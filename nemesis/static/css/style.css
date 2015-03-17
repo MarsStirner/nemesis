@@ -1,0 +1,833 @@
+html, body {height: 100%;}
+#bottom, #push {height:60px;}
+#footer {height:60px;}
+.footer > hr {
+    margin: 20px 0;
+}
+#wrap {
+    min-height: 100%; height: auto !important; height: 100%; margin: 0 auto -60px;
+}
+
+#wrap > #container {
+    padding-top: 0px;
+}
+
+body{
+    padding-top:0;
+}
+
+.loader {
+    display:    none;
+    position:   fixed;
+    z-index:    2010;
+    top:        30%;
+    left:       40%;
+    height:     120px;
+    width:      300px;
+    background: rgba( 0, 0, 0, .75)
+    50% 50%
+    no-repeat;
+    color: #ffffff;
+    padding: 19px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+    border-radius: 6px;
+}
+.loader .overlay{
+    position:   fixed;
+    z-index:    2000;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
+}
+/* When the body has the loading class, we turn
+   the scrollbar off with overflow:hidden */
+body.loading {
+    overflow: hidden;
+}
+
+/* Anytime the body has the loading class, our
+   modal element will be visible */
+body.loading .loader {
+    display: block;
+}
+
+.container-fluid > hr {
+    margin: 10px 0;
+}
+
+.navbar-static-top .user-text-assist {
+    margin: 5px 0 0 0;
+}
+.navbar-inverse .navbar-text {
+    color: inherit;
+}
+.navbar-static-top .user-text-assist .popover {
+    width: 300px;
+    max-width: 300px;
+    color: #333;
+}
+.navbar-static-top .user-text-assist .popover .btn{
+   font-size: 14px;
+}
+.navbar-static-top .assist-icon {
+    font-size: larger;
+}
+
+.form-signin {
+    max-width: 300px;
+    padding: 19px 29px 29px;
+    margin: 120px auto 20px;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+       -moz-border-radius: 5px;
+            border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+       -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+    margin-bottom: 10px;
+}
+.form-signin input[type="text"],
+.form-signin input[type="password"],
+.form-signin select{
+    font-size: 16px;
+    height: auto;
+    margin-bottom: 15px;
+    padding: 7px 9px;
+}
+
+.form-sel-doctor {
+    padding: 19px 29px 29px;
+    margin: 0 auto 20px;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+       -moz-border-radius: 5px;
+            border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+       -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.form-sel-doctor .scrollable {
+    overflow-y: auto;
+    height: 500px;
+}
+.form-sel-doctor .profile-text {
+    font-size: smaller;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* Form customizations */
+form.icon {
+    display: inline;
+}
+
+form.icon button {
+    border: none;
+    background: transparent;
+    text-decoration: none;
+    padding: 0;
+    line-height: normal;
+}
+
+a.icon {
+    text-decoration: none;
+}
+
+.table caption {
+    font-size: 19px;
+    text-align: left;
+}
+
+/* Typeahead */
+
+span.twitter-typeahead {
+    display: inline !important;
+}
+
+.typeahead,
+.tt-query,
+.tt-hint {
+    display: block;
+    height: 34px;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.428571429;
+    border: 1px solid transparent;
+    border-radius:4px;
+}
+
+.typeahead {
+  background-color: #fff;
+}
+
+.typeahead:focus {
+  border: 2px solid #0097cf;
+}
+
+.tt-query {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+  color: #999
+}
+
+.tt-dropdown-menu {
+  width: 422px;
+  margin-top: 0;
+  padding: 4px 0;
+  background-color: #fff;
+  /*border: 1px solid #ccc;*/
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
+  -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+     -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+          box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.tt-suggestion {
+  padding: 3px 10px;
+  /*font-size: 18px;*/
+  /*line-height: 24px;*/
+  cursor: pointer;
+}
+
+.tt-suggestion.tt-cursor {
+  color: #fff;
+  background-color: #0097cf;
+
+}
+
+.tt-suggestion p {
+  margin: 0;
+}
+
+/* CSS# TreeView */
+
+/*
+ * CSS3 Treeview. No JavaScript
+ * @version 1.0
+ * @author Martin Ivanov
+ * @url developer's website: http://wemakesites.net/
+ * @url developer's twitter: https://twitter.com/#!/wemakesitesnet
+ * @url developer's blog http://acidmartin.wordpress.com/
+ **/
+
+/*
+ * This solution works with all modern browsers and Internet Explorer 9+.
+ * If you are interested in purchasing a JavaScript enabler for IE8
+ * for the CSS3 Treeview, please, check this link:
+ * http://experiments.wemakesites.net/miscellaneous/acidjs-css3-treeview/
+ **/
+
+.css-treeview ul,
+.css-treeview li {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.css-treeview input.group {
+    position: absolute;
+    display: none;
+}
+
+.css-treeview {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    z-index: 100;
+    margin-top: 8px;
+}
+
+.css-treeview input.leaf {
+    cursor: pointer;
+}
+
+.css-treeview input.group + label + ul {
+    margin-left: 18px;
+}
+
+.css-treeview input.group ~ ul {
+    display: none;
+}
+
+.css-treeview label.group:hover,
+.css-treeview label.leaf:hover,
+.css-treeview a.leaf:hover {
+    background-color: mediumseagreen;
+    color: lightyellow;
+}
+
+.css-treeview label.group,
+.css-treeview label.leaf,
+.css-treeview a.leaf,
+.css-treeview label.group::before {
+    cursor: pointer;
+    vertical-align: middle;
+    font-weight: normal;
+    border-radius: 2px;
+}
+
+.css-treeview input.group:disabled + label.group {
+    cursor: default;
+    opacity: .6;
+}
+
+.css-treeview input.group:checked:not(:disabled) ~ ul {
+    display: block;
+}
+
+.css-treeview label.group::before {
+    background: url("/static/i/tree-icons.png") no-repeat;
+    display: inline-block;
+    height: 16px;
+}
+
+.css-treeview label.group::before {
+    content: "";
+    width: 16px;
+    margin: 0 2px 0 0;
+    vertical-align: middle;
+    background-position: 0 -32px;
+}
+
+.css-treeview input.group:checked + label.group::before {
+    background-position: 0 -16px;
+}
+.css-treeview a.no-schedule, .css-treeview label.no-schedule {
+    text-decoration: line-through;
+    font-style: italic;
+    color: #999;
+}
+
+/* webkit adjacent element selector bugfix */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .css-treeview {
+        -webkit-animation: webkit-adjacent-element-selector-bugfix infinite 1s;
+    }
+
+    @-webkit-keyframes webkit-adjacent-element-selector-bugfix {
+        from {
+            padding: 0;
+        } to {
+            padding: 0;
+        }
+    }
+}
+
+.scrolled-tree {
+    height: 100%;
+    overflow-y: auto;
+    max-height: 500px;
+    min-height: 250px;
+}
+
+.scrolled-tree.popup {
+    display: none;
+    position: absolute;
+}
+
+.btn-gray {
+  color: #ffffff;
+  background-color: #999999;
+  border-color: #cccccc;
+}
+.btn-gray:hover,
+.btn-gray:focus,
+.btn-gray:active,
+.btn-gray.active,
+.open .dropdown-toggle.btn-gray {
+  color: #666666;
+  background-color: #ebebeb;
+  border-color: #adadad;
+}
+
+.nav > li > a {
+    cursor: pointer;
+}
+
+div.select2-container {
+    display: block !important;
+    /*width: 100%;*/
+    /*min-width: 250px;*/
+}
+
+.marginal {
+    margin-bottom: 20px;
+}
+
+.vmargin10 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.vbmargin10 {
+    margin-bottom: 10px;
+}
+
+.rmargin10 {
+    margin-right: 10px !important;
+}
+
+.lmargin20 {
+    margin-left: 20px;
+}
+
+.tmargin20 {
+    margin-top: 20px;
+}
+
+.nomarpad {
+    margin: 0;
+    padding: 0;
+}
+
+.bg-muted {
+  background-color: #f5f5f5;
+}
+
+.btn-group-justified {
+  table-layout: auto;
+}
+
+.btn-group-justified > .btn-group{
+      width:100%;
+}
+
+.mkb-button {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.tab-content {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.action-property-name-field {
+    width: 16%;
+}
+
+.ng-ckeditor {
+    border:0 none
+}
+
+table.table-clickable tbody tr {
+    cursor: pointer;
+}
+
+tr.row-clickable {
+    cursor: pointer;
+}
+
+.popupable {
+    display: block;
+    position: absolute;
+    z-index: 10;
+    margin-top: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.ui-treeview ul,
+.ui-treeview li {
+    padding: 0;
+    margin: 0 0 3px;
+    list-style: none;
+}
+
+.ui-treeview li > ul {
+    margin-left: 24px;
+}
+
+.ui-treeview div.tree-label {
+    background: url("/static/i/tree-icons.png") no-repeat;
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.ui-treeview div.tree-label.leaf {
+
+}
+.ui-treeview a {
+    cursor: pointer;
+}
+.ui-treeview a.node {
+    color: inherit;
+    text-decoration: none;
+}
+.ui-treeview div.tree-label.expanded {
+    background-position: 0 -16px;
+}
+.ui-treeview div.tree-label.collapsed {
+    background-position: 0 -32px;
+}
+.wm-popup {
+    display: none;
+    position: absolute;
+    margin-top: 10px;
+    z-index: 1000;
+}
+.novmargin{
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.nohmargin{
+    margin-left: 0;
+    margin-right: 0;
+}
+.no-top-margin{
+    margin-top: 0;
+}
+legend h2{margin-top: 0}
+blockquote.danger{
+    border-color: #D43F3A;
+}
+
+.nowrap{
+    white-space: nowrap;
+}
+
+.timepicker_popup{
+    margin-top: 1px;
+    padding: 0px 10px;
+    position: absolute;
+    background: #FFF;
+    border: 1px solid #aaa;
+    box-shadow: 0 4px 5px rgba(0,0,0,.15);
+    border-radius: 4px;
+    z-index: 1010;
+    width: 300%;
+}
+
+.lander a.btn {
+    text-align: left;
+    padding: 10px;
+}
+.lander a h3 {
+    text-decoration: underline;
+    margin-top: 10px;
+}
+.lander a ul li {
+    white-space: normal;
+}
+
+.validatable.ng-invalid {
+    border: 1px solid #a94442;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
+}
+
+.validatable.ng-invalid-required {
+    border: 1px solid #a94442;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
+}
+
+.validatable.ng-invalid-pattern {
+    border: 1px solid #a94442;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
+}
+
+div.toc-affix {
+    top: 0;
+    margin-top: 20px;
+    width: 200px;
+}
+
+.toc .wrap-btn {
+    display: block;
+    white-space: normal !important;
+    text-align: left;
+    border-radius: 0;
+    /*text-decoration: underline;*/
+}
+.toc .nav > li > a {
+    padding: 4px 0 0 10px;
+}
+.toc .nav > li > a:hover {
+    /*text-decoration: underline;*/
+}
+.toc ul,
+.toc li {
+    margin-left: 0;
+    padding: 0;
+    list-style: none;
+}
+.toc hr{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.toc li > ul {
+    margin-left: 12px;
+}
+.toc .nav .nav > li > a {
+    font-size: 13px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.toc .nav .nav {
+    display: none;
+}
+.toc .nav > .toc-selected-top > ul {
+    display: block;
+}
+.toc .toc-selected-top > a {
+    border-left: 2px solid #2a6496;
+    color: #2a6496;
+    margin-left: -2px;
+}
+.toc .toc-selected-top > a {
+    border-left: 2px solid #2a6496;
+    color: #2a6496;
+    margin-left: -2px;
+}
+.toc .toc-selected-bottom > a {
+    border-left: 1px solid #2a6496;
+    color: #2a6496;
+    margin-left: -1px;
+}
+.modal.fade .modal-dialog, .modal.in .modal-dialog {
+  -webkit-transform: translate(0, 0);
+  -ms-transform: translate(0, 0);
+  transform: translate(0, 0);
+}
+.modal-lg{
+    width: 70%;
+}
+mark, .mark {
+    background-color: #fcf8e3;
+    padding: 0.2em 0;
+}
+.affix-wrapper {
+    margin-top: 20px;
+}
+.affix-wrapper.affix {
+    width: inherit;
+    padding-right: 30px;
+}
+.list-inline > li.schedule_label {
+    margin-bottom: 8px;
+    padding-left: 0;
+}
+.list-inline > li.schedule_label > span.label{
+    cursor: pointer;
+    font-size: 100%;
+    font-weight: normal;
+}
+ng-form {
+    display: block;
+}
+
+/*
+ * Aside element
+ */
+.aside {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 1049;
+    overflow: auto;
+    min-width: 320px;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+}
+.aside .aside-content {
+    top: 40px;
+    bottom: 40px;
+}
+.aside:focus {
+    outline: none;
+}
+@media (max-width: 991px) {
+    .aside {
+        min-width: 240px;
+    }
+}
+.aside.left {
+    right: auto;
+    left: 0;
+}
+.aside.right {
+    right: 0;
+    left: auto;
+}
+.aside .aside-dialog .aside-header {
+    border-bottom: 1px solid #e5e5e5;
+    min-height: 16px;
+    padding: 6px 15px;
+    background: #428bca;
+    color: white;
+}
+.aside .aside-dialog .aside-header .close {
+    margin-right: -8px;
+    padding: 4px 8px;
+    color: white;
+    font-size: 25px;
+    opacity: .8;
+}
+.aside .aside-dialog .aside-body {
+    position: relative;
+    padding: 20px;
+}
+.aside .aside-dialog .aside-footer {
+    margin-top: 15px;
+    padding: 19px 20px 20px;
+    text-align: right;
+    border-top: 1px solid #e5e5e5;
+}
+.aside .aside-dialog .aside-footer .btn + .btn {
+    margin-left: 5px;
+    margin-bottom: 0;
+}
+.aside .aside-dialog .aside-footer .btn-group .btn + .btn {
+    margin-left: -1px;
+}
+.aside .aside-dialog .aside-footer .btn-block + .btn-block {
+    margin-left: 0;
+}
+.aside-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    background-color: #000000;
+}
+.aside-backdrop.fade {
+    opacity: 0;
+    filter: alpha(opacity=0);
+}
+.aside-backdrop.in {
+    opacity: 0.5;
+    filter: alpha(opacity=50);
+}
+
+
+.table-bak th {
+    text-align: center;
+    vertical-align: middle !important;
+}
+.table-bak td[rowspan] + td[rowspan], .table-bak th[rowspan] + th[rowspan] {
+   border-right-width: medium;
+}
+
+.modal-scrollable {
+    overflow-y: auto;
+}
+
+.modal-scrollable .modal-dialog,
+.modal-scrollable .modal-content {
+    /* 90% of window height */
+    height: 90%;
+}
+
+.modal-scrollable .modal-body {
+    /* 100% = dialog height, 150px = header + footer */
+    max-height: calc(100% - 150px);
+    height: 100%;
+    overflow-y: scroll;
+}
+
+button.text-left {
+    text-align: left;
+    padding-left: 10px;
+}
+
+a.pseudo-btn {
+    padding: 6px 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.label-no-bold {
+    font-weight: normal;
+
+}
+.thesaurus-tree{
+    max-height: calc(100% - 305px);
+    height: 100%;
+    overflow-y: auto;
+}
+.full-height{
+    height: 100%;
+}
+.aside.full-height .wysiwyg-panel{
+    max-height: 190px!important;
+    overflow-y: auto!important;
+}
+.aside.full-height{
+    max-width: 800px;
+    overflow-y: hidden;
+}
+
+.inline-checkbox {
+    margin: 0;
+    padding-bottom: 0;
+}
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cursor-default {
+    cursor: auto;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.header-sorter {
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.idle-modal p {
+    text-align: center;
+    font-size: larger;
+}
+.idle-modal .modal-header {
+    text-align: center;
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+    color: #8a6d3b;
+    -webkit-border-top-left-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    -moz-border-radius-topleft: 5px;
+    -moz-border-radius-topright: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+.idle-modal .idle-countdown {
+    text-align: center;
+}
+.idle-modal .modal-footer {
+    text-align: center;
+    margin-top: 0;
+}
