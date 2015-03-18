@@ -29,20 +29,3 @@ def bootstrap_app(templates_dir):
     import models
     import views
     import nemesis.context_processors
-
-
-
-@app.context_processor
-def enum():
-    from nemesis.lib.enum import Enum
-    return {
-        'Enum': Enum,
-    }
-
-
-@app.context_processor
-def lpu_style():
-    return {
-        'LPU_STYLE': app.config['LPU_STYLE']
-    }
-
