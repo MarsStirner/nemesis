@@ -7,8 +7,10 @@ app = Flask(__name__)
 
 
 # noinspection PyUnresolvedReferences
-def bootstrap_app():
+def bootstrap_app(templates_dir):
     from systemwide import db, cache, babel, principal, login_manager, beaker_session
+
+    app.template_folder = templates_dir
 
     db.init_app(app)
     babel.init_app(app)

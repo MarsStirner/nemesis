@@ -1,9 +1,0 @@
-<ol class="breadcrumb">
-    {%- for crumb in session['crumbs'] -%}
-        {%- if loop.last -%}
-            <li class="active">{{ crumb[1] }}</li>
-        {%- else -%}
-             <li><a href="{{ crumb[0] }}">{{ crumb[1] }}</a></li>
-        {%- endif -%}
-    {%- endfor -%}
-</ol>
