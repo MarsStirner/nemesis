@@ -27,7 +27,7 @@ app.run(['$q', '$timeout', function($q, $timeout) {
     }
     CKEDITOR.on('loaded', checkLoaded);
     $timeout(checkLoaded, 100);
-}]);
+}])
 
 app.directive('ckeditor', ['$timeout', '$q', function ($timeout, $q) {
     'use strict';
@@ -99,7 +99,7 @@ app.directive('ckeditor', ['$timeout', '$q', function ($timeout, $q) {
                         setModelData(setPristine);
                         isReady = true;
                     });
-                };
+                }
 
                 //instance.on('pasteState',   setModelData);
                 instance.on('change',       setModelData);

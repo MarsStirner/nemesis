@@ -751,6 +751,26 @@ ng-form {
     overflow-y: scroll;
 }
 
+
+.modal-scrollable-block {
+    overflow: auto;
+    border: solid;
+    height: 600px;
+}
+.modal-scrollable-block2 {
+    overflow: auto;
+    height: 300px;
+}
+
+.modal-full-screen .modal-dialog,
+.modal-full-screen .modal-content {
+    height: 97%;
+}
+.modal-full-screen .modal-body {
+    max-height: calc(100% - 150px);
+    height: 100%;
+}
+
 button.text-left {
     text-align: left;
     padding-left: 10px;
@@ -830,4 +850,8 @@ a.pseudo-btn {
 .idle-modal .modal-footer {
     text-align: center;
     margin-top: 0;
+}
+
+.pagination.pagination-nomargin {
+    margin: 0;
 }

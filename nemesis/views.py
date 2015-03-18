@@ -8,7 +8,6 @@ from flask import render_template, abort, request, redirect, url_for, flash, ses
 from flask.ext.principal import Identity, AnonymousIdentity, identity_changed
 from flask.ext.principal import identity_loaded, Permission, RoleNeed, UserNeed, ActionNeed
 from flask.ext.login import login_user, logout_user, login_required, current_user
-from requests.exceptions import ConnectionError
 from sqlalchemy.orm import lazyload, joinedload
 from itsdangerous import json
 
@@ -41,33 +40,29 @@ def check_valid_login():
 
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
         if auth_token:
-            try:
-                result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
-            except ConnectionError:
-                print(u'КАС недоступен')
-            else:
-                if result.status_code == 200:
-                    answer = result.json()
-                    if answer['success']:
-                        if not current_user.is_authenticated():
-                            user = UserAuth.get_by_id(answer['user_id'])
-                            if login_user(user):
-                                session_save_user(user)
-                                # Tell Flask-Principal the identity changed
-                                identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
-                                return redirect(request.url or UserProfileManager.get_default_url())
-                            else:
-                                pass
-                                # errors.append(u'Аккаунт неактивен')
-                        login_valid = True
-                    else:
-                        # Remove the user information from the session
-                        logout_user()
-                        # Remove session keys set by Flask-Principal
-                        for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
-                            session.pop(key, None)
-                        # Tell Flask-Principal the user is anonymous
-                        identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+            result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
+            if result.status_code == 200:
+                answer = result.json()
+                if answer['success']:
+                    if not current_user.is_authenticated():
+                        user = UserAuth.get_by_id(answer['user_id'])
+                        if login_user(user):
+                            session_save_user(user)
+                            # Tell Flask-Principal the identity changed
+                            identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
+                            return redirect(request.url or UserProfileManager.get_default_url())
+                        else:
+                            pass
+                            # errors.append(u'Аккаунт неактивен')
+                    login_valid = True
+                else:
+                    # Remove the user information from the session
+                    logout_user()
+                    # Remove session keys set by Flask-Principal
+                    for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
+                        session.pop(key, None)
+                    # Tell Flask-Principal the user is anonymous
+                    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
         if not login_valid:
             # return redirect(url_for('login', next=request.url))

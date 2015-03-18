@@ -125,6 +125,10 @@ class Client(db.Model):
         primaryjoin='and_(ClientWork.client_id==Client.id, ClientWork.deleted == 0)',
         order_by="desc(ClientWork.id)"
     )
+    file_attaches = db.relationship(
+        u'ClientFileAttach',
+        lazy='dynamic'
+    )
 
     events = db.relationship(
         u'Event',
@@ -674,8 +678,10 @@ class ClientDocument(db.Model):
     origin = db.Column(db.String(256), nullable=False)
     version = db.Column(db.Integer, nullable=False, default=0)
     endDate = db.Column(db.Date)
+    cfa_id = db.Column(db.Integer, db.ForeignKey('ClientFileAttach.id'))
 
     documentType = db.relationship(u'rbDocumentType', lazy=False)
+    file_attach = db.relationship('ClientFileAttach')
 
     def __init__(self, doc_type, serial, number, beg_date, end_date, origin, client):
         self.documentType_id = int(doc_type) if doc_type else None
@@ -1012,9 +1018,11 @@ class ClientPolicy(db.Model):
     name = db.Column(db.Unicode(64), nullable=False, server_default=u"''", default=u'')
     note = db.Column(db.Unicode(200), nullable=False, server_default=u"''", default=u'')
     version = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
+    cfa_id = db.Column(db.Integer, db.ForeignKey('ClientFileAttach.id'))
 
     insurer = db.relationship(u'Organisation', lazy=False)
     policyType = db.relationship(u'rbPolicyType', lazy=False)
+    file_attach = db.relationship('ClientFileAttach')
 
     def __init__(self, pol_type, serial, number, beg_date, end_date, insurer, client):
         self.policyType_id = int(pol_type) if pol_type else None
@@ -1311,3 +1319,18 @@ class AddressHouse(db.Model):
 
     def __int__(self):
         return self.id
+
+
+class ClientFileAttach(db.Model):
+    __tablename__ = u'ClientFileAttach'
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
+    filegroup_id = db.Column(db.Integer, db.ForeignKey('FileGroupDocument.id'), nullable=False)
+    attachDate = db.Column(db.DateTime, nullable=False)
+    documentType_id = db.Column(db.Integer, db.ForeignKey('rbDocumentType.id'))
+    relationType_id = db.Column(db.Integer, db.ForeignKey('rbRelationType.id'))
+
+    file_document = db.relationship('FileGroupDocument')
+    documentType = db.relationship('rbDocumentType')
+    relationType = db.relationship('rbRelationType')

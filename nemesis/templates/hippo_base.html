@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru" ng-app="WebMis20">
+<head>
+    <title>{{ config['TITLE'] }} {% block title %}{% endblock %}</title>
+    {%- include '_header.html' -%}
+    {%- block modules_css %}{% endblock -%}
+</head>
+<body ng-class="{loading: pendingRequests}">
+<div id="wrap">
+    {% include '_top.html' %}
+    <div id="container" class="container-fluid">
+        {%- block content %}{% endblock -%}
+    </div><!-- /#container -->
+    <div id="push"></div>
+</div><!-- /#wrap -->
+{% include '_bottom.html' -%}
+{% include '_footer.html' with context -%}
+<script>
+    var
+        url_client_get = '{{ url_for('patients.api_patient_get') }}',
+        url_client_save = '{{ url_for('patients.api_patient_save') }}',
+        url_client_html = '{{ url_for('patients.patient') }}',
+        url_client_search = '{{ url_for('patients.api_search_clients') }}',
+        url_action_get = '{{ url_for('schedule.api_action_get') }}',
+        url_action_new = '{{ url_for('schedule.api_action_new_get') }}',
+        url_action_save = '{{ url_for('schedule.api_action_post') }}',
+        url_event_get = '{{ url_for('event.api_event_info') }}',
+        url_event_new = '{{ url_for('event.api_event_new_get') }}',
+        url_event_save = '{{ url_for('event.api_event_save') }}',
+        url_event_close = '{{ url_for('event.api_event_close') }}',
+        url_event_search = '{{ url_for('event.api_event_search') }}',
+        url_for_event_html_event_info = '{{ url_for('event.html_event_info') }}',
+        url_event_new_event_html = '{{ url_for('event.new_event') }}',
+        url_api_event_stationary_open_get = '{{ url_for('event.api_event_stationary_open_get') }}',
+        url_kladr_city_get = '{{ url_for('patients.api_kladr_city_get') }}',  // for tests
+        url_kladr_street_get = '{{ url_for('patients.api_kladr_street_get') }}',  // for tests
+        url_for_event_api_diagnosis_save = '{{ url_for('event.api_diagnosis_save') }}',
+        url_api_diagnosis_get = '{{ url_for('event.api_diagnosis_get') }}',
+        url_api_client_payment_info_get = '{{ url_for('event.api_client_payment_info_get') }}',
+        url_api_prev_event_payment_info_get = '{{ url_for('event.api_prev_event_payment_info_get') }}',
+        url_for_event_api_search_services = '{{ url_for('event.api_search_services') }}',
+        url_for_event_api_service_delete_service = '{{ url_for('event.api_service_delete_service') }}',
+        url_for_event_api_service_coordinate = '{{ url_for('event.api_service_coordinate') }}',
+        url_for_event_api_service_remove_coord = '{{ url_for('event.api_service_remove_coord') }}',
+        url_for_event_api_service_change_account = '{{ url_for('event.api_service_change_account') }}',
+        url_for_event_api_delete_action = '{{ url_for('event.api_delete_action') }}',
+        url_for_delete_event = '{{ url_for('event.api_delete_event') }}',
+        url_for_schedule_api_atl_get = '{{ url_for('schedule.api_atl_get') }}',
+        url_for_schedule_api_atl_get_flat = '{{ url_for('schedule.api_atl_get_flat') }}',
+        url_for_schedule_html_action = '{{ url_for('schedule.html_action') }}',
+        url_schedule_appointment_html = '{{ url_for('schedule.appointment') }}',
+        url_schedule_api_appointment = '{{ url_for('schedule.api_appointment') }}',
+        url_schedule_api_schedule = '{{ url_for('schedule.api_schedule') }}',
+        url_schedule_api_move_client = '{{ url_for('schedule.api_move_client') }}',
+        url_schedule_html_person_schedule_monthview = '{{ url_for('schedule.person_schedule_monthview') }}',
+        url_schedule_api_schedule_description = '{{ url_for('schedule.api_schedule_description') }}',
+        url_schedule_api_schedule_description_post = '{{ url_for('schedule.api_schedule_description_post') }}',
+        url_api_copy_schedule_description = '{{ url_for('schedule.api_copy_schedule_description') }}',
+        url_schedule_api_schedule_lock = '{{ url_for('schedule.api_schedule_lock') }}',
+        url_schedule_api_html_day_free = '{{ url_for('schedule.html_day_free') }}',
+        url_for_patien_info_full = '{{ url_for('patients.patient_info_full') }}',
+        url_schedule_api_create_lab_direction = '{{ url_for('schedule.api_create_lab_direction') }}',
+        url_schedule_all_persons_tree = '{{ url_for('schedule.api_all_persons_tree') }}',
+        url_event_api_get_events = '{{ url_for('event.api_get_events') }}',
+        url_schedule_api_day_schedule = '{{ url_for('schedule.api_day_schedule') }}',
+        url_doctor_to_assist = '{{ url_for('doctor_to_assist') }}',
+        url_get_orgstructure = '{{ url_for('schedule.api_org_structure') }}',
+        url_api_get_action_ped = '{{ url_for('schedule.api_get_action_ped') }}',
+        url_api_persons_tree_schedule_info = '{{ url_for('schedule.api_persons_tree_schedule_info') }}',
+        url_api_search_persons = '{{ url_for('schedule.api_search_persons') }}',
+        url_api_procedure_offices_get = '{{ url_for('schedule.api_procedure_offices_get') }}',
+        url_schedule_index = '{{ url_for('schedule.index') }}',
+        url_wm10_create_event = '{{ "{0}patients/{{0}}/appeals/new/".format(config['WEBMIS10_URL']) }}',
+        url_api_event_make_payment = '{{ url_for('accounting.api_event_make_payment') }}',
+        url_api_get_event_payments = '{{ url_for('accounting.api_get_event_payments') }}';
+</script>
+{%- block modules_js %}{% endblock -%}
+</body>
+</html>

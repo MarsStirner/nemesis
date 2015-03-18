@@ -2,6 +2,8 @@
 
 import datetime
 import itertools
+import os
+import base64
 
 from collections import defaultdict
 
@@ -9,6 +11,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import between, func
 from flask import json
 
+from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
@@ -21,7 +24,7 @@ from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTi
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
 from nemesis.models.client import Client
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
-    Organisation, rbContactType)
+    Organisation, rbContactType, FileGroupDocument, FileMeta, rbDocumentType)
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import VOL_POLICY_CODES, STATIONARY_EVENT_CODES
 
@@ -466,6 +469,8 @@ class ClientVisualizer(object):
         documents = [safe_dict(doc) for doc in client.documents_all] if client.id else []
         policies = [safe_dict(policy) for policy in client.policies_all] if client.id else []
         document_history = documents + policies
+        file_attaches_query = client.file_attaches.join(FileGroupDocument, FileMeta)
+        files = [self.make_file_attach_info(fa) for fa in file_attaches_query]
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
         return {
             'info': client,
@@ -481,7 +486,55 @@ class ClientVisualizer(object):
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
+            'file_attaches': files
             # 'identifications': identifications,
+        }
+
+    def make_file_attach_info(self, file_attach, with_data=True, file_idx_list=None):
+        """
+
+        :type file_attach: application.models.client.ClientFileAttach
+        :return:
+        """
+
+        file_document = file_attach.file_document
+        return {
+            'id': file_attach.id,
+            'attach_date': file_attach.attachDate,
+            'doc_type': file_attach.documentType,
+            'relation_type': file_attach.relationType,
+            'file_document': {
+                'id': file_document.id,
+                'name': file_document.name,
+                'files': [
+                    self.make_file_info(fm, with_data) for fm in file_document.files if (
+                        (fm.idx in file_idx_list) if file_idx_list else True
+                    )
+                ]
+            }
+        }
+
+    def make_file_info(self, file_meta, with_data=True):
+        def get_file_data(fullpath):
+            try:
+                with open(fullpath, 'rb') as f:
+                    file_encoded = base64.b64encode(f.read())
+            except IOError, e:
+                logger.error(u'Невозможно загрузить файл %s' % fullpath, exc_info=True)
+                return None
+            return file_encoded
+
+        if file_meta.id and with_data:
+            fullpath = os.path.join(app.config['FILE_STORAGE_PATH'], file_meta.path)
+            data = get_file_data(fullpath)
+        else:
+            data = None
+        return {
+            'id': file_meta.id,
+            'name': file_meta.name,
+            'idx': file_meta.idx,
+            'mime': file_meta.mimetype,
+            'data': data
         }
 
     def make_client_info_for_view_frame(self, client):

@@ -1,0 +1,65 @@
+<!-- Le javascript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="{{ url_for('static', filename='js/underscore.js') }}"></script>
+<script src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/moment.ru.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hitsl/hitsl.power.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hitsl/hitsl.core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hitsl/hitsl.ui.js') }}"></script>
+<script src="{{ url_for('static', filename='angular.js/angular-sanitize.min.js') }}"></script>
+<script src="{{ url_for('static', filename='angular.js/angular-locale_ru-ru.js') }}"></script>
+
+<script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='angular.js/ui-bootstrap-tpls.js') }}"></script>
+
+<script src="{{ url_for('static', filename='angular-ui-select/select.js') }}"></script>
+<script src="{{ url_for('static', filename='angular.js/angular-tree-repeat.js') }}"></script>
+<script src="{{ url_for('static', filename='angular-ui-utils/mask_edited.js') }}"></script>
+<script src="{{ url_for('static', filename='js/angular-strap.js') }}"></script>
+<script src="{{ url_for('static', filename='js/angular-strap.tpl.js') }}"></script>
+<script src="{{ url_for('static', filename='angular-scroll/angular-scroll.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/webmis20.js', v=version) }}"></script>
+
+<script src="{{ url_for('static', filename='js/services.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services/client/client-models.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services/event/event-models.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services/schedule-models.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services/appointment_dialog.js', v=version) }}"></script>
+
+<script src="{{ url_for('static', filename='js/loader.js', v=version) }}"></script>
+
+<script src="{{ url_for('static', filename='js/controllers.js', v=version) }}"></script>
+
+<script src="{{ url_for('static', filename='js/directives.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/goodies.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/person_tree.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/action-type-tree.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/action-layout.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/bootstrap-wysiwyg.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/client-search.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/event-search.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/directives/client-info.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/services/appointment_dialog.js', v=version) }}"></script>
+<script src="{{ url_for('static', filename='js/controllers.js', v=version) }}"></script>
+<script src="{{ url_for('config_js') }}"></script>
+
+<link href="{{ url_for('static', filename='jcrop/jquery.Jcrop.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='jcrop/jquery.Jcrop.min.js', v=version) }}"></script>
+
+<script>
+    'use strict';
+    var
+        rb_root = '{{ url_for('api_refbook') }}',
+        rbThesaurus_root = '{{ url_for('api_thesaurus') }}',
+        url_print_templates = '{{ print_subsystem_templates }}',
+        url_print_subsystem = '{{ print_subsystem_url }}',
+        url_print_template = '{{ print_subsystem_print_template }}',
+        kladr_city = '{{ url_for('kladr_city') }}',
+        kladr_street = '{{ url_for('kladr_street') }}',
+        url_roles_api = '{{ url_for('api_roles') }}',
+        url_api_doctors_to_assist = '{{ url_for('api_doctors_to_assist') }}';
+
+</script>

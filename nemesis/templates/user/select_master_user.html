@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %} > Выбор замещаемого врача{% endblock %}
+
+{% block modules_css %}
+<style type="text/css">
+      body {
+        background-color: #f5f5f5;
+      }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div ng-controller="SelectMasterUserCtrl">
+    <div class="col-md-offset-2 col-md-8">
+        <div class="row">
+        <form class="form-sel-doctor" method="POST">
+            <h2 class="vmargin10 marginal">Выберите врача для ассистирования</h2>
+            <input type="text" class="form-control marginal" placeholder="ФИО, профиль, специальность..."
+                ng-model="search.$">
+            <div class="scrollable row">
+                <div class="col-md-6" ng-repeat="user in users | filter:search">
+                    <button type="button" class="btn btn-lg btn-default btn-block marginal text-left"
+                            ng-click="select_user_and_go(user)">
+                        <span ng-bind="user.full_name"></span><br>
+                        <span class="text-muted" ng-bind="user.profile.name"></span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+{% block modules_js %}
+    <script src="{{ url_for('static', filename='js/controllers/select_master_user.js', v=version) }}"></script>
+{% endblock %}

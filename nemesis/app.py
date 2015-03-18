@@ -7,11 +7,8 @@ app = Flask(__name__)
 
 
 # noinspection PyUnresolvedReferences
-def bootstrap_app(template_folder):
+def bootstrap_app():
     from systemwide import db, cache, babel, principal, login_manager, beaker_session
-
-    # Hack
-    app.template_folder = template_folder
 
     db.init_app(app)
     babel.init_app(app)
@@ -32,11 +29,18 @@ def bootstrap_app(template_folder):
     import nemesis.context_processors
 
 
+
 @app.context_processor
 def enum():
     from nemesis.lib.enum import Enum
     return {
         'Enum': Enum,
+    }
+
+
+@app.context_processor
+def lpu_style():
+    return {
         'LPU_STYLE': app.config['LPU_STYLE']
     }
 

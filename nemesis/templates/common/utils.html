@@ -1,0 +1,5 @@
+{% macro mark_active(url, append=False) -%}
+    {% if request.path == url_for(url) -%}
+        {% if not append %} class="active"{% else %}active{% endif %}
+    {%- endif %}
+{%- endmacro %}

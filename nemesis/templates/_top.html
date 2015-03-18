@@ -1,0 +1,94 @@
+{%- if current_user.id and current_user.current_role -%}
+<div class="navbar navbar-inverse navbar-static-top">
+    <div class="container-fluid">
+        <ul class="nav navbar-nav" id="cur_modules">
+            <li>
+                <div>
+                    {%- for item in main_menu -%}
+                        {% if item.visible %}
+                        <a class="btn navbar-btn {% if request.endpoint == item.link %}active btn-info{% else %}btn-default{% endif %}"
+                           href="{{ url_for(item.link) }}" title="{{ item.title }}">
+                            {% if item.homepage %}
+                            <span class="glyphicon glyphicon-home"></span>
+                            {% else %}
+                            {{ item.title }}
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                    {%- endfor -%}
+                </div>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav pull-right">
+            {% if current_user.id %}
+            <li>
+                {% if user_profiles_mng.has_ui_assistant() %}
+                <div class="navbar-text user-text-assist">
+                    <div>
+                        <span class="nowrap">
+                            <span class="glyphicon glyphicon-user"></span> {{ current_user.format_name() }}<span class="assist-user-text">, ассистирую:</span>
+                        </span>
+                        <br>
+                        {% if current_user.master %}
+                            <div id="assist" class="hidden">
+                                <div class="row">
+                                  <div class="col-xs-4">
+                                    <span class="thumbnail"><span style="font-size:75px" class="fa fa-user-md assist-icon text-muted"></span></span>
+                                  </div>
+                                  <div class="col-xs-8">
+                                    <h4>{{ current_user.master.lastName }} {{ current_user.master.firstName|truncate(1, True, end=".") }} {{ current_user.master.patrName|truncate(1, True, end=".") }}
+                                      <small>{{ current_user.master.speciality }}</small><br>
+                                      <small>{{ current_user.master._current_role_name }}</small>
+                                      </h4>
+                                      <a href="{{ url_for('doctor_to_assist', next=request.url) }}" class="btn btn-primary btn-sm btn-block">Сменить врача</a>
+                                  </div>
+                                </div>
+                            </div>
+                        <a class="show_assist" href="javascript:void(0);"><span class="fa fa-user-md assist-icon"></span></a>
+                        <a class="show_assist" href="javascript:void(0);">
+                        {{ current_user.master.format_name(is_master=True) }}</a>
+
+                        <script type="application/javascript">
+                            $(function () {
+                                $(".show_assist").popover({
+                                    html : true,
+                                    placement : 'bottom',
+                                    title : '',
+                                    trigger : 'focus',
+                                    content: function() {
+                                      return $('#assist').html();
+                                    }
+                                });
+                            });
+                        </script>
+                        {% else %}
+                            <a href="{{ url_for('doctor_to_assist', next=request.url) }}" title="Выбрать врача"><span class="fa fa-user-md assist-icon"></span></a>
+                            <a href="{{ url_for('doctor_to_assist', next=request.url) }}" title="Выбрать врача">не выбрано</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <span class="navbar-text nohmargin">
+                    <span class="glyphicon glyphicon-user"></span>
+                    <span> {{ current_user.format_name() }}</span>
+                </span>
+                {% endif %}
+
+                <form class="navbar-form navbar-left" id="_change_role_frm" action="{{ url_for('select_role') }}" method="POST">
+                    <select name="roles" onchange="$('#_change_role_frm').submit();" class="form-control">
+                    {% for code, name in current_user.roles -%}
+                        <option value="{{ code }}"{%- if code == current_user.current_role %} selected="selected"{% endif -%}>{{ name }}</option>
+                    {%- endfor -%}
+                    </select>
+                </form>
+            </li>
+            <li>
+                <div class="btn-group">
+                    <a id="logout" class="btn btn-small btn-default navbar-btn" href="{{ url_for('logout') }}" title="Выйти"><span class="glyphicon glyphicon-log-out"></span></a>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{%- endif -%}

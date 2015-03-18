@@ -73,6 +73,7 @@ angular.module('WebMis20.services.models').
                     add_relations();
                     add_contacts();
                     self.document_history = data.client_data.document_history;
+                    self.file_attaches = data.client_data.file_attaches;
                     self.deleted_entities = {}; // deleted items to save
                 } else if (info_type === 'for_event') {
                     add_id_doc();

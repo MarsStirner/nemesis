@@ -21,7 +21,8 @@ angular.module('WebMis20.directives')
                     getName = attrs.customName ? scope.$eval(attrs.customName) : function (selected) {
                         return selected ? selected.name : undefined;
                     },
-                    orderBy = attrs.orderBy;
+                    orderBy = attrs.orderBy,
+                    ngChange = attrs.ngChange;
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
@@ -44,6 +45,7 @@ angular.module('WebMis20.directives')
                 if (ngModel) uiSelect.attr('ng-model', ngModel);
                 if (placeholder) uiSelectMatch.attr('placeholder', placeholder);
                 if (refBook) uiSelect.attr('ref-book', refBook);
+                if (ngChange) uiSelect.attr('ng-change', ngChange);
                 uiSelect.append(uiSelectMatch);
                 uiSelect.append(uiSelectChoices);
                 $(element).replaceWith(uiSelect);
@@ -1117,6 +1119,263 @@ angular.module('WebMis20.directives')
                 arrow.attr('ng-class', "{'fa-caret-down': order === 'DESC', 'fa-caret-up': order === 'ASC'}");
                 element.append(arrow);
                 $compile(arrow)(scope);
+            }
+        }
+    }])
+    .directive('wmInputFile', ['$log', function ($log) {
+        return {
+            restrict: 'A',
+            scope: {
+                file: '=',
+                onChange: '&?'
+            },
+            link: function (scope, elem, attrs) {
+                var reader = new FileReader(),
+                    is_image = false;
+                reader.onloadend = function () {
+                    scope.$apply(function () {
+                        if (is_image) {
+                            scope.file.image = new Image();
+                            scope.file.image.src = reader.result;
+                            scope.file.binary_b64 = null;
+                        } else {
+                            $log.info('file is not an image');
+                            scope.file.binary_b64 = reader.result;
+                            scope.file.image = null;
+                        }
+                        console.log(scope.file);
+                    });
+                };
+                elem.change(function (event) {
+                    var file = event.target.files[0];
+                    scope.file.selected = Boolean(file);
+                    if (scope.file.selected) {
+                        scope.file.mime = file.type;
+                        scope.file.size = file.size;
+                        scope.file.name = file.name;
+                        is_image = /image/.test(file.type);
+                        scope.file.type = is_image ? 'image' : 'other';
+                        if (is_image) {
+                            reader.readAsDataURL(file);
+                        } else {
+                            reader.readAsDataURL(file);
+                        }
+                        scope.onChange();
+                    }
+                });
+                scope.$watch('file.selected', function (n, o) {
+                    if (n !== true) {
+                        elem.val('');
+                    }
+                })
+            }
+        }
+    }])
+    .directive('wmImageEditor', ['$log', function ($log) {
+        return {
+            restrict: 'E',
+            replace: true,
+            template: '<canvas></canvas>',
+            scope: {
+                modelImage: '='
+            },
+            link: function (scope, element, attrs) {
+                var viewCanvas = element[0],
+                    viewCtx = viewCanvas.getContext('2d'),
+                    _originalImage = new Image(), // for backup
+                    _helpImage = new Image(), // always in non rotated state
+                    _rotateAngle = 0,
+                    _scaleFactor = 1.0,
+                    _jcrop_api,
+                    _helpCanvasMap = {}; // offscreen canvases
+
+                function _initNewImage(image) {
+                    _originalImage.src = image.src;
+                    _helpImage.src = image.src;
+                    _rotateAngle = 0;
+                    _scaleFactor = 1.0;
+                    _resizeCanvas();
+                }
+                function _resizeCanvas(canvas, width, height) {
+                    if (canvas === undefined) canvas = viewCanvas;
+                    if (width === undefined) width = scope.modelImage.width;
+                    if (height === undefined) height = scope.modelImage.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                function _getHelpCanvas(name, dontStore) {
+                    if (_helpCanvasMap.hasOwnProperty(name)) {
+                        return _helpCanvasMap[name];
+                    } else {
+                        var canvas = document.createElement('canvas'),
+                            ctx = canvas.getContext('2d'),
+                            hcObj = {
+                                canvas: canvas,
+                                ctx: ctx
+                            };
+                        if (!dontStore) _helpCanvasMap[name] = hcObj;
+                        return hcObj;
+                    }
+                }
+                function _getNewCanvasSize(width, height, angle) {
+                    var rads = Math.PI / 180 * angle,
+                        c = Math.abs(Math.cos(rads)),
+                        s = Math.abs(Math.sin(rads));
+                    var newWidth = height * s + width * c,
+                        newHeight = height * c + width * s;
+                    return {
+                        w: newWidth,
+                        h: newHeight
+                    };
+                }
+
+                function drawImage(context, image, x, y) {
+                    if (context === undefined) context = viewCtx;
+                    if (image === undefined) image = scope.modelImage;
+                    if (x === undefined) x = 0;
+                    if (y === undefined) y = 0;
+                    context.drawImage(image, x, y);
+                }
+                function renderViewImage() {
+                    var image = scope.modelImage,
+                        newWidth = image.width * _scaleFactor,
+                        newHeight = image.height * _scaleFactor;
+
+                    _resizeCanvas(viewCanvas, newWidth, newHeight);
+                    viewCtx.save();
+                    viewCtx.scale(_scaleFactor, _scaleFactor);
+                    drawImage(viewCtx, image);
+                    viewCtx.restore();
+                }
+
+                function rotateImage() {
+                    var _hc = _getHelpCanvas('helpModelImage'),
+                        hCanvas = _hc.canvas,
+                        hCtx = _hc.ctx,
+                        image = _helpImage,
+                        newSizes = _getNewCanvasSize(image.width, image.height, _rotateAngle),
+                        newWidth = newSizes.w,
+                        newHeight = newSizes.h;
+
+                    _resizeCanvas(hCanvas, newWidth, newHeight);
+                    hCtx.save();
+                    hCtx.translate(newWidth / 2, newHeight / 2);
+                    hCtx.rotate(Math.PI / 180 * _rotateAngle);
+                    drawImage(hCtx, image, -image.width / 2, -image.height / 2);
+                    hCtx.restore();
+
+                    scope.modelImage.src = hCanvas.toDataURL();
+
+                    renderViewImage();
+                }
+
+                scope.$on('rotateImage', function (event, args) {
+                    _rotateAngle += args.angle;
+                    if (_rotateAngle === 360) {
+                        _rotateAngle = 0;
+                    } else if (_rotateAngle > 360) {
+                        _rotateAngle -= 360;
+                    } else if (_rotateAngle < 0)  {
+                        _rotateAngle = 360 + _rotateAngle;
+                    }
+                    rotateImage();
+                });
+
+                scope.$on('cropImageStart', function () {
+                    var _hc = _getHelpCanvas('crop', true),
+                        hCanvas = _hc.canvas,
+                        hCtx = _hc.ctx,
+                        jqViewCanvas = $(viewCanvas);
+
+                    _resizeCanvas(hCanvas, viewCanvas.width, viewCanvas.height);
+                    hCtx.save();
+                    hCtx.scale(_scaleFactor, _scaleFactor);
+                    drawImage(hCtx, scope.modelImage);
+                    hCtx.restore();
+                    jqViewCanvas.before(hCanvas);
+                    jqViewCanvas.hide();
+                    $(hCanvas).Jcrop({
+                        minSize: [32, 32]
+                    }, function () {
+                        _jcrop_api = this;
+                    });
+                });
+
+                function _clearJcrop() {
+                    _jcrop_api.release();
+                    _jcrop_api.destroy();
+                    _jcrop_api = undefined;
+                }
+                scope.$on('cropImageCancel', function () {
+                    _clearJcrop();
+                    $(viewCanvas).show();
+                });
+
+                scope.$on('cropImageApply', function () {
+                    var _hc = _getHelpCanvas('helpModelImage', true),
+                        hCanvas = _hc.canvas,
+                        hCtx = _hc.ctx,
+                        cropCoords = _jcrop_api.tellSelect(),
+                        x = cropCoords.x / _scaleFactor,
+                        y = cropCoords.y / _scaleFactor,
+                        w = cropCoords.w / _scaleFactor,
+                        h = cropCoords.h / _scaleFactor;
+
+                    _resizeCanvas(hCanvas, w, h);
+                    hCtx.drawImage(scope.modelImage, x, y, w, h, 0, 0, w, h);
+
+                    _helpImage.src = hCanvas.toDataURL();
+                    _rotateAngle = 0;
+                    scope.modelImage.src = _helpImage.src;
+
+                    _clearJcrop();
+                    $(viewCanvas).show();
+                    renderViewImage();
+                });
+
+                function scaleImage() {
+                    var _hc = _getHelpCanvas('helpModelImage'),
+                        hCanvas = _hc.canvas,
+                        hCtx = _hc.ctx;
+                    _resizeCanvas(hCanvas, _helpImage.width, _helpImage.height);
+                    drawImage(hCtx, _helpImage);
+
+                    renderViewImage();
+                }
+
+                scope.$on('zoomImage', function (event, args) {
+                    _scaleFactor = args.scalePct / 100;
+                    scaleImage();
+                });
+
+                scope.$on('resetImage', function () {
+                    _rotateAngle = 0;
+                    _scaleFactor = 1.0;
+                    _resizeCanvas();
+                    scope.modelImage.src = _originalImage.src;
+                    _helpImage.src = scope.modelImage.src;
+                    renderViewImage()
+                });
+
+                function _clearOldData() {
+                    angular.forEach(_helpCanvasMap, function (cObj) {
+                        cObj.canvas.width = 1;
+                        cObj.canvas.height = 1;
+                    });
+                    viewCanvas.width = 1;
+                    viewCanvas.height = 1;
+                    _originalImage.src = "about:blank";
+                    _helpImage.src = "about:blank";
+                }
+
+                scope.$watch('modelImage', function (n, o) {
+                    _clearOldData();
+                    if (n && n.src) {
+                        _initNewImage(n);
+                        $log.debug('draw image from watch');
+                        drawImage();
+                    }
+                });
             }
         }
     }])

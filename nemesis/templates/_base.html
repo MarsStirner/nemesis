@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru" ng-app="WebMis20">
+<head>
+    <title>{{ config['TITLE'] }} {% block title %}{% endblock %}</title>
+    {%- include '_header.html' -%}
+    {%- block modules_css %}{% endblock -%}
+</head>
+<body ng-class="{loading: pendingRequests}">
+<div id="wrap">
+    {% include '_top.html' %}
+    {%- block container %}
+    {% endblock -%}
+    <div id="push"></div>
+</div><!-- /#wrap -->
+{% include '_bottom.html' -%}
+{% include '_footer.html' with context -%}
+{%- block modules_js %}{% endblock -%}
+</body>
+</html>

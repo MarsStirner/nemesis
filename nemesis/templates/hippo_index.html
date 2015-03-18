@@ -1,0 +1,106 @@
+{% extends "base2.html" %}
+
+{% block content %}
+    <blockquote class="danger">
+        <h2>Добро пожаловать, {% if current_user.firstName %}{{ current_user.firstName }}{% else %}{{ current_user.lastName }}{% endif %}!
+            <small> Для продолжения работы выберите нужный пункт</small>
+        </h2>
+    </blockquote>
+    {% if user_profiles_mng.has_ui_doctor() %}
+        <div class="row lander marginal">
+            <div class="col-md-4">
+                <a href="{{ url_for('schedule.doctor_schedule_day') }}" title="Обслуживание пациентов" class="btn btn-primary btn-block">
+                    <h3>Приём пациентов</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        {% if user_profiles_mng.has_ui_diag_doctor() %}
+                            <li>Посмотреть график процедурных кабинетов</li>
+                        {% else %}
+                            <li>Посмотреть свой график </li>
+                        {% endif %}
+                        <li>Произвести приём пациента </li>
+                        <li>Записать пациента  </li>
+                    </ul>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('patients.search') }}" title="К расписанию" class="btn btn-success btn-block">
+                    <h3>Поиск пациентов</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Найти пациента </li>
+                        <li>Создать предварительную запись </li>
+                        <li>Создать обращение </li>
+                    </ul>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    {% if user_profiles_mng.has_ui_registrator() %}
+        <div class="row lander marginal">
+            <div class="col-md-4">
+                <a href="{{ url_for('patients.index') }}" title="Обслуживание пациентов" class="btn btn-primary btn-block">
+                    <h3>Обслуживание пациентов</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Найти пациента </li>
+                        <li>Создать предварительную запись </li>
+                        <li>Создать обращение </li>
+                        <li>Добавить/удалить услуги</li>
+                    </ul>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('schedule.person_schedule_monthview') }}" title="К расписанию" class="btn btn-success btn-block">
+                    <h3>Формирование графиков</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Создать новый график работы врача</li>
+                        <li>Изменить существующий график работы</li>
+                        <li>Установить причину отсутствия врача</li>
+                        <li>Перенести записи пациентов между врачами</li>
+                    </ul>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('schedule.index') }}" title="К расписанию" class="btn btn-warning btn-block">
+                    <h3>Просмотр графиков</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Посмотреть графики работы врачей</li>
+                        <li>Посмотреть записанных пациентов</li>
+                    </ul>
+                    <br/>
+                    <br/>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    {% if user_profiles_mng.has_ui_cashier() %}
+        <div class="row lander marginal">
+            <div class="col-md-4">
+                <a href="{{ url_for('accounting.cashbook_html') }}" title="Расчет" class="btn btn-primary btn-block">
+                    <h3>Расчет</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Найти обращение для оплаты </li>
+                        <li>Вести учёт денежных средств </li>
+                        <li>Вести номера договоров </li>
+                    </ul>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('accounting.cashbook_operations') }}" title="Журнал кассовых операций" class="btn btn-success btn-block">
+                    <h3>Журнал кассовых операций</h3>
+                    <strong>Вы сможете:</strong>
+                    <ul>
+                        <li>Сформировать и распечатать журнал кассовых операций</li>
+                    </ul>
+                    <br/>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block modules_js %}{% endblock %}
