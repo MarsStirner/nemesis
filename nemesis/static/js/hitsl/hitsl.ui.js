@@ -100,7 +100,7 @@ angular.module('hitsl.ui')
         }
     };
 }])
-.service('FileEditModal', ['$modal', '$http', 'WMConfig', function ($modal, $http, WMConfig) {
+.service('FileEditModal', ['$modal', '$http', 'WMConfig', 'MessageBox', function ($modal, $http, WMConfig, MessageBox) {
     function _getTemplate(openMode, attachType) {
         var template = '\
 <div class="modal-header">\
@@ -124,6 +124,9 @@ angular.module('hitsl.ui')
                     </button>\
                 </div>\
                 <div class="col-md-4">\
+                    <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()">\
+                        <span class="glyphicon glyphicon-minus" title="Удалить страницу"></span>\
+                    </button>\
                     <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()">\
                         <span class="glyphicon glyphicon-plus" title="Добавить страницу"></span>\
                     </button>\
@@ -136,8 +139,8 @@ angular.module('hitsl.ui')
     <hr>\
     <div class="row">\
     <div class="col-md-4">\
-        {0}\
-        {1}\
+        <div id="addFileBlock" ng-show="addFileBlockVisible()">{0}</div>\
+        <div id="metaInfoBlock" class="modal-scrollable-block2">{1}</div>\
     </div>\
     <div class="col-md-8">\
         <div id="image_editor" ng-show="imageSelected()">\
@@ -188,6 +191,9 @@ angular.module('hitsl.ui')
     </div>\
 </div>\
 <div class="modal-footer">\
+    <button type="button" class="btn btn-danger pull-left" ng-click="deleteFileAttach()" ng-if="btnDelDocumentVisible()"\
+        title="Удалить документ целиком">Удалить документ\
+    </button>\
     <button type="button" class="btn btn-success" ng-click="save_image()" ng-disabled="!correctFileSelected()">\
         Сохранить\
     </button>\
@@ -226,41 +232,39 @@ angular.module('hitsl.ui')
 </div>\
 <hr>';
         var metaInfoTemplate = '\
-<div id="metaInfoBlock" class="modal-scrollable-block2">\
-    <legend>Информация о документе</legend>\
-    <ng-form name="metaInfoForm">\
-        <div class="form-group">\
-            <label for="docName">Наименование</label>\
-            <input type="text" class="form-control" id="docName" ng-model="file_attach.file_document.name">\
-        </div>\
-        <div class="form-group">\
-            <label for="documentType">Тип документа</label>\
-            <rb-select id="documentType" ng-model="file_attach.doc_type" ref-book="rbDocumentType"\
-                placeholder="Тип документа" ng-change="generateFileDocumentName()">\
-            </rb-select>\
-        </div>\
-        <label class="radio-inline">\
-            <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'own\'" ng>Документ пациента\
-        </label>\
-        <label class="radio-inline">\
-            <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'relative\'">Документ родственника\
-        </label>\
-        <div class="form-group" ng-show="file_attach.rel_type === \'relative\'">\
-            <label for="relativeType">Родство с пациентом</label>\
-            <wm-relation-type-rb id="relativeType" class="form-control" name="relativeType"\
-                client="client.info" direct="false" ng-model="file_attach.relation_type"\
-                ng-change="generateFileDocumentName()" ng-required="relativeRequired()">\
-            </wm-relation-type-rb>\
-        </div>\
-        <div class="form-group" ng-show="file_attach.rel_type === \'own\'">\
-            <label for="relDocType">Связанный документ</label>\
-            <span id="conDoc"></span>\
-        </div>\
-    </ng-form>\
-</div>';
+<legend>Информация о документе</legend>\
+<ng-form name="metaInfoForm">\
+    <div class="form-group">\
+        <label for="docName">Наименование</label>\
+        <input type="text" class="form-control" id="docName" ng-model="file_attach.file_document.name">\
+    </div>\
+    <div class="form-group">\
+        <label for="documentType">Тип документа</label>\
+        <rb-select id="documentType" ng-model="file_attach.doc_type" ref-book="rbDocumentType"\
+            placeholder="Тип документа" ng-change="generateFileDocumentName()">\
+        </rb-select>\
+    </div>\
+    <label class="radio-inline">\
+        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'own\'" ng>Документ пациента\
+    </label>\
+    <label class="radio-inline">\
+        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'relative\'">Документ родственника\
+    </label>\
+    <div class="form-group" ng-show="file_attach.rel_type === \'relative\'">\
+        <label for="relativeType">Родство с пациентом</label>\
+        <wm-relation-type-rb id="relativeType" class="form-control" name="relativeType"\
+            client="client.info" direct="false" ng-model="file_attach.relation_type"\
+            ng-change="generateFileDocumentName()" ng-required="relativeRequired()">\
+        </wm-relation-type-rb>\
+    </div>\
+    <div class="form-group" ng-show="file_attach.rel_type === \'own\'">\
+        <label for="relDocType">Связанный документ</label>\
+        <span id="conDoc"></span>\
+    </div>\
+</ng-form>';
 
         template = template.format(
-            openMode === 'new' ? (addFileTemplate) : '',
+            addFileTemplate,
             attachType === 'client' ? (metaInfoTemplate) : ''
         );
         return template;
@@ -296,15 +300,15 @@ angular.module('hitsl.ui')
         }
     };
 
-    var WMFileMeta = function (source, idx, id) {
+    var WMFileMeta = function (source) {
+        this.id = null;
+        this.name = null;
+        this.idx = null;
         if (!source) {
-            this.id = id || null;
-            this.name = null;
-            this.idx = idx || null;
             this.setFile();
         } else {
             angular.extend(this, source);
-            this.file = new WMFile(source); // TODO
+            this.file = new WMFile(source);
         }
     };
     WMFileMeta.prototype.setFile = function (file) {
@@ -334,7 +338,9 @@ angular.module('hitsl.ui')
         }
     };
     WMFileDocument.prototype.addPage = function () {
-        this.files.push(new WMFileMeta(null, this.files.length));
+        this.files.push(new WMFileMeta({
+            idx: this.files.length
+        }));
     };
     WMFileDocument.prototype.getFile = function (pageNum) {
         return this.files[pageNum - 1];
@@ -343,11 +349,23 @@ angular.module('hitsl.ui')
         return this.files.length;
     };
     WMFileDocument.prototype.setPages = function (pages) {
-        angular.forEach(pages, function (fm) {
-            if (!this.files.hasOwnProperty(fm[1])) {
-                this.files[fm[1]] = new WMFileMeta(null, fm[1], fm[0]);
+        angular.forEach(pages, function (page) {
+            if (!this.files.hasOwnProperty(page.idx)) {
+                this.files[page.idx] = new WMFileMeta({
+                    id: page.id,
+                    idx: page.idx
+                });
             }
         }, this);
+    };
+    WMFileDocument.prototype.removePage = function (page) {
+        var idx = page - 1;
+        this.files.splice(idx, 1);
+        this.files.filter(function (page, index) {
+            return index > idx;
+        }).forEach(function (page) {
+            page.idx -= 1;
+        });
     };
 
     var WMFileAttach = function (source) {
@@ -366,38 +384,47 @@ angular.module('hitsl.ui')
 
     function makeAttachFileDocumentInfo(fileAttach) {
         angular.forEach(fileAttach.file_document.files, function (fileMeta, key) {
-            var fileinfo = fileMeta.file,
-                data = fileinfo.type === 'image' ? fileinfo.image.src : fileinfo.binary_b64;
+            if (fileMeta.id) {
+                fileAttach.file_document.files[key] = {
+                    meta: {
+                        id: fileMeta.id,
+                        name: fileMeta.name,
+                        idx: fileMeta.idx
+                    }
+                };
+            } else if (!fileMeta.isLoaded()) {
+                delete fileAttach.file_document.files[key];
+            } else {
+                var fileinfo = fileMeta.file,
+                    data = fileinfo.type === 'image' ? fileinfo.image.src : fileinfo.binary_b64;
 
-            fileAttach.file_document.files[key] = {
-                meta: {
-                    id: fileMeta.id,
-                    name: fileMeta.name,
-                    idx: fileMeta.idx
-                },
-                file: {
-                    mime: fileinfo.mime,
-                    data: data
-                }
-            };
+                fileAttach.file_document.files[key] = {
+                    meta: {
+                        id: fileMeta.id,
+                        name: fileMeta.name,
+                        idx: fileMeta.idx
+                    },
+                    file: {
+                        mime: fileinfo.mime,
+                        data: data
+                    }
+                };
+            }
         });
         return fileAttach;
     }
 
-    function capitalize(text) {
-        return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-    }
     function unspace(text) {
         return text.replace(/ /g, '_');
     }
 
-    var FileEditController = function ($scope, file_attach, client_id, client) {
+    var FileEditController = function ($scope, file_attach, client_id, client, pageNumber) {
         $scope.client = client;
         $scope.mode = 'scanning';
         $scope.device_list = [];
         $scope.selected = {
             device: {},
-            currentPage: 1
+            currentPage: pageNumber
         };
         $scope.file_attach = file_attach;
         $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
@@ -428,6 +455,23 @@ angular.module('hitsl.ui')
                 alert('Ошибка сохранения');
             });
         };
+        $scope.deleteFileAttach = function () {
+            MessageBox.question(
+                'Удаление документа',
+                'Документ будет удален. Продолжить?'
+            ).then(function () {
+                $http.delete(WMConfig.url.api_patient_file_attach, {
+                    params: {
+                        cfa_id: $scope.file_attach.id
+                    }
+                }).success(function () {
+                    $scope.$close('deleted');
+                }).error(function () {
+                    alert('Ошибка удаления');
+                });
+            });
+        };
+
         $scope.clear_image = function () {
             $scope.file.image = null;
             $scope.image = null;
@@ -455,6 +499,38 @@ angular.module('hitsl.ui')
             $scope.file_attach.file_document.addPage();
             $scope.selected.currentPage = $scope.file_attach.file_document.totalPages();
             $scope.pageChanged();
+        };
+        $scope.deletePage = function () {
+            function setCurPage() {
+                if (!$scope.file_attach.file_document.totalPages()) {
+                    $scope.file_attach.file_document.addPage();
+                }
+                if ($scope.selected.currentPage > $scope.file_attach.file_document.totalPages()) {
+                    $scope.selected.currentPage = $scope.selected.currentPage - 1
+                }
+                $scope.pageChanged();
+            }
+
+            if ($scope.currentFile.id) {
+                MessageBox.question(
+                    'Удаление страницы документа',
+                    'Текущая страница документа будет удалена. Продолжить?'
+                ).then(function () {
+                    $http.delete(WMConfig.url.api_patient_file_attach, {
+                        params: {
+                            file_meta_id: $scope.currentFile.id
+                        }
+                    }).success(function () {
+                        $scope.file_attach.file_document.removePage($scope.selected.currentPage);
+                        setCurPage();
+                    }).error(function () {
+                        alert('Ошибка удаления');
+                    });
+                });
+            } else {
+                $scope.file_attach.file_document.removePage($scope.selected.currentPage);
+                setCurPage();
+            }
         };
         $scope.pageChanged = function () {
             $scope.currentFile.file.selected = false;
@@ -499,6 +575,12 @@ angular.module('hitsl.ui')
             }
         });
 
+        $scope.btnDelDocumentVisible = function () {
+            return $scope.file_attach.id;
+        };
+        $scope.addFileBlockVisible = function () {
+            return !$scope.currentFile.id;
+        };
         $scope.imageSelected = function () {
             return $scope.currentFile.isImage();
         };
@@ -506,9 +588,9 @@ angular.module('hitsl.ui')
             return $scope.currentFile.isNotImage();
         };
         $scope.correctFileSelected = function () {
-            return true || $scope.file.type === 'image' ? // TODO
+            return true || ($scope.file.type === 'image' ? // TODO
                 $scope.imageSelected() :
-                $scope.notImageSelected();
+                $scope.notImageSelected());
         };
     };
     return {
@@ -530,24 +612,32 @@ angular.module('hitsl.ui')
                     },
                     client: function () {
                         return params.client;
+                    },
+                    pageNumber: function () {
+                        return 1;
                     }
                 }
             });
             return instance.result;
         },
         open: function (cfa_id, params) {
-            var idx = params.idx,
+            var idx = params.idx || 0,
                 file_attach;
             return $http.get(WMConfig.url.api_patient_file_attach, {
                 params: {
                     cfa_id: cfa_id,
                     idx: idx
                 }
-            }).success(function (data) {
-                file_attach = new WMFileAttach(data.result.cfa);
-                file_attach.file_document.setPages(data.result.other_pages);
+            }).then(function (response) {
+                var pages = response.data.result.file_pages;
+                file_attach = new WMFileAttach(response.data.result.cfa);
+                if (pages.length) {
+                    file_attach.file_document.setPages(pages);
+                } else {
+                    file_attach.file_document.addPage();
+                }
                 return open_modal();
-            }).error(function () {
+            }, function () {
                 alert('Ошибка открытия файла. Файл был удален.');
             });
 
@@ -567,6 +657,9 @@ angular.module('hitsl.ui')
                         },
                         client: function () {
                             return params.client;
+                        },
+                        pageNumber: function () {
+                            return idx + 1;
                         }
                     }
                 });

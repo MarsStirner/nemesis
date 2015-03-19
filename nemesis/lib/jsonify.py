@@ -7,7 +7,7 @@ import base64
 
 from collections import defaultdict
 
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql.expression import between, func
 from flask import json
 
@@ -22,7 +22,7 @@ from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
-from nemesis.models.client import Client
+from nemesis.models.client import Client, ClientFileAttach
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
     Organisation, rbContactType, FileGroupDocument, FileMeta, rbDocumentType)
 from nemesis.lib.user import UserUtils, UserProfileManager
@@ -469,8 +469,14 @@ class ClientVisualizer(object):
         documents = [safe_dict(doc) for doc in client.documents_all] if client.id else []
         policies = [safe_dict(policy) for policy in client.policies_all] if client.id else []
         document_history = documents + policies
-        file_attaches_query = client.file_attaches.join(FileGroupDocument, FileMeta)
-        files = [self.make_file_attach_info(fa) for fa in file_attaches_query]
+        file_attaches_query = client.file_attaches.options(
+            joinedload(
+                ClientFileAttach.file_document, innerjoin=True
+            ).joinedload(
+                FileGroupDocument.files
+            )
+        )
+        files = [self.make_file_attach_info(fa, False) for fa in file_attaches_query]
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
         return {
             'info': client,
@@ -509,7 +515,7 @@ class ClientVisualizer(object):
                 'files': [
                     self.make_file_info(fm, with_data) for fm in file_document.files if (
                         (fm.idx in file_idx_list) if file_idx_list else True
-                    )
+                    ) and fm.deleted == 0
                 ]
             }
         }
