@@ -1728,6 +1728,22 @@ class QuotaCatalog(db.Model):
     documentCorresp = db.Column(db.Unicode(256), nullable=True)
     comment = db.Column(db.UnicodeText, nullable=True)
 
+    finance = db.relationship('rbFinance')
+
+    def __json__(self):
+        return {'id': self.id,
+                'finance_id': self.finance_id,
+                'finance': self.finance,
+                'create_datetime': self.createDatetime,
+                'create_person_id': self.createPerson_id,
+                'beg_date': self.begDate,
+                'end_date': self.endDate,
+                'catalog_number': self.catalogNumber,
+                'document_date': self.documentDate,
+                'document_number': self.documentNumber,
+                'document_corresp': self.documentCorresp,
+                'comment': self.comment}
+
 
 class QuotaType(db.Model):
     __tablename__ = u'QuotaType'
