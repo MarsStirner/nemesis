@@ -1714,7 +1714,8 @@ class QuotaCatalog(db.Model):
     __tablename__ = u'QuotaCatalog'
 
     id = db.Column(db.Integer, primary_key=True)
-    finance_id = db.Column(db.ForeignKey('rbFinance.id'), nullable=False, index=True)
+    finance_id = db.Column(db.ForeignKey('rbFinance.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                           nullable=False, index=True)
     createDatetime = db.Column(db.DateTime, nullable=False)
     createPerson_id = db.Column(db.Integer, index=True)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
@@ -1732,7 +1733,8 @@ class QuotaType(db.Model):
     __tablename__ = u'QuotaType'
 
     id = db.Column(db.Integer, primary_key=True)
-    catalog_id = db.Column(db.ForeignKey('QuotaCatalog.id'), nullable=False, index=True)
+    catalog_id = db.Column(db.ForeignKey('QuotaCatalog.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                           nullable=False, index=True)
     createDatetime = db.Column(db.DateTime, nullable=False)
     createPerson_id = db.Column(db.Integer, index=True)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
@@ -1755,17 +1757,22 @@ class VMPQuotaDetails(db.Model):
     __tablename__ = u'VMPQuotaDetails'
 
     id = db.Column(db.Integer, primary_key=True)
-    pacientModel_id = db.Column(db.ForeignKey('rbPacientModel.id'), nullable=False, index=True)
-    treatment_id = db.Column(db.ForeignKey('rbTreatment.id'), nullable=False, index=True)
-    quotaType_id = db.Column(db.ForeignKey('QuotaType.id'), nullable=False, index=True)
+    pacientModel_id = db.Column(db.ForeignKey('rbPacientModel.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                                nullable=False, index=True)
+    treatment_id = db.Column(db.ForeignKey('rbTreatment.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                             nullable=False, index=True)
+    quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                             nullable=False, index=True)
 
 
 class MKB_VMPQuotaFilter(db.Model):
     __tablename__ = u'MKB_VMPQuotaFilter'
 
     id = db.Column(db.Integer, primary_key=True)
-    MKB_id = db.Column(db.ForeignKey('MKB.id'), nullable=False, index=True)
-    quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id'), nullable=False, index=True)
+    MKB_id = db.Column(db.ForeignKey('MKB.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                       nullable=False, index=True)
+    quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                                nullable=False, index=True)
 
 
 class ClientQuoting(db.Model):
@@ -1783,7 +1790,8 @@ class ClientQuoting(db.Model):
     master_id = db.Column(db.ForeignKey('Client.id'), index=True)
     identifier = db.Column(db.Unicode(16))
     quotaTicket = db.Column(db.Unicode(20))
-    quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id'), nullable=False, index=True)
+    quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+                                nullable=False, index=True)
     stage = db.Column(db.Integer)
     directionDate = db.Column(db.DateTime, nullable=False)
     freeInput = db.Column(db.Unicode(128))
