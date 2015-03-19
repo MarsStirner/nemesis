@@ -13,7 +13,8 @@ from itsdangerous import json
 
 from nemesis.systemwide import login_manager, cache
 from nemesis.lib.data import get_kladr_city, get_kladr_street
-from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json, api_method
+from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json
+from nemesis.lib.apiutils import api_method
 # from application.models import *
 from nemesis.utils import admin_permission
 from lib.user import UserAuth, AnonymousUser, UserProfileManager

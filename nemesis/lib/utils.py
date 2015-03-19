@@ -18,21 +18,6 @@ from pysimplelogs.logger import SimpleLogger
 from version import version
 
 
-def api_method(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-        except Exception, e:
-            return jsonify({
-                'exception': e.__class__.__name__,
-                'value': repr(e),
-            }, 500, 'Exception')
-        else:
-            return jsonify(result)
-    return wrapper
-
-
 def public_endpoint(function):
     function.is_public = True
     return function
