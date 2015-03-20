@@ -232,7 +232,7 @@ angular.module('hitsl.ui')
         return template;
     }
 
-    var WMFile = function (source) {
+    var WMFile = function (source, refreshFileData) {
         if (!source) {
             this.mime = null;
             this.size = null;
@@ -241,40 +241,48 @@ angular.module('hitsl.ui')
             this.image = null;
             this.binary_b64 = null;
         } else {
-            this.load(source);
+            this.load(source, refreshFileData);
         }
     };
-    WMFile.prototype.load = function (source) {
+    WMFile.prototype.load = function (source, refreshData) {
         this.mime = source.mime;
         this.size = source.size;
         this.name = source.name;
-        if (this.mime === null || this.mime === undefined) {
-            this.type = this.image = this.binary_b64 = null;
-        } else if (/image/.test(this.mime)) {
-            this.type = 'image';
-            this.image = new Image();
-            this.image.src = "data:{0};base64,".format(this.mime) + source.data;
-            this.binary_b64 = null;
-        } else {
-            this.type = 'other';
-            this.binary_b64 = source.data;
-            this.image = null;
+        if (refreshData) {
+            if (this.mime === null || this.mime === undefined) {
+                this.type = this.image = this.binary_b64 = null;
+            } else if (/image/.test(this.mime)) {
+                this.type = 'image';
+                this.image = new Image();
+                this.image.src = "data:{0};base64,".format(this.mime) + source.data;
+                this.binary_b64 = null;
+            } else {
+                this.type = 'other';
+                this.binary_b64 = source.data;
+                this.image = null;
+            }
         }
     };
 
     var WMFileMeta = function (source) {
-        this.id = null;
-        this.name = null;
-        this.idx = null;
         if (!source) {
-            this.setFile();
+            this.id = null;
+            this.name = null;
+            this.idx = null;
+            this.file = new WMFile();
         } else {
-            angular.extend(this, source);
-            this.file = new WMFile(source);
+            this.load(source, true);
         }
     };
-    WMFileMeta.prototype.setFile = function (file) {
-        this.file = new WMFile(file);
+    WMFileMeta.prototype.load = function (source, refreshFileData) {
+        this.id = source.id;
+        this.name = source.name;
+        this.idx = source.idx;
+        if (!this.file) {
+            this.file = new WMFile(source, refreshFileData);
+        } else {
+            this.file.load(source, refreshFileData);
+        }
     };
     WMFileMeta.prototype.isImage = function () {
         return this.file.type === 'image' && this.file.image.src;
@@ -292,23 +300,22 @@ angular.module('hitsl.ui')
             this.name = null;
             this.files = [];
         } else {
-            angular.extend(this, source);
-            this.files = [];
-            angular.forEach(source.files, function (file) {
-                this.files[file.idx] = new WMFileMeta(file);
-            }, this);
+            this.load(source);
         }
     };
-    WMFileDocument.prototype.addPage = function () {
-        this.files.push(new WMFileMeta({
-            idx: this.files.length
-        }));
-    };
-    WMFileDocument.prototype.getFile = function (pageNum) {
-        return this.files[pageNum - 1];
-    };
-    WMFileDocument.prototype.totalPages = function () {
-        return this.files.length;
+    WMFileDocument.prototype.load = function (source) {
+        this.id = source.id;
+        this.name = source.name;
+        if (!this.files) {
+            this.files = [];
+        }
+        angular.forEach(source.files, function (file_meta) {
+            if (!this.files.hasOwnProperty(file_meta.idx)) {
+                this.files[file_meta.idx] = new WMFileMeta(file_meta);
+            } else {
+                this.files[file_meta.idx].load(file_meta);
+            }
+        }, this);
     };
     WMFileDocument.prototype.setPages = function (pages) {
         angular.forEach(pages, function (page) {
@@ -329,6 +336,17 @@ angular.module('hitsl.ui')
             page.idx -= 1;
         });
     };
+    WMFileDocument.prototype.addPage = function () {
+        this.files.push(new WMFileMeta({
+            idx: this.totalPages()
+        }));
+    };
+    WMFileDocument.prototype.getFile = function (pageNum) {
+        return this.files[pageNum - 1];
+    };
+    WMFileDocument.prototype.totalPages = function () {
+        return this.files.length;
+    };
 
     var WMFileAttach = function (source) {
         if (!source) {
@@ -338,29 +356,46 @@ angular.module('hitsl.ui')
             this.relation_type = null;
             this.file_document = new WMFileDocument();
         } else {
-            angular.extend(this, source);
-            this.file_document = new WMFileDocument(source.file_document);
+            this.load(source);
         }
         this.rel_type = this.relation_type ? 'relative': 'own';
     };
+    WMFileAttach.prototype.load = function (source) {
+        this.id = source.id;
+        this.attach_date = source.attach_date;
+        this.doc_type = source.doc_type;
+        this.relation_type = source.relation_type;
+        if (!this.file_document) {
+            this.file_document = new WMFileDocument(source.file_document);
+        } else {
+            this.file_document.load(source.file_document);
+        }
+    };
 
     function makeAttachFileDocumentInfo(fileAttach) {
+        var cfa_copy = _.omit(fileAttach, function (value, key, obj) {
+            return key === 'file_document' || !obj.hasOwnProperty(key);
+        });
+        cfa_copy.file_document = _.omit(fileAttach.file_document, function (value, key, obj) {
+            return key === 'files' || !obj.hasOwnProperty(key);
+        });
+        cfa_copy.file_document.files = [];
         angular.forEach(fileAttach.file_document.files, function (fileMeta, key) {
+            var fm_copy,
+                fileinfo,
+                data;
             if (fileMeta.id) {
-                fileAttach.file_document.files[key] = {
+                fm_copy = {
                     meta: {
                         id: fileMeta.id,
                         name: fileMeta.name,
                         idx: fileMeta.idx
                     }
                 };
-            } else if (!fileMeta.isLoaded()) {
-                delete fileAttach.file_document.files[key];
             } else {
-                var fileinfo = fileMeta.file,
-                    data = fileinfo.type === 'image' ? fileinfo.image.src : fileinfo.binary_b64;
-
-                fileAttach.file_document.files[key] = {
+                fileinfo = fileMeta.file;
+                data = fileinfo.type === 'image' ? fileinfo.image.src : fileinfo.binary_b64;
+                fm_copy = {
                     meta: {
                         id: fileMeta.id,
                         name: fileMeta.name,
@@ -372,8 +407,10 @@ angular.module('hitsl.ui')
                     }
                 };
             }
+            cfa_copy.file_document.files[key] = fm_copy;
         });
-        return fileAttach;
+
+        return cfa_copy;
     }
 
     function unspace(text) {
@@ -409,8 +446,8 @@ angular.module('hitsl.ui')
             $http.post(WMConfig.url.api_patient_file_attach, {
                 client_id: client_id,
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
-            }).success(function () {
-                alert('Сохранено');
+            }).success(function (data) {
+                $scope.file_attach.load(data.result.cfa);
             }).error(function () {
                 alert('Ошибка сохранения');
             });
@@ -478,7 +515,7 @@ angular.module('hitsl.ui')
                         file_meta_id: $scope.currentFile.id
                     }
                 }).success(function (data) {
-                    $scope.currentFile.file.load(data.result);
+                    $scope.currentFile.file.load(data.result, true);
                 }).error(function () {
                     alert('Ошибка открытия файла. Файл был удален.');
                 });
@@ -528,7 +565,7 @@ angular.module('hitsl.ui')
             return $scope.currentFile.isNotImage();
         };
         $scope.correctFileSelected = function () {
-            return true || ($scope.file.type === 'image' ? // TODO
+            return true || ($scope.file.type === 'image' ? // TODO: провенить, что на всех страницах добавлен файл
                 $scope.imageSelected() :
                 $scope.notImageSelected());
         };
