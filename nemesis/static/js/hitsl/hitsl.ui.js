@@ -144,47 +144,9 @@ angular.module('hitsl.ui')
     </div>\
     <div class="col-md-8">\
         <div id="image_editor" ng-show="imageSelected()">\
-        <div class="btn-toolbar marginal bg-muted" role="toolbar" aria-label="...">\
-            <div class="btn-group btn-group-lg pull-right" role="group" aria-label="...">\
-                <button type="button" class="btn btn-default" ng-click="reset_image()" title="Вернуться к исходному изображению">\
-                    <span class="fa fa-refresh"></span>\
-                </button>\
-                <button type="button" class="btn btn-default" ng-click="clear_image()" title="Очистить область изображения">\
-                    <span class="fa fa-times"></span>\
-                </button>\
+            <div class="modal-scrollable-block">\
+                <wm-image-editor id="image_editor" model-image="currentFile.file.image" read-only="checkImageRO()"></wm-image-editor>\
             </div>\
-            <div class="btn-group btn-group-lg rmargin10" role="group" aria-label="...">\
-                <button type="button" class="btn btn-default" ng-click="rotate(\'left\')" title="Повернуть против часовой стрелки">\
-                    <span class="fa fa-rotate-left"></span>\
-                </button>\
-                <button type="button" class="btn btn-default" ng-click="rotate(\'right\')" title="Повернуть по часовой стрелке">\
-                    <span class="fa fa-rotate-right"></span>\
-                </button>\
-            </div>\
-            <div class="btn-group btn-group-lg rmargin10" role="group" aria-label="...">\
-                <button type="button" class="btn btn-default" ng-click="zoom(1)" title="Увеличить">\
-                    <span class="fa fa-plus"></span>\
-                </button>\
-                <label class="label label-default">[[scalePct]] %</label>\
-                <button type="button" class="btn btn-default" ng-click="zoom(-1)" title="Уменьшить">\
-                    <span class="fa fa-minus"></span>\
-                </button>\
-            </div>\
-            <div class="btn-group btn-group-lg" role="group" aria-label="...">\
-                <button type="button" class="btn btn-default" ng-click="crop(\'Start\')" title="Обрезать изображение">\
-                    <span class="fa fa-crop"></span>\
-                </button>\
-                <button type="button" class="btn btn-default btn-success" ng-click="crop(\'Apply\')" title="Подтвердить">\
-                    <span class="fa fa-check"></span>\
-                </button>\
-                <button type="button" class="btn btn-default btn-danger" ng-click="crop(\'Cancel\')" title="Отменить">\
-                    <span class="fa fa-times"></span>\
-                </button>\
-            </div>\
-        </div>\
-        <div class="modal-scrollable-block">\
-            <wm-image-editor id="image_editor" model-image="currentFile.file.image"></wm-image-editor>\
-        </div>\
         </div>\
         <div ng-show="notImageSelected()"><span>Предпросмотр недоступен. Выбранный файл не является изображением.</span></div>\
     </div>\
@@ -428,8 +390,6 @@ angular.module('hitsl.ui')
         };
         $scope.file_attach = file_attach;
         $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
-        var scales = [5, 10, 15, 30, 50, 75, 90, 100, 125, 150, 200, 300, 400, 500];
-        $scope.scalePct = 100;
 
         $scope.get_device_list = function () {
             $http.get(WMConfig.url.scanserver.list).success(function (data) {
@@ -470,29 +430,6 @@ angular.module('hitsl.ui')
                     alert('Ошибка удаления');
                 });
             });
-        };
-
-        $scope.clear_image = function () {
-            $scope.file.image = null;
-            $scope.image = null;
-        };
-        $scope.reset_image = function () {
-            $scope.$broadcast('resetImage');
-        };
-        $scope.rotate = function (w) {
-            var angle = w === 'left' ? -15 : 15;
-            $scope.$broadcast('rotateImage', {
-                angle: angle
-            });
-        };
-        $scope.zoom = function (how) {
-            $scope.scalePct = scales[scales.indexOf($scope.scalePct) + how];
-            $scope.$broadcast('zoomImage', {
-                scalePct: $scope.scalePct
-            });
-        };
-        $scope.crop = function (action) {
-            $scope.$broadcast('cropImage' + action);
         };
 
         $scope.addPage = function () {
@@ -575,6 +512,9 @@ angular.module('hitsl.ui')
             }
         });
 
+        $scope.checkImageRO = function () {
+            return $scope.currentFile.id;
+        };
         $scope.btnDelDocumentVisible = function () {
             return $scope.file_attach.id;
         };
