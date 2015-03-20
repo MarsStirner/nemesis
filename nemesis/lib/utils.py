@@ -163,7 +163,10 @@ logger = SimpleLogger.get_logger(app.config['SIMPLELOGS_URL'],
 class WebMisJsonEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime.datetime):
-            return timezone(app.config['TIME_ZONE']).localize(o).astimezone(tz=timezone('UTC')).isoformat()
+            try:
+                return timezone(app.config['TIME_ZONE']).localize(o).astimezone(tz=timezone('UTC')).isoformat()
+            except OverflowError:
+                return o.isoformat()
         elif isinstance(o, (datetime.date, datetime.time)):
             return o.isoformat()
         elif isinstance(o, Decimal):
