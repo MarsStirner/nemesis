@@ -1765,6 +1765,23 @@ class QuotaType(db.Model):
     teenOlder = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
 
+    catalog = db.relationship('QuotaCatalog')
+
+    def __json__(self):
+        return {'id': self.id,
+                'catalog_id': self.catalog_id,
+                'catalog': self.catalog,
+                'create_datetime': self.createDatetime,
+                'create_person_id': self.createPerson_id,
+                'deleted': self.deleted,
+                'class': self.class_,
+                'profile_code': self.profile_code,
+                'group_code': self.group_code,
+                'type_code': self.type_code,
+                'code': self.code,
+                'name': self.name,
+                'price': self.price}
+
     def __unicode__(self):
         return self.name
 
