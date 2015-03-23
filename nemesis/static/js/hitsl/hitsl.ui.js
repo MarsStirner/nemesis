@@ -104,7 +104,7 @@ angular.module('hitsl.ui')
     function _getTemplate(openMode, attachType) {
         var template = '\
 <div class="modal-header">\
-    <h3 class="modal-title">Добавление документа</h3>\
+    <h3 class="modal-title" ng-bind="getTitleText()"></h3>\
 </div>\
 <div class="modal-body">\
     <div class="row">\
@@ -218,10 +218,6 @@ angular.module('hitsl.ui')
             client="client.info" direct="false" ng-model="file_attach.relation_type"\
             ng-change="generateFileDocumentName()" ng-required="relativeRequired()">\
         </wm-relation-type-rb>\
-    </div>\
-    <div class="form-group" ng-show="file_attach.rel_type === \'own\'">\
-        <label for="relDocType">Связанный документ</label>\
-        <span id="conDoc"></span>\
     </div>\
 </ng-form>';
 
@@ -354,6 +350,8 @@ angular.module('hitsl.ui')
             this.attach_date = null;
             this.doc_type = null;
             this.relation_type = null;
+            this.document_info = null;
+            this.policy_info = null;
             this.file_document = new WMFileDocument();
         } else {
             this.load(source);
@@ -365,11 +363,21 @@ angular.module('hitsl.ui')
         this.attach_date = source.attach_date;
         this.doc_type = source.doc_type;
         this.relation_type = source.relation_type;
+        this.document_info = source.document_info;
+        this.policy_info = source.policy_info;
         if (!this.file_document) {
             this.file_document = new WMFileDocument(source.file_document);
         } else {
             this.file_document.load(source.file_document);
         }
+    };
+    WMFileAttach.prototype.setDocumentInfo = function (document) {
+        this.document_info = document;
+        this.doc_type = document.doc_type;
+    };
+    WMFileAttach.prototype.setPolicyInfo = function (policy) {
+        this.policy_info = policy;
+        // todo: set doc_type based on policy type
     };
 
     function makeAttachFileDocumentInfo(fileAttach) {
@@ -419,6 +427,7 @@ angular.module('hitsl.ui')
 
     var FileEditController = function ($scope, file_attach, client_id, client, pageNumber) {
         $scope.client = client;
+
         $scope.mode = 'scanning';
         $scope.device_list = [];
         $scope.selected = {
@@ -549,6 +558,15 @@ angular.module('hitsl.ui')
             }
         });
 
+        $scope.getTitleText = function () {
+            var text = '{0}{, |1|}'.formatNonEmpty(
+                $scope.file_attach.id ? 'Просмотр копии документа' : 'Добавление копии документа', (
+                    safe_traverse($scope.file_attach, ['document_info', 'doc_text']) ||
+                    safe_traverse($scope.file_attach, ['policy_info', 'policy_text'])
+                )
+            );
+            return text;
+        };
         $scope.checkImageRO = function () {
             return $scope.currentFile.id;
         };
@@ -572,8 +590,15 @@ angular.module('hitsl.ui')
     };
     return {
         addNew: function (client_id, params) {
-            var file_attach = new WMFileAttach();
+            var file_attach = new WMFileAttach(),
+                documentInfo = params.documentInfo,
+                policyInfo = params.policyInfo;
             file_attach.file_document.addPage();
+            if (documentInfo) {
+                file_attach.setDocumentInfo(documentInfo);
+            } else if (policyInfo) {
+                file_attach.setPolicyInfo(policyInfo);
+            }
             var instance = $modal.open({
                 template: _getTemplate('new', params.attachType),
                 controller: FileEditController,

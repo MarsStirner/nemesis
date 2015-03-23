@@ -728,6 +728,9 @@ class ClientDocument(db.Model):
             'end_date': self.endDate,
             'origin': self.origin,
             'doc_text': self.__unicode__(),
+            'file_attach': {
+                'id': self.cfa_id
+            }
         }
 
     def __int__(self):
@@ -1069,7 +1072,10 @@ class ClientPolicy(db.Model):
                 'infis': None,
                 'title': None
             },
-            'policy_text': u'%s (%s - %s)' % (unicode(self), format_date(self.begDate) or '', format_date(self.endDate) or '')
+            'policy_text': u'%s (%s - %s)' % (unicode(self), format_date(self.begDate) or '', format_date(self.endDate) or ''),
+            'file_attach': {
+                'id': self.cfa_id
+            }
         }
 
 

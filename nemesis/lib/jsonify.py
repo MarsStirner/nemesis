@@ -22,7 +22,7 @@ from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
-from nemesis.models.client import Client, ClientFileAttach
+from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
     Organisation, rbContactType, FileGroupDocument, FileMeta, rbDocumentType)
 from nemesis.lib.user import UserUtils, UserProfileManager
@@ -502,13 +502,17 @@ class ClientVisualizer(object):
         :type file_attach: application.models.client.ClientFileAttach
         :return:
         """
-
+        cfa_id = file_attach.id
+        document_info = ClientDocument.query.filter(ClientDocument.cfa_id == cfa_id).first()
+        policy_info = ClientPolicy.query.filter(ClientPolicy.cfa_id == cfa_id).first()
         file_document = file_attach.file_document
         return {
             'id': file_attach.id,
             'attach_date': file_attach.attachDate,
             'doc_type': file_attach.documentType,
             'relation_type': file_attach.relationType,
+            'document_info': document_info,
+            'policy_info': policy_info,
             'file_document': {
                 'id': file_document.id,
                 'name': file_document.name,

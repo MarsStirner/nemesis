@@ -62,6 +62,38 @@ angular.module('WebMis20.services.models').
                     var contacts = data.client_data.contacts;
                     self.contacts = contacts !== null ? contacts : [];
                 }
+                function add_file_attaches() {
+                    self.file_attaches = data.client_data.file_attaches;
+                    var map = {};
+                    self.file_attaches.forEach(function (fa, idx) {
+                        map[fa.id] = idx;
+                    });
+                    self.id_docs.forEach(function (id_doc) {
+                        if (id_doc.file_attach.id) {
+                            id_doc.file_attach = self.file_attaches[map[id_doc.file_attach.id]];
+                        }
+                    });
+                    self.compulsory_policies.forEach(function (cpol) {
+                        if (cpol.file_attach.id) {
+                            cpol.file_attach = self.file_attaches[map[cpol.file_attach.id]];
+                        }
+                    });
+                    self.voluntary_policies.forEach(function (vpol) {
+                        if (vpol.file_attach.id) {
+                            vpol.file_attach = self.file_attaches[map[vpol.file_attach.id]];
+                        }
+                    });
+                    self.invalidities.forEach(function (invld) {
+                        if (invld.self_document.file_attach.id) {
+                            invld.self_document.file_attach = self.file_attaches[map[invld.self_document.file_attach.id]];
+                        }
+                    });
+                    self.works.forEach(function (work) {
+                        if (work.self_document.file_attach.id) {
+                            work.self_document.file_attach = self.file_attaches[map[work.self_document.file_attach.id]];
+                        }
+                    });
+                }
 
                 self.info = data.client_data.info;
                 if (info_type === 'for_editing') {
@@ -72,8 +104,8 @@ angular.module('WebMis20.services.models').
                     add_soc_statuses();
                     add_relations();
                     add_contacts();
+                    add_file_attaches();
                     self.document_history = data.client_data.document_history;
-                    self.file_attaches = data.client_data.file_attaches;
                     self.deleted_entities = {}; // deleted items to save
                 } else if (info_type === 'for_event') {
                     add_id_doc();
