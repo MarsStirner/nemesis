@@ -1780,6 +1780,7 @@ class QuotaType(db.Model):
                 'type_code': self.type_code,
                 'code': self.code,
                 'name': self.name,
+                'teen_older': self.teenOlder,
                 'price': self.price}
 
     def __unicode__(self):
@@ -1796,6 +1797,19 @@ class VMPQuotaDetails(db.Model):
                              nullable=False, index=True)
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='RESTRICT', onupdate='RESTRICT'),
                              nullable=False, index=True)
+
+    pacient_model = db.relation('rbPacientModel')
+    treatment = db.relation('rbTreatment')
+    quota_type = db.relation('QuotaType')
+
+    def __json__(self):
+        return {'id': self.id,
+                'pacient_model_id': self.pacientModel_id,
+                'treatment_id': self.treatment_id,
+                'quota_type_id': self.quotaType_id,
+                'pacient_model': self.pacient_model,
+                'treatment': self.treatment,
+                'quota_type': self.quota_type}
 
 
 class MKB_VMPQuotaFilter(db.Model):
