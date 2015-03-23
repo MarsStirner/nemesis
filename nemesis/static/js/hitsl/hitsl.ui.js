@@ -109,7 +109,7 @@ angular.module('hitsl.ui')
 <div class="modal-body">\
     <div class="row">\
         <div class="col-md-4">\
-            <div class="btn-group">\
+            <div class="btn-group" ng-show="addFileBlockVisible()">\
                 <label class="btn btn-default" ng-model="mode" btn-radio="\'scanning\'">Сканировать</label>\
                 <label class="btn btn-default" ng-model="mode" btn-radio="\'select_existing\'">Выбрать файл</label>\
             </div>\
@@ -119,19 +119,22 @@ angular.module('hitsl.ui')
                 <div class="col-md-8 form-inline">\
                     <label class="control-label">Имя файла</label>\
                     <input type="text" class="form-control" ng-model="currentFile.name" style="width: inherit;">\
-                    <button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" title="Сформировать имя файла">\
+                    <button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" ng-if="canEdit()"\
+                        title="Сформировать имя файла">\
                         <span class="glyphicon glyphicon-repeat"></span>\
                     </button>\
                 </div>\
                 <div class="col-md-4">\
-                    <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()">\
+                    <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()" ng-if="canEdit()">\
                         <span class="glyphicon glyphicon-minus" title="Удалить страницу"></span>\
                     </button>\
-                    <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()">\
+                    <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()" ng-if="canEdit()">\
                         <span class="glyphicon glyphicon-plus" title="Добавить страницу"></span>\
                     </button>\
-                    <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1" ng-model="selected.currentPage" ng-change="pageChanged()"\
-                        previous-text="&lsaquo;" next-text="&rsaquo;" class="pagination-nomargin pull-right"></pagination>\
+                    <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1"\
+                        ng-model="selected.currentPage" ng-change="pageChanged()" previous-text="&lsaquo;"\
+                        next-text="&rsaquo;" class="pagination-nomargin pull-right">\
+                    </pagination>\
                 </div>\
             </div>\
         </div>\
@@ -156,7 +159,8 @@ angular.module('hitsl.ui')
     <button type="button" class="btn btn-danger pull-left" ng-click="deleteFileAttach()" ng-if="btnDelDocumentVisible()"\
         title="Удалить документ целиком">Удалить документ\
     </button>\
-    <button type="button" class="btn btn-success" ng-click="save_image()" ng-disabled="!correctFileSelected()">\
+    <button type="button" class="btn btn-success" ng-click="save_image()" ng-if="canEdit()"\
+        ng-disabled="!correctFileSelected()">\
         Сохранить\
     </button>\
     <button type="button" class="btn btn-danger" ng-click="$dismiss()">Закрыть</button>\
@@ -198,25 +202,28 @@ angular.module('hitsl.ui')
 <ng-form name="metaInfoForm">\
     <div class="form-group">\
         <label for="docName">Наименование</label>\
-        <input type="text" class="form-control" id="docName" ng-model="file_attach.file_document.name">\
+        <input type="text" class="form-control" id="docName" ng-model="file_attach.file_document.name"\
+            ng-disabled="!canEdit()">\
     </div>\
     <div class="form-group">\
         <label for="documentType">Тип документа</label>\
-        <rb-select id="documentType" ng-model="file_attach.doc_type" ref-book="rbDocumentType"\
+        <rb-select id="documentType" ng-model="file_attach.doc_type" ref-book="rbDocumentType" ng-disabled="!canEdit()"\
             placeholder="Тип документа" ng-change="generateFileDocumentName()">\
         </rb-select>\
     </div>\
     <label class="radio-inline">\
-        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'own\'" ng>Документ пациента\
+        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'own\'"\
+            ng-disabled="!canEdit()">Документ пациента\
     </label>\
     <label class="radio-inline">\
-        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'relative\'">Документ родственника\
+        <input type="radio" id="relType" ng-model="file_attach.rel_type" ng-value="\'relative\'"\
+            ng-disabled="!canEdit()">Документ родственника\
     </label>\
     <div class="form-group" ng-show="file_attach.rel_type === \'relative\'">\
         <label for="relativeType">Родство с пациентом</label>\
         <wm-relation-type-rb id="relativeType" class="form-control" name="relativeType"\
             client="client.info" direct="false" ng-model="file_attach.relation_type"\
-            ng-change="generateFileDocumentName()" ng-required="relativeRequired()">\
+            ng-change="generateFileDocumentName()" ng-required="relativeRequired()" ng-disabled="!canEdit()">\
         </wm-relation-type-rb>\
     </div>\
 </ng-form>';
@@ -425,7 +432,7 @@ angular.module('hitsl.ui')
         return text.replace(/ /g, '_');
     }
 
-    var FileEditController = function ($scope, file_attach, client_id, client, pageNumber) {
+    var FileEditController = function ($scope, file_attach, client_id, client, pageNumber, readOnly) {
         $scope.client = client;
 
         $scope.mode = 'scanning';
@@ -567,14 +574,17 @@ angular.module('hitsl.ui')
             );
             return text;
         };
+        $scope.canEdit = function () {
+            return !readOnly;
+        };
         $scope.checkImageRO = function () {
-            return $scope.currentFile.id;
+            return !$scope.canEdit || $scope.currentFile.id;
         };
         $scope.btnDelDocumentVisible = function () {
-            return $scope.file_attach.id;
+            return $scope.canEdit() && $scope.file_attach.id;
         };
         $scope.addFileBlockVisible = function () {
-            return !$scope.currentFile.id;
+            return $scope.canEdit() && !$scope.currentFile.id;
         };
         $scope.imageSelected = function () {
             return $scope.currentFile.isImage();
@@ -617,6 +627,9 @@ angular.module('hitsl.ui')
                     },
                     pageNumber: function () {
                         return 1;
+                    },
+                    readOnly: function () {
+                        return false;
                     }
                 }
             });
@@ -624,7 +637,8 @@ angular.module('hitsl.ui')
         },
         open: function (cfa_id, params) {
             var idx = params.idx || 0,
-                file_attach;
+                file_attach,
+                readOnly = !params.editMode;
             return $http.get(WMConfig.url.api_patient_file_attach, {
                 params: {
                     cfa_id: cfa_id,
@@ -662,6 +676,9 @@ angular.module('hitsl.ui')
                         },
                         pageNumber: function () {
                             return idx + 1;
+                        },
+                        readOnly: function () {
+                            return readOnly;
                         }
                     }
                 });
