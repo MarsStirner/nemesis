@@ -100,7 +100,8 @@ angular.module('hitsl.ui')
         }
     };
 }])
-.service('FileEditModal', ['$modal', '$http', 'WMConfig', 'MessageBox', function ($modal, $http, WMConfig, MessageBox) {
+.service('FileEditModal', ['$modal', '$http', 'WMConfig', 'MessageBox', '$rootScope',
+        function ($modal, $http, WMConfig, MessageBox, $rootScope) {
     function _getTemplate(openMode, attachType) {
         var template = '\
 <div class="modal-header">\
@@ -495,6 +496,11 @@ angular.module('hitsl.ui')
                 $scope.selected.scan_options.resolution.value,
                 $scope.selected.scan_options.mode.value
             );
+
+            var loaderTextElem = $('#loaderText'),
+                oldText = loaderTextElem.text();
+            loaderTextElem.text('Идёт сканирование');
+            $rootScope.pendingRequests += 1;
             getImage(scanUrl, function (image_b64) {
                 $scope.currentFile.file.binary_b64 = null;
                 $scope.currentFile.file.image = new Image();
@@ -502,6 +508,9 @@ angular.module('hitsl.ui')
                 $scope.currentFile.file.type = 'image';
                 $scope.currentFile.file.image.src = image_b64;
                 $scope.generateFileName();
+
+                $rootScope.pendingRequests -= 1;
+                loaderTextElem.text(oldText);
             });
         };
         $scope.save_image = function () {
