@@ -1479,8 +1479,8 @@ angular.module('WebMis20.directives')
                     });
                     viewCanvas.width = 1;
                     viewCanvas.height = 1;
-                    _originalImage.src = "about:blank";
-                    _helpImage.src = "about:blank";
+                    _originalImage.src = "";
+                    _helpImage.src = "";
                 }
 
                 scope.$watch('modelImage', function (n, o) {

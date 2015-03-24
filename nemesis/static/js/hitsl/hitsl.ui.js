@@ -111,7 +111,7 @@ angular.module('hitsl.ui')
         <div class="col-md-4">\
             <div class="btn-group" ng-show="addFileBlockVisible()">\
                 <label class="btn btn-default" ng-model="mode" btn-radio="\'scanning\'">Сканировать</label>\
-                <label class="btn btn-default" ng-model="mode" btn-radio="\'select_existing\'">Выбрать файл</label>\
+                <label class="btn btn-default" ng-model="mode" btn-radio="\'select_from_fs\'">Выбрать файл</label>\
             </div>\
         </div>\
         <div id="pages" class="col-md-8">\
@@ -181,9 +181,13 @@ angular.module('hitsl.ui')
     <hr>\
     <li><h4>Настроить параметры сканирования</h4></li>\
     <label>Качество изображения</label>\
-    <select><option>Хорошее</option></select>\
+    <select class="form-control" ng-model="selected.scan_options.resolution"\
+        ng-options="item.name for item in scan_options.resolutions">\
+    </select>\
     <label>Режим сканирования</label>\
-    <select><option>Цветной</option></select>\
+    <select class="form-control" ng-model="selected.scan_options.mode"\
+        ng-options="item.name for item in scan_options.modes">\
+    </select>\
     <hr>\
     <li><h4>Начать сканирование</h4></li>\
     <button type="button" class="btn btn-warning btn-sm" ng-click="start_scan()"\
@@ -192,7 +196,7 @@ angular.module('hitsl.ui')
     </button>\
     </ol>\
 </div>\
-<div ng-show="mode === \'select_existing\'">\
+<div ng-show="mode === \'select_from_fs\'">\
     <input type="file" wm-input-file file="currentFile.file" on-change="generateFileName()"\
         accept="image/*,.pdf,.txt,.odt,.doc,.docx,.ods,.xls,.xlsx">\
 </div>\
@@ -433,29 +437,71 @@ angular.module('hitsl.ui')
     }
 
     var FileEditController = function ($scope, file_attach, client_id, client, pageNumber, readOnly) {
-        $scope.client = client;
-
-        $scope.mode = 'scanning';
+        var modes = ['scanning', 'select_from_fs'];
+        $scope.mode = modes[0];
+        $scope.scan_options = {
+            resolutions: [
+                {name: 'Лучшее',        value: 600},
+                {name: 'Отличное',      value: 300},
+                {name: 'Хорошее',       value: 150},
+                {name: 'Нормальное',    value: 75}],
+            modes: [
+                {name: 'Цветное',       value: 'Color'},
+                {name: 'Чёрно-белое',   value: 'Gray'}]
+        };
         $scope.device_list = [];
         $scope.selected = {
-            device: {},
+            device: null,
+            scan_options: {
+                resolution: $scope.scan_options.resolutions[2],
+                mode: $scope.scan_options.modes[0]
+            },
             currentPage: pageNumber
         };
+        $scope.client = client;
         $scope.file_attach = file_attach;
         $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
 
         $scope.get_device_list = function () {
-            $http.get(WMConfig.url.scanserver.list).success(function (data) {
+            $http.get(WMConfig.url.coldstar.scan_get_device_list).success(function (data) {
                 $scope.device_list = data.devices;
             });
         };
         $scope.start_scan = function () {
-            $http.post(WMConfig.url.scanserver.scan, {
-                name: $scope.selected.device.name
-            }).success(function (data) {
-                $scope.image = new Image();
-                $scope.image.src = 'data:image/png;base64,' + data.image;
-                $scope.file.encoded = $scope.image;
+            function getImage(scanUrl, callback) {
+                var scanImage = new Image(),
+                    helpCanvas = document.createElement('canvas'),
+                    helpCtx = helpCanvas.getContext('2d');
+                scanImage.onload = function () {
+                    $scope.$apply(function () {
+                        helpCanvas.width = scanImage.width;
+                        helpCanvas.height = scanImage.height;
+                        helpCtx.drawImage(scanImage, 0, 0);
+
+                        callback(helpCanvas.toDataURL());
+
+                        helpCanvas.width = 1;
+                        helpCanvas.height = 1;
+                        scanImage.src = "";
+                    });
+                };
+                scanImage.crossOrigin = 'anonymous';
+                scanImage.src = scanUrl
+            }
+
+            var scanUrl = '{0}?name={1}&resolution={2}&mode={3}'.format(
+                WMConfig.url.coldstar.scan_process_scan,
+                $scope.selected.device.name,
+                $scope.selected.scan_options.resolution.value,
+                $scope.selected.scan_options.mode.value
+            );
+            getImage(scanUrl, function (image_b64) {
+                $scope.currentFile.file.binary_b64 = null;
+                $scope.currentFile.file.image = new Image();
+                $scope.currentFile.file.mime = 'image/jpeg';
+                $scope.currentFile.file.type = 'image';
+                $scope.currentFile.file.image.src = image_b64;
+                $scope.generateFileName();
             });
         };
         $scope.save_image = function () {
