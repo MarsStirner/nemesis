@@ -1732,7 +1732,7 @@ class QuotaCatalog(db.Model):
 
     def __json__(self):
         return {'id': self.id,
-                'finance_id': self.finance_id,
+                # 'finance_id': self.finance_id,
                 'finance': self.finance,
                 'create_datetime': self.createDatetime,
                 'create_person_id': self.createPerson_id,
@@ -1756,17 +1756,44 @@ class QuotaType(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer, index=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    class_ = db.Column(u'class', db.Integer, nullable=False)
+    class_ = db.Column(u'class', db.Integer, nullable=False, server_default=u"'0'")
     profile_code = db.Column(db.String(16))
     group_code = db.Column(db.String(16))
     type_code = db.Column(db.String(16))
     code = db.Column(db.String(16), nullable=False)
     name = db.Column(db.Unicode(255), nullable=False)
-    teenOlder = db.Column(db.Integer, nullable=False)
+    teenOlder = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     price = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
+
+    catalog = db.relationship('QuotaCatalog')
+
+    def __json__(self):
+        return {'id': self.id,
+                'catalog_id': self.catalog_id,
+                # 'catalog': self.catalog,
+                'create_datetime': self.createDatetime,
+                'create_person_id': self.createPerson_id,
+                # 'deleted': self.deleted,
+                'class': self.class_,
+                'profile_code': self.profile_code,
+                'group_code': self.group_code,
+                'type_code': self.type_code,
+                'code': self.code,
+                'name': self.name,
+                'teen_older': self.teenOlder,
+                'price': self.price}
 
     def __unicode__(self):
         return self.name
+
+
+class MKB_VMPQuotaFilter(db.Model):
+    __tablename__ = u'MKB_VMPQuotaFilter'
+
+    id = db.Column(db.Integer, primary_key=True)
+    MKB_id = db.Column(db.ForeignKey('MKB.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False, index=True)
+    quotaDetails_id = db.Column(
+        db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False, index=True)
 
 
 class VMPQuotaDetails(db.Model):
@@ -1780,15 +1807,22 @@ class VMPQuotaDetails(db.Model):
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='RESTRICT', onupdate='RESTRICT'),
                              nullable=False, index=True)
 
+    pacient_model = db.relation('rbPacientModel')
+    treatment = db.relation('rbTreatment')
+    quota_type = db.relation('QuotaType')
+    mkb = db.relation('MKB', secondary=MKB_VMPQuotaFilter.__table__, lazy=False)
 
-class MKB_VMPQuotaFilter(db.Model):
-    __tablename__ = u'MKB_VMPQuotaFilter'
-
-    id = db.Column(db.Integer, primary_key=True)
-    MKB_id = db.Column(db.ForeignKey('MKB.id', ondelete='RESTRICT', onupdate='RESTRICT'),
-                       nullable=False, index=True)
-    quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'),
-                                nullable=False, index=True)
+    def __json__(self):
+        return {
+            'id': self.id,
+            # 'pacient_model_id': self.pacientModel_id,
+            # 'treatment_id': self.treatment_id,
+            'quota_type_id': self.quotaType_id,
+            'patient_model': self.pacient_model,
+            'treatment': self.treatment,
+            'mkb': self.mkb,
+            # 'quota_type': self.quota_type
+        }
 
 
 class ClientQuoting(db.Model):

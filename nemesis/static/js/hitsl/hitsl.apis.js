@@ -3,8 +3,8 @@
  */
 
 
-WebMis20
-.service('ApiCalls', function ($q, $http, RisarNotificationService) {
+angular.module('hitsl.core')
+.service('ApiCalls', function ($q, $http, NotificationService) {
     this.wrapper = function (method, url, params, data) {
         var defer = $q.defer();
         $http({
@@ -18,7 +18,7 @@ WebMis20
         })
         .error(function (data, code) {
             var text = (code === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
-            RisarNotificationService.notify(
+            NotificationService.notify(
                 code,
                 text.format(data.meta.name),
                 'danger'
