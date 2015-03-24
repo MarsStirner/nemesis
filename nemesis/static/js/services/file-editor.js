@@ -2,8 +2,8 @@
 
 angular.module('WebMis20')
 .service('FileEditModal', [
-    '$modal', '$http', 'WMConfig', 'MessageBox', '$rootScope', 'WMFileAttach',
-    function ($modal, $http, WMConfig, MessageBox, $rootScope, WMFileAttach) {
+    '$modal', '$http', 'WMConfig', 'MessageBox', '$rootScope', 'WMFileAttach', 'NotificationService',
+    function ($modal, $http, WMConfig, MessageBox, $rootScope, WMFileAttach, NotificationService) {
 
     var _getTemplate = function(openMode, attachType) {
         var template = '\
@@ -50,6 +50,7 @@ angular.module('WebMis20')
         <div id="metaInfoBlock" class="modal-scrollable-block2">{1}</div>\
     </div>\
     <div class="col-md-8">\
+        <div alert-notify></div>\
         <div id="image_editor" ng-show="imageSelected()">\
             <div class="modal-scrollable-block">\
                 <wm-image-editor id="image_editor" model-image="currentFile.file.image" read-only="checkImageRO()"></wm-image-editor>\
@@ -270,6 +271,11 @@ angular.module('WebMis20')
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
             }).success(function (data) {
                 $scope.file_attach.load(data.result.cfa);
+                NotificationService.notify(
+                    200,
+                    'Сохранено',
+                    'success'
+                );
             }).error(function () {
                 alert('Ошибка сохранения');
             });
@@ -319,6 +325,11 @@ angular.module('WebMis20')
                     }).success(function () {
                         $scope.file_attach.file_document.removePage($scope.selected.currentPage);
                         setCurPage();
+                        NotificationService.notify(
+                            200,
+                            'Страница удалена',
+                            'success'
+                        );
                     }).error(function () {
                         alert('Ошибка удаления');
                     });
