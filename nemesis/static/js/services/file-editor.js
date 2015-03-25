@@ -12,51 +12,44 @@ angular.module('WebMis20')
 </div>\
 <div class="modal-body">\
     <div class="row">\
-        <div class="col-md-4">\
-            <div class="btn-group" ng-show="addFileBlockVisible()">\
-                <label class="btn btn-default" ng-model="mode" btn-radio="\'scanning\'">Сканировать</label>\
-                <label class="btn btn-default" ng-model="mode" btn-radio="\'select_from_fs\'">Выбрать файл</label>\
-            </div>\
-        </div>\
-        <div id="pages" class="col-md-8">\
-            <div class="row">\
-                <div class="col-md-8 form-inline">\
-                    <label class="control-label">Имя файла</label>\
-                    <input type="text" class="form-control" ng-model="currentFile.name" style="width: inherit;">\
-                    <button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" ng-if="canEdit()"\
-                        title="Сформировать имя файла">\
-                        <span class="glyphicon glyphicon-repeat"></span>\
-                    </button>\
-                </div>\
-                <div class="col-md-4">\
-                    <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()" ng-if="canEdit()">\
-                        <span class="glyphicon glyphicon-minus" title="Удалить страницу"></span>\
-                    </button>\
-                    <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()" ng-if="canEdit()">\
-                        <span class="glyphicon glyphicon-plus" title="Добавить страницу"></span>\
-                    </button>\
-                    <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1"\
-                        ng-model="selected.currentPage" ng-change="pageChanged()" previous-text="&lsaquo;"\
-                        next-text="&rsaquo;" class="pagination-nomargin pull-right">\
-                    </pagination>\
-                </div>\
-            </div>\
-        </div>\
-    </div>\
-    <hr>\
-    <div class="row">\
-    <div class="col-md-4">\
+    <div class="col-md-4 vertical-divider" id="docInfo">\
         <div id="addFileBlock" ng-show="addFileBlockVisible()">{0}</div>\
         <div id="metaInfoBlock" class="modal-scrollable-block2">{1}</div>\
     </div>\
-    <div class="col-md-8">\
-        <div alert-notify></div>\
-        <div id="image_editor" ng-show="imageSelected()">\
-            <div class="modal-scrollable-block">\
-                <wm-image-editor id="image_editor" model-image="currentFile.file.image" read-only="checkImageRO()"></wm-image-editor>\
+    <div class="col-md-8" id="pageInfo">\
+        <div class="row marginal" id="pages">\
+            <div class="col-md-8 form-inline">\
+                <label class="control-label">Имя файла</label>\
+                <input type="text" class="form-control" ng-model="currentFile.name" style="width: inherit;">\
+                <button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" ng-if="canEdit()"\
+                    title="Сформировать имя файла">\
+                    <span class="glyphicon glyphicon-repeat"></span>\
+                </button>\
+            </div>\
+            <div class="col-md-4">\
+                <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()" ng-if="canEdit()">\
+                    <span class="glyphicon glyphicon-minus" title="Удалить страницу"></span>\
+                </button>\
+                <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()" ng-if="canEdit()">\
+                    <span class="glyphicon glyphicon-plus" title="Добавить страницу"></span>\
+                </button>\
+                <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1"\
+                    ng-model="selected.currentPage" ng-change="pageChanged()" previous-text="&lsaquo;"\
+                    next-text="&rsaquo;" class="pagination-nomargin pull-right">\
+                </pagination>\
             </div>\
         </div>\
-        <div ng-show="notImageSelected()"><span>Предпросмотр недоступен. Выбранный файл не является изображением.</span></div>\
+        <div class="row">\
+            <div class="col-md-12">\
+                <div alert-notify></div>\
+                <div id="image_editor" ng-show="imageSelected()">\
+                    <div class="modal-scrollable-block">\
+                        <wm-image-editor id="image_editor" model-image="currentFile.file.image" read-only="checkImageRO()"></wm-image-editor>\
+                    </div>\
+                </div>\
+                <div ng-show="notImageSelected()"><span>Предпросмотр недоступен. Выбранный файл не является изображением.</span></div>\
+            </div>\
+        </div>\
     </div>\
     </div>\
 </div>\
@@ -71,6 +64,10 @@ angular.module('WebMis20')
     <button type="button" class="btn btn-danger" ng-click="$dismiss()">Закрыть</button>\
 </div>';
         var addFileTemplate = '\
+<div class="btn-group" ng-show="addFileBlockVisible()">\
+    <label class="btn btn-default" ng-model="mode" btn-radio="\'scanning\'">Сканировать</label>\
+    <label class="btn btn-default" ng-model="mode" btn-radio="\'select_from_fs\'">Выбрать существующий</label>\
+</div>\
 <div ng-show="mode === \'scanning\'">\
     <ol>\
     <li><h4>Выбрать устройство</h4></li>\
@@ -83,7 +80,6 @@ angular.module('WebMis20')
                 ng-value="dev">[[dev.model]]\
         </label>\
     </div>\
-    <hr>\
     <li><h4>Настроить параметры сканирования</h4></li>\
     <label>Качество изображения</label>\
     <select class="form-control" ng-model="selected.scan_options.resolution"\
@@ -93,7 +89,6 @@ angular.module('WebMis20')
     <select class="form-control" ng-model="selected.scan_options.mode"\
         ng-options="item.name for item in scan_options.modes">\
     </select>\
-    <hr>\
     <li><h4>Начать сканирование</h4></li>\
     <button type="button" class="btn btn-warning btn-sm" ng-click="start_scan()"\
         ng-disabled="!selected.device">\
@@ -102,8 +97,11 @@ angular.module('WebMis20')
     </ol>\
 </div>\
 <div ng-show="mode === \'select_from_fs\'">\
+    <ul>\
+    <li><h4>Выбрать файл</h4></li>\
     <input type="file" wm-input-file file="currentFile.file" on-change="generateFileName()"\
         accept="image/*,.pdf,.txt,.odt,.doc,.docx,.ods,.xls,.xlsx">\
+    </ul>\
 </div>\
 <hr>';
         var metaInfoTemplate = '\
