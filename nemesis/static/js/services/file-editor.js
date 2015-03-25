@@ -57,8 +57,7 @@ angular.module('WebMis20')
     <button type="button" class="btn btn-danger pull-left" ng-click="deleteFileAttach()" ng-if="btnDelDocumentVisible()"\
         title="Удалить документ целиком">Удалить документ\
     </button>\
-    <button type="button" class="btn btn-success" ng-click="save_image()" ng-if="canEdit()"\
-        ng-disabled="!correctFileSelected()">\
+    <button type="button" class="btn btn-success" ng-click="save_image()" ng-if="canEdit()">\
         Сохранить\
     </button>\
     <button type="button" class="btn btn-danger" ng-click="$dismiss()">Закрыть</button>\
@@ -130,7 +129,7 @@ angular.module('WebMis20')
         <label for="relativeType">Родство с пациентом</label>\
         <wm-relation-type-rb id="relativeType" class="form-control" name="relativeType"\
             client="client.info" direct="false" ng-model="file_attach.relation_type"\
-            ng-change="generateFileDocumentName()" ng-required="relativeRequired()" ng-disabled="!canEdit()">\
+            ng-change="generateFileDocumentName()" ng-disabled="!canEdit()">\
         </wm-relation-type-rb>\
     </div>\
 </ng-form>';
@@ -155,13 +154,16 @@ angular.module('WebMis20')
                 fileinfo,
                 data;
             if (fileMeta.id) {
-                fm_copy = {
-                    meta: {
-                        id: fileMeta.id,
-                        name: fileMeta.name,
-                        idx: fileMeta.idx
-                    }
-                };
+                if (fileMeta.isLoaded()) {
+                    fm_copy = {
+                        meta: {
+                            id: fileMeta.id,
+                            name: fileMeta.name,
+                            idx: fileMeta.idx
+                        }
+                    };
+                    cfa_copy.file_document.files.push(fm_copy);
+                }
             } else {
                 fileinfo = fileMeta.file;
                 data = fileinfo.type === 'image' ? fileinfo.image.src : fileinfo.binary_b64;
@@ -176,8 +178,8 @@ angular.module('WebMis20')
                         data: data
                     }
                 };
+                cfa_copy.file_document.files.push(fm_copy);
             }
-            cfa_copy.file_document.files[key] = fm_copy;
         });
 
         return cfa_copy;
@@ -264,6 +266,13 @@ angular.module('WebMis20')
             });
         };
         $scope.save_image = function () {
+            var validity = $scope.validate();
+            if (!validity.result) {
+                NotificationService.notify(null,
+                    'Невозможно сохранить документ: ' + validity.message,
+                    'danger');
+                return;
+            }
             $http.post(WMConfig.url.api_patient_file_attach, {
                 client_id: client_id,
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
@@ -407,10 +416,24 @@ angular.module('WebMis20')
         $scope.notImageSelected = function () {
             return $scope.currentFile.isNotImage();
         };
-        $scope.correctFileSelected = function () {
-            return true || ($scope.file.type === 'image' ? // TODO: провенить, что на всех страницах добавлен файл
-                $scope.imageSelected() :
-                $scope.notImageSelected());
+        $scope.validate = function () {
+            var validity = {
+                result: true,
+                message: 'ok'
+            },
+                files = $scope.file_attach.file_document.files,
+                curFile;
+            for (var idx in files) {
+                if (files.hasOwnProperty(idx)) {
+                    curFile = files[idx];
+                    if (!curFile.id && !curFile.isLoaded()) {
+                        validity.result = false;
+                        validity.message = 'Не выбран файл на {0} странице документа'.format(curFile.idx + 1);
+                        break;
+                    }
+                }
+            }
+            return validity;
         };
     };
 
@@ -606,8 +629,8 @@ angular.module('WebMis20')
     WMFileDocument.prototype.removePage = function (page) {
         var idx = page - 1;
         this.files.splice(idx, 1);
-        this.files.filter(function (page, index) {
-            return index > idx;
+        this.files.filter(function (page) {
+            return page.idx > idx;
         }).forEach(function (page) {
             page.idx -= 1;
         });
