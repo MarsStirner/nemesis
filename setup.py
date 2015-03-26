@@ -27,7 +27,7 @@ setup(
         'Flask-BabelEx',
         'Flask-Cache',
         'Requests',
-        'spinxit',
+        'sphinxit',
         'Flask-Beaker',
         'Flask-Login',
         'Flask-Principal',
