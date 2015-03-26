@@ -14,7 +14,7 @@ setup(
     url='https://github.com/hitsl/nemesis',
     author='hitsl',
     description='Base MIS module.',
-    long_description=read('readme.md'),
+    long_description=read('README.md'),
     include_package_data=True,
     packages=['nemesis'],
     platforms='any',
