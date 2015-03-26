@@ -49,7 +49,8 @@ angular.module('WebMis20')
         },
         scope: {
             modelImage: '=',
-            readOnly: '='
+            readOnly: '=',
+            mimeType: '@?'
         },
         link: function (scope, element, attrs) {
             var viewCanvas = element[0].childNodes[1].childNodes[0],
@@ -60,6 +61,9 @@ angular.module('WebMis20')
                 _scaleFactor = 1.0,
                 _jcrop_api,
                 _helpCanvasMap = {}; // offscreen canvases
+            if (!scope.mimeType) {
+                scope.mimeType = 'image/png';
+            }
 
             // toolbar
             var scales = [5, 10, 15, 30, 50, 75, 90, 100, 125, 150, 200, 300, 400, 500];
@@ -181,7 +185,7 @@ angular.module('WebMis20')
                 _resizeCanvas(hCanvas, w, h);
                 hCtx.drawImage(scope.modelImage, x, y, w, h, 0, 0, w, h);
 
-                _helpImage.src = hCanvas.toDataURL();
+                _helpImage.src = hCanvas.toDataURL(scope.mimeType, 0.65);
                 _rotateAngle = 0;
                 scope.modelImage.src = _helpImage.src;
 
@@ -271,7 +275,7 @@ angular.module('WebMis20')
                 drawImage(hCtx, image, -image.width / 2, -image.height / 2);
                 hCtx.restore();
 
-                scope.modelImage.src = hCanvas.toDataURL();
+                scope.modelImage.src = hCanvas.toDataURL(scope.mimeType, 0.65);
 
                 renderViewImage();
             }

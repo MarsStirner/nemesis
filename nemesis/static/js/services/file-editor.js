@@ -44,7 +44,8 @@ angular.module('WebMis20')
                 <div alert-notify></div>\
                 <div id="image_editor" ng-show="imageSelected()">\
                     <div class="modal-scrollable-block">\
-                        <wm-image-editor id="image_editor" model-image="currentFile.file.image" read-only="checkImageRO()"></wm-image-editor>\
+                        <wm-image-editor id="image_editor" model-image="currentFile.file.image" mime-type="[[currentFile.file.mime]]"\
+                            read-only="false"></wm-image-editor>\
                     </div>\
                 </div>\
                 <div ng-show="notImageSelected()"><span>Предпросмотр недоступен. Выбранный файл не является изображением.</span></div>\
@@ -83,10 +84,6 @@ angular.module('WebMis20')
     <label>Качество изображения</label>\
     <select class="form-control" ng-model="selected.scan_options.resolution"\
         ng-options="item.name for item in scan_options.resolutions">\
-    </select>\
-    <label>Режим сканирования</label>\
-    <select class="form-control" ng-model="selected.scan_options.mode"\
-        ng-options="item.name for item in scan_options.modes">\
     </select>\
     <li><h4>Начать сканирование</h4></li>\
     <button type="button" class="btn btn-warning btn-sm" ng-click="start_scan()"\
@@ -191,23 +188,20 @@ angular.module('WebMis20')
 
     var FileEditController = function ($scope, file_attach, client_id, client, pageNumber, readOnly) {
         var modes = ['scanning', 'select_from_fs'];
+        var scan_image_format = 'jpeg';
         $scope.mode = modes[0];
         $scope.scan_options = {
             resolutions: [
-                {name: 'Лучшее',        value: 600},
-                {name: 'Отличное',      value: 300},
-                {name: 'Хорошее',       value: 150},
-                {name: 'Нормальное',    value: 75}],
-            modes: [
-                {name: 'Цветное',       value: 'Color'},
-                {name: 'Чёрно-белое',   value: 'Gray'}]
+                {name: 'Лучшее (600 dpi)',  value: 600},
+                {name: 'Отличное (300 dpi)',value: 300},
+                {name: 'Хорошее (150 dpi)', value: 150},
+                {name: 'Среднее (75 dpi)',   value: 75}]
         };
         $scope.device_list = [];
         $scope.selected = {
             device: null,
             scan_options: {
-                resolution: $scope.scan_options.resolutions[2],
-                mode: $scope.scan_options.modes[0]
+                resolution: $scope.scan_options.resolutions[2]
             },
             currentPage: pageNumber
         };
@@ -231,7 +225,7 @@ angular.module('WebMis20')
                         helpCanvas.height = scanImage.height;
                         helpCtx.drawImage(scanImage, 0, 0);
 
-                        callback(helpCanvas.toDataURL());
+                        callback(helpCanvas.toDataURL('image/' + scan_image_format, 0.65));
 
                         helpCanvas.width = 1;
                         helpCanvas.height = 1;
@@ -242,11 +236,11 @@ angular.module('WebMis20')
                 scanImage.src = scanUrl
             }
 
-            var scanUrl = '{0}?name={1}&resolution={2}&mode={3}'.format(
+            var scanUrl = '{0}?name={1}&format={2}&resolution={3}'.format(
                 WMConfig.url.coldstar.scan_process_scan,
                 $scope.selected.device.name,
-                $scope.selected.scan_options.resolution.value,
-                $scope.selected.scan_options.mode.value
+                scan_image_format,
+                $scope.selected.scan_options.resolution.value
             );
 
             var loaderTextElem = $('#loaderText'),
@@ -256,7 +250,7 @@ angular.module('WebMis20')
             getImage(scanUrl, function (image_b64) {
                 $scope.currentFile.file.binary_b64 = null;
                 $scope.currentFile.file.image = new Image();
-                $scope.currentFile.file.mime = 'image/jpeg';
+                $scope.currentFile.file.mime = 'image/' + scan_image_format;
                 $scope.currentFile.file.type = 'image';
                 $scope.currentFile.file.image.src = image_b64;
                 $scope.generateFileName();
