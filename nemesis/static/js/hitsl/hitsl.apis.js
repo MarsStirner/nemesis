@@ -28,18 +28,31 @@ angular.module('hitsl.core')
         return defer.promise;
     };
 })
-.service('NotificationService', function () {
+.service('NotificationService', ['TimeoutCallback', function (TimeoutCallback) {
     var self = this;
     var recompilers = [];
     this.notifications = [];
-    this.notify = function (code, message, severity) {
+    this.timeouts = {};
+    this.notify = function (code, message, severity, to) {
+        if (to === true) to = 3000;
+        else if (!angular.isNumber(to)) to = undefined;
         var id = Math.floor(Math.random() * 65536);
         self.notifications.push({
             id: id,
             code: code,
             message: message,
-            severity: severity
+            severity: severity,
+            to: to
         });
+        if (to) {
+            this.timeouts[id] = new TimeoutCallback(
+                angular.bind(this, function () {
+                    this.dismiss(id);
+                }),
+                to
+            );
+            this.timeouts[id].start();
+        }
         notify_recompilers();
         return id;
     };
@@ -49,6 +62,9 @@ angular.module('hitsl.core')
         });
         notify_recompilers();
     };
+    this.cancelTO = function (id) {
+        this.timeouts[id].kill();
+    };
     this.register = function (recompile_function) {
         recompilers.push(recompile_function);
     };
@@ -57,14 +73,14 @@ angular.module('hitsl.core')
             recompile(self.notifications);
         });
     }
-})
+}])
 .directive('alertNotify', function (NotificationService, $compile) {
     return {
         restrict: 'AE',
         scope: {},
         link: function (scope, element, attributes) {
             var template =
-                '<div class="alert alert-{0}" role="alert">\
+                '<div class="alert alert-{0}" role="alert" {3}>\
                     <button type="button" class="close" ng-click="$dismiss({2})">\
                         <span aria-hidden="true">&times;</span>\
                         <span class="sr-only">Close</span>\
@@ -112,7 +128,8 @@ angular.module('hitsl.core')
                     return template.format(
                         notification.severity || 'info',
                         compile(notification.message),
-                        notification.id
+                        notification.id,
+                        notification.to ? 'ng-mouseover="onMouseOver({0})"'.format(notification.id): ''
                     )
                 }).join('\n');
                 var replace_element = $('<div class="abs-alert">{0}</div>'.format(html));
@@ -121,6 +138,9 @@ angular.module('hitsl.core')
                 element = replace_element;
             }
             NotificationService.register(recompile);
+            scope.onMouseOver = function (id) {
+                NotificationService.cancelTO(id);
+            };
         }
     }
 })

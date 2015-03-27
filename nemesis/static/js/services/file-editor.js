@@ -263,21 +263,28 @@ angular.module('WebMis20')
             if (!validity.result) {
                 NotificationService.notify(null,
                     'Невозможно сохранить документ: ' + validity.message,
-                    'danger');
+                    'danger',
+                    true
+                );
                 return;
             }
             $http.post(WMConfig.url.api_patient_file_attach_save, {
                 client_id: client_id,
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
-            }).success(function (data) {
+            }).success(function (data, status) {
                 $scope.file_attach.load(data.result.cfa);
                 NotificationService.notify(
-                    200,
+                    status,
                     'Сохранено',
-                    'success'
+                    'success',
+                    true
                 );
-            }).error(function () {
-                alert('Ошибка сохранения');
+            }).error(function (data, status) {
+                NotificationService.notify(
+                    status,
+                    'Ошибка сохранения',
+                    'danger'
+                );
             });
         };
         $scope.deleteFileAttach = function () {
@@ -291,8 +298,12 @@ angular.module('WebMis20')
                     }
                 }).success(function () {
                     $scope.$close('deleted');
-                }).error(function () {
-                    alert('Ошибка удаления');
+                }).error(function (data, status) {
+                    NotificationService.notify(
+                        status,
+                        'Ошибка удаления документа',
+                        'danger'
+                    );
                 });
             });
         };
@@ -322,16 +333,21 @@ angular.module('WebMis20')
                         params: {
                             file_meta_id: $scope.currentFile.id
                         }
-                    }).success(function () {
+                    }).success(function (data, status) {
                         $scope.file_attach.file_document.removePage($scope.selected.currentPage);
                         setCurPage();
                         NotificationService.notify(
-                            200,
+                            status,
                             'Страница удалена',
-                            'success'
+                            'success',
+                            true
                         );
-                    }).error(function () {
-                        alert('Ошибка удаления');
+                    }).error(function (data, status) {
+                        NotificationService.notify(
+                            status,
+                            'Ошибка удаления страницы',
+                            'danger'
+                        );
                     });
                 });
             } else {
@@ -351,9 +367,9 @@ angular.module('WebMis20')
                     }
                 }).success(function (data) {
                     $scope.currentFile.load(data.result, true);
-                }).error(function (data) {
+                }).error(function (data, status) {
                     NotificationService.notify(
-                        404,
+                        status,
                         data.meta.name,
                         'danger'
                     );
