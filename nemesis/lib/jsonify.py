@@ -470,14 +470,17 @@ class ClientVisualizer(object):
         documents = [safe_dict(doc) for doc in client.documents_all] if client.id else []
         policies = [safe_dict(policy) for policy in client.policies_all] if client.id else []
         document_history = documents + policies
-        file_attaches_query = client.file_attaches.options(
-            joinedload(
-                ClientFileAttach.file_document, innerjoin=True
-            ).joinedload(
-                FileGroupDocument.files
+        if client.id:
+            file_attaches_query = client.file_attaches.options(
+                joinedload(
+                    ClientFileAttach.file_document, innerjoin=True
+                ).joinedload(
+                    FileGroupDocument.files
+                )
             )
-        )
-        files = [self.make_file_attach_info(fa, False) for fa in file_attaches_query]
+            files = [self.make_file_attach_info(fa, False) for fa in file_attaches_query]
+        else:
+            files = []
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
         return {
             'info': client,
