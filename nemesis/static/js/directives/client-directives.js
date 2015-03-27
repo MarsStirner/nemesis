@@ -62,64 +62,61 @@ angular.module('WebMis20.directives').
                     });
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_type.$invalid}">\
-                <label for="pol_type[[idPostfix]]" class="control-label">Тип</label>\
-                <ui-select class="form-control" id="pol_type[[idPostfix]]" name="pol_type" theme="select2"\
-                           ng-model="modelPolicy.policy_type" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
-                    <ui-select-match placeholder="Тип полиса">[[$select.selected.name]]</ui-select-match>\
-                    <ui-select-choices repeat="pt in rbPolicyObjects | filter: $select.search">\
-                        <div ng-bind-html="pt.name | highlight: $select.search"></div>\
-                    </ui-select-choices>\
-                </ui-select>\
-            </div>\
-            <div class="form-group col-md-1"\
-                 ng-class="{\'has-error\': ((policyForm.$dirty || modelPolicy.id) && policyForm.pol_serial.$invalid) || policyForm.pol_serial.$error.required}">\
-                <label for="pol_serial[[idPostfix]]" class="control-label">Серия</label>\
-                <input type="text" class="form-control" id="pol_serial[[idPostfix]]" name="pol_serial"\
-                       ui-mask="[[modelPolicy.policy_type.masks.serial]]" autocomplete="off" \
-                       placeholder="[[placeholder_serial]]" validator-regexp="modelPolicy.policy_type.validators.serial"\
-                       ng-model="modelPolicy.serial" ng-disabled="!edit_mode()" ng-required="modelPolicy.policy_type.validators.serial && policyForm.$dirty"/>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_number.$invalid}">\
-                <label for="pol_number[[idPostfix]]" class="control-label">Номер</label>\
-                <input type="text" class="form-control" id="pol_number[[idPostfix]]" name="pol_number"\
-                       ui-mask="[[modelPolicy.policy_type.masks.number]]" autocomplete="off"\
-                       placeholder="[[placeholder_number]]" validator-regexp="modelPolicy.policy_type.validators.number"\
-                       ng-model="modelPolicy.number" ng-required="policyForm.$dirty" ng-disabled="!edit_mode()"/>\
-            </div>\
-            <div class="form-group col-md-offset-1 col-md-2"\
-                 ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_begdate[[idPostfix]].$invalid}">\
-                <label for="pol_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
-                <wm-date id="pol_begdate[[idPostfix]]"\
-                         ng-model="modelPolicy.beg_date" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
-                </wm-date>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': policyForm.pol_enddate[[idPostfix]].$invalid }">\
-                <label for="pol_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
-                <wm-date id="pol_enddate[[idPostfix]]"\
-                         ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()">\
-                </wm-date>\
-            </div>\
-        </div>\
-        <div class="row">\
-            <div class="form-group col-md-12"\
-                 ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_insurer.$invalid}">\
-                <label for="pol_insurer[[idPostfix]]" class="control-label">Страховая медицинская организация</label>\
-                <div ng-class="form-control" class="validatable" id="pol_insurer[[idPostfix]]" name="pol_insurer"\
-                     free-input-select="" freetext="true" items="OrganisationObjects" builder="builder_organisation"\
-                     ng-disabled="!edit_mode()" ng-required="policyForm.$dirty" ng-model="modelPolicy.insurer">\
-                    [[ item.short_name ]]\
-                </div>\
-            </div>\
+'<div class="row">\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_type.$invalid}">\
+        <label for="pol_type[[idPostfix]]" class="control-label">Тип</label>\
+        <ui-select class="form-control" id="pol_type[[idPostfix]]" name="pol_type" theme="select2"\
+                   ng-model="modelPolicy.policy_type" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
+            <ui-select-match placeholder="Тип полиса">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="pt in rbPolicyObjects | filter: $select.search">\
+                <div ng-bind-html="pt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-1"\
+         ng-class="{\'has-error\': ((policyForm.$dirty || modelPolicy.id) && policyForm.pol_serial.$invalid) || policyForm.pol_serial.$error.required}">\
+        <label for="pol_serial[[idPostfix]]" class="control-label">Серия</label>\
+        <input type="text" class="form-control" id="pol_serial[[idPostfix]]" name="pol_serial"\
+               ui-mask="[[modelPolicy.policy_type.masks.serial]]" autocomplete="off" \
+               placeholder="[[placeholder_serial]]" validator-regexp="modelPolicy.policy_type.validators.serial"\
+               ng-model="modelPolicy.serial" ng-disabled="!edit_mode()" ng-required="modelPolicy.policy_type.validators.serial && policyForm.$dirty"/>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_number.$invalid}">\
+        <label for="pol_number[[idPostfix]]" class="control-label">Номер</label>\
+        <input type="text" class="form-control" id="pol_number[[idPostfix]]" name="pol_number"\
+               ui-mask="[[modelPolicy.policy_type.masks.number]]" autocomplete="off"\
+               placeholder="[[placeholder_number]]" validator-regexp="modelPolicy.policy_type.validators.number"\
+               ng-model="modelPolicy.number" ng-required="policyForm.$dirty" ng-disabled="!edit_mode()"/>\
+    </div>\
+    <div class="form-group col-md-offset-1 col-md-2"\
+         ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_begdate[[idPostfix]].$invalid}">\
+        <label for="pol_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
+        <wm-date id="pol_begdate[[idPostfix]]"\
+                 ng-model="modelPolicy.beg_date" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
+        </wm-date>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': policyForm.pol_enddate[[idPostfix]].$invalid }">\
+        <label for="pol_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
+        <wm-date id="pol_enddate[[idPostfix]]"\
+                 ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()">\
+        </wm-date>\
+    </div>\
+</div>\
+<div class="row">\
+    <div class="form-group col-md-12"\
+         ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_insurer.$invalid}">\
+        <label for="pol_insurer[[idPostfix]]" class="control-label">Страховая медицинская организация</label>\
+        <div ng-class="form-control" class="validatable" id="pol_insurer[[idPostfix]]" name="pol_insurer"\
+             free-input-select="" freetext="true" items="OrganisationObjects" builder="builder_organisation"\
+             ng-disabled="!edit_mode()" ng-required="policyForm.$dirty" ng-model="modelPolicy.insurer">\
+            [[ item.short_name ]]\
         </div>\
     </div>\
-</div>'
+</div>\
+'
             };
         }
     ]).
@@ -238,62 +235,57 @@ angular.module('WebMis20.directives').
                     };
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_type.$invalid}">\
-                <label for="doc_type[[idPostfix]]" class="control-label">Тип</label>\
-                <ui-select class="form-control" id="doc_type[[idPostfix]]" name="doc_type" theme="select2"\
-                           ng-model="modelDocument.doc_type" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
-                    <ui-select-match placeholder="Тип документа">[[$select.selected.name]]</ui-select-match>\
-                    <ui-select-choices repeat="dt in rbDocumentType.objects | filter: filter_document(groupCode) | filter: $select.search">\
-                        <div ng-bind-html="dt.name | highlight: $select.search"></div>\
-                    </ui-select-choices>\
-                </ui-select>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': ((docForm.$dirty || modelDocument.id)  && docForm.doc_serial.$invalid) || docForm.doc_serial.$error.required}">\
-                <label for="doc_serial[[idPostfix]]" class="control-label">Серия</label>\
-                <input type="text" class="form-control" id="doc_serial[[idPostfix]]" name="doc_serial"\
-                       ui-mask="[[modelDocument.doc_type.masks.serial]]"\
-                       autocomplete="off" placeholder="[[placeholder_serial]]" validator-regexp="modelDocument.doc_type.validators.serial"\
-                       ng-model="modelDocument.serial" ng-disabled="!edit_mode()"\
-                       ng-required="modelDocument.doc_type.validators.serial && docForm.$dirty"/>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_number.$invalid}">\
-                <label for="doc_number[[idPostfix]]" class="control-label">Номер</label>\
-                <input type="text" class="form-control" id="doc_number[[idPostfix]]" name="doc_number"\
-                       ui-mask="[[modelDocument.doc_type.masks.number]]"\
-                       autocomplete="off" placeholder="[[placeholder_number]]" validator-regexp="modelDocument.doc_type.validators.number"\
-                       ng-model="modelDocument.number" ng-required="docForm.$dirty" ng-disabled="!edit_mode()"/>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_begdate[[idPostfix]].$invalid}">\
-                <label for="doc_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
-                <wm-date id="doc_begdate[[idPostfix]]"\
-                         ng-model="modelDocument.beg_date" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
-                </wm-date>\
-            </div>\
-            <div class="form-group col-md-2"\
-                 ng-class="{\'has-error\': docForm.doc_enddate[[idPostfix]].$invalid }">\
-                <label for="doc_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
-                <wm-date id="doc_enddate[[idPostfix]]" ng-model="modelDocument.end_date" ng-disabled="!edit_mode()">\
-                </wm-date>\
-            </div>\
-        </div>\
-    \
-        <div class="row">\
-            <div class="form-group col-md-12"\
-                 ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_ufms.$invalid}">\
-                <label for="doc_ufms[[idPostfix]]" class="control-label">Выдан</label>\
-                <div ng-class="form-control" class="validatable" id="doc_ufms[[idPostfix]]" name="doc_ufms"\
-                     fs-select="" freetext="true" items="ufmsItems"\
-                     ng-disabled="!edit_mode()" ng-required="docForm.$dirty" ng-model="modelDocument.origin">\
-                    {{item}}\
-                </div>\
-            </div>\
+'<div class="row">\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_type.$invalid}">\
+        <label for="doc_type[[idPostfix]]" class="control-label">Тип</label>\
+        <ui-select class="form-control" id="doc_type[[idPostfix]]" name="doc_type" theme="select2"\
+                   ng-model="modelDocument.doc_type" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
+            <ui-select-match placeholder="Тип документа">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="dt in rbDocumentType.objects | filter: filter_document(groupCode) | filter: $select.search">\
+                <div ng-bind-html="dt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': ((docForm.$dirty || modelDocument.id)  && docForm.doc_serial.$invalid) || docForm.doc_serial.$error.required}">\
+        <label for="doc_serial[[idPostfix]]" class="control-label">Серия</label>\
+        <input type="text" class="form-control" id="doc_serial[[idPostfix]]" name="doc_serial"\
+               ui-mask="[[modelDocument.doc_type.masks.serial]]"\
+               autocomplete="off" placeholder="[[placeholder_serial]]" validator-regexp="modelDocument.doc_type.validators.serial"\
+               ng-model="modelDocument.serial" ng-disabled="!edit_mode()"\
+               ng-required="modelDocument.doc_type.validators.serial && docForm.$dirty"/>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_number.$invalid}">\
+        <label for="doc_number[[idPostfix]]" class="control-label">Номер</label>\
+        <input type="text" class="form-control" id="doc_number[[idPostfix]]" name="doc_number"\
+               ui-mask="[[modelDocument.doc_type.masks.number]]"\
+               autocomplete="off" placeholder="[[placeholder_number]]" validator-regexp="modelDocument.doc_type.validators.number"\
+               ng-model="modelDocument.number" ng-required="docForm.$dirty" ng-disabled="!edit_mode()"/>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_begdate[[idPostfix]].$invalid}">\
+        <label for="doc_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
+        <wm-date id="doc_begdate[[idPostfix]]"\
+                 ng-model="modelDocument.beg_date" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
+        </wm-date>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': docForm.doc_enddate[[idPostfix]].$invalid }">\
+        <label for="doc_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
+        <wm-date id="doc_enddate[[idPostfix]]" ng-model="modelDocument.end_date" ng-disabled="!edit_mode()">\
+        </wm-date>\
+    </div>\
+</div>\
+<div class="row">\
+    <div class="form-group col-md-12"\
+         ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_ufms.$invalid}">\
+        <label for="doc_ufms[[idPostfix]]" class="control-label">Выдан</label>\
+        <div ng-class="form-control" class="validatable" id="doc_ufms[[idPostfix]]" name="doc_ufms"\
+             fs-select="" freetext="true" items="ufmsItems"\
+             ng-disabled="!edit_mode()" ng-required="docForm.$dirty" ng-model="modelDocument.origin">\
+            {{item}}\
         </div>\
     </div>\
 </div>'
@@ -595,6 +587,82 @@ angular.module('WebMis20.directives').
         </div>\
     </div>\
 </div>'
+            };
+        }
+    ]).
+    directive('wmClientFileAttachItem', [
+        function() {
+            return {
+                restrict: 'E',
+                scope: {
+                    modelAttach: '=',
+                    onOpen: '&'
+                },
+                link: function(scope, elm, attrs) {
+                    scope.open = function (fa_id, page_idx) {
+                        scope.onOpen({
+                            fa_id: fa_id,
+                            page_idx: page_idx
+                        });
+                    };
+                },
+                template:
+'<span>\
+    <a ng-click="open(modelAttach.id)">[[ modelAttach.file_document.name ]]</a> (Страницы\
+        <span ng-repeat="page in modelAttach.file_document.files">\
+            <a href="javascript:void(0)" ng-click="open(modelAttach.id, page.idx)">[[page.idx + 1]]</a>\
+        </span>) от [[modelAttach.attach_date | asDate]]\
+</span>'
+            };
+        }
+    ]).
+    directive('wmClientFileAttach', [
+        function() {
+            return {
+                restrict: 'E',
+                scope: {
+                    attachType: '@',
+                    modelAttach: '=',
+                    modelDoc: '=',
+                    onAdd: '&',
+                    onOpen: '&'
+                },
+                link: function(scope, elm, attrs) {
+                    scope.addNew = function () {
+                        if (scope.attachType === 'document') {
+                            scope.onAdd({
+                                documentInfo: scope.modelDoc,
+                                policyInfo: null
+                            });
+                        } else if (scope.attachType === 'policy') {
+                            scope.onAdd({
+                                documentInfo: null,
+                                policyInfo: scope.modelDoc
+                            });
+                        }
+                    };
+                    scope.open = function (fa_id, page_idx) {
+                        scope.onOpen({
+                            cfa_id: fa_id,
+                            idx: page_idx
+                        });
+                    };
+
+                    scope.btnAddVisible = function () {
+                        return scope.modelDoc.id && !scope.modelAttach.id;
+                    };
+                    scope.itemVisible = function () {
+                        return scope.modelAttach.id;
+                    };
+                },
+                template:
+'<wm-client-file-attach-item ng-if="itemVisible()" model-attach="modelAttach"\
+    on-open="open(fa_id, page_idx)">\
+</wm-client-file-attach-item>\
+</span>\
+<button type="button" class="btn btn-sm btn-primary" ng-click="addNew()" ng-if="btnAddVisible()"\
+    title="Добавить копию документа">Добавить копию документа\
+</button>'
             };
         }
     ])

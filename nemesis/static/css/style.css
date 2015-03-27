@@ -751,7 +751,6 @@ ng-form {
     overflow-y: scroll;
 }
 
-
 .modal-scrollable-block {
     overflow: auto;
     border: solid;
@@ -854,4 +853,8 @@ a.pseudo-btn {
 
 .pagination.pagination-nomargin {
     margin: 0;
+}
+
+.row .vertical-divider {
+  border-right: 3px solid #d2def9;
 }

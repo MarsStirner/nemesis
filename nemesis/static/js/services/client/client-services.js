@@ -42,7 +42,8 @@ angular.module('WebMis20.services').
                     "beg_date": null,
                     "end_date": null,
                     "origin": null,
-                    "doc_text": null
+                    "doc_text": null,
+                    "file_attach": {}
                 };
                 client.id_docs.push(new_doc);
                 return new_doc;
@@ -71,7 +72,8 @@ angular.module('WebMis20.services').
                     "beg_date": null,
                     "end_date": null,
                     "insurer": null,
-                    "policy_text": null
+                    "policy_text": null,
+                    "file_attach": {}
                 };
                 client[entity].push(obj);
                 return obj;
@@ -336,10 +338,12 @@ angular.module('WebMis20.services').
                         "beg_date": null,
                         "end_date": null,
                         "origin": null,
-                        "doc_text": null
+                        "doc_text": null,
+                        "file_attach": {}
                     }
                 }
-                var new_ss = {'deleted': 0,
+                var new_ss = {
+                    'deleted': 0,
                     'ss_class': {'code':class_code},
                     'ss_type': null,
                     'beg_date': null,

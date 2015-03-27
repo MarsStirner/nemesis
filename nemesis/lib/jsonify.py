@@ -7,7 +7,7 @@ import base64
 
 from collections import defaultdict
 
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql.expression import between, func
 from flask import json
 
@@ -16,13 +16,14 @@ from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
 from nemesis.lib.agesex import recordAcceptableEx
+from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import safe_unicode, safe_dict, logger, safe_traverse_attrs, format_date, safe_date
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
 from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
-from nemesis.models.client import Client
+from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
     Organisation, rbContactType, FileGroupDocument, FileMeta, rbDocumentType)
 from nemesis.lib.user import UserUtils, UserProfileManager
@@ -469,8 +470,14 @@ class ClientVisualizer(object):
         documents = [safe_dict(doc) for doc in client.documents_all] if client.id else []
         policies = [safe_dict(policy) for policy in client.policies_all] if client.id else []
         document_history = documents + policies
-        file_attaches_query = client.file_attaches.join(FileGroupDocument, FileMeta)
-        files = [self.make_file_attach_info(fa) for fa in file_attaches_query]
+        file_attaches_query = client.file_attaches.options(
+            joinedload(
+                ClientFileAttach.file_document, innerjoin=True
+            ).joinedload(
+                FileGroupDocument.files
+            )
+        )
+        files = [self.make_file_attach_info(fa, False) for fa in file_attaches_query]
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
         return {
             'info': client,
@@ -496,20 +503,26 @@ class ClientVisualizer(object):
         :type file_attach: application.models.client.ClientFileAttach
         :return:
         """
-
+        cfa_id = file_attach.id
+        document_info = ClientDocument.query.filter(ClientDocument.cfa_id == cfa_id).first()
+        policy_info = ClientPolicy.query.filter(ClientPolicy.cfa_id == cfa_id).first()
         file_document = file_attach.file_document
+        if not file_document:
+            raise ApiException(404, u'Не найдена запись FileGroupDocument с id = {0}'.format(file_attach.filegroup_id))
         return {
             'id': file_attach.id,
             'attach_date': file_attach.attachDate,
             'doc_type': file_attach.documentType,
             'relation_type': file_attach.relationType,
+            'document_info': document_info,
+            'policy_info': policy_info,
             'file_document': {
                 'id': file_document.id,
                 'name': file_document.name,
                 'files': [
                     self.make_file_info(fm, with_data) for fm in file_document.files if (
-                        (fm.idx in file_idx_list) if file_idx_list else True
-                    )
+                        (fm.idx in file_idx_list) if file_idx_list is not None else True
+                    ) and fm.deleted == 0
                 ]
             }
         }
@@ -526,7 +539,13 @@ class ClientVisualizer(object):
 
         if file_meta.id and with_data:
             fullpath = os.path.join(app.config['FILE_STORAGE_PATH'], file_meta.path)
-            data = get_file_data(fullpath)
+            try:
+                data = get_file_data(fullpath)
+                if data is None:
+                    raise Exception()
+            except Exception, e:
+                logger.error(u'Невозможно загрузить файл %s' % fullpath, exc_info=True)
+                raise ApiException(404, u'Невозможно загрузить файл с id = {0}'.format(file_meta.id))
         else:
             data = None
         return {

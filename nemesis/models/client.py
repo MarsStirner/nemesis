@@ -127,7 +127,9 @@ class Client(db.Model):
     )
     file_attaches = db.relationship(
         u'ClientFileAttach',
-        lazy='dynamic'
+        primaryjoin='and_(ClientFileAttach.client_id==Client.id, ClientFileAttach.deleted == 0)',
+        lazy='dynamic',
+        order_by="desc(ClientFileAttach.id)"
     )
 
     events = db.relationship(
@@ -726,6 +728,9 @@ class ClientDocument(db.Model):
             'end_date': self.endDate,
             'origin': self.origin,
             'doc_text': self.__unicode__(),
+            'file_attach': {
+                'id': self.cfa_id
+            }
         }
 
     def __int__(self):
@@ -1067,7 +1072,10 @@ class ClientPolicy(db.Model):
                 'infis': None,
                 'title': None
             },
-            'policy_text': u'%s (%s - %s)' % (unicode(self), format_date(self.begDate) or '', format_date(self.endDate) or '')
+            'policy_text': u'%s (%s - %s)' % (unicode(self), format_date(self.begDate) or '', format_date(self.endDate) or ''),
+            'file_attach': {
+                'id': self.cfa_id
+            }
         }
 
 
@@ -1327,6 +1335,7 @@ class ClientFileAttach(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
     filegroup_id = db.Column(db.Integer, db.ForeignKey('FileGroupDocument.id'), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, default='0')
     attachDate = db.Column(db.DateTime, nullable=False)
     documentType_id = db.Column(db.Integer, db.ForeignKey('rbDocumentType.id'))
     relationType_id = db.Column(db.Integer, db.ForeignKey('rbRelationType.id'))
