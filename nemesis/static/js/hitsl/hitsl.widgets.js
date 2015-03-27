@@ -321,7 +321,6 @@ angular.module('WebMis20')
                 _clearOldData();
                 if (n && n.src) {
                     _initNewImage(n);
-                    $log.debug('draw image from watch');
                     renderViewImage();
                 }
             });

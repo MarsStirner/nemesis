@@ -16,6 +16,7 @@ from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
 from nemesis.lib.agesex import recordAcceptableEx
+from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import safe_unicode, safe_dict, logger, safe_traverse_attrs, format_date, safe_date
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
 from nemesis.models.event import Event, EventType, Diagnosis
@@ -506,6 +507,8 @@ class ClientVisualizer(object):
         document_info = ClientDocument.query.filter(ClientDocument.cfa_id == cfa_id).first()
         policy_info = ClientPolicy.query.filter(ClientPolicy.cfa_id == cfa_id).first()
         file_document = file_attach.file_document
+        if not file_document:
+            raise ApiException(404, u'Не найдена запись FileGroupDocument с id = {0}'.format(file_attach.filegroup_id))
         return {
             'id': file_attach.id,
             'attach_date': file_attach.attachDate,
@@ -518,7 +521,7 @@ class ClientVisualizer(object):
                 'name': file_document.name,
                 'files': [
                     self.make_file_info(fm, with_data) for fm in file_document.files if (
-                        (fm.idx in file_idx_list) if file_idx_list else True
+                        (fm.idx in file_idx_list) if file_idx_list is not None else True
                     ) and fm.deleted == 0
                 ]
             }
@@ -536,7 +539,13 @@ class ClientVisualizer(object):
 
         if file_meta.id and with_data:
             fullpath = os.path.join(app.config['FILE_STORAGE_PATH'], file_meta.path)
-            data = get_file_data(fullpath)
+            try:
+                data = get_file_data(fullpath)
+                if data is None:
+                    raise Exception()
+            except Exception, e:
+                logger.error(u'Невозможно загрузить файл %s' % fullpath, exc_info=True)
+                raise ApiException(404, u'Невозможно загрузить файл с id = {0}'.format(file_meta.id))
         else:
             data = None
         return {

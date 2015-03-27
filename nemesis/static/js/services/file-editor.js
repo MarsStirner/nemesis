@@ -45,7 +45,7 @@ angular.module('WebMis20')
                 <div id="image_editor" ng-show="imageSelected()">\
                     <div class="modal-scrollable-block">\
                         <wm-image-editor id="image_editor" model-image="currentFile.file.image" mime-type="[[currentFile.file.mime]]"\
-                            read-only="false"></wm-image-editor>\
+                            read-only="checkImageRO()"></wm-image-editor>\
                     </div>\
                 </div>\
                 <div ng-show="notImageSelected()"><span>Предпросмотр недоступен. Выбранный файл не является изображением.</span></div>\
@@ -207,7 +207,6 @@ angular.module('WebMis20')
         };
         $scope.client = client;
         $scope.file_attach = file_attach;
-        $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
 
         $scope.get_device_list = function () {
             $http.get(WMConfig.url.coldstar.scan_get_device_list).success(function (data) {
@@ -267,7 +266,7 @@ angular.module('WebMis20')
                     'danger');
                 return;
             }
-            $http.post(WMConfig.url.api_patient_file_attach, {
+            $http.post(WMConfig.url.api_patient_file_attach_save, {
                 client_id: client_id,
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
             }).success(function (data) {
@@ -286,7 +285,7 @@ angular.module('WebMis20')
                 'Удаление документа',
                 'Документ будет удален. Продолжить?'
             ).then(function () {
-                $http.delete(WMConfig.url.api_patient_file_attach, {
+                $http.delete(WMConfig.url.api_patient_file_attach_delete, {
                     params: {
                         cfa_id: $scope.file_attach.id
                     }
@@ -319,7 +318,7 @@ angular.module('WebMis20')
                     'Удаление страницы документа',
                     'Текущая страница документа будет удалена. Продолжить?'
                 ).then(function () {
-                    $http.delete(WMConfig.url.api_patient_file_attach, {
+                    $http.delete(WMConfig.url.api_patient_file_attach_delete, {
                         params: {
                             file_meta_id: $scope.currentFile.id
                         }
@@ -341,7 +340,9 @@ angular.module('WebMis20')
             }
         };
         $scope.pageChanged = function () {
-            $scope.currentFile.file.selected = false;
+            if ($scope.currentFile) {
+                $scope.currentFile.file.selected = false;
+            }
             $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
             if ($scope.currentFile.id && !$scope.currentFile.isLoaded()) {
                 $http.get(WMConfig.url.api_patient_file_attach, {
@@ -349,9 +350,13 @@ angular.module('WebMis20')
                         file_meta_id: $scope.currentFile.id
                     }
                 }).success(function (data) {
-                    $scope.currentFile.file.load(data.result, true);
-                }).error(function () {
-                    alert('Ошибка открытия файла. Файл был удален.');
+                    $scope.currentFile.load(data.result, true);
+                }).error(function (data) {
+                    NotificationService.notify(
+                        404,
+                        data.meta.name,
+                        'danger'
+                    );
                 });
             }
         };
@@ -429,6 +434,8 @@ angular.module('WebMis20')
             }
             return validity;
         };
+
+        $scope.pageChanged();
     };
 
     return {
@@ -474,8 +481,7 @@ angular.module('WebMis20')
                 readOnly = !params.editMode;
             return $http.get(WMConfig.url.api_patient_file_attach, {
                 params: {
-                    cfa_id: cfa_id,
-                    idx: idx
+                    cfa_id: cfa_id
                 }
             }).then(function (response) {
                 var pages = response.data.result.file_pages;
@@ -487,7 +493,7 @@ angular.module('WebMis20')
                 }
                 return open_modal();
             }, function () {
-                alert('Ошибка открытия файла. Файл был удален.');
+                alert('Ошибка открытия документа');
             });
 
             function open_modal() {
