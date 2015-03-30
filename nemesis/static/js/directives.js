@@ -1859,41 +1859,6 @@ angular.module('WebMis20.validators', [])
         }
     }
 }])
-.directive('formSafeClose', ['$timeout', function ($timeout) {
-    return {
-        restrict: 'A',
-        require: 'form',
-        link: function($scope, element, attrs, form) {
-            var message = "Вы уверены, что хотите закрыть вкладку? Форма может содержать несохранённые данные.";
-            $scope.$on('$locationChangeStart', function(event, next, current) {
-                if (form.$dirty) {
-                    if(!confirm(message)) {
-                        event.preventDefault();
-                    }
-                }
-            });
-            // Чтобы обойти баг FF с повторным вызовом onbeforeunload (http://stackoverflow.com/a/2295156/1748202)
-            $scope.onBeforeUnloadFired = false;
-
-            $scope.ResetOnBeforeUnloadFired = function () {
-               $scope.onBeforeUnloadFired = false;
-            };
-            window.onbeforeunload = function(evt){
-                if (form.$dirty && !$scope.onBeforeUnloadFired) {
-                    $scope.onBeforeUnloadFired = true;
-                    if (typeof evt == "undefined") {
-                        evt = window.event;
-                    }
-                    if (evt) {
-                        evt.returnValue = message;
-                    }
-                    $timeout($scope.ResetOnBeforeUnloadFired);
-                    return message;
-                }
-            };
-        }
-    }
-}])
 .directive('validNumber', function() {
     return {
         require: '?ngModel',

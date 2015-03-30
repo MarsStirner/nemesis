@@ -58,8 +58,8 @@ angular.module('hitsl.core', [])
         }
     };
 }])
-.service('IdleTimer', ['$http', '$log', '$document', '$window', 'TimeoutCallback', 'WMConfig', 'IdleUserModal',
-    function ($http, $log, $document, $window, TimeoutCallback, WMConfig, IdleUserModal) {
+.service('IdleTimer', ['$http', '$log', '$document', '$window', '$rootScope', 'TimeoutCallback', 'WMConfig', 'IdleUserModal',
+    function ($http, $log, $document, $window, $rootScope, TimeoutCallback, WMConfig, IdleUserModal) {
         var last_ping_time = null,
             last_activity_time = null,
             token_expire_time = null,
@@ -102,7 +102,8 @@ angular.module('hitsl.core', [])
             set_warning_timer(token_live_time);
         }
         function process_logout() {
-            $window.open(WMConfig.url.logout, '_self');
+            $rootScope.cancelFormSafeClose = true;
+            $window.open(WMConfig.url.logout + '?next=' + $window.location.href, '_self');
         }
         function _set_tracking(on) {
             if (on) {
