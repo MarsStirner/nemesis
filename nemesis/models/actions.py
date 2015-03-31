@@ -164,7 +164,10 @@ class ActionProperty(db.Model):
 
         def make_value(value, index=0):
             val = value_class()
-            val.set_value(value)
+            if raw:
+                val.set_raw_value(value)
+            else:
+                val.set_value(value)
             val.index = index
             val.property_object = self
             db.session.add(val)
