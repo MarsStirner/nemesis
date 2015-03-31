@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import between, func
 from nemesis.app import app
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import logger, get_new_uuid, safe_traverse, group_concat
+from nemesis.lib.utils import logger, get_new_uuid, safe_traverse, group_concat, safe_date
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
@@ -20,7 +20,7 @@ from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
 from nemesis.lib.user import UserUtils
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
-    STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE)
+    STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 
 
 # планируемая дата выполнения (default planned end date)
@@ -591,7 +591,7 @@ def int_get_atl_dict_all():
 
 def get_patient_location(event, dt=None):
     if event.is_stationary:
-        query = _get_os_moving_query(event, dt)
+        query = _get_moving_query(event, dt, False)
         query = query.join(
             ActionProperty
         ).join(
@@ -613,7 +613,7 @@ def get_patient_location(event, dt=None):
 
 
 def get_patient_hospital_bed(event, dt=None):
-    query = _get_os_moving_query(event, dt)
+    query = _get_moving_query(event, dt, False)
     query = query.join(
         ActionProperty
     ).join(
@@ -632,7 +632,7 @@ def get_patient_hospital_bed(event, dt=None):
     return hb
 
 
-def _get_os_moving_query(event, dt=None):
+def _get_moving_query(event, dt=None, finished=None):
     query = db.session.query(Action).join(
         ActionType
     ).filter(
@@ -642,14 +642,17 @@ def _get_os_moving_query(event, dt=None):
     )
     if dt:
         query = query.filter(Action.begDate <= dt)
-    else:
-        query = query.filter(Action.status != ActionStatus.finished[0])
+    elif finished is not None:
+        if finished:
+            query = query.filter(Action.status == ActionStatus.finished[0])
+        else:
+            query = query.filter(Action.status != ActionStatus.finished[0])
     query = query.order_by(Action.begDate.desc())
     return query
 
 
 def get_hosp_length(event):
-    def _from_hosp_release():
+    def from_hosp_release():
         query = _get_hosp_release_query(event)
         query = query.join(
             ActionProperty
@@ -666,24 +669,48 @@ def get_hosp_length(event):
         hosp_length = query.first()
         return hosp_length.value if hosp_length else None
 
-    def _calculate_not_finished():
-        date_start = event.setDate.date()
-        date_to = date.today()
+    def _get_start_date_from_moving():
+        query = _get_moving_query(event)
+        start_date = query.with_entities(
+            Action.begDate
+        ).order_by(None).order_by(Action.begDate).first()
+        return safe_date(start_date[0]) if start_date else None
+
+    def _get_finish_date_from_moving():
+        last_moving_q = _get_moving_query(event, finished=True)
+        final_moving_q = last_moving_q.join(
+            ActionProperty
+        ).join(
+            ActionPropertyType, db.and_(ActionProperty.type_id == ActionPropertyType.id,
+                                        ActionPropertyType.actionType_id == ActionType.id)
+        ).outerjoin(
+            ActionProperty_Integer, ActionProperty.id == ActionProperty_Integer.id
+        ).filter(
+            ActionPropertyType.code == STATIONARY_ORG_STRUCT_TRANSFER_CODE,
+            ActionProperty_Integer.id == None
+        )
+        end_date = final_moving_q.with_entities(
+            Action.endDate
+        ).first()
+        return safe_date(end_date[0]) if end_date else None
+
+    def calculate_not_finished():
+        date_start = _get_start_date_from_moving() or event.setDate.date()
+        date_to = _get_finish_date_from_moving()
+        if not date_to:
+            date_to = date.today()
         hosp_length = (date_to - date_start).days
         if event.is_day_hospital:
             hosp_length += 1
         return hosp_length
 
     # 1) from hospital release document
-    duration = _from_hosp_release()
+    duration = from_hosp_release()
     if duration is not None:
         hosp_length = duration
-    elif event.is_closed:
-        # 2) incorrect case
-        hosp_length = None
     else:
-        # 3) calculate not yet finished stay length
-        hosp_length = _calculate_not_finished()
+        # 2) calculate not yet finished stay length
+        hosp_length = calculate_not_finished()
     return hosp_length
 
 
