@@ -14,7 +14,7 @@ from itsdangerous import json
 
 from nemesis.systemwide import login_manager, cache
 from nemesis.lib.data import get_kladr_city, get_kladr_street
-from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json
+from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json, safe_dict
 from nemesis.lib.apiutils import api_method
 # from application.models import *
 from nemesis.utils import admin_permission
@@ -247,9 +247,9 @@ def api_refbook_int(name):
                 _order = ref_book.__mapper_args__['order_by']
 
             if 'deleted' in ref_book.__dict__:
-                return ref_book.query.filter_by(deleted=0).order_by(_order).all()
+                return [safe_dict(rb) for rb in ref_book.query.filter_by(deleted=0).order_by(_order).all()]
             else:
-                return ref_book.query.order_by(_order).all()
+                return [safe_dict(rb) for rb in ref_book.query.order_by(_order).all()]
 
     response = requests.get(u'{0}v1/{1}/'.format(app.config['VESTA_URL'], name))
     return [
