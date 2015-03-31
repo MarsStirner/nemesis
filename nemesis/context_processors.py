@@ -2,7 +2,6 @@
 from nemesis.app import app
 from datetime import datetime
 from nemesis.lib.user import UserUtils, UserProfileManager
-from version import version as app_version
 from nemesis_version import version as nemesis_version
 from nemesis.lib.enum import Enum
 
@@ -22,7 +21,6 @@ def enum():
         'print_subsystem_print_template': '%s/print_template' % ps_url,
 
         'copy_year': datetime.today().year,
-        'app_version': app_version,
         'nemesis_version': nemesis_version
     }
 
