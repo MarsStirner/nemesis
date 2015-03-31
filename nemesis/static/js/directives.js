@@ -1148,7 +1148,7 @@ angular.module('WebMis20.directives')
                 };
                 $scope.add_new_diagnosis = function () {
                     var new_diagnosis = WMEventServices.get_new_diagnosis($scope.action.action);
-                    if ($scope.params['defaults']){
+                    if ($scope.params && $scope.params['defaults']){
                         $scope.set_defaults(new_diagnosis)
                     }
                     if ($scope.risar) {
