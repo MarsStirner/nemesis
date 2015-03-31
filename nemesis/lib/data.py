@@ -496,8 +496,9 @@ def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
                 ContractTariff, db.and_(ActionType_Service.service_id == ContractTariff.service_id,
                                         ContractTariff.master_id == contract_id,
                                         ContractTariff.eventType_id == event_type_id,
-                                        ContractTariff.deleted == 0,
-                                        between(func.curdate(), ContractTariff.begDate, ContractTariff.endDate))
+                                        # временно убрана проверка на даты действия тарифа в прайсе.
+                                        # Вернуть с добавлением возможности работы с несколькими контрактами в обращении.
+                                        ContractTariff.deleted == 0)  # between(func.curdate(), ContractTariff.begDate, ContractTariff.endDate)
             ).outerjoin(
                 Contract, db.and_(Contract.id == ContractTariff.master_id,
                                   Contract.deleted == 0)
