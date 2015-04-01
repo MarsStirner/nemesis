@@ -228,8 +228,11 @@ def doctor_to_assist():
     return render_template('user/select_master_user.html')
 
 
+@app.route('/api/rb/')
+@app.route('/api/rb/<name>')
 @cache.memoize(86400)
-def api_refbook_int(name):
+@api_method
+def api_refbook(name):
     if name is None:
         return []
 
@@ -255,14 +258,7 @@ def api_refbook_int(name):
     return [
         {'id': item['_id'], 'name': item['name'], 'code': item['code']}
         for item in response.json()['data']
-    ]
-
-
-@app.route('/api/rb/')
-@app.route('/api/rb/<name>')
-@api_method
-def api_refbook(name):
-    return api_refbook_int(name)
+]
 
 
 @cache.memoize(86400)
