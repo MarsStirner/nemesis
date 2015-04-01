@@ -160,6 +160,7 @@ class Client(db.Model):
     def init_on_load(self):
         # TODO: redo?
         self._id_document = None
+        self._cache_policies = None
 
     def age_tuple(self, moment=None):
         """
@@ -170,7 +171,6 @@ class Client(db.Model):
         if not moment:
             moment = datetime.date.today()
         return calcAgeTuple(self.birthDate, moment)
-
 
     @property
     def age(self):
@@ -243,6 +243,12 @@ class Client(db.Model):
         return filter(lambda s: not s.endDate or s.endDate >= datetime.date.today(), self.soc_statuses)
 
     @property
+    def _policies(self):
+        if not getattr(self, '_cache_policies'):
+            self._cache_policies = self.policies.all()
+        return self._cache_policies
+
+    @property
     def policy(self):
         return self.compulsoryPolicy
 
@@ -252,12 +258,15 @@ class Client(db.Model):
 
     @property
     def compulsoryPolicy(self):
-        cpols = filter(lambda p: p.policyType is not None and p.policyType.code in COMP_POLICY_CODES, self.policies)
+        cpols = filter(lambda p: p.policyType is not None and p.policyType.code in COMP_POLICY_CODES, self._policies)
         return cpols[0] if cpols else None
 
     @property
     def voluntaryPolicies(self):
-        return filter(lambda p: p.policyType is not None and p.policyType.code in VOL_POLICY_CODES, self.policies)
+        return filter(lambda p: p.policyType is not None and p.policyType.code in VOL_POLICY_CODES, self._policies)
+
+    def getCurrentAndExpiredVolPolicies(self):
+        return [vpol for vpol in self.policies_all if vpol.policyType.code in VOL_POLICY_CODES]
 
     @property
     def phones(self):

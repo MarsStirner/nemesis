@@ -559,7 +559,7 @@ class ClientVisualizer(object):
             'data': data
         }
 
-    def make_client_info_for_view_frame(self, client):
+    def make_client_info_for_view_frame(self, client, with_expired_vpol=False):
         """Данные пациента для фрейма информации о пациенте."""
         reg_addr, live_addr = self.make_addresses_info(client)
         info = {
@@ -568,19 +568,15 @@ class ClientVisualizer(object):
             'reg_address': reg_addr,
             'live_address': live_addr,
             'compulsory_policy': client.compulsoryPolicy,
-            'voluntary_policies': client.voluntaryPolicies,
+            'voluntary_policies': (client.getCurrentAndExpiredVolPolicies()
+                                   if with_expired_vpol else client.voluntaryPolicies),
             'contacts': self.make_contacts_info(client)
         }
         return info
 
     def make_client_info_for_event(self, client, event):
         """Данные пациента, используемые в интерфейсе обращения."""
-        info = self.make_client_info_for_view_frame(client)
-        if event.id:
-            info['voluntary_policies'] = [
-                vpol for vpol in client.policies_all
-                if vpol.policyType.code in VOL_POLICY_CODES
-            ]
+        info = self.make_client_info_for_view_frame(client, with_expired_vpol=bool(event.id))
         info['relations'] = [self.make_relation_info(client.id, relation) for relation in client.client_relations]
         info['work_org_id'] = client.works[0].org_id if client.works else None,  # FIXME: ...
         return info
