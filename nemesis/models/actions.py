@@ -812,7 +812,7 @@ class ActionType(db.Model):
     nomenclatureService = db.relationship(u'rbService', foreign_keys='ActionType.nomenclativeService_id')
     property_types = db.relationship(u'ActionPropertyType', lazy='dynamic')
     group = db.relationship(u'ActionType', remote_side=[id])
-    jobType = db.relationship(u'rbJobType', lazy=False)
+    jobType = db.relationship(u'rbJobType')
     tissue_type = db.relationship(
         'ActionType_TissueType',
         primaryjoin='and_(ActionType_TissueType.master_id == ActionType.id, ActionType_TissueType.idx == 0)',

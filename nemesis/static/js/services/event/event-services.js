@@ -45,12 +45,10 @@ angular.module('WebMis20.services').
             var deferred = $q.defer();
             var unclosed_actions = event.info.actions.filter(function (action) {
                 return action.status.code !== 'finished';
-            }).map(function (action) {
-                return action.name;
             });
             if (unclosed_actions.length) {
-                var msg = ('Следующие действия не завершены:<br> * {0}<br><br>' +
-                    'Продолжить процесс закрытия обращения?').format(unclosed_actions.join('<br> * '));
+                var msg = ('В обращении имеется {0} незакрытых действий.<br>' +
+                    'Продолжить процесс закрытия обращения?').format(unclosed_actions.length);
                 return MessageBox.question('Имеются незакрытые действия', msg);
             } else {
                 deferred.resolve();
@@ -269,10 +267,7 @@ angular.module('WebMis20.services').
                     url_for_event_api_delete_action, {
                         action_id: action.id
                     }
-                ).success(function() {
-                    event.info.actions.remove(action);
-                    return self.reload_diagnoses(event);
-                });
+                );
             }
         };
     }]).

@@ -923,7 +923,7 @@ class EventVisualizer(object):
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
             'note': event.note,
-            'actions': map(self.make_action, event.actions),
+            'actions': self.make_ultra_small_actions(event)
         }
 
     def make_diagnoses(self, event):
@@ -1035,6 +1035,29 @@ class EventVisualizer(object):
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
         }
+
+    def make_ultra_small_actions(self, event):
+        actions = db.session.query(
+            Action.id,
+            Action.status,
+            Action.createPerson_id,
+            Action.person_id,
+            Action.setPerson_id
+        ).filter(
+            Action.event_id == event.id,
+            Action.deleted == 0
+        )
+
+        def make_usa(action):
+            return {
+                'id': action.id,
+                'status': ActionStatus(action.status),
+                'create_person_id': action.createPerson_id,
+                'person_id': action.person_id,
+                'set_person_id': action.setPerson_id
+            }
+        usal = map(make_usa, actions)
+        return usal
 
     def make_event_payment(self, event, client=None):
         if client:

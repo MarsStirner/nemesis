@@ -160,6 +160,7 @@ var WebMis20 = angular.module('WebMis20', [
     }
 })
 .filter('action_group_filter', function ($filter) {
+    // TODO: подумать об удалении, теперь нигде не используется
     return function (items, group) {
         if (items instanceof Array) {
             var ff;

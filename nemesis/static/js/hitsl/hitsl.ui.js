@@ -149,42 +149,58 @@ angular.module('hitsl.ui')
         }
     }
 }])
-.run(['$templateCache', function ($templateCache) {
-    $templateCache.put('/WebMis20/modal-MessageBox-info.html',
-        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-            <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
-            <h4 class="modal-title">[[head_msg]]</h4>\
-        </div>\
-        <div class="modal-body">\
-            <p ng-bind-html="message"></p>\
-        </div>\
-        <div class="modal-footer">\
-            <button type="button" class="btn btn-success" ng-click="$close()">Ок</button>\
-        </div>'
-    );
-    $templateCache.put('/WebMis20/modal-MessageBox-error.html',
-        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-            <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
-            <h4 class="modal-title">[[head_msg]]</h4>\
-        </div>\
-        <div class="modal-body">\
-            <p ng-bind-html="message"></p>\
-        </div>\
-        <div class="modal-footer">\
-            <button type="button" class="btn btn-danger" ng-click="$dismiss()">Ок</button>\
-        </div>'
-    );
-    $templateCache.put('/WebMis20/modal-MessageBox-question.html',
-        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-            <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
-            <h4 class="modal-title">[[head_msg]]</h4>\
-        </div>\
-        <div class="modal-body">\
-            <p ng-bind-html="question"></p>\
-        </div>\
-        <div class="modal-footer">\
-            <button type="button" class="btn btn-danger" ng-click="$close(true)">Да</button>\
-            <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-        </div>'
-    );
-}]);
+.directive('wmSortableHeader', [function () {
+    return {
+        restrict: 'A',
+        controllerAs: 'wmSortableHeaderCtrl',
+        controller: function () {
+            this.orders = ['DESC', 'ASC'];
+            this.sort_cols = [];
+            this.register_col = function (col) {
+                this.sort_cols.push(col);
+            };
+            this.clear_other = function (cur_col) {
+                this.sort_cols.forEach(function (col) {
+                    if (col !== cur_col) {
+                        col.order = undefined;
+                    }
+                });
+            }
+        }
+    }
+}])
+.directive('wmSortableColumn', ['$compile', function ($compile) {
+    return {
+        restrict: 'A',
+        require: '^wmSortableHeader',
+        scope: {
+            onChangeOrder: '&?'
+        },
+        link: function (scope, element, attrs, allColsCtrl) {
+            allColsCtrl.register_col(scope);
+            scope.order = undefined;
+            scope.column_name = attrs.wmSortableColumn;
+
+            element.click(function () {
+                scope.$apply(function () {
+                    allColsCtrl.clear_other(scope);
+                    scope.order = (scope.order === allColsCtrl.orders[0]) ?
+                        allColsCtrl.orders[1] :
+                        allColsCtrl.orders[0];
+                    scope.onChangeOrder({
+                        params: {
+                            order: scope.order,
+                            column_name: scope.column_name
+                        }
+                    });
+                });
+            });
+            element.addClass('cursor-pointer text-nowrap');
+            var arrow = $('<span class="fa header-sorter"></span>');
+            arrow.attr('ng-class', "{'fa-caret-down': order === 'DESC', 'fa-caret-up': order === 'ASC'}");
+            element.append(arrow);
+            $compile(arrow)(scope);
+        }
+    }
+}])
+;
