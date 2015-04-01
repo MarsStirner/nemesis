@@ -166,6 +166,11 @@ def config_js():
     return render_template('config.js', settings=settings, config=app.config)
 
 
+@app.route('/current_user.js')
+def current_user_js():
+    return render_template('current_user.js', current_user=current_user.export_js())
+
+
 def session_save_user(user):
     session['hippo_user'] = user
 

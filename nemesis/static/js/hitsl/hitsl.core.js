@@ -3,24 +3,6 @@
  */
 
 angular.module('hitsl.core', [])
-.service('CurrentUser', ['$http', function ($http) {
-    var self = this;
-    $http.get('/api/current-user.json').success(function (data) {
-        angular.extend(self, data.result);
-    });
-    this.get_main_user = function () {
-        return this.master || this;
-    };
-    this.has_right = function () {
-        return [].clone.call(arguments).filter(aux.func_in(this.get_user().rights)).length > 0;
-    };
-    this.has_role = function () {
-        return [].clone.call(arguments).filter(aux.func_in(this.roles)).length > 0;
-    };
-    this.current_role_in = function () {
-        return [].clone.call(arguments).has(this.current_role);
-    };
-}])
 .service('MessageBox', ['$modal', function ($modal) {
     return {
         info: function (head, message) {
