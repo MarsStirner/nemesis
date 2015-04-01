@@ -1042,7 +1042,10 @@ class EventVisualizer(object):
             Action.status,
             Action.createPerson_id,
             Action.person_id,
-            Action.setPerson_id
+            Action.setPerson_id,
+            ActionType.name
+        ).join(
+            Action.actionType
         ).filter(
             Action.event_id == event.id,
             Action.deleted == 0
@@ -1054,7 +1057,8 @@ class EventVisualizer(object):
                 'status': ActionStatus(action.status),
                 'create_person_id': action.createPerson_id,
                 'person_id': action.person_id,
-                'set_person_id': action.setPerson_id
+                'set_person_id': action.setPerson_id,
+                'at_name': action[5]
             }
         usal = map(make_usa, actions)
         return usal

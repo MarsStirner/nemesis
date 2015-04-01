@@ -45,10 +45,12 @@ angular.module('WebMis20.services').
             var deferred = $q.defer();
             var unclosed_actions = event.info.actions.filter(function (action) {
                 return action.status.code !== 'finished';
+            }).map(function (action) {
+                return action.at_name;
             });
             if (unclosed_actions.length) {
-                var msg = ('В обращении имеется {0} незакрытых действий.<br>' +
-                    'Продолжить процесс закрытия обращения?').format(unclosed_actions.length);
+                var msg = ('Следующие действия не завершены:<br> * {0}<br><br>' +
+                    'Продолжить процесс закрытия обращения?').format(unclosed_actions.join('<br> * '));
                 return MessageBox.question('Имеются незакрытые действия', msg);
             } else {
                 deferred.resolve();
