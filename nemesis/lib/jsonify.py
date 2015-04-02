@@ -1033,6 +1033,8 @@ class EventVisualizer(object):
         }
 
     def make_ultra_small_actions(self, event):
+        if not event.id:
+            return []
         actions = db.session.query(
             Action.id,
             Action.status,
