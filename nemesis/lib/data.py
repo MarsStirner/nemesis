@@ -71,7 +71,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     now = datetime.now()
     now_date = now.date()
     actionType = ActionType.query.get(int(action_type_id))
-    if isinstance(event, (int, basestring)):
+    if isinstance(event, (int, long, basestring)):
         event = Event.query.get(int(event))
     if event is None:
         raise ValueError('Event neither refer to existing Event nor newly created model')
