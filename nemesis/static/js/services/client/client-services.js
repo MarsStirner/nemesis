@@ -31,20 +31,24 @@ angular.module('WebMis20.services').
             }
         }
 
+        function get_document_record() {
+            return {
+                "id": null,
+                "deleted": 0,
+                "doc_type": null,
+                "serial": null,
+                "number": null,
+                "beg_date": null,
+                "end_date": null,
+                "origin": null,
+                "doc_text": null,
+                "file_attach": {}
+            };
+        }
+
         return {
             push_id_doc: function(client) {
-                var new_doc = {
-                    "id": null,
-                    "deleted": 0,
-                    "doc_type": null,
-                    "serial": null,
-                    "number": null,
-                    "beg_date": null,
-                    "end_date": null,
-                    "origin": null,
-                    "doc_text": null,
-                    "file_attach": {}
-                };
+                var new_doc = get_document_record();
                 client.id_docs.push(new_doc);
                 return new_doc;
             },
@@ -328,23 +332,14 @@ angular.module('WebMis20.services').
             },
             push_soc_status: function (client, class_name, class_code) {
                 var document = null;
-                if (class_code != 4) {
-                    document = {
-                        "id": null,
-                        "deleted": 0,
-                        "doc_type": null,
-                        "serial": null,
-                        "number": null,
-                        "beg_date": null,
-                        "end_date": null,
-                        "origin": null,
-                        "doc_text": null,
-                        "file_attach": {}
-                    }
+                if (class_code === 2) {
+                    document = get_document_record();
+                } else if (class_code === 3) {
+                    document = {};
                 }
                 var new_ss = {
                     'deleted': 0,
-                    'ss_class': {'code':class_code},
+                    'ss_class': {'code': class_code},
                     'ss_type': null,
                     'beg_date': null,
                     'end_date': null,
@@ -352,6 +347,9 @@ angular.module('WebMis20.services').
                 };
                 client[class_name].push(new_ss);
                 return new_ss;
+            },
+            add_soc_status_doc: function (ss) {
+                ss.self_document = get_document_record();
             },
             add_new_invalidity: function(client) {
                 var self = this;

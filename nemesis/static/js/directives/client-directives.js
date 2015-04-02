@@ -196,8 +196,6 @@ angular.module('WebMis20.directives').
                         }
                         return ""
                     };
-                    $scope.placeholder_serial = $scope.modelDocument.doc_type ? $scope.make_placeholder($scope.modelDocument.doc_type.masks.serial) : "";
-                    $scope.placeholder_number = $scope.modelDocument.doc_type ? $scope.make_placeholder($scope.modelDocument.doc_type.masks.number) : "";
                 },
                 restrict: 'E',
                 require: '^form',
@@ -214,6 +212,14 @@ angular.module('WebMis20.directives').
                     scope.ufmsItems = scope.rbUFMS.objects.map(function(o) {
                         return o.name;
                     });
+                    if (safe_traverse(scope, ['modelDocument', 'doc_type'])) {
+                        scope.placeholder_serial = scope.make_placeholder(scope.modelDocument.doc_type.masks.serial);
+                        scope.placeholder_number = scope.make_placeholder(scope.modelDocument.doc_type.masks.number);
+                    } else {
+                        scope.placeholder_serial = '';
+                        scope.placeholder_number = '';
+                    }
+
                     scope.$watch('rbUFMS.objects', function(n, o) {
                         if (n !== o) {
                             scope.ufmsItems = n.map(function(o) {
