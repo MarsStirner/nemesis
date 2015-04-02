@@ -6,6 +6,7 @@ import os
 import base64
 
 from collections import defaultdict
+import re
 
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql.expression import between, func
@@ -1307,6 +1308,10 @@ class EventVisualizer(object):
         }
 
 
+re_html_body = re.compile(ur'<body(\s*.*?)>(.*)</body>', re.I | re.U | re.S)
+re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.S)
+
+
 class ActionVisualizer(object):
     ro = True
 
@@ -1483,6 +1488,15 @@ class ActionVisualizer(object):
         """
         evis = EventVisualizer()
         return evis.make_diagnostic_record(value)
+
+    @staticmethod
+    def make_ap_Text(value):
+        match = re_html_body.search(value)
+        if not match:
+            return value
+        return re_html_style.sub('', match.group(2))
+
+    make_ap_Html = make_ap_Text
 
     # ---
 
