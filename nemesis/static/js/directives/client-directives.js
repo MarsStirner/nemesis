@@ -93,14 +93,14 @@ angular.module('WebMis20.directives').
     <div class="form-group col-md-offset-1 col-md-2"\
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_begdate[[idPostfix]].$invalid}">\
         <label for="pol_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
-        <wm-date id="pol_begdate[[idPostfix]]"\
+        <wm-date id="pol_begdate[[idPostfix]]" name="pol_begdate[[idPostfix]]"\
                  ng-model="modelPolicy.beg_date" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
         </wm-date>\
     </div>\
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': policyForm.pol_enddate[[idPostfix]].$invalid }">\
         <label for="pol_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
-        <wm-date id="pol_enddate[[idPostfix]]"\
+        <wm-date id="pol_enddate[[idPostfix]]" name="pol_enddate[[idPostfix]]"\
                  ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()">\
         </wm-date>\
     </div>\
@@ -168,7 +168,7 @@ angular.module('WebMis20.directives').
             <div class="form-group col-md-3"\
                  ng-class="{\'has-error\': ((socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_begdate[[idPostfix]].$invalid)}">\
                 <label for="ss_begdate[[idPostfix]]" class="control-label">Дата начала</label>\
-                <wm-date id="ss_begdate[[idPostfix]]"\
+                <wm-date id="ss_begdate[[idPostfix]]" name="ss_begdate[[idPostfix]]"\
                          ng-model="modelSocStatus.beg_date" ng-disabled="!edit_mode()"\
                          ng-required="socStatusForm.$dirty">\
                 </wm-date>\
@@ -176,7 +176,7 @@ angular.module('WebMis20.directives').
             <div class="form-group col-md-3"\
                  ng-class="{\'has-error\': socStatusForm.ss_enddate_[[idPostfix]].$invalid}">\
                 <label for="ss_enddate_[[idPostfix]]" class="control-label">Дата окончания</label>\
-                <wm-date id="ss_enddate_[[idPostfix]]"\
+                <wm-date id="ss_enddate_[[idPostfix]]" name="ss_enddate_[[idPostfix]]"\
                          ng-model="modelSocStatus.end_date" ng-disabled="!edit_mode()">\
                 </wm-date>\
             </div>\
@@ -267,14 +267,15 @@ angular.module('WebMis20.directives').
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_begdate[[idPostfix]].$invalid}">\
         <label for="doc_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
-        <wm-date id="doc_begdate[[idPostfix]]"\
+        <wm-date id="doc_begdate[[idPostfix]]" name="doc_begdate[[idPostfix]]"\
                  ng-model="modelDocument.beg_date" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
         </wm-date>\
     </div>\
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': docForm.doc_enddate[[idPostfix]].$invalid }">\
         <label for="doc_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
-        <wm-date id="doc_enddate[[idPostfix]]" ng-model="modelDocument.end_date" ng-disabled="!edit_mode()">\
+        <wm-date id="doc_enddate[[idPostfix]]" name="doc_enddate[[idPostfix]]"\
+                 ng-model="modelDocument.end_date" ng-disabled="!edit_mode()">\
         </wm-date>\
     </div>\
 </div>\
@@ -319,7 +320,7 @@ angular.module('WebMis20.directives').
             <div class="form-group col-md-3"\
                  ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_date[[idPostfix]].$invalid}">\
                 <label for="cbt_date[[idPostfix]]" class="control-label">Дата установления</label>\
-                <wm-date id="cbt_date[[idPostfix]]"\
+                <wm-date id="cbt_date[[idPostfix]]" name="cbt_date[[idPostfix]]"\
                          ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
                 </wm-date>\
             </div>\
@@ -392,7 +393,7 @@ angular.module('WebMis20.directives').
             <div class="form-group col-md-3"\
                  ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_date[[idPostfix]].$invalid}">\
                 <label for="alg_date[[idPostfix]]" class="control-label">Дата установления</label>\
-                <wm-date id="alg_date[[idPostfix]]"\
+                <wm-date id="alg_date[[idPostfix]]" name="alg_date[[idPostfix]]"\
                          ng-model="modelAllergy.date" ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
                 </wm-date>\
             </div>\
