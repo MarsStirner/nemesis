@@ -1451,106 +1451,105 @@ angular.module('WebMis20.directives')
         </div>\
         <div class="modal-body">\
             <ng-form name="DiagnosisForm">\
-                <div class="row marginal">\
-                    <div class="col-md-3  text-right">\
-                        <label for="diagnosis_type" class="control-label">Тип</label>\
-                    </div>\
-                    <div class="col-md-4">\
-                        <div class="form-group"\
-                             ng-class="{\'has-error\': DiagnosisForm.diagnosis_type.$invalid}">\
-                            <ui-select class="form-control" name="diagnosis_type" theme="select2"\
-                                ng-model="model.diagnosis_type" ref-book="rbDiagnosisType"\
-                                ng-required="true" ng-disabled="[[params.disabled.diagnosis_type]]">\
-                                <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                                <ui-select-choices repeat="dt in ($refBook.objects | filter: $select.search | filter: filter_type()) track by dt.id">\
-                                    <span ng-bind-html="dt.name | highlight: $select.search"></span>\
-                                </ui-select-choices>\
-                            </ui-select>\
-                        </div>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3 text-right">\
-                        <label for="diagnosis_character" class="control-label">Характер</label>\
-                    </div>\
-                    <div class="col-md-4">\
-                        <ui-select class="form-control" name="diagnosis_character" theme="select2"\
-                            ng-model="model.character" ref-book="rbDiseaseCharacter">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="ct in ($refBook.objects | filter: $select.search) track by ct.id">\
-                                <span ng-bind-html="ct.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3 text-right">\
-                        <label for="diagnosis_date" class="control-label">Дата начала</label>\
-                    </div>\
-                    <div class="col-md-2">\
-                        <div class="form-group" ng-class="{\'has-error\': DiagnosisForm.set_date.$invalid}">\
-                            <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
-                            </wm-date>\
-                        </div>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3 text-right">\
-                        <label for="MKB" class="control-label">МКБ</label>\
-                    </div>\
-                    <div class="col-md-4">\
-                        <div class="form-group"\
-                        ng-class="{\'has-error\': DiagnosisForm.mkb.$invalid}">\
-                            <ui-mkb ng-model="model.diagnosis.mkb" name="mkb" ng-required="true"></ui-mkb>\
-                        </div>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3  text-right">\
-                        <label for="diagnosis_person" class="control-label">Врач</label>\
-                    </div>\
-                    <div class="col-md-4">\
-                        <div class="form-group"\
-                        ng-class="{\'has-error\': model.person == null}">\
-                            <wm-person-select ng-model="model.person" name="diagnosis_person" ng-required="true"></wm-person-select>\
-                        </div>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3  text-right">\
-                        <label for="diagnosis_date" class="control-label">Дата окончания</label>\
-                    </div>\
-                    <div class="col-md-2">\
-                        <div class="form-group" ng-class="{\'has-error\': DiagnosisForm.end_date.$invalid}">\
-                            <wm-date name="end_date" ng-model="model.end_date" ng-required="[[params.required.end_date]]">\
-                            </wm-date>\
-                        </div>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3  text-right">\
-                        <label for="result" class="control-label">Результат</label>\
-                    </div>\
-                    <div class="col-md-4"\
-                        ng-class="{\'has-error\': DiagnosisForm.result.$invalid}">\
-                        <ui-select class="form-control" name="result" theme="select2"\
-                            ng-model="model.result" ref-book="rbResult"\
-                            ng-required="result_required()">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="r in ($refBook.objects | filter: $select.search | rb_result_filter: 2) track by r.id">\
-                                <span ng-bind-html="r.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-3  text-right">\
-                        <label for="diagnosis_description" class="control-label">Описание</label>\
-                    </div>\
-                    <div class="col-md-9">\
-                        <wysiwyg ng-model="model.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
-                    </div>\
-                </div>\
+                <table class="table table-condensed">\
+                    <thead>\
+                    <tr>\
+                        <th class="col-md-3"></th>\
+                        <th class="col-md-9"></th>\
+                    </tr>\
+                    </thead>\
+                    <tbody>\
+                        <tr>\
+                            <th class="text-right">Тип <span class="text-danger">*</span></th>\
+                            <td>\
+                                <div class="form-group col-md-4"\
+                                     ng-class="{\'has-error\': DiagnosisForm.diagnosis_type.$invalid}">\
+                                    <ui-select class="form-control" name="diagnosis_type" theme="select2"\
+                                        ng-model="model.diagnosis_type" ref-book="rbDiagnosisType"\
+                                        ng-required="true" ng-disabled="[[params.disabled.diagnosis_type]]">\
+                                        <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                                        <ui-select-choices repeat="dt in ($refBook.objects | filter: $select.search | filter: filter_type()) track by dt.id">\
+                                            <span ng-bind-html="dt.name | highlight: $select.search"></span>\
+                                        </ui-select-choices>\
+                                    </ui-select>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Характер</th>\
+                            <td>\
+                                <div class="col-md-4">\
+                                <ui-select class="form-control" name="diagnosis_character" theme="select2"\
+                                    ng-model="model.character" ref-book="rbDiseaseCharacter">\
+                                    <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                                    <ui-select-choices repeat="ct in ($refBook.objects | filter: $select.search) track by ct.id">\
+                                        <span ng-bind-html="ct.name | highlight: $select.search"></span>\
+                                    </ui-select-choices>\
+                                </ui-select>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Дата начала <span class="text-danger">*</span></th>\
+                            <td>\
+                                <div class="form-group col-md-3" ng-class="{\'has-error\': DiagnosisForm.set_date.$invalid}">\
+                                    <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
+                                    </wm-date>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">МКБ <span class="text-danger">*</span></th>\
+                            <td>\
+                                <div class="form-group col-md-4"\
+                                ng-class="{\'has-error\': DiagnosisForm.mkb.$invalid}">\
+                                    <ui-mkb ng-model="model.diagnosis.mkb" name="mkb" ng-required="true"></ui-mkb>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Врач</th>\
+                            <td>\
+                                <div class="form-group col-md-4"\
+                                ng-class="{\'has-error\': model.person == null}">\
+                                    <wm-person-select ng-model="model.person" name="diagnosis_person" ng-required="true"></wm-person-select>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Дата окончания</th>\
+                            <td>\
+                                <div class="form-group col-md-3" ng-class="{\'has-error\': DiagnosisForm.end_date.$invalid}">\
+                                    <wm-date name="end_date" ng-model="model.end_date" ng-required="[[params.required.end_date]]">\
+                                    </wm-date>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Результат</th>\
+                            <td>\
+                                <div class="col-md-4" ng-class="{\'has-error\': DiagnosisForm.result.$invalid}">\
+                                    <ui-select class="form-control" name="result" theme="select2"\
+                                        ng-model="model.result" ref-book="rbResult"\
+                                        ng-required="result_required()">\
+                                        <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                                        <ui-select-choices repeat="r in ($refBook.objects | filter: $select.search | rb_result_filter: 2) track by r.id">\
+                                            <span ng-bind-html="r.name | highlight: $select.search"></span>\
+                                        </ui-select-choices>\
+                                    </ui-select>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                        <tr>\
+                            <th class="text-right">Описание</th>\
+                            <td>\
+                                <div class="col-md-12">\
+                                <wysiwyg ng-model="model.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
+                                </div>\
+                            </td>\
+                        </tr>\
+                    </tbody>\
+                </table>\
             </ng-form>\
         </div>\
         <div class="modal-footer">\
