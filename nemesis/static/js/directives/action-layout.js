@@ -4,7 +4,7 @@
 'use strict';
 
 angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.directives.personTree', 'WebMis20.directives.wysiwyg'])
-.directive('wmActionLayout', ['$compile', 'SelectAll', '$filter', '$sce', function ($compile, SelectAll, $filter, $sce) {
+.directive('wmActionLayout', ['$compile', 'SelectAll', '$filter', function ($compile, SelectAll, $filter) {
     return {
         restrict: 'E',
         scope: {
@@ -49,7 +49,7 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                 case 'String':
                                 case 'Integer':
                                 case 'Double':
-                                    inner_template = '<span ng-bind="{0}.value"></span>'; break;
+                                    inner_template = '<span>[[ {0}.value ]] {1}</span>'.format('{0}', property.type.unit.code || ''); break;
                                 case 'Date':
                                     inner_template = '<span ng-bind="{0}.value | asDate"></span>'; break;
                                 case 'Time':
@@ -97,9 +97,15 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                     break;
                                 case 'Integer':
                                     inner_template = '<input class="form-control" type="number" ng-model="{0}.value" valid-number valid-number-negative>';
+                                    if (property.type.unit) {
+                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property.type.unit.code);
+                                    }
                                     break;
                                 case 'Double':
                                     inner_template = '<input class="form-control" type="text" ng-model="{0}.value" valid-number valid-number-negative valid-number-float>';
+                                    if (property.type.unit) {
+                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property.type.unit.code);
+                                    }
                                     break;
                                 case 'Time':
                                     inner_template = '<div fs-time ng-model="{0}.value"></div>';
