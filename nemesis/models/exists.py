@@ -1749,7 +1749,7 @@ class QuotaType(db.Model):
     __tablename__ = u'QuotaType'
 
     id = db.Column(db.Integer, primary_key=True)
-    catalog_id = db.Column(db.ForeignKey('QuotaCatalog.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+    catalog_id = db.Column(db.ForeignKey('QuotaCatalog.id', ondelete='CASCADE', onupdate='CASCADE'),
                            nullable=False, index=True)
     createDatetime = db.Column(db.DateTime, nullable=False)
     createPerson_id = db.Column(db.Integer, index=True)
@@ -1765,7 +1765,7 @@ class QuotaType(db.Model):
     teenOlder = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     price = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
 
-    catalog = db.relationship('QuotaCatalog')
+    catalog = db.relationship('QuotaCatalog', backref='quotaTypes')
 
     def __json__(self):
         return {'id': self.id,
@@ -1793,7 +1793,7 @@ class MKB_VMPQuotaFilter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     MKB_id = db.Column(db.ForeignKey('MKB.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False, index=True)
     quotaDetails_id = db.Column(
-        db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False, index=True)
+        db.ForeignKey('VMPQuotaDetails.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
 
 
 class VMPQuotaDetails(db.Model):
@@ -1804,12 +1804,12 @@ class VMPQuotaDetails(db.Model):
                                 nullable=False, index=True)
     treatment_id = db.Column(db.ForeignKey('rbTreatment.id', ondelete='RESTRICT', onupdate='RESTRICT'),
                              nullable=False, index=True)
-    quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='RESTRICT', onupdate='RESTRICT'),
+    quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='CASCADE', onupdate='CASCADE'),
                              nullable=False, index=True)
 
     pacient_model = db.relation('rbPacientModel')
     treatment = db.relation('rbTreatment')
-    quota_type = db.relation('QuotaType')
+    quota_type = db.relation('QuotaType', backref='quotaDetails')
     mkb = db.relation('MKB', secondary=MKB_VMPQuotaFilter.__table__, lazy=False)
 
     def __json__(self):
