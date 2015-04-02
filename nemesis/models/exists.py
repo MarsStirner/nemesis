@@ -83,6 +83,11 @@ class rbTreatment(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.UnicodeText, nullable=False)
+    treatmentType_id = db.Column(db.ForeignKey('rbTreatmentType.id'))
+    pacientModel_id = db.Column(db.ForeignKey('rbPacientModel.id'))
+
+    treatmentType = db.relationship('rbTreatmentType')
+    pacientModel = db.relationship('rbPacientModel')
 
     def __json__(self):
         return {
@@ -94,6 +99,23 @@ class rbTreatment(db.Model):
     def __int__(self):
         return self.id
 
+
+class rbTreatmentType(db.Model):
+    __tablename__ = u'rbTreatmentType'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.UnicodeText, nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
 
 class rbBloodType(db.Model):
     __tablename__ = 'rbBloodType'
@@ -1821,6 +1843,7 @@ class VMPQuotaDetails(db.Model):
             'patient_model': self.pacient_model,
             'treatment': self.treatment,
             'mkb': self.mkb,
+            'treatment_type': self.treatment.treatmentType if self.treatment else None,
             # 'quota_type': self.quota_type
         }
 
