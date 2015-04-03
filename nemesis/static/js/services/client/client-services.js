@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMClientServices', ['MessageBox', 'RefBookService', 'CurrentUser',
-            function (MessageBox, RefBookService, CurrentUser) {
+    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser',
+            function ($timeout, MessageBox, RefBookService, CurrentUser) {
         function get_actual_address (client, entity) {
             var addrs =  client[entity].filter(function (el) {
                 return el.deleted === 0;
@@ -350,6 +350,12 @@ angular.module('WebMis20.services').
             },
             add_soc_status_doc: function (ss) {
                 ss.self_document = get_document_record();
+            },
+            clear_soc_status_doc: function (ss, formCtrl) {
+                ss.self_document = {};
+                if (formCtrl) {
+                    $timeout(formCtrl.$setPristine);
+                }
             },
             add_new_invalidity: function(client) {
                 var self = this;

@@ -229,8 +229,8 @@ angular.module('WebMis20.directives').
                     });
 
                     scope.$watch('docForm.$dirty', function(n, o) {
-                        if (n !== o) {
-                            scope.modelDocument.dirty = n;
+                        if (n) {
+                            scope.modelDocument.dirty = true;
                         }
                     });
 
