@@ -1,4 +1,4 @@
-var SelectMasterUserCtrl = function ($scope, $http, $window) {
+var SelectMasterUserCtrl = function ($scope, $http, $window, WMConfig) {
     $scope.user = {};
     $scope.get_users = function () {
         $http.get(url_api_doctors_to_assist)
@@ -19,7 +19,7 @@ var SelectMasterUserCtrl = function ($scope, $http, $window) {
     };
     $scope.submit = function () {
         if ($scope.user.selected_id && $scope.user.selected_prof_id) {
-            $http.post(url_doctor_to_assist, {
+            $http.post(WMConfig.url.doctor_to_assist, {
                 user_id: $scope.user.selected_id,
                 profile_id: $scope.user.selected_prof_id
             }, {
@@ -35,4 +35,4 @@ var SelectMasterUserCtrl = function ($scope, $http, $window) {
     $scope.get_users();
 };
 
-WebMis20.controller('SelectMasterUserCtrl', ['$scope', '$http', '$window', SelectMasterUserCtrl]);
+WebMis20.controller('SelectMasterUserCtrl', ['$scope', '$http', '$window', 'WMConfig', SelectMasterUserCtrl]);
