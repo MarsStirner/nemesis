@@ -29,7 +29,7 @@ angular.module('WebMis20.directives')
                 var uiSelect = $('<ui-select></ui-select>');
                 var uiSelectMatch = $('<ui-select-match>[[getName($select.selected)]]</ui-select-match>');
                 var uiSelectChoices = $(
-                    '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} track by item.id">\
+                    '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} | limitTo:10 track by item.id">\
                         <div ng-bind-html="getName(item) | highlight: $select.search"></div>\
                     </ui-select-choices>'
                     .format(
