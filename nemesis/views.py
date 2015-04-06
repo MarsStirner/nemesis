@@ -31,6 +31,9 @@ login_manager.login_view = 'login'
 login_manager.anonymous_user = AnonymousUser
 
 
+semi_public_endpoints = ('config_js', 'current_user_js', 'logout')
+
+
 @app.before_request
 def check_valid_login():
     if (request.endpoint and
@@ -73,14 +76,15 @@ def check_valid_login():
         if not login_valid:
             # return redirect(url_for('login', next=request.url))
             return redirect(app.config['COLDSTAR_URL'] + 'cas/login?back=%s' % urllib2.quote(request.url))
-        if not getattr(current_user, 'current_role', None) and request.endpoint != 'wm_config':
+        if not getattr(current_user, 'current_role', None) and request.endpoint not in semi_public_endpoints:
             return redirect(url_for('select_role', next=request.url))
 
 
 @app.before_request
 def check_user_profile_settings():
+    free_endpoints = ('doctor_to_assist', 'api_doctors_to_assist') + semi_public_endpoints
     if request.endpoint and 'static' not in request.endpoint:
-        if (request.endpoint not in ('doctor_to_assist', 'api_doctors_to_assist', 'logout', 'wm_config') and
+        if (request.endpoint not in free_endpoints and
             UserProfileManager.has_ui_assistant() and
             not current_user.master
         ):

@@ -84,12 +84,12 @@ angular.module('WebMis20.services.models').
                         }
                     });
                     self.invalidities.forEach(function (invld) {
-                        if (invld.self_document.file_attach.id) {
+                        if (safe_traverse(invld, ['self_document', 'file_attach', 'id'])) {
                             invld.self_document.file_attach = self.file_attaches[map[invld.self_document.file_attach.id]];
                         }
                     });
                     self.works.forEach(function (work) {
-                        if (work.self_document.file_attach.id) {
+                        if (safe_traverse(work, ['self_document', 'file_attach', 'id'])) {
                             work.self_document.file_attach = self.file_attaches[map[work.self_document.file_attach.id]];
                         }
                     });

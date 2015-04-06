@@ -187,7 +187,6 @@ angular.module('WebMis20.directives').
             controller: function($scope) {
                 $scope.getCity = function(search_q) {
                     var url = [kladr_city + 'search/' + search_q + '/'].join('');
-//                    var url = url_kladr_city_get;
                     return $http.get(url, {}).then(function(res) {
                         return res.data.result;
                     });
@@ -266,7 +265,6 @@ angular.module('WebMis20.directives').
                         return [];
                     }
                     var url = [kladr_street, 'search/', loc, '/', search_q, '/' ].join('');
-//                    var url = url_kladr_street_get;
                     return $http.get(url, {}).then(function(res) {
                         return res.data.result;
                     });
