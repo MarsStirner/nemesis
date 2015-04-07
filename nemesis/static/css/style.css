@@ -858,3 +858,9 @@ a.pseudo-btn {
 .row .vertical-divider {
   border-right: 3px solid #d2def9;
 }
+
+/*formstamp widgets*/
+.nopadding.fs-racheck,
+.nopadding > .fs-racheck{
+    padding: 0;
+}
