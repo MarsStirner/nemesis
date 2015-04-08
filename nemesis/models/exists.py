@@ -1828,6 +1828,7 @@ class VMPQuotaDetails(db.Model):
                              nullable=False, index=True)
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id', ondelete='CASCADE', onupdate='CASCADE'),
                              nullable=False, index=True)
+    price = db.Column(db.DECIMAL)
 
     pacient_model = db.relation('rbPacientModel')
     treatment = db.relation('rbTreatment')
@@ -1844,6 +1845,7 @@ class VMPQuotaDetails(db.Model):
             'treatment': self.treatment,
             'mkb': self.mkb,
             'treatment_type': self.treatment.treatmentType if self.treatment else None,
+            'price': self.price,
             # 'quota_type': self.quota_type
         }
 
