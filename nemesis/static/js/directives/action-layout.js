@@ -116,6 +116,9 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                         inner_template = '<select class="form-control" ng-model="{0}.value" ng-options="val for val in {0}.type.values"></select>'
                                     } else {
                                         inner_template = '<input class="form-control" type="text" ng-model="{0}.value">';
+                                        if (property.type.unit) {
+                                            inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property_unit_code);
+                                        }
                                     }
                                     break;
                                 case 'JobTicket':
