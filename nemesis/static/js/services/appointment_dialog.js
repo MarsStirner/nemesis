@@ -167,7 +167,8 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         $modalInstance.dismiss('cancel');
                     };
                 },
-                size: size
+                size: size,
+                windowClass: client_id ? '' : 'modal-scrollable'
             });
         }
     }
