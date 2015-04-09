@@ -247,7 +247,9 @@ angular.module('WebMis20.directives.goodies', [])
         restrict: 'A',
         require: 'form',
         link: function($scope, element, attrs, form) {
-            var message = "Вы уверены, что хотите закрыть вкладку? Форма может содержать несохранённые данные.";
+            var message = $scope.$eval(attrs.formSafeClose) || (
+                "Вы уверены, что хотите закрыть вкладку? Форма может содержать несохранённые данные."
+            );
             $scope.$on('$locationChangeStart', function(event, next, current) {
                 if (form.$dirty) {
                     if (!$rootScope.cancelFormSafeClose && !confirm(message)) {
