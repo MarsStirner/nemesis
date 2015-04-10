@@ -77,7 +77,14 @@ def check_valid_login():
             # return redirect(url_for('login', next=request.url))
             return redirect(app.config['COLDSTAR_URL'] + 'cas/login?back=%s' % urllib2.quote(request.url))
         if not getattr(current_user, 'current_role', None) and request.endpoint not in semi_public_endpoints:
-            return redirect(url_for('select_role', next=request.url))
+            if len(current_user.roles) == 1:
+                current_user.current_role = current_user.roles[0]
+                identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+                if not UserProfileManager.has_ui_assistant() and current_user.master:
+                    current_user.set_master(None)
+                    identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+            else:
+                return redirect(url_for('select_role', next=request.url))
 
 
 @app.before_request
