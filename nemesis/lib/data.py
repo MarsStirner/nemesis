@@ -249,7 +249,7 @@ def set_ap_value(prop, value):
     value_class = prop.get_value_class()
     value = value_class.format_value(prop, value)
     if isinstance(value, dict):
-        prop.set_value(safe_traverse(value, 'id'), True)
+        prop.set_value(value, True)
     else:
         prop.set_value(value)
 

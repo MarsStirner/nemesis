@@ -37,7 +37,8 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                         if (property === undefined) return '{' + tag.id + '}';
                         var property_code = 'action.get_property(' + tag.id + ')',
                             property_value_domain_obj = property_code + '.type.domain_obj',
-                            property_is_assignable = 'action.is_assignable(' + tag.id + ')';
+                            property_is_assignable = 'action.is_assignable(' + tag.id + ')',
+                            property_unit_code = (property.type.unit)?(property.type.unit.code):('');
 
                         if (scope.action.ro) {
                             switch (property.type.type_name) {
@@ -49,7 +50,7 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                 case 'String':
                                 case 'Integer':
                                 case 'Double':
-                                    inner_template = '<span>[[ {0}.value ]] {1}</span>'.format('{0}', property.type.unit.code || ''); break;
+                                    inner_template = '<span>[[ {0}.value ]] {1}</span>'.format('{0}', property_unit_code); break;
                                 case 'Date':
                                     inner_template = '<span ng-bind="{0}.value | asDate"></span>'; break;
                                 case 'Time':
@@ -98,13 +99,13 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                 case 'Integer':
                                     inner_template = '<input class="form-control" type="number" ng-model="{0}.value" valid-number valid-number-negative>';
                                     if (property.type.unit) {
-                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property.type.unit.code);
+                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property_unit_code);
                                     }
                                     break;
                                 case 'Double':
                                     inner_template = '<input class="form-control" type="text" ng-model="{0}.value" valid-number valid-number-negative valid-number-float>';
                                     if (property.type.unit) {
-                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property.type.unit.code);
+                                        inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property_unit_code);
                                     }
                                     break;
                                 case 'Time':
@@ -115,6 +116,9 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                         inner_template = '<select class="form-control" ng-model="{0}.value" ng-options="val for val in {0}.type.values"></select>'
                                     } else {
                                         inner_template = '<input class="form-control" type="text" ng-model="{0}.value">';
+                                        if (property.type.unit) {
+                                            inner_template = '<div class="input-group">{0}<span class="input-group-addon">{1}</span></div>'.format(inner_template, property_unit_code);
+                                        }
                                     }
                                     break;
                                 case 'JobTicket':
@@ -196,7 +200,7 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                     property_is_assignable,
                                     scope.action.ro,
                                     inner_template.format(property_code),
-                                    property.type.unit ? property.type.unit.code : '',
+                                    property_unit_code,
                                     property.type.norm ? property.type.norm : ''
                                 );
                             } else if (context.tag.tagName === 'vgroup') {
