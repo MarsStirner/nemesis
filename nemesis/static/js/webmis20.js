@@ -451,7 +451,7 @@ var WebMis20 = angular.module('WebMis20', [
     PrintingService.prototype.print_template = function(template_data_list, separated) { // [ {template_id, context}, ... ]
         var self = this;
         var send_data = {
-            separated: separated,
+            separate: separated,
             documents: template_data_list.map(function (item) {
                 return {
                     id: item.template_id,
