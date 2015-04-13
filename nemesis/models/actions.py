@@ -181,7 +181,7 @@ class ActionProperty(db.Model):
                 if value is not None:
                     value_object.append(make_value(value))
             else:
-                if value is None:
+                if value is None or value == '':
                     delete_value(value_object[0])
                 else:
                     value_object[0].set_value(value)

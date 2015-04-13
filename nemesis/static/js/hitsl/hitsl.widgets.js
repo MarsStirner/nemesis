@@ -16,21 +16,6 @@ angular.module('WebMis20')
                     }
                 });
             };
-            ngModelCtrl.$parsers.unshift(function(_) {
-                var viewValue = ngModelCtrl.$viewValue;
-                if (!viewValue || viewValue instanceof Date) {
-                    return viewValue;
-                }
-                var d = moment(viewValue.replace('_', ''), "DD.MM.YYYY", true);
-                if (moment(d).isValid()) {
-                    ngModelCtrl.$setValidity('date', true);
-                    ngModelCtrl.$setViewValue(d.toDate());
-                    return d;
-                } else {
-                    ngModelCtrl.$setValidity('date', false);
-                    return undefined;
-                }
-            });
             var _id = attrs.id,
                 name = attrs.name,
                 ngDisabled = attrs.ngDisabled,
@@ -41,7 +26,7 @@ angular.module('WebMis20')
             var wmdate = $('<div class="input-group"></div>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
-                        is-open="popup.opened" ui-mask="99.99.9999" date-mask />'
+                        is-open="popup.opened" manual-date ui-mask="99.99.9999" date-mask />'
                 ),
                 button = $('\
                     <button type="button" class="btn btn-default" ng-click="open_datepicker_popup(popup.opened)">\
@@ -67,6 +52,30 @@ angular.module('WebMis20')
             wmdate.append(date_input, button_wrap);
             $(element).append(wmdate);
             $compile(wmdate)(scope);
+        }
+    };
+}])
+.directive('manualDate', [function() {
+    return {
+        restrict: 'A',
+        require: '^ngModel',
+        link: function(scope, elm, attrs, ctrl) {
+            ctrl.$parsers.unshift(function(_) {
+                var viewValue = ctrl.$viewValue,
+                    maxDate = scope.$eval(attrs.max);
+                if (!viewValue || viewValue instanceof Date) {
+                    return viewValue;
+                }
+                var d = moment(viewValue.replace('_', ''), "DD.MM.YYYY", true);
+                if (moment(d).isValid() && (maxDate ? moment(maxDate).isAfter(d) : true)) {
+                    ctrl.$setValidity('date', true);
+                    ctrl.$setViewValue(d.toDate());
+                    return d;
+                } else {
+                    ctrl.$setValidity('date', false);
+                    return undefined;
+                }
+            });
         }
     };
 }])
