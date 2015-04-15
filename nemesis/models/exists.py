@@ -197,7 +197,9 @@ class Organisation(db.Model):
             # 'net': self.net,
             'infis': self.infisCode,
             'is_insurer': bool(self.isInsurer),
-            'is_hospital': bool(self.isHospital)
+            'is_hospital': bool(self.isHospital),
+            'address': self.Address,
+            'phone': self.phone
         }
 
     def __int__(self):
@@ -386,6 +388,7 @@ class Person(db.Model):
             'federal_code': self.federalCode,
             'regional_code': self.regionalCode,
             'org_structure': self.org_structure,
+            'organisation': self.organisation,
             'full_name': self.full_name
         }
 
