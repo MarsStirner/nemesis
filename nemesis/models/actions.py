@@ -80,6 +80,22 @@ class Action(db.Model):
             if prop.type.code
         )
 
+    @property
+    def propsByTypeId(self):
+        return dict(
+            (prop.type_id, prop)
+            for prop in self.properties
+        )
+
+    def setPropValue(self, pt_id, value, raw=False):
+        if pt_id not in self.propsByTypeId:
+            new_p = ActionProperty()
+            new_p.action = self
+            new_p.type_id = pt_id
+        else:
+            new_p = self.propsByTypeId[pt_id]
+        new_p.set_value(value, raw)
+
     def __getitem__(self, item):
         return self.propsByCode[item]
 
@@ -732,11 +748,11 @@ class ActionTemplate(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
     deleted = db.Column(db.Integer, nullable=False)
-    group_id = db.Column(db.Integer, index=True)
+    group_id = db.Column(db.ForeignKey('ActionTemplate.id'), index=True)
     code = db.Column(db.String(64), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     sex = db.Column(db.Integer, nullable=False)
@@ -745,9 +761,11 @@ class ActionTemplate(db.Model):
     age_bc = db.Column(db.SmallInteger)
     age_eu = db.Column(db.Integer)
     age_ec = db.Column(db.SmallInteger)
-    owner_id = db.Column(db.Integer, index=True)
-    speciality_id = db.Column(db.Integer, index=True)
-    action_id = db.Column(db.Integer, index=True)
+    owner_id = db.Column(db.ForeignKey('Person.id'), index=True)
+    speciality_id = db.Column(db.ForeignKey('rbSpeciality.id'), index=True)
+    action_id = db.Column(db.ForeignKey('Action.id'), index=True)
+
+    action = db.relationship('Action')
 
 
 # t_ActionTissue = db.Table(
