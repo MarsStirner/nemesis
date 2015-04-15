@@ -123,6 +123,13 @@ var WebMis20 = angular.module('WebMis20', [
         return data
     }
 })
+.filter('split', function ($filter) {
+    return function (data, splitChar) {
+        if (typeof data === "string")
+            return data.split(splitChar);
+        return data
+    }
+})
 .filter('attribute', function ($filter) {
     return function (array, attribute) {
         var value = arguments[2];
