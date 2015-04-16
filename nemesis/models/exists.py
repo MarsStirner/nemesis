@@ -61,16 +61,19 @@ class rbFinance(db.Model):
 
 class rbPacientModel(db.Model):
     __tablename__ = u'rbPacientModel'
+    _table_description = u'Модели пациента'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.UnicodeText, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -79,21 +82,22 @@ class rbPacientModel(db.Model):
 
 class rbTreatment(db.Model):
     __tablename__ = u'rbTreatment'
+    _table_description = u'Методы лечения'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.UnicodeText, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
     treatmentType_id = db.Column(db.ForeignKey('rbTreatmentType.id'))
-    pacientModel_id = db.Column(db.ForeignKey('rbPacientModel.id'))
 
     treatmentType = db.relationship('rbTreatmentType')
-    pacientModel = db.relationship('rbPacientModel')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -102,6 +106,7 @@ class rbTreatment(db.Model):
 
 class rbTreatmentType(db.Model):
     __tablename__ = u'rbTreatmentType'
+    _table_description = u'Виды лечения'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
@@ -111,11 +116,12 @@ class rbTreatmentType(db.Model):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name,
+            'name': self.name
         }
 
     def __int__(self):
         return self.id
+
 
 class rbBloodType(db.Model):
     __tablename__ = 'rbBloodType'
