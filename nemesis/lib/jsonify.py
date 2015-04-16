@@ -1130,10 +1130,10 @@ class EventVisualizer(object):
 
         result = []
         for event in event_list:
-            lc = self.make_event_local_contract(event)
-            if not lc['id']:
+            if not event.localContract_id:
                 continue
-
+            lc = self.make_event_local_contract(event)
+            lc['shared_in_events'].append([event.id, event.externalId])
             result.append({
                 'local_contract': lc,
                 'event_info': make_event_small_info(event)
