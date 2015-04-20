@@ -21,8 +21,8 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         [[ error.text ]]\
                     </div>\
                     <div class="modal-footer">\
-                        <button type="button" class="btn btn-success" ng-click="accept()" ng-disabled="error">Отменить запись</button>\
-                        <button type="button" class="btn btn-danger" ng-click="cancel()">Не отменять запись</button>\
+                        <button type="button" class="btn btn-default" ng-click="cancel()">Не отменять запись</button>\
+                        <button type="button" class="btn btn-danger" ng-click="accept()" ng-disabled="error">Отменить запись</button>\
                     </div>',
                 controller: function ($scope, $http, $modalInstance) {
                     $scope.ticket = ticket;
