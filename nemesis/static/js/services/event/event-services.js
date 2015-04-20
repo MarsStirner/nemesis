@@ -265,11 +265,7 @@ angular.module('WebMis20.services').
             },
             delete_action: function (event, action) {
                 var self = this;
-                return $http.post(
-                    url_for_event_api_delete_action, {
-                        action_id: action.id
-                    }
-                );
+                return $http.delete(url_for_actions_api_delete_action + '/' + action.id);
             }
         };
     }]).

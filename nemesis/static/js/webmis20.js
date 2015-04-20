@@ -9,8 +9,8 @@ var WebMis20 = angular.module('WebMis20', [
     'WebMis20.services.models',
     'WebMis20.directives',
     'WebMis20.directives.personTree',
+    'WebMis20.directives.wysiwyg',
     'WebMis20.directives.ActionTypeTree',
-    'WebMis20.ActionLayout',
     'WebMis20.directives.goodies',
     'WebMis20.controllers',
     'WebMis20.validators'
@@ -494,97 +494,6 @@ var WebMis20 = angular.module('WebMis20', [
         });
     };
     return PrintingService;
-}])
-.factory('WMAction', ['$http', '$q', '$rootScope', function ($http, $q, $rootScope) {
-        // FIXME: На данный момент это ломает функциональность действий, но пока пофиг.
-    var Action = function () {
-        this.action = {};
-        this.layout = {};
-        this.action_columns = {};
-        this.properties_by_id = {};
-        this.properties_by_code = {};
-        this.ro = false;
-    };
-    function success_wrapper(self) {
-        return function (data) {
-            self.action = data.result.action;
-            self.layout = data.result.layout;
-            self.ro = data.result.ro;
-            self.bak_lab_info = data.result.bak_lab_info;
-            self.action_columns = {
-                assignable: false,
-                unit: false
-            };
-            self.properties_by_id = {};
-            self.properties_by_code = {};
-
-            angular.forEach(data.result.action.properties, function (item) {
-                self.action_columns.assignable |= item.type.is_assignable;
-                self.action_columns.unit |= item.type.unit;
-
-
-                self.properties_by_id[item.type.id] = item;
-
-                if (item.type.code) {
-                    self.properties_by_code[item.type.code] = item;
-                }
-            });
-            $rootScope.$broadcast('action_loaded', self);
-        }
-    }
-    Action.prototype.get = function (id) {
-        return $http.get(url_action_get, {
-            params: {
-                action_id: id
-            }
-        }).success(success_wrapper(this));
-    };
-    Action.prototype.get_new = function (event_id, action_type_id) {
-        this.action.event_id = event_id;
-        this.action.action_type_id = action_type_id;
-        return $http.get(url_action_new, {
-            params: {
-                action_type_id: action_type_id,
-                event_id: event_id
-            }
-        }).success(success_wrapper(this));
-    };
-    Action.prototype.is_new = function () {
-        return !this.action.id;
-    };
-    Action.prototype.save = function () {
-        var deferred = $q.defer();
-        $http.post(
-            url_action_save, this.action
-            ).
-                success(function(responce){
-                    success_wrapper(responce);
-                    deferred.resolve(responce.result);
-                }).
-                error(function(responce){
-                    deferred.reject('action save error');
-                })
-        ;
-        return deferred.promise;
-    };
-    Action.prototype.cancel = function () {
-        window.close();
-    };
-    Action.prototype.get_property = function (id) {
-        if (id instanceof String) {
-            return this.properties_by_code[id];
-        } else {
-            return this.properties_by_id[id];
-        }
-    };
-    Action.prototype.get_baklab_info = function () {
-        return this.bak_lab_info ? this.bak_lab_info : null;
-    };
-    Action.prototype.is_assignable = function (id) {
-        var prop = this.get_property(id);
-        return prop ? prop.type.is_assignable : false;
-    };
-    return Action;
 }])
 .factory('EventType', ['RefBook', 'AgeSex', function (RefBook, AgeSex) {
     var EventType = function () {

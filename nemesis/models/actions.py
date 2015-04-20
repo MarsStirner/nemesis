@@ -96,6 +96,11 @@ class Action(db.Model):
             new_p = self.propsByTypeId[pt_id]
         new_p.set_value(value, raw)
 
+    def delete(self):
+        self.deleted = 1
+        for prop in self.properties:
+            prop.delete()
+
     def __getitem__(self, item):
         return self.propsByCode[item]
 
@@ -121,12 +126,12 @@ class ActionProperty(db.Model):
     type = db.relationship(u'ActionPropertyType', lazy=False, innerjoin=True)
     unit = db.relationship(u'rbUnit', lazy=False)
 
-    def get_value_class(self):
+    def get_value_container_class(self):
         # Следующая магия вытаскивает класс, ассоциированный с backref-пропертей, созданной этим же классом у нашего
         # ActionProperty. Объекты этого класса мы будем создавать для значений
-        return getattr(self.__class__, self.__get_property_name()).property.mapper.class_
+        return getattr(self.__class__, self.__get_value_container_property_name()).property.mapper.class_
 
-    def __get_property_name(self):
+    def __get_value_container_property_name(self):
         type_name = self.type.typeName
         if type_name in ["Constructor", u"Жалобы", 'Text', 'Html']:
             class_name = 'String'
@@ -139,83 +144,91 @@ class ActionProperty(db.Model):
         return '_value_{0}'.format(class_name)
 
     @property
-    def value_object(self):
-        return getattr(self, self.__get_property_name())
+    def value_container(self):
+        return getattr(self, self.__get_value_container_property_name())
 
-    @value_object.setter
-    def value_object(self, value):
-        setattr(self, self.__get_property_name(), value)
+    @value_container.setter
+    def value_container(self, value):
+        setattr(self, self.__get_value_container_property_name(), value)
 
     @property
     def value_raw(self):
-        value_object = self.value_object
-        if not value_object:
+        value_container = self.value_container
+        if not value_container:
             return None
         if self.type.isVector:
-            return [item.value_ for item in value_object]
+            return [item.value_ for item in value_container]
         else:
-            return value_object[0].value_
+            return value_container[0].value_
 
     @property
     def value(self):
-        value_object = self.value_object
-        if not value_object:
+        value_container = self.value_container
+        if not value_container:
             return None
         if self.type.isVector:
-            return [item.value for item in value_object]
+            return [item.value for item in value_container]
         else:
-            return value_object[0].value
+            return value_container[0].value
 
     @value.setter
     def value(self, value):
         self.set_value(value)
+
+    def delete(self):
+        self.deleted = 1
+        klass = self.get_value_container_class()
+        klass.mark_as_deleted(self)
 
     def set_value(self, value, raw=False):
         if self.type.isVector and not (isinstance(value, (list, tuple)) or value is None):
             raise Exception(u'Tried assigning non-list value (%s) to vector action property (%s)' % (value, self.type.name))
         if not self.type.isVector and isinstance(value, (list, tuple)):
             raise Exception(u'Tried assigning list value (%s) to non-vector action property (%s)' % (value, self.type.name))
-        value_object = self.value_object
-        value_class = self.get_value_class()
+        value_container = self.value_container
+        value_container_class = self.get_value_container_class()
+        # объектификация значения
+        if not raw:
+            value = value_container_class.objectify(self, value)
 
         def make_value(value, index=0):
-            val = value_class()
+            value_container = value_container_class()
             if raw:
-                val.set_raw_value(value)
+                value_container.set_raw_value(value)
             else:
-                val.set_value(value)
-            val.index = index
-            val.property_object = self
-            db.session.add(val)
-            return val
+                value_container.set_value(value)
+            value_container.index = index
+            value_container.property_object = self
+            db.session.add(value_container)
+            return value_container
 
         def delete_value(val_object):
             db.session.delete(val_object)
 
         if not self.type.isVector:
-            if len(value_object) == 0:
+            if len(value_container) == 0:
                 if value is not None:
-                    value_object.append(make_value(value))
+                    value_container.append(make_value(value))
             else:
                 if value is None or value == '':
-                    delete_value(value_object[0])
+                    delete_value(value_container[0])
                 else:
-                    value_object[0].set_value(value)
+                    value_container[0].set_value(value)
         else:
             if value:
-                m = min(len(value_object), len(value))
+                m = min(len(value_container), len(value))
                 for i in xrange(m):
-                    value_object[i].set_value(value[i])
+                    value_container[i].set_value(value[i])
 
-                if len(value_object) < len(value):
+                if len(value_container) < len(value):
                     for i in xrange(m, len(value)):
-                        value_object.append(make_value(value[i], i))
+                        value_container.append(make_value(value[i], i))
 
-                elif len(value_object) > len(value):
-                    for i in xrange(len(value_object) - 1, m - 1, -1):
-                        delete_value(value_object[i])
+                elif len(value_container) > len(value):
+                    for i in xrange(len(value_container) - 1, m - 1, -1):
+                        delete_value(value_container[i])
             else:
-                for val in value_object:
+                for val in value_container:
                     delete_value(val)
 
     def __json__(self):
@@ -325,7 +338,7 @@ class ActionProperty__ValueType(db.Model):
     __abstract__ = True
 
     @classmethod
-    def format_value(cls, prop, json_data):
+    def objectify(cls, prop, json_data):
         return json_data
 
     @classmethod
@@ -368,7 +381,7 @@ class ActionProperty_Date(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Date')
 
     @classmethod
-    def format_value(cls, prop, json_data):
+    def objectify(cls, prop, json_data):
         from nemesis.lib.utils import safe_date  # fixme: reorganize utils module
         return safe_date(json_data)
 
@@ -457,12 +470,12 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
             self.value_model = val
 
     @classmethod
-    def format_value(cls, property, json_data):
-        from blueprints.event.lib.utils import create_or_update_diagnosis, delete_diagnosis
+    def objectify(cls, prop, json_data):
+        from nemesis.lib.diagnosis import delete_diagnosis, create_or_update_diagnosis
         from nemesis.lib.utils import safe_traverse
 
-        action = property.action
-        if property.type.isVector:
+        action = prop.action
+        if prop.type.isVector:
             diag_list = []
             for diag_data in json_data:
                 d = create_or_update_diagnosis(action.event, diag_data, action)
@@ -474,7 +487,7 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
                     diag_list.append(d)
             return diag_list
         else:
-            current_value = property.value_raw
+            current_value = prop.value_raw
             if json_data is not None:
                 d = create_or_update_diagnosis(action.event, json_data, action)
                 if current_value is not None and current_value != d.id:
@@ -488,7 +501,8 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
 
     @classmethod
     def mark_as_deleted(cls, prop):
-        from blueprints.event.lib.utils import delete_diagnosis
+        from nemesis.lib.diagnosis import delete_diagnosis
+
         value = prop.value
         if prop.type.isVector:
             if value:
@@ -705,7 +719,7 @@ class ActionProperty_Time(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Time')
 
     @classmethod
-    def format_value(cls, prop, json_data):
+    def objectify(cls, prop, json_data):
         from nemesis.lib.utils import safe_time  # fixme: reorganize utils module
         return safe_time(json_data)
 
