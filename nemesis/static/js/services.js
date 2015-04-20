@@ -3,12 +3,13 @@
 angular.module('WebMis20.services', []).
     service('WMAppointment', ['$http', function ($http) {
         return {
-            make: function (ticket, client_id, appointment_type_id, associated_event_id) {
+            make: function (ticket, client_id, appointment_type_id, associated_event_id, note) {
                 return $http.post(url_schedule_api_appointment, {
                     client_id: client_id,
                     ticket_id: ticket.id,
                     appointment_type_id: appointment_type_id,
-                    event_id: associated_event_id
+                    event_id: associated_event_id,
+                    note: note
                 });
             },
             cancel: function (ticket, client_id) {

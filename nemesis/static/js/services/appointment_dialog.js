@@ -83,14 +83,15 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                                   </ul>\
                               </dd>\
                               <dt ng-show="client_name">Пациент:</dt><dd ng-show="client_name">[[ client_name ]]</dd>\
+                              <dt>Комментарий:</dt><dd><textarea rows="3" class="form-control" ng-model="model.note"></textarea></dd>\
                             </dl>\
                         </div>\
                     </div>\
                     <div class="modal-footer">\
+                        <button type="button" class="btn btn-default pull-left" ng-click="prev_page()" ng-show="chose_client_mode && page === 1">Назад</button>\
+                        <button type="button" class="btn btn-default" ng-click="cancel()">Не записывать</button>\
                         <button type="button" class="btn btn-primary" ng-click="next_page()" ng-show="chose_client_mode && page === 0" ng-disabled="!model.client.client_id">Далее</button>\
-                        <button type="button" class="btn btn-default" ng-click="prev_page()" ng-show="chose_client_mode && page === 1">Назад</button>\
                         <button type="button" class="btn btn-success" ng-click="accept()" ng-show="page === 1">Записать</button>\
-                        <button type="button" class="btn btn-danger" ng-click="cancel()">Не записывать</button>\
                     </div>',
                 controller: function ($scope, $http, $modalInstance) {
                     $scope.rbAppointmentType = new RefBookService.get('rbAppointmentType');
@@ -154,7 +155,8 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         WMAppointment.make(ticket,
                             $scope.model.client.client_id,
                             $scope.model.appointment_type.id,
-                            $scope.model.associated_event_id
+                            $scope.model.associated_event_id,
+                            $scope.model.note
                         ).success(function (data) {
                             $modalInstance.close(data);
                         }).error(function () {
