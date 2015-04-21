@@ -183,7 +183,7 @@ angular.module('WebMis20.directives')
         }
     }])
     .service('PrintingDialog', ['$modal', function ($modal) {
-        var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender) {
+        var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender, meta_values, fast_print) {
             $scope.aux = aux;
             $scope.page = 0;
             $scope.ps = ps;
@@ -254,7 +254,9 @@ angular.module('WebMis20.directives')
                 if (template.meta) {
                     var desc = $scope.mega_model[template.id] = {};
                     template.meta.map(function (variable) {
-                        desc[variable.name] = variable.default;
+                        desc[variable.name] = variable.default || (
+                            meta_values !== undefined ? meta_values[variable.name] : undefined
+                        );
                     })
                 }
             }
@@ -292,11 +294,19 @@ angular.module('WebMis20.directives')
             $scope.template_has_meta = function (template) {
                 return Boolean(template.meta.length);
             };
+
             $scope.select_all_templates();
+            if (fast_print) {
+                if ($scope.instant_print()) {
+                    $scope.print_separated();
+                } else {
+                    $scope.page = 1;
+                }
+            }
         };
 
         return {
-            open: function (ps, context_extender) {
+            open: function (ps, context_extender, meta_values, fast_print) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
                     controller: ModalPrintDialogController,
@@ -307,6 +317,12 @@ angular.module('WebMis20.directives')
                         },
                         context_extender: function () {
                             return context_extender
+                        },
+                        meta_values: function () {
+                            return meta_values;
+                        },
+                        fast_print: function () {
+                            return fast_print;
                         }
                     }
                 });
@@ -315,57 +331,59 @@ angular.module('WebMis20.directives')
     }])
     .run(['$templateCache', function ($templateCache) {
         $templateCache.put('/WebMis20/modal-print-dialog.html',
-            '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-                <button type="button" class="close" ng-click="cancel()">&times;</button>\
-            <h4 class="modal-title" id="myModalLabel">Печать документов</h4>\
-        </div>\
-        <table ng-show="page == 0" class="table table-condensed modal-body">\
-            <thead>\
-                <tr>\
-                    <th>\
-                        <input type="checkbox" ng-checked="ps.templates.length == selected_templates.length" ng-click="select_all_templates()">\
-                        </th>\
-                        <th>Наименование</th>\
-                    </tr>\
-                </thead>\
-                <tbody>\
-                    <tr ng-repeat="template in ps.templates">\
-                        <td>\
-                            <input type="checkbox" ng-checked="selected_templates.has(template)" id="template-id-[[template.id]]" ng-click="toggle_select_template(template)">\
-                            </td>\
-                            <td>\
-                                <label for="template-id-[[template.id]]" ng-bind="template.name"></label>\
-                            </td>\
-                        </tr>\
-                    </tbody>\
-                </table>\
-                <div ng-show="page == 1">\
-                    <form name="printing_meta">\
-                        <div class="modal-body" ng-repeat="template in selected_templates | filter:template_has_meta">\
-                            <p ng-bind="template.name"></p>\
-                            <div class="row" ng-repeat="var_meta in template.meta">\
-                                <div class="col-md-3">\
-                                    <label ng-bind="var_meta.title"></label>\
-                                </div>\
-                                <div class="col-md-9" ui-print-variable meta="var_meta" model="mega_model[template.id][var_meta.name]">\
-                                </div>\
-                            </div>\
-                        </div>\
-                    </form>\
+'<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+    <button type="button" class="close" ng-click="cancel()">&times;</button>\
+    <h4 class="modal-title" id="myModalLabel">Печать документов</h4>\
+</div>\
+<div class="modal-body">\
+    <table ng-show="page == 0" class="table table-condensed modal-body">\
+        <thead>\
+            <tr>\
+                <th>\
+                    <input type="checkbox" ng-checked="ps.templates.length == selected_templates.length" ng-click="select_all_templates()">\
+                </th>\
+                <th>Наименование</th>\
+            </tr>\
+        </thead>\
+        <tbody>\
+            <tr ng-repeat="template in ps.templates">\
+                <td>\
+                <input type="checkbox" ng-checked="selected_templates.has(template)" id="template-id-[[template.id]]" ng-click="toggle_select_template(template)">\
+                </td>\
+                <td>\
+                    <label for="template-id-[[template.id]]" ng-bind="template.name"></label>\
+                </td>\
+            </tr>\
+        </tbody>\
+    </table>\
+    <div ng-show="page == 1">\
+        <form name="printing_meta">\
+            <div ng-repeat="template in selected_templates | filter:template_has_meta">\
+                <h4 class="marginal" ng-bind="template.name"></h4>\
+                <div class="row marginal" ng-repeat="var_meta in template.meta">\
+                    <div class="col-md-3">\
+                        <label ng-bind="var_meta.title"></label>\
+                    </div>\
+                    <div class="col-md-9" ui-print-variable meta="var_meta" model="mega_model[template.id][var_meta.name]">\
+                    </div>\
                 </div>\
-                <div class="modal-footer">\
-                    <button type="button" class="btn btn-success" ng-click="btn_next()" ng-if="page == 0 && !instant_print()">\
-                    Далее &gt;&gt;</button>\
-                    <button type="button" class="btn btn-default" ng-click="btn_prev()" ng-if="page == 1 && !instant_print()">\
-                    &lt;&lt; Назад</button>\
-                    <button type="button" class="btn btn-primary" ng-click="print_separated()" ng-if="page == 1 || instant_print()"\
-                    ng-disabled="printing_meta.$invalid">Печать</button>\
-                    <button type="button" class="btn btn-primary" ng-click="print_compact()" ng-if="page == 1 || instant_print()"\
-                    ng-disabled="printing_meta.$invalid">Печать компактно</button>\
-                    <button type="button" class="btn btn-default" ng-click="cancel()">Отмена</button>\
-                </div>')
+            </div>\
+        </form>\
+    </div>\
+</div>\
+<div class="modal-footer">\
+    <button type="button" class="btn btn-success" ng-click="btn_next()" ng-if="page == 0 && !instant_print()">\
+        Далее &gt;&gt;</button>\
+    <button type="button" class="btn btn-default" ng-click="btn_prev()" ng-if="page == 1 && !instant_print()">\
+        &lt;&lt; Назад</button>\
+    <button type="button" class="btn btn-primary" ng-click="print_separated()" ng-if="page == 1 || instant_print()"\
+        ng-disabled="printing_meta.$invalid">Печать</button>\
+    <button type="button" class="btn btn-primary" ng-click="print_compact()" ng-if="page == 1 || instant_print()"\
+        ng-disabled="printing_meta.$invalid">Печать компактно</button>\
+    <button type="button" class="btn btn-default" ng-click="cancel()">Отмена</button>\
+</div>')
     }])
-    .directive('uiPrintButton', ['PrintingDialog', 'MessageBox', function (PrintingDialog, MessageBox) {
+    .directive('uiPrintButton', ['PrintingDialog', function (PrintingDialog) {
         return {
             restrict: 'E',
             replace: true,
@@ -387,7 +405,7 @@ angular.module('WebMis20.directives')
                 scope.disabled = function () {
                     return !scope.$ps.is_available();
                 };
-                scope.print_templates = function(){
+                scope.print_templates = function() {
                     if (scope.beforePrint) {
                         scope.beforePrint().then(function () {
                             // чтобы диалог печати не вызывался до обновления страницы после сохранения действия
@@ -402,14 +420,9 @@ angular.module('WebMis20.directives')
                 scope.open_print_window = function () {
                     if (!scope.$ps.is_loaded()) {
                         scope.$ps.set_context(scope.lazyLoadContext)
-                        .then(function () {
-                            PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
-                        }, function () {
-                            MessageBox.error(
-                                'Печать недоступна',
-                                'Сервис печати недоступен. Свяжитесь с администратором.'
-                            );
-                        });
+                            .then(function () {
+                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                            });
                     } else {
                         PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
                     }
