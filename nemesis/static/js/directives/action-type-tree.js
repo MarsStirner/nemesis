@@ -151,8 +151,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         return deferred.promise;
     }
 }])
-.service('ActionTypeTreeModal', ['$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync',
-        function ($modal, $http, ActionTypeTreeService, WMWindowSync) {
+.service('ActionTypeTreeModal', ['$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices',
+        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -223,13 +223,17 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     $modalInstance.dismiss('close');
                 };
                 $scope.add_prepared_action = function (node) {
-                    $scope.prepared2create.push({
+                    var newAction = {
                         type_id: node.id,
                         type_name: node.name,
                         assigned: node.assignable.map(function (prop) {return prop[0]}),
                         assignable: node.assignable,
                         planned_end_date: new Date()
-                    })
+                    };
+                    $scope.prepared2create.push(newAction);
+                    WMEventServices.get_action_ped(node.id).then(function (ped) {
+                        newAction.planned_end_date = ped;
+                    });
                 };
                 $scope.create_action = function (node_id) {
                     var url = url_for_schedule_html_action + '?action_type_id=' + node_id + '&event_id=' + $scope.event_id;
