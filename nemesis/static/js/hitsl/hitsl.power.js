@@ -5,7 +5,11 @@
 // AUX
 
 var aux = {
-    getQueryParams: function (qs) {
+    getQueryParams: function () {
+        var qs = '{0}&{1}'.format(
+            document.location.search,
+            document.location.hash.startswith('#?') ? document.location.hash.slice(2) : ''
+        );
         qs = qs.split("+").join(" ");
 
         var params = {}, tokens,
