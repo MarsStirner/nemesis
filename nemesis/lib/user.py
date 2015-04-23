@@ -436,7 +436,7 @@ class UserUtils(object):
         readRight = u'client%sRead' % modeRights[0]
         return event and (
             current_user.has_right('adm') or (
-                current_user.has_right(readRight) and (not event.is_diagnostic)
+                current_user.has_right(readRight)
             )
         )
 
@@ -463,7 +463,7 @@ class UserUtils(object):
         readRight = u'client%sRead' % modeRights[2]
         return event and (
             current_user.has_right('adm') or (
-                current_user.has_right(readRight) and (not event.is_diagnostic)
+                current_user.has_right(readRight)
             )
         )
 
