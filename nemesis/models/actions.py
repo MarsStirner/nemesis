@@ -477,6 +477,7 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
         action = prop.action
         if prop.type.isVector:
             diag_list = []
+            json_data = json_data or []
             for diag_data in json_data:
                 d = create_or_update_diagnosis(action.event, diag_data, action)
                 deleted = safe_traverse(diag_data, 'deleted')
