@@ -413,6 +413,8 @@ class UserUtils(object):
         return action and (
             # админу можно всё
             current_user.has_right('adm') or (
+                # действие является шаблоном действия
+                not action.event) or (
                 # действие не закрыто
                 action.status < 2 and
                 # остальным - только если обращение не закрыто
