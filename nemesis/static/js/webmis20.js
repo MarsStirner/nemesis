@@ -412,8 +412,8 @@ var WebMis20 = angular.module('WebMis20', [
 
     return Settings;
 }])
-.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser', 'MessageBox',
-        function ($window, $http, $rootScope, $timeout, CurrentUser, MessageBox) {
+.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser',
+        function ($window, $http, $rootScope, $timeout, CurrentUser) {
     var PrintingService = function (context_type) {
         if (arguments.length >= 3) {
             this.target = arguments[2]
@@ -440,10 +440,6 @@ var WebMis20 = angular.module('WebMis20', [
                 t.not_available = true;
             }
             t.loaded = false;
-            return MessageBox.error(
-                'Печать недоступна',
-                'Сервис печати недоступен. Свяжитесь с администратором.'
-            );
         });
     };
     PrintingService.prototype.is_available = function () {

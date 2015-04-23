@@ -383,7 +383,7 @@ angular.module('WebMis20.directives')
     <button type="button" class="btn btn-default" ng-click="cancel()">Отмена</button>\
 </div>')
     }])
-    .directive('uiPrintButton', ['PrintingDialog', function (PrintingDialog) {
+    .directive('uiPrintButton', ['PrintingDialog', 'MessageBox', function (PrintingDialog, MessageBox) {
         return {
             restrict: 'E',
             replace: true,
@@ -422,6 +422,11 @@ angular.module('WebMis20.directives')
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
                                 PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                            }, function () {
+                                MessageBox.error(
+                                    'Печать недоступна',
+                                    'Сервис печати недоступен. Свяжитесь с администратором.'
+                                );
                             });
                     } else {
                         PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));

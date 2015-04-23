@@ -94,7 +94,7 @@ angular.module('WebMis20.ActionLayout', ['WebMis20.validators', 'WebMis20.direct
                                     inner_template = '<wysiwyg ng-model="{0}.value" />';
                                     break;
                                 case 'Date':
-                                    inner_template = '<input type="text" class="form-control" datepicker-popup="dd-MM-yyyy" ng-model="{0}.value" />';
+                                    inner_template = '<wm-date ng-model="{0}.value"></wm-date>';
                                     break;
                                 case 'Integer':
                                     inner_template = '<input class="form-control" type="number" ng-model="{0}.value" valid-number valid-number-negative>';
