@@ -149,7 +149,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
                 prop.value = src_props[prop_type.id].value
             elif prop_type.id in full_props:
                 prop_desc = full_props[prop_type.id]
-                set_ap_value(prop, prop_desc['value'])
+                prop.value = prop_desc['value']
                 prop.isAssigned = prop_desc['is_assigned']
             elif prop.type.defaultValue:
                 prop.set_value(prop.type.defaultValue, True)
@@ -194,69 +194,35 @@ def update_action(action, **kwargs):
       быть отмечены назначаемыми для исследований
       - properties - список словарей для редактирования данных свойств в целом
 
+    :type action: Action
     :param action: Action
-    :param kwargs:
+    :param properties_assigned: список id ActionPropertyType, которые должны быть отмечены назначаемыми для исследований
+    :param properties: список словарей для редактирования данных свойств в целом
     :return: Action
     """
     # action attributes
     for attr in ('amount', 'account', 'status', 'person_id', 'setPerson_id', 'begDate', 'endDate', 'directionDate',
                  'isUrgent', 'plannedEndDate', 'coordPerson_id', 'coordDate', 'note', 'uet', 'payStatus',
                  'contract_id', 'office'):
-        edited = attr in kwargs
-        if edited:
-            edited = kwargs.get(attr)
-            setattr(action, attr, edited)
+        if attr in kwargs:
+            setattr(action, attr, kwargs.get(attr))
 
     # properties (only assigned data)
-    assigned = 'properties_assigned' in kwargs
-    if assigned:
-        assigned = kwargs.get('properties_assigned')
-        for prop in action.properties:
-            prop.isAssigned = prop.type_id in assigned
+    assigned = kwargs.get('properties_assigned', [])
+    for type_id in assigned:
+        action.propsByTypeId[type_id].isAssigned = True
 
     # properties (full data)
-    properties = 'properties' in kwargs
-    if properties:
-        properties = kwargs.get('properties')
-        for prop_desc in properties:
-            prop = ActionProperty.query.get(prop_desc['id'])
-            set_ap_value(prop, prop_desc['value'])
-            prop.isAssigned = prop_desc['is_assigned']
-            db.session.add(prop)
+    for prop_desc in kwargs.get('properties', []):
+        type_id = prop_desc['type']['id']
+        prop = action.propsByTypeId.get(type_id)
+        if not prop:
+            logger.warn(u'Попытка установить свойство, когорого нет у действия (Action.id=%s, type_id=%s)' % (action.id, type_id))
+            continue
+        prop.value = prop_desc['value']
+        prop.isAssigned = prop_desc['is_assigned']
 
     return action
-
-
-def delete_action(action):
-    if not action:
-        return False, 404, u'Действие с id = %s не найдено' % action.id
-    if not UserUtils.can_delete_action(action):
-        return False, 403, u'У пользователя нет прав на удаление действия с id = %s' % action.id
-    action.deleted = 1
-    for prop in action.properties:
-        prop.deleted = 1
-        mark_ap_value_as_deleted(prop)
-    return True, 200, ''
-
-
-def set_ap_value(prop, value):
-    """
-
-    :param prop: ActionProperty
-    :param value: dict|string
-    :return:
-    """
-    value_class = prop.get_value_class()
-    value = value_class.format_value(prop, value)
-    if isinstance(value, dict):
-        prop.set_value(value, True)
-    else:
-        prop.set_value(value)
-
-
-def mark_ap_value_as_deleted(prop):
-    value_class = prop.get_value_class()
-    value_class.mark_as_deleted(prop)
 
 
 def create_JT(action, orgstructure_id):

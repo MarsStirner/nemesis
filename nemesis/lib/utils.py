@@ -577,3 +577,10 @@ def _group_concat_mysql(element, cmplr, **kw):
         cmplr.process(element.clauses.clauses[0]),
         separator,
     )
+
+
+def transfer_fields(src, dst, names):
+    for name in names:
+        setattr(dst, name, getattr(src, name))
+
+

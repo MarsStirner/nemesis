@@ -1130,10 +1130,10 @@ class EventVisualizer(object):
 
         result = []
         for event in event_list:
-            lc = self.make_event_local_contract(event)
-            if not lc['id']:
+            if not event.localContract_id:
                 continue
-
+            lc = self.make_event_local_contract(event)
+            lc['shared_in_events'].append([event.id, event.externalId])
             result.append({
                 'local_contract': lc,
                 'event_info': make_event_small_info(event)
@@ -1320,31 +1320,29 @@ class ActionVisualizer(object):
         @type action: Action
         """
         result = {
-            'action': {
-                'id': action.id,
-                'action_type': action.actionType,
-                'event_id': action.event_id,
-                'client': action.event.client,
-                'direction_date': action.directionDate,
-                'beg_date': action.begDate,
-                'end_date': action.endDate,
-                'planned_end_date': action.plannedEndDate,
-                'status': ActionStatus(action.status),
-                'set_person': action.setPerson,
-                'person': action.person,
-                'note': action.note,
-                'office': action.office,
-                'amount': action.amount,
-                'uet': action.uet,
-                'pay_status': action.payStatus,
-                'account': action.account,
-                'is_urgent': action.isUrgent,
-                'coord_date': action.coordDate,
-                'properties': [
-                    self.make_property(prop)
-                    for prop in action.properties
-                ]
-            },
+            'id': action.id,
+            'action_type': action.actionType,
+            'event_id': action.event_id,
+            'client': action.event.client,
+            'direction_date': action.directionDate,
+            'beg_date': action.begDate,
+            'end_date': action.endDate,
+            'planned_end_date': action.plannedEndDate,
+            'status': ActionStatus(action.status),
+            'set_person': action.setPerson,
+            'person': action.person,
+            'note': action.note,
+            'office': action.office,
+            'amount': action.amount,
+            'uet': action.uet,
+            'pay_status': action.payStatus,
+            'account': action.account,
+            'is_urgent': action.isUrgent,
+            'coord_date': action.coordDate,
+            'properties': [
+                self.make_property(prop)
+                for prop in action.properties
+            ],
             #FIXME: Мелочь, конечно, но использование двойного отрицания не особо красиво. Зачем здесь делать "not", чтобы потом в интефейсе проверять "!ro".
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
             'layout': self.make_action_layout(action),
