@@ -92,6 +92,8 @@ class Action(db.Model):
             new_p = ActionProperty()
             new_p.action = self
             new_p.type_id = pt_id
+            new_p.type = ActionPropertyType.query.get(pt_id)
+            db.session.add(new_p)
         else:
             new_p = self.propsByTypeId[pt_id]
         new_p.set_value(value, raw)

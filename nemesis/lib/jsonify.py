@@ -1323,7 +1323,7 @@ class ActionVisualizer(object):
             'id': action.id,
             'action_type': action.actionType,
             'event_id': action.event_id,
-            'client': action.event.client,
+            'client': safe_traverse_attrs(action, 'event', 'client', default=None),
             'direction_date': action.directionDate,
             'beg_date': action.begDate,
             'end_date': action.endDate,
