@@ -75,7 +75,7 @@ def check_valid_login():
 
         if not login_valid:
             # return redirect(url_for('login', next=request.url))
-            return redirect(app.config['COLDSTAR_URL'] + 'cas/login?back=%s' % urllib2.quote(request.url))
+            return redirect(app.config['COLDSTAR_URL'] + 'cas/login?back=%s' % urllib2.quote(request.url.encode('utf-8')))
         if not getattr(current_user, 'current_role', None) and request.endpoint not in semi_public_endpoints:
             return redirect(url_for('select_role', next=request.url))
 
@@ -133,8 +133,8 @@ def settings_html():
 
 
 @app.route('/login/', methods=['GET', 'POST'])
-@public_endpoint
 def login():
+    abort(404)
     # login form that uses Flask-WTF
     form = LoginForm()
     errors = list()
