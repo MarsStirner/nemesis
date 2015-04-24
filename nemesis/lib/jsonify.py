@@ -69,6 +69,21 @@ class ScheduleVisualizer(object):
             'record': self.make_client_ticket_record(client_ticket) if client_ticket else None
         }
 
+    def make_ticket_for_queue(self, ticket):
+        client_ticket = ticket.client_ticket
+        client_id = client_ticket.client_id if client_ticket else None
+        cviz = ClientVisualizer()
+        return {
+            'id': ticket.id,
+            'begDateTime': ticket.begDateTime,
+            'date': ticket.schedule.date,
+            'status': 'busy' if client_id else 'free',
+            'client': cviz.make_short_client_info(ticket.client) if client_id else None,
+            'attendance_type': ticket.attendanceType,
+            'office': ticket.schedule.office.code if ticket.schedule.office else None,
+            'record': self.make_client_ticket_record(client_ticket) if client_ticket else None
+        }
+
     def make_day(self, schedule):
         return {
             'id': schedule.id,
@@ -403,6 +418,37 @@ class ScheduleVisualizer(object):
         from_schedule_info['schedules'] = copy_schedule
         from_schedule_info['quotas'] = copy_quotas
         return from_schedule_info
+
+    def make_patient_queue_by_dates(self, person_id, start_date, end_date):
+        queued_tickets = ScheduleClientTicket.query.join(
+            ScheduleTicket,
+            Schedule
+        ).filter(
+            Schedule.person_id == person_id,
+            start_date <= Schedule.date, Schedule.date < end_date,
+            Schedule.deleted == 0,
+            ScheduleClientTicket.client_id != None,
+            ScheduleClientTicket.deleted == 0
+        ).order_by(
+            Schedule.date,
+            Schedule.begTime,
+            ScheduleTicket.begTime
+        ).options(
+            db.contains_eager('ticket').contains_eager('schedule')
+        )
+        queue_by_date = defaultdict(dict)
+        for client_ticket in queued_tickets:
+            ticket_info = self.make_ticket_for_queue(client_ticket.ticket)
+            if client_ticket.ticket.attendanceType.code == 'planned':
+                queue_by_date[ticket_info['date']].setdefault('planned', []).append(ticket_info)
+            elif client_ticket.ticket.attendanceType.code == 'CITO':
+                queue_by_date[ticket_info['date']].setdefault('CITO', []).append(ticket_info)
+            elif client_ticket.ticket.attendanceType.code == 'extra':
+                queue_by_date[ticket_info['date']].setdefault('extra', []).append(ticket_info)
+        qbd = {}
+        for d, tickets in queue_by_date.iteritems():
+            qbd[d] = tickets.get('CITO', []) + tickets.get('planned', []) + tickets.get('extra', [])
+        return qbd
 
 
 class ClientVisualizer(object):

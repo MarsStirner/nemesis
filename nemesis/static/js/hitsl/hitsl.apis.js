@@ -85,7 +85,7 @@ angular.module('hitsl.core')
                         <span aria-hidden="true">&times;</span>\
                         <span class="sr-only">Close</span>\
                     </button>\
-                    {1}\
+                    <span style="margin-right: 10px">{1}</span>\
                 </div>';
             scope.$dismiss = function (id) {
                 NotificationService.dismiss(id);

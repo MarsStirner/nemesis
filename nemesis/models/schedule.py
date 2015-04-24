@@ -179,7 +179,7 @@ class ScheduleClientTicket(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
     ticket_id = db.Column(db.Integer, db.ForeignKey('ScheduleTicket.id'), nullable=False)
     isUrgent = db.Column(db.Boolean)
-    note = db.Column(db.Unicode(256), default=u'')
+    note = db.Column(db.UnicodeText, default=u'')
     appointmentType_id = db.Column(db.Integer, db.ForeignKey('rbAppointmentType.id'))
     infisFrom = db.Column(db.Unicode(20))
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)

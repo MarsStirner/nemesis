@@ -55,7 +55,7 @@ angular.module('WebMis20.directives').
             },
             template: '\
 <form class="form-horizontal marginal" role="form">\
-    <div class="input-group">\
+    <div class="input-group input-group-lg">\
         <input id="search" class="form-control" type="text" ng-model="query" autocomplete="off"\
                ng-change="clear_results()"\
                placeholder="Поиск пациента по коду, ФИО, дате рождения, полису или документу, удостоверяющему личность">\
