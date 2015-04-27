@@ -156,6 +156,9 @@ class AnonymousUser(AnonymousUserMixin):
     def is_admin(self):
         return False
 
+    def get_main_user(self):
+        return self
+
     def export_js(self):
         return {
             'id': None,

@@ -430,7 +430,8 @@ def page_not_found(e):
     if request_wants_json():
         return jsonify(unicode(e), result_code=404, result_name=u'Page not found')
     flash(u'Указанный вами адрес не найден')
-    return render_template('404.html'), 404
+    template_name = '404.html' if current_user.is_authenticated() else '404_v2.html'
+    return render_template(template_name), 404
 
 
 #########################################
