@@ -12,9 +12,11 @@ angular.module('WebMis20.directives.goodies', [])
     Timeout.prototype.kill = function () {
         if (this.hideki) {
             $timeout.cancel(this.hideki);
+            this.hideki = null;
         }
         if (this.interval_promise) {
             $interval.cancel(this.interval_promise);
+            this.interval_promise = null;
         }
     };
     Timeout.prototype.start = function (timeout) {
