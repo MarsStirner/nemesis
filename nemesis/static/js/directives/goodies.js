@@ -137,7 +137,7 @@ angular.module('WebMis20.directives.goodies', [])
             var element_control = $('<div class="input-group"></div>');
             element_control.append('<span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>');
             element_control.append(element_input);
-            element_control.append('<span class="input-group-btn"><button class="btn btn-default" ng-click="$query=\'\'"><i class="glyphicon glyphicon-remove"></i></button></span>');
+            element_control.append('<span class="input-group-btn"><button class="btn btn-default" ng-click="clear()"><i class="glyphicon glyphicon-remove"></i></button></span>');
             var element_popup = $('<div class="wm-popup well well-sm"></div>');
             element_popup.append(element.html());
             var element_wrapper = $('<div style="display: inline"></div>');
@@ -152,6 +152,12 @@ angular.module('WebMis20.directives.goodies', [])
             scope.$watch('$query', function (n, o) {
                 if (angular.equals(n, o)) return n;
                 changeTimeoutObject.start()
+            });
+            scope.ngModel = ngModel;
+            scope.$watch('ngModel.$modelValue', function (n, o) {
+                if (n === null) {
+                    scope.$query = '';
+                }
             });
             function hide_popup () {
                 popupTimeoutObject.kill();
@@ -177,6 +183,10 @@ angular.module('WebMis20.directives.goodies', [])
                 }
             };
             scope.$query = '';
+            scope.clear = function () {
+                scope.$query = '';
+                scope.$ctrl.$select(null);
+            };
 
             $compile(element_wrapper)(scope);
         }

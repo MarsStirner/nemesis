@@ -837,7 +837,8 @@ angular.module('WebMis20.directives')
         return {
             restrict: 'E',
             scope: {
-                onSelect: '&?'
+                onSelect: '&?',
+                nodesSelectable: '@'
             },
             template:
                 '<div class="ui-treeview">\
@@ -847,11 +848,17 @@ angular.module('WebMis20.directives')
                                 <div class="tree-label leaf">&nbsp;</div>\
                                 [[ node.name ]]\
                             </a>\
-                            <a ng-if="node.is_node" ng-click="sas.toggle(node.id)" class="node">\
+                            <a ng-if="node.is_node && !nodesSelectable" ng-click="sas.toggle(node.id)" class="node">\
                                 <div class="tree-label"\
                                      ng-class="{\'collapsed\': !sas.selected(node.id),\
                                                 \'expanded\': sas.selected(node.id)}">&nbsp;</div>\
                                 [[ node.name ]]\
+                            </a>\
+                            <a ng-if="node.is_node && nodesSelectable" class="leaf">\
+                                <div class="tree-label" ng-click="sas.toggle(node.id)"\
+                                     ng-class="{\'collapsed\': !sas.selected(node.id),\
+                                                \'expanded\': sas.selected(node.id)}">&nbsp;</div>\
+                                <span ng-click="select(node)" ng-bind="node.name"><span>\
                             </a>\
                             <ul ng-if="node.is_node && sas.selected(node.id)">\
                                 <li sf-treecurse></li>\

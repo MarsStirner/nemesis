@@ -591,25 +591,31 @@ def int_get_atl_dict_all():
 
 def get_patient_location(event, dt=None):
     if event.is_stationary:
-        query = _get_moving_query(event, dt, False)
-        query = query.join(
-            ActionProperty
-        ).join(
-            ActionPropertyType, db.and_(ActionProperty.type_id == ActionPropertyType.id,
-                                        ActionPropertyType.actionType_id == ActionType.id)
-        ).join(
-            ActionProperty_OrgStructure, ActionProperty.id == ActionProperty_OrgStructure.id
-        ).join(
-            OrgStructure
-        ).filter(
-            ActionPropertyType.code == STATIONARY_ORG_STRUCT_STAY_CODE
-        ).with_entities(
+        query = _get_stationary_location_query(event, dt)
+        query = query.with_entities(
             OrgStructure
         )
         current_os = query.first()
     else:
         current_os = event.orgStructure
     return current_os
+
+
+def _get_stationary_location_query(event, dt=None):
+    query = _get_moving_query(event, dt, False)
+    query = query.join(
+        ActionProperty
+    ).join(
+        ActionPropertyType, db.and_(ActionProperty.type_id == ActionPropertyType.id,
+                                    ActionPropertyType.actionType_id == ActionType.id)
+    ).join(
+        ActionProperty_OrgStructure, ActionProperty.id == ActionProperty_OrgStructure.id
+    ).join(
+        OrgStructure
+    ).filter(
+        ActionPropertyType.code == STATIONARY_ORG_STRUCT_STAY_CODE
+    )
+    return query
 
 
 def get_patient_hospital_bed(event, dt=None):
