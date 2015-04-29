@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*
+import datetime
+
 from sqlalchemy import Table
 
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
+from nemesis.models.utils import safe_current_user_id
 
-# from application.models.actions import Action
 
 organisation_mkb_assoc = Table(
     'Organisation_MKB', db.metadata,
@@ -43,6 +45,7 @@ class rbDocumentTypeGroup(db.Model):
 
 class rbFinance(db.Model):
     __tablename__ = 'rbFinance'
+    _table_description = u'Источники финансирования'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(8), nullable=False)
@@ -91,6 +94,14 @@ class rbTreatment(db.Model):
     treatmentType_id = db.Column(db.ForeignKey('rbTreatmentType.id'))
 
     treatmentType = db.relationship('rbTreatmentType')
+
+    @property
+    def treatment_type(self):
+        return self.treatmentType
+
+    @treatment_type.setter
+    def treatment_type(self, value):
+        self.treatmentType_id = value
 
     def __json__(self):
         return {
@@ -148,10 +159,10 @@ class Organisation(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     fullName = db.Column(db.String(255), nullable=False)
     shortName = db.Column(db.String(255), nullable=False)
@@ -190,6 +201,39 @@ class Organisation(db.Model):
     OKPF = db.relationship('rbOKPF')
     OKFS = db.relationship('rbOKFS')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
+
+    @property
+    def is_insurer(self):
+        return bool(self.isInsurer)
+
+    @is_insurer.setter
+    def is_insurer(self, value):
+        self.isInsurer = value
+
+    @property
+    def is_hospital(self):
+        return bool(self.isHospital)
+
+    @is_hospital.setter
+    def is_hospital(self, value):
+        self.isHospital = value
+
+    @property
+    def kladr_locality(self):
+        from nemesis.lib.data import get_kladr_city
+        loc = {}
+        if self.area:
+            city_info = get_kladr_city(self.area)
+            return {
+                'code': self.area,
+                'name': city_info.get('fullname', u'-код региона не найден в кладр-')
+            }
+        else:
+            return None
+
+    @kladr_locality.setter
+    def kladr_locality(self, value):
+        self.area = value
 
     def __unicode__(self):
         return self.fullName

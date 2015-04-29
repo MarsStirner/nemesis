@@ -176,7 +176,7 @@ angular.module('WebMis20.directives').
     }]).
     directive('wmKladrLocality', ['$http', function($http) {
         return {
-            require: ['^wmKladrAddress', 'ngModel'],
+            require: ['^?wmKladrAddress', 'ngModel'],
             restrict: 'E',
             replace: true,
             scope: {
@@ -195,7 +195,9 @@ angular.module('WebMis20.directives').
             link: function(scope, elm, attrs, ctrls) {
                 var kladrCtrl = ctrls[0],
                     modelCtrl = ctrls[1];
-                kladrCtrl.registerWidget('locality', scope);
+                if (kladrCtrl) {
+                    kladrCtrl.registerWidget('locality', scope);
+                }
 
                 scope.getText = function() {
                     return modelCtrl.$viewValue;
