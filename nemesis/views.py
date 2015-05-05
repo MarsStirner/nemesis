@@ -31,7 +31,7 @@ login_manager.login_view = 'login'
 login_manager.anonymous_user = AnonymousUser
 
 
-semi_public_endpoints = ('config_js', 'current_user_js', 'logout')
+semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout')
 
 
 @app.before_request
@@ -187,7 +187,6 @@ def redirect_after_user_change():
 
 
 @app.route('/select_role/', methods=['GET', 'POST'])
-@public_endpoint
 def select_role():
     form = RoleForm()
     errors = list()
@@ -281,7 +280,6 @@ def api_roles_int(user_login):
 
 @app.route('/api/roles/')
 @app.route('/api/roles/<user_login>')
-@public_endpoint
 @api_method
 def api_roles(user_login):
     return api_roles_int(user_login)
