@@ -391,6 +391,12 @@ class ClientAddress(db.Model):
     def is_russian(self):
         return bool(self.KLADRCode)
 
+    def is_from_kladr(self, full=True):
+        if full:
+            return bool(self.KLADRCode and self.KLADRStreetCode)
+        else:
+            return bool(self.KLADRCode)
+
     def set_deleted(self, val):
         self.deleted = val
         if self.address:
@@ -424,41 +430,18 @@ class ClientAddress(db.Model):
 class ClientAllergy(db.Model):
     __tablename__ = u'ClientAllergy'
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
-    createDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now,
-                               onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id,
-                                onupdate=safe_current_user_id)
-    deleted = db.Column(db.Integer,
-                        nullable=False,
-                        server_default=u"'0'",
-                        default=0)
-    client_id = db.Column(db.ForeignKey('Client.id'),
-                          nullable=False,
-                          index=True)
-    name = db.Column("nameSubstance",
-                     db.Unicode(128),
-                     nullable=False)
-    power = db.Column(db.Integer,
-                      nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
+    client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
+    name = db.Column("nameSubstance", db.Unicode(128), nullable=False)
+    power = db.Column(db.Integer, nullable=False)
     createDate = db.Column(db.Date)
-    notes = db.Column(db.String,
-                      nullable=False,
-                      default='')
-    version = db.Column(db.Integer,
-                        nullable=False,
-                        default=0)
+    notes = db.Column(db.String, nullable=False, default='')
+    version = db.Column(db.Integer, nullable=False, default=0)
 
     def __init__(self, name=None, power=None, date=None, notes=None, client=None):
         self.name = name
@@ -490,10 +473,8 @@ class ClientAttach(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now,
-                               onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id,
-                                onupdate=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     attachType_id = db.Column(db.ForeignKey('rbAttachType.id'), nullable=False, index=True)
@@ -569,41 +550,18 @@ class ClientAttach(db.Model):
 class ClientIntoleranceMedicament(db.Model):
     __tablename__ = u'ClientIntoleranceMedicament'
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
-    createDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now,
-                               onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id,
-                                onupdate=safe_current_user_id)
-    deleted = db.Column(db.Integer,
-                        nullable=False,
-                        server_default=u"'0'",
-                        default=0)
-    client_id = db.Column(db.ForeignKey('Client.id'),
-                          nullable=False,
-                          index=True)
-    name = db.Column("nameMedicament",
-                     db.Unicode(128),
-                     nullable=False)
-    power = db.Column(db.Integer,
-                      nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
+    client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
+    name = db.Column("nameMedicament", db.Unicode(128), nullable=False)
+    power = db.Column(db.Integer, nullable=False)
     createDate = db.Column(db.Date)
-    notes = db.Column(db.String,
-                      nullable=False,
-                      default='')
-    version = db.Column(db.Integer,
-                        nullable=False,
-                        default=0)
+    notes = db.Column(db.String, nullable=False, default='')
+    version = db.Column(db.Integer, nullable=False, default=0)
 
     def __init__(self, name=None, power=None, date=None, notes=None, client=None):
         self.name = name
@@ -1091,19 +1049,11 @@ class ClientPolicy(db.Model):
 class BloodHistory(db.Model):
     __tablename__ = u'BloodHistory'
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
-    bloodDate = db.Column(db.Date,
-                          nullable=False)
-    client_id = db.Column(db.Integer,
-                          db.ForeignKey('Client.id'),
-                          nullable=False)
-    bloodType_id = db.Column(db.Integer,
-                             db.ForeignKey('rbBloodType.id'),
-                             nullable=False)
-    person_id = db.Column(db.Integer,
-                          db.ForeignKey('Person.id'),
-                          nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    bloodDate = db.Column(db.Date, nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
+    bloodType_id = db.Column(db.Integer, db.ForeignKey('rbBloodType.id'), nullable=False)
+    person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False)
 
     bloodType = db.relationship("rbBloodType")
     person = db.relationship('Person')
@@ -1289,34 +1239,16 @@ class AddressHouse(db.Model):
         db.Index(u'KLADRCode', u'KLADRCode', u'KLADRStreetCode', u'number', u'corpus'),
     )
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
-    createDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime,
-                               nullable=False,
-                               default=datetime.datetime.now,
-                               onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer,
-                                index=True,
-                                default=safe_current_user_id,
-                                onupdate=safe_current_user_id)
-    deleted = db.Column(db.Integer,
-                        nullable=False,
-                        default=0,
-                        server_default=u"'0'")
-    KLADRCode = db.Column(db.String(13),
-                          nullable=False)
-    KLADRStreetCode = db.Column(db.String(17),
-                                nullable=False)
-    number = db.Column(db.String(8),
-                       nullable=False)
-    corpus = db.Column(db.String(8),
-                       nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, default=0, server_default=u"'0'")
+    KLADRCode = db.Column(db.String(13), nullable=False)
+    KLADRStreetCode = db.Column(db.String(17), nullable=False)
+    number = db.Column(db.String(8), nullable=False)
+    corpus = db.Column(db.String(8), nullable=False)
 
     def __init__(self, loc_code, street_code, house_number, corpus_number):
         self.KLADRCode = loc_code

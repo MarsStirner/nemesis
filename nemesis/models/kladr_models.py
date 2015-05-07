@@ -40,3 +40,38 @@ class Street(db.Model):
     UNO = db.Column(db.String(4), nullable=False)
     OCATD = db.Column(db.String(11), nullable=False)
     infis = db.Column(db.String(5), nullable=False, index=True)
+
+
+class KladrLocality(object):
+    # I - IV KLADR levels
+
+    def __init__(self, **kwargs):
+        if 'invalid' in kwargs:
+            self.invalid = kwargs['invalid']
+            self.code = kwargs['code'] if 'code' in kwargs else None
+        else:
+            self.code = kwargs['code'] if 'code' in kwargs else None
+            self.name = kwargs['name'] if 'name' in kwargs else None
+            self.fullname = kwargs['fullname'] if 'fullname' in kwargs else None
+
+    def get_region_code(self):
+        if self.code:
+            return self.code[:2].ljust(11, '0')
+
+    def get_district_code(self):
+        if self.code:
+            return self.code[:5].ljust(11, '0')
+
+    def __json__(self):
+        if hasattr(self, 'invalid'):
+            return {
+                'code': self.code,
+                'name': self.invalid,
+                'fullname': self.invalid
+            }
+        else:
+            return {
+                'code': self.code,
+                'name': self.name,
+                'fullname': self.fullname
+            }

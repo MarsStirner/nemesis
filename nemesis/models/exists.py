@@ -220,20 +220,18 @@ class Organisation(db.Model):
 
     @property
     def kladr_locality(self):
-        from nemesis.lib.data import get_kladr_city
-        loc = {}
         if self.area:
-            city_info = get_kladr_city(self.area)
-            return {
-                'code': self.area,
-                'name': city_info.get('fullname', u'-код региона не найден в кладр-')
-            }
+            if not hasattr(self, '_kladr_locality'):
+                from nemesis.lib.vesta import Vesta
+                self._kladr_locality = Vesta.get_kladr_locality(self.area)
+            return self._kladr_locality
         else:
             return None
 
     @kladr_locality.setter
     def kladr_locality(self, value):
         self.area = value
+        delattr(self, '_kladr_locality')
 
     def __unicode__(self):
         return self.fullName
