@@ -16,6 +16,7 @@ from nemesis.systemwide import login_manager, cache
 from nemesis.lib.data import get_kladr_city, get_kladr_street
 from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json, safe_dict
 from nemesis.lib.apiutils import api_method
+from nemesis.lib.vesta import Vesta
 # from application.models import *
 from nemesis.utils import admin_permission
 from lib.user import UserAuth, AnonymousUser, UserProfileManager
@@ -343,21 +344,11 @@ def api_thesaurus(code=None):
 @app.route('/api/kladr/city/search/')
 @app.route('/api/kladr/city/search/<search_query>/')
 @app.route('/api/kladr/city/search/<search_query>/<limit>/')
-@cache.memoize(86400)
+@api_method
 def kladr_search_city(search_query=None, limit=300):
-    result = []
     if search_query is None:
-        return jsonify([])
-    response = requests.get(u'{0}kladr/psg/search/{1}/{2}/'.format(app.config['VESTA_URL'],
-                                                                   search_query,
-                                                                   limit))
-    for city in response.json()['data']:
-        data = {'code': city['identcode'], 'name': u'{0}. {1}'.format(city['shorttype'], city['name'])}
-        if city['parents']:
-            for parent in city['parents']:
-                data['name'] = u'{0}, {1}. {2}'.format(data['name'], parent['shorttype'], parent['name'])
-        result.append(data)
-    return jsonify(result)
+        return []
+    return Vesta.search_kladr_locality(search_query, limit)
 
 
 @app.route('/api/kladr/street/search/')
@@ -380,11 +371,9 @@ def kladr_search_street(city_code=None, search_query=None, limit=100):
 
 @app.route('/api/kladr/city/')
 @app.route('/api/kladr/city/<code>/')
-@cache.memoize(86400)
+@api_method
 def kladr_city(code=None):
-    if code is None:
-        return jsonify([])
-    return jsonify([get_kladr_city(code)])
+    return Vesta.get_kladr_locality(code) if code else []
 
 
 @app.route('/api/kladr/street/')

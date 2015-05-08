@@ -42,10 +42,25 @@ class Vesta(object):
             if not data:
                 locality = KladrLocality(invalid=u'Не найден адрес в кладр по коду {0}'.format(code))
             else:
-                locality_info = data[0]
-                name = fullname = u'{0}. {1}'.format(locality_info['shorttype'], locality_info['name'])
-                if locality_info['parents']:
-                    for parent in locality_info['parents']:
-                        fullname = u'{0}, {1}. {2}'.format(fullname, parent['shorttype'], parent['name'])
-                locality = KladrLocality(code=code, name=name, fullname=fullname)
+                loc_info = data[0]
+                locality = _make_kladr_locality(loc_info)
         return locality
+
+    @classmethod
+    @cache.memoize(86400)
+    def search_kladr_locality(cls, query, limit=300):
+        url = u'{0}/kladr/psg/search/{1}/{2}/'.format(cls.get_url(), query, limit)
+        result, data = cls._get_data(url)
+        if result.success and data:
+            return [_make_kladr_locality(loc_info) for loc_info in data]
+        else:
+            return []
+
+
+def _make_kladr_locality(loc_info):
+    code = loc_info['identcode']
+    name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
+    if loc_info['parents']:
+        for parent in loc_info['parents']:
+            fullname = u'{0}, {1}. {2}'.format(fullname, parent['shorttype'], parent['name'])
+    return KladrLocality(code=code, name=name, fullname=fullname)

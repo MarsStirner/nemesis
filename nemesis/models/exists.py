@@ -195,11 +195,12 @@ class Organisation(db.Model):
     head_id = db.Column(db.Integer, index=True)
     miacCode = db.Column(db.String(10), nullable=False)
     isOrganisation = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    uuid_id = db.Column(db.Integer, nullable=False, index=True, server_default=u"'0'")
+    uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
 
     net = db.relationship('rbNet')
     OKPF = db.relationship('rbOKPF')
     OKFS = db.relationship('rbOKFS')
+    uuid = db.relationship('UUID')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
 
     @property
@@ -208,7 +209,7 @@ class Organisation(db.Model):
 
     @is_insurer.setter
     def is_insurer(self, value):
-        self.isInsurer = value
+        self.isInsurer = int(bool(value))
 
     @property
     def is_hospital(self):
@@ -216,7 +217,7 @@ class Organisation(db.Model):
 
     @is_hospital.setter
     def is_hospital(self, value):
-        self.isHospital = value
+        self.isHospital = int(bool(value))
 
     @property
     def kladr_locality(self):
@@ -231,7 +232,8 @@ class Organisation(db.Model):
     @kladr_locality.setter
     def kladr_locality(self, value):
         self.area = value
-        delattr(self, '_kladr_locality')
+        if hasattr(self, '_kladr_locality'):
+            delattr(self, '_kladr_locality')
 
     def __unicode__(self):
         return self.fullName

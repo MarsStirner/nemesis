@@ -198,6 +198,13 @@ angular.module('WebMis20.directives').
                 if (kladrCtrl) {
                     kladrCtrl.registerWidget('locality', scope);
                 }
+                modelCtrl.$formatters.push(function (value) {
+                    if (typeof value === 'object') {
+                        return value.fullname;
+                    } else {
+                        return value;
+                    }
+                });
 
                 scope.getText = function() {
                     return modelCtrl.$viewValue;
@@ -212,7 +219,7 @@ angular.module('WebMis20.directives').
             },
             template:
                 '<input type="text" class="form-control" placeholder="" autocomplete="off"\
-                    ng-model="model" typeahead="city as city.name for city in getCity($viewValue)"\
+                    ng-model="model" typeahead="city as city.fullname for city in getCity($viewValue)"\
                     typeahead-wait-ms="1000" typeahead-min-length="2" typeahead-editable="false"\
                     ng-required="required" ng-disabled="disabled"/>'
         }
