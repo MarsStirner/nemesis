@@ -886,3 +886,7 @@ a.pseudo-btn {
     right: 35%;
     z-index: 1100;
 }
+
+.text-bold {
+    font-weight: bold;
+}
