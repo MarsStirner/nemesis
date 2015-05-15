@@ -1,9 +1,46 @@
 'use strict';
 
 angular.module('WebMis20')
+.service('ScannerService', function ($rootScope, $q, $window, $timeout, $http, WMConfig) {
+    this.getImage = function (name, format, resolution) {
+        var scanUrl = '{0}?name={1}&format={2}&resolution={3}'.format(
+            WMConfig.url.coldstar.scan_process_scan, name, format, resolution);
+        var scanImage = new $window.Image(),
+            helpCanvas = $window.document.createElement('canvas'),
+            helpCtx = helpCanvas.getContext('2d'),
+            deferred = $q.defer();
+
+        scanImage.onload = function () {
+            helpCanvas.width = scanImage.width;
+            helpCanvas.height = scanImage.height;
+            helpCtx.drawImage(scanImage, 0, 0);
+            $rootScope.$apply(function () {
+                deferred.resolve(helpCanvas.toDataURL('image/' + format, 0.65));
+            });
+            helpCanvas.width = 1;
+            helpCanvas.height = 1;
+            scanImage.src = "";
+        };
+        scanImage.onerror = function () {
+            $rootScope.$apply(function () {
+                deferred.reject()
+            });
+        };
+        scanImage.crossOrigin = 'anonymous';
+        $timeout(function () {
+            scanImage.src = scanUrl;
+        }, 0);
+        return deferred.promise;
+    };
+    this.getDeviceList = function () {
+        return $http.get(WMConfig.url.coldstar.scan_get_device_list).then(function (response) {
+            return response.data.devices;
+        });
+    };
+})
 .service('FileEditModal', [
-    '$modal', '$http', 'WMConfig', 'MessageBox', '$rootScope', 'WMFileAttach', 'NotificationService',
-    function ($modal, $http, WMConfig, MessageBox, $rootScope, WMFileAttach, NotificationService) {
+    '$modal', '$http', 'WMConfig', 'MessageBox', '$rootScope', 'WMFileAttach', 'NotificationService', 'ScannerService',
+    function ($modal, $http, WMConfig, MessageBox, $rootScope, WMFileAttach, NotificationService, ScannerService) {
 
     var _getTemplate = function(openMode, attachType) {
         var template = '\
@@ -76,8 +113,8 @@ angular.module('WebMis20')
     </button>\
     <div class="radio" ng-repeat="dev in device_list">\
         <label>\
-            <input type="radio" id="dev[[$index]]" ng-model="selected.device"\
-                ng-value="dev">[[dev.model]]\
+            <input type="radio" id="dev[[$index]]" ng-model="selected.device" ng-value="dev">\
+            [[ dev.vendor ]] [[dev.model]]\
         </label>\
     </div>\
     <li><h4>Настроить параметры сканирования</h4></li>\
@@ -197,9 +234,16 @@ angular.module('WebMis20')
                 {name: 'Хорошее (150 dpi)', value: 150},
                 {name: 'Среднее (75 dpi)',   value: 75}]
         };
-        $scope.device_list = [];
+        var scanner;
+        try {
+            var selected_scanner_json = localStorage.getItem('selected_scanner');
+            scanner = JSON.parse(selected_scanner_json);
+        } catch (e) {
+            scanner = null;
+        }
+        $scope.device_list = (scanner !== null)?[scanner]:[];
         $scope.selected = {
-            device: null,
+            device: scanner,
             scan_options: {
                 resolution: $scope.scan_options.resolutions[2]
             },
@@ -209,44 +253,32 @@ angular.module('WebMis20')
         $scope.file_attach = file_attach;
 
         $scope.get_device_list = function () {
-            $http.get(WMConfig.url.coldstar.scan_get_device_list).success(function (data) {
-                $scope.device_list = data.devices;
+            ScannerService.getDeviceList().then(function (devices) {
+                $scope.device_list = devices;
             });
         };
-        $scope.start_scan = function () {
-            function getImage(scanUrl, callback) {
-                var scanImage = new Image(),
-                    helpCanvas = document.createElement('canvas'),
-                    helpCtx = helpCanvas.getContext('2d');
-                scanImage.onload = function () {
-                    $scope.$apply(function () {
-                        helpCanvas.width = scanImage.width;
-                        helpCanvas.height = scanImage.height;
-                        helpCtx.drawImage(scanImage, 0, 0);
-
-                        callback(helpCanvas.toDataURL('image/' + scan_image_format, 0.65));
-
-                        helpCanvas.width = 1;
-                        helpCanvas.height = 1;
-                        scanImage.src = "";
-                    });
-                };
-                scanImage.crossOrigin = 'anonymous';
-                scanImage.src = scanUrl
+        $scope.$watch('selected.device', function (n, o) {
+            if (!angular.equals(n, o)) {
+                localStorage.setItem('selected_scanner', JSON.stringify(n));
             }
-
-            var scanUrl = '{0}?name={1}&format={2}&resolution={3}'.format(
-                WMConfig.url.coldstar.scan_process_scan,
+        });
+        $scope.start_scan = function () {
+            var loaderTextElem = $('#loaderText'),
+                oldText = loaderTextElem.text();
+            function before_request() {
+                loaderTextElem.text('Идёт сканирование');
+                $rootScope.pendingRequests += 1;
+            }
+            function finalize_request() {
+                $rootScope.pendingRequests -= 1;
+                loaderTextElem.text(oldText);
+            }
+            before_request();
+            ScannerService.getImage(
                 $scope.selected.device.name,
                 scan_image_format,
                 $scope.selected.scan_options.resolution.value
-            );
-
-            var loaderTextElem = $('#loaderText'),
-                oldText = loaderTextElem.text();
-            loaderTextElem.text('Идёт сканирование');
-            $rootScope.pendingRequests += 1;
-            getImage(scanUrl, function (image_b64) {
+            ).then(function (image_b64) {
                 $scope.currentFile.file.binary_b64 = null;
                 $scope.currentFile.file.image = new Image();
                 $scope.currentFile.file.mime = 'image/' + scan_image_format;
@@ -254,8 +286,13 @@ angular.module('WebMis20')
                 $scope.currentFile.file.image.src = image_b64;
                 $scope.generateFileName();
 
-                $rootScope.pendingRequests -= 1;
-                loaderTextElem.text(oldText);
+                finalize_request();
+            }, function () {
+                NotificationService.notify(null,
+                    'Загрузка изображения не удалась. Повторите попытку позже',
+                    'danger'
+                );
+                finalize_request();
             });
         };
         $scope.save_image = function () {
