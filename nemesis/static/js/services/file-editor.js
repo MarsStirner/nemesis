@@ -234,18 +234,19 @@ angular.module('WebMis20')
                 {name: 'Хорошее (150 dpi)', value: 150},
                 {name: 'Среднее (75 dpi)',   value: 75}]
         };
-        var scanner;
+        var scanner = null,
+            resolution = 2;
         try {
-            var selected_scanner_json = localStorage.getItem('selected_scanner');
-            scanner = JSON.parse(selected_scanner_json);
-        } catch (e) {
-            scanner = null;
-        }
+            scanner = JSON.parse(localStorage.getItem('selected_scanner'));
+        } catch (e) {}
+        try {
+            resolution = parseInt(localStorage.getItem('selected_scanner_resolution')) || 2
+        } catch (e) {}
         $scope.device_list = (scanner !== null)?[scanner]:[];
         $scope.selected = {
             device: scanner,
             scan_options: {
-                resolution: $scope.scan_options.resolutions[2]
+                resolution: $scope.scan_options.resolutions[resolution]
             },
             currentPage: pageNumber
         };
@@ -260,6 +261,11 @@ angular.module('WebMis20')
         $scope.$watch('selected.device', function (n, o) {
             if (!angular.equals(n, o)) {
                 localStorage.setItem('selected_scanner', JSON.stringify(n));
+            }
+        });
+        $scope.$watch('selected.scan_options.resolution', function (n, o) {
+            if (!angular.equals(n, o)) {
+                localStorage.setItem('selected_scanner_resolution', _.indexOf($scope.scan_options.resolutions, n));
             }
         });
         $scope.start_scan = function () {
