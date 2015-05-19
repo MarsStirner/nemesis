@@ -245,7 +245,6 @@ def doctor_to_assist():
     return render_template('user/select_master_user.html')
 
 
-@cache.memoize(86400)
 def api_refbook_int(name):
     if name is None:
         return []
