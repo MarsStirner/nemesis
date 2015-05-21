@@ -218,10 +218,12 @@ def select_role():
 @public_endpoint
 def logout():
     _logout_user()
+    response = redirect(request.args.get('next') or '/')
     token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
     if token:
         requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
-    return redirect(request.args.get('next') or '/')
+        response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
+    return response
 
 
 @app.route('/doctor_to_assist/', methods=['GET', 'POST'])
