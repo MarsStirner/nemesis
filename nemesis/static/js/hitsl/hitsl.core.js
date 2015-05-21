@@ -40,8 +40,8 @@ angular.module('hitsl.core', [])
         }
     };
 }])
-.service('IdleTimer', ['$http', '$log', '$document', '$window', '$rootScope', 'TimeoutCallback', 'WMConfig', 'IdleUserModal',
-    function ($http, $log, $document, $window, $rootScope, TimeoutCallback, WMConfig, IdleUserModal) {
+.service('IdleTimer', ['$http', '$q', '$log', '$document', '$window', '$rootScope', 'TimeoutCallback', 'WMConfig', 'IdleUserModal',
+    function ($http, $q, $log, $document, $window, $rootScope, TimeoutCallback, WMConfig, IdleUserModal) {
         var last_ping_time = null,
             last_activity_time = null,
             token_expire_time = null,
@@ -49,8 +49,16 @@ angular.module('hitsl.core', [])
             user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
             ping_timer = new TimeoutCallback(ping_cas, ping_timeout),
             token_life_timer = new TimeoutCallback(check_show_idle_warning, null),
+            ping_state = false,
             _onUserAction = function() {
                 last_activity_time = get_current_time();
+                if (!ping_state && (!last_ping_time || (
+                        (last_activity_time - last_ping_time) > ping_timeout + 5000)
+                    )) {
+                    $log.debug('immediate ping after inactivity');
+                    ping_cas();
+                    ping_timer.start_interval();
+                }
             };
 
         function get_ping_timeout() {
@@ -58,14 +66,12 @@ angular.module('hitsl.core', [])
                 ping_to;
             if (9 < idle_time && idle_time <= 60) {
                 ping_to = 10;
-            } else if (60 < idle_time && idle_time <= 60 * 3) {
+            } else if (60 < idle_time && idle_time <= 60 * 5) {
                 ping_to = 20;
-            } else if (60 * 3< idle_time && idle_time <= 60 * 5) {
-                ping_to = 30;
             } else if (60 * 5 < idle_time && idle_time <= 60 * 10) {
-                ping_to = 60;
+                ping_to = 30;
             } else if (60 * 10 < idle_time) {
-                ping_to = 120;
+                ping_to = 60;
             } else {
                 throw 'user_idle_timeout cannot be less than 10 seconds';
             }
@@ -84,8 +90,20 @@ angular.module('hitsl.core', [])
             set_warning_timer(token_live_time);
         }
         function process_logout() {
+            $log.info('logging out...');
+            _set_tracking(false);
+            ping_timer.kill();
+            token_life_timer.kill();
             $rootScope.cancelFormSafeClose = true;
-            $window.open(WMConfig.url.logout + '?next=' + $window.location.href, '_self');
+            $window.location.href = WMConfig.url.logout + '?next=' + encodeURIComponent($window.location.href);
+        }
+        function process_soft_logout() {
+            $log.info('refreshing page...');
+            _set_tracking(false);
+            ping_timer.kill();
+            token_life_timer.kill();
+            $rootScope.cancelFormSafeClose = true;
+            $window.location.reload(true);
         }
         function _set_tracking(on) {
             if (on) {
@@ -96,9 +114,10 @@ angular.module('hitsl.core', [])
         }
         function _init_warning_timer() {
             check_token().then(function (result) {
-                if (result) {
-                    set_token_expire_time(result.data.deadline, result.data.ttl);
-                }
+                set_token_expire_time(result.data.deadline, result.data.ttl);
+            }, function (response) {
+                $log.info('Could not init warning timer ({0})'.format(response));
+                process_logout();
             });
         }
         function check_token() {
@@ -107,93 +126,126 @@ angular.module('hitsl.core', [])
                 token: get_current_token()
             }, {
                 silent: true
-            }).then(function (result) {
-                if (!result.data.success) {
-                    $log.error('Could not check token lifetime ({0}). You should be logged off.'.format(result.data.message));
-                    return null;
+            }).then(function (response) {
+                if (!response.data.success) {
+                    $log.error('Could not check token lifetime ({0}). You should be logged off.'.format(response.data.message));
+                    return $q.reject(response);
                 }
-                return result;
-            }, function (result) {
-                $log.error('Could not check token lifetime (unknown error). You should be logged off.');
-                return null;
+                return response;
+            }, function (response) {
+                $log.error('Could not check token lifetime ({0}). You should be logged off.'.format(response));
+                return $q.reject(response);
             });
         }
         function ping_cas() {
-            var cur_time = get_current_time();
+            return process_ping_cas().then(angular.noop, function (data) {
+                if (data.success === false && data.exception === 'EExpiredToken') {
+                    $log.debug('ping attempt failed, token was already expired');
+                    process_soft_logout();
+                    return null;
+                } else {
+                    return $q.reject(data);
+                }
+            });
+        }
+        function process_ping_cas() {
+            var cur_time = get_current_time(),
+                deferred = $q.defer();
             $log.debug('ping about to fire...');
             if ((cur_time - last_activity_time) < ping_timeout) {
                 $log.debug('prolonging token (current expire time: {0} / {1})'.format(token_expire_time, new Date(token_expire_time * 1E3)));
-                $http.post(WMConfig.url.coldstar.cas_prolong_token, { // TODO: url
+                ping_state = true;
+                $http.post(WMConfig.url.coldstar.cas_prolong_token, {
                     token: get_current_token()
                 }, {
                     silent: true
                 }).success(function (result) {
                     if (!result.success) {
-                        // TODO: накапливать ошибки и делать логаут?
                         $log.error('Could not prolong token on ping timer ({0})'.format(result.message));
+                        return deferred.reject(result);
                     } else {
-                        last_ping_time = cur_time;
+                        last_ping_time = get_current_time();
                         set_token_expire_time(result.deadline, result.ttl);
+                        deferred.resolve(result)
                     }
-                }).error(function () {
-                    $log.error('Could not prolong token on ping timer (unknown error)');
+                }).error(function (result) {
+                    $log.error('Could not prolong token on ping timer ({0})'.format(result));
+                    deferred.reject(result);
+                }).finally(function () {
+                    ping_state = false;
+                });
+            } else {
+                deferred.resolve({
+                    message: 'Did not ping - no user activity'
                 });
             }
+            return deferred.promise;
         }
-        function set_warning_timer(token_live_time) {
-            token_live_time = Math.floor(token_live_time * 1E3);
-            var warning_time = WMConfig.settings.logout_warning_timeout * 1E3,
+        function set_warning_timer(token_live_time_s) {
+            var token_live_time_ms = Math.floor(token_live_time_s * 1E3),
+                warning_time_ms = WMConfig.settings.logout_warning_timeout * 1E3,
                 to;
-            if (token_live_time < 0) {
+            if (token_live_time_ms < 0) {
                 $log.error('Token has already expired!');
-            } else if (token_live_time < warning_time) {
+                process_logout();
+            } else if (token_live_time_ms < warning_time_ms) {
                 $log.warn('Logout warning time is greater than token lifetime.');
+                show_logout_warning(Math.floor(token_live_time_s));
             } else {
-                to = token_live_time - warning_time;
+                to = token_live_time_ms - warning_time_ms;
                 $log.info('show warning dialog in (msec): ' + to);
                 token_life_timer.start(to);
             }
         }
         function check_show_idle_warning() {
             var cur_time = get_current_time();
-            if ((cur_time - last_activity_time) < ping_timeout) {
-                $log.debug('fire ping instead of showing warning dialog');
-                ping_cas();
-            } else {
-                check_token().then(function (result) {
-                    if (result && result.data.deadline <= token_expire_time) {
+            var try_show_warning = function () {
+                check_token().then(function (response) {
+                    if (response.data.deadline <= token_expire_time) {
                         show_logout_warning();
                     } else {
                         $log.debug('User is active in another system.');
-                        set_token_expire_time(result.data.deadline, result.data.ttl);
+                        set_token_expire_time(response.data.deadline, response.data.ttl);
                     }
+                }, function (response) {
+                    $log.info('Could not check token before showing warning ({0})'.format(response));
+                    process_logout();
                 });
+            };
+            if ((cur_time - last_activity_time) < ping_timeout) {
+                $log.debug('fire ping instead of showing warning dialog');
+                process_ping_cas().catch(try_show_warning);
+            } else {
+                try_show_warning();
             }
         }
-        function show_logout_warning() {
+        function show_logout_warning(time_left) {
             _set_tracking(false);
             ping_timer.kill();
-            IdleUserModal.open()
+            IdleUserModal.open(time_left)
                 .then(function cancelIdle (result) {
                     $log.info('User has come back after idle.');
                     _set_tracking(true);
                     last_activity_time = get_current_time();
-                    ping_cas();
+                    ping_cas().catch(function (data) {
+                        $log.info('Could not prolong token from warning state ({0})'.format(data));
+                        process_logout();
+                    });
                     ping_timer.start_interval();
                 }, function logoutAfterIdle (result) {
-                    check_token().then(function (result) {
-                        if (result && token_expire_time <= result.data.deadline) {
+                    check_token().then(function (response) {
+                        if (token_expire_time <= response.data.deadline) {
                             $log.info('Warning timer has expired, but logout won\'t be processed' +
-                            ' because user was active in another system.');
+                                ' because user was active in another system.');
                             _set_tracking(true);
                             ping_timer.start_interval();
-                            set_token_expire_time(result.data.deadline, result.data.ttl);
+                            set_token_expire_time(response.data.deadline, response.data.ttl);
                         } else {
                             $log.info('User is still idle. Logging off.');
                             process_logout();
                         }
-                    }, function () {
-                        $log.info('Error checking token before logout. Logging off.');
+                    }, function (response) {
+                        $log.info('Error checking token before logout ({0}). Logging out.'.format(response));
                         process_logout();
                     });
                 });
@@ -210,9 +262,9 @@ angular.module('hitsl.core', [])
     }])
 .service('IdleUserModal', ['$modal', 'WMConfig', 'TimeoutCallback', function ($modal, WMConfig, TimeoutCallback) {
     return {
-        open: function () {
+        open: function (time_left) {
             var IUController = function ($scope) {
-                $scope.countdown = WMConfig.settings.logout_warning_timeout;
+                $scope.countdown = time_left !== undefined ? time_left : WMConfig.settings.logout_warning_timeout;
                 $scope.idletime_minute = Math.floor(WMConfig.settings.user_idle_timeout / 60) || 1;
                 $scope.timer = new TimeoutCallback(function () {
                     if ($scope.countdown <= 0) {
