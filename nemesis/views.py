@@ -32,7 +32,7 @@ login_manager.login_view = 'login'
 login_manager.anonymous_user = AnonymousUser
 
 
-semi_public_endpoints = ('config_js', 'current_user_js', 'logout')
+semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout')
 
 
 @app.before_request
@@ -199,7 +199,6 @@ def redirect_after_user_change():
 
 
 @app.route('/select_role/', methods=['GET', 'POST'])
-@public_endpoint
 def select_role():
     form = RoleForm()
     errors = list()
@@ -286,7 +285,6 @@ def api_roles_int(user_login):
 
 @app.route('/api/roles/')
 @app.route('/api/roles/<user_login>')
-@public_endpoint
 @api_method
 def api_roles(user_login):
     return api_roles_int(user_login)
@@ -423,7 +421,8 @@ def page_not_found(e):
     if request_wants_json():
         return jsonify(unicode(e), result_code=404, result_name=u'Page not found')
     flash(u'Указанный вами адрес не найден')
-    return render_template('404.html'), 404
+    template_name = '404.html' if current_user.is_authenticated() else '404_v2.html'
+    return render_template(template_name), 404
 
 
 #########################################

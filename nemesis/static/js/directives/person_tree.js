@@ -65,12 +65,14 @@ angular.module('WebMis20.directives.personTree', [])
                         speciality: spec_group.speciality,
                         persons: (spec_group.persons).filter(function (person) {
                             var words = $scope.query.split(' ');
-                            return $scope.query == '' || words.filter(function (word) {
-                                var data = [].concat(person.nameFull, [spec_group.speciality.name]);
-                                return data.filter(function (namePart) {
+                            return $scope.query === '' || words.filter(function (word) {
+                                var data = [].concat(person.nameFull, spec_group.speciality.name.split(' '),
+                                    person.org_structure ? person.org_structure.split(' ') : ''
+                                );
+                                return data.some(function (namePart) {
                                     return namePart.toLocaleLowerCase().startswith(word.toLocaleLowerCase())
-                                }).length > 0;
-                            }).length == words.length;
+                                });
+                            }).length === words.length;
                         }).map(function (person) {
                             return {
                                 id: person.id,
