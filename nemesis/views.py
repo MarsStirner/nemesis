@@ -88,6 +88,18 @@ def check_valid_login():
                 if not UserProfileManager.has_ui_assistant() and current_user.master:
                     current_user.set_master(None)
                     identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+            elif request.args.get('role') and current_user.has_role(request.args.get('role')):
+                _req_role = request.args.get('role')
+                if _req_role != UserProfileManager.doctor_otd:
+                    current_user.current_role = current_user.find_role(_req_role)
+                else:
+                    # Если передан врач отделения, то заменяем его на врача поликлиники
+                    current_user.current_role = current_user.find_role(UserProfileManager.doctor_clinic)
+
+                identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+                if not UserProfileManager.has_ui_assistant() and current_user.master:
+                    current_user.set_master(None)
+                    identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
             else:
                 return redirect(url_for('select_role', next=request.url))
 
