@@ -52,7 +52,9 @@ angular.module('hitsl.core', [])
             ping_state = false,
             _onUserAction = function() {
                 last_activity_time = get_current_time();
-                if (last_ping_time && !ping_state && ((last_activity_time - last_ping_time) > ping_timeout + 5000)) {
+                if (!ping_state && (!last_ping_time || (
+                        (last_activity_time - last_ping_time) > ping_timeout + 5000)
+                    )) {
                     $log.debug('immediate ping after inactivity');
                     ping_cas();
                     ping_timer.start_interval();
@@ -89,10 +91,19 @@ angular.module('hitsl.core', [])
         }
         function process_logout() {
             $log.info('logging out...');
+            _set_tracking(false);
             ping_timer.kill();
             token_life_timer.kill();
             $rootScope.cancelFormSafeClose = true;
             $window.location.href = WMConfig.url.logout + '?next=' + encodeURIComponent($window.location.href);
+        }
+        function process_soft_logout() {
+            $log.info('refreshing page...');
+            _set_tracking(false);
+            ping_timer.kill();
+            token_life_timer.kill();
+            $rootScope.cancelFormSafeClose = true;
+            $window.location.reload(true);
         }
         function _set_tracking(on) {
             if (on) {
@@ -127,6 +138,17 @@ angular.module('hitsl.core', [])
             });
         }
         function ping_cas() {
+            return process_ping_cas().then(angular.noop, function (data) {
+                if (data.success === false && data.exception === 'EExpiredToken') {
+                    $log.debug('ping attempt failed, token was already expired');
+                    process_soft_logout();
+                    return null;
+                } else {
+                    return $q.reject(data);
+                }
+            });
+        }
+        function process_ping_cas() {
             var cur_time = get_current_time(),
                 deferred = $q.defer();
             $log.debug('ping about to fire...');
@@ -140,7 +162,7 @@ angular.module('hitsl.core', [])
                 }).success(function (result) {
                     if (!result.success) {
                         $log.error('Could not prolong token on ping timer ({0})'.format(result.message));
-                        return deferred.reject(result.message);
+                        return deferred.reject(result);
                     } else {
                         last_ping_time = get_current_time();
                         set_token_expire_time(result.deadline, result.ttl);
@@ -153,7 +175,9 @@ angular.module('hitsl.core', [])
                     ping_state = false;
                 });
             } else {
-                deferred.resolve('Did not ping - no user activity');
+                deferred.resolve({
+                    message: 'Did not ping - no user activity'
+                });
             }
             return deferred.promise;
         }
@@ -190,7 +214,7 @@ angular.module('hitsl.core', [])
             };
             if ((cur_time - last_activity_time) < ping_timeout) {
                 $log.debug('fire ping instead of showing warning dialog');
-                ping_cas().catch(try_show_warning);
+                process_ping_cas().catch(try_show_warning);
             } else {
                 try_show_warning();
             }
@@ -203,8 +227,8 @@ angular.module('hitsl.core', [])
                     $log.info('User has come back after idle.');
                     _set_tracking(true);
                     last_activity_time = get_current_time();
-                    ping_cas().catch(function (response) {
-                        $log.info('Could not prolong token from warning state ({0})'.format(response));
+                    ping_cas().catch(function (data) {
+                        $log.info('Could not prolong token from warning state ({0})'.format(data));
                         process_logout();
                     });
                     ping_timer.start_interval();
