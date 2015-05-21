@@ -45,6 +45,13 @@ def check_valid_login():
         login_valid = False
 
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
+
+        if not auth_token and request.method == 'GET' and 'token' in request.args and request.args.get('token'):
+            auth_token = request.args.get('token')
+            # если нет токена, то current_user должен быть AnonymousUser
+            if not isinstance(current_user._get_current_object(), AnonymousUser):
+                _logout_user()
+
         if auth_token:
             try:
                 result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
@@ -60,19 +67,16 @@ def check_valid_login():
                                 session_save_user(user)
                                 # Tell Flask-Principal the identity changed
                                 identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
-                                return redirect(request.url or UserProfileManager.get_default_url())
+                                response = redirect(request.url or UserProfileManager.get_default_url())
+                                if not request.cookies.get(app.config['CASTIEL_AUTH_TOKEN']):
+                                    response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
+                                return response
                             else:
                                 pass
                                 # errors.append(u'Аккаунт неактивен')
                         login_valid = True
                     else:
-                        # Remove the user information from the session
-                        logout_user()
-                        # Remove session keys set by Flask-Principal
-                        for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
-                            session.pop(key, None)
-                        # Tell Flask-Principal the user is anonymous
-                        identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+                        _logout_user()
 
         if not login_valid:
             # return redirect(url_for('login', next=request.url))
@@ -214,13 +218,7 @@ def select_role():
 @app.route('/logout/')
 @public_endpoint
 def logout():
-    # Remove the user information from the session
-    logout_user()
-    # Remove session keys set by Flask-Principal
-    for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
-        session.pop(key, None)
-    # Tell Flask-Principal the user is anonymous
-    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+    _logout_user()
     token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
     if token:
         requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
@@ -464,3 +462,13 @@ def on_identity_loaded(sender, identity):
     if isinstance(user_rights, dict):
         for right in user_rights.get(current_role, []):
             identity.provides.add(ActionNeed(right))
+
+
+def _logout_user():
+    # Remove the user information from the session
+    logout_user()
+    # Remove session keys set by Flask-Principal
+    for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
+        session.pop(key, None)
+    # Tell Flask-Principal the user is anonymous
+    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
