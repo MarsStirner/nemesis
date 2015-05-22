@@ -24,7 +24,7 @@ from forms import LoginForm, RoleForm
 from nemesis.lib.jsonify import PersonTreeVisualizer
 from nemesis.models.exists import rbUserProfile, Person
 from nemesis.app import app
-from nemesis.models import enums, event, actions, exists, schedule, client
+from nemesis.models import enums, event, actions, exists, schedule, client, expert_protocol
 from nemesis.systemwide import db
 
 
@@ -255,7 +255,7 @@ def api_refbook_int(name):
             ref_book = getattr(mod, name)
             return ref_book.rb()['objects']
 
-    for mod in (exists, schedule, actions, client, event):
+    for mod in (exists, schedule, actions, client, event, expert_protocol):
         if hasattr(mod, name):
             ref_book = getattr(mod, name)
 

@@ -265,6 +265,28 @@ if (!Array.range) {
     }
 }
 
+// Function.prototype for inheritance
+
+Function.prototype.inheritsFrom = function (parentClassOrObject) {
+    if (parentClassOrObject.constructor === Function) {
+        //Normal Inheritance
+        this.prototype = Object.create(parentClassOrObject.prototype);
+        this.prototype.constructor = this;
+        //this.prototype.parent = parentClassOrObject.prototype;
+        for (var prop in parentClassOrObject) {
+            if (parentClassOrObject.hasOwnProperty(prop)) {
+                this[prop] = parentClassOrObject[prop];
+            }
+        }
+    } else {
+        //Pure Virtual Inheritance
+        this.prototype = parentClassOrObject;
+        this.prototype.constructor = this;
+        //this.prototype.parent = parentClassOrObject;
+    }
+    return this;
+};
+
 // Underscore
 
 _.mixin({

@@ -426,6 +426,13 @@ def safe_bool(val):
     return bool(val)
 
 
+def safe_uuid(val):
+    if not isinstance(val, basestring):
+        return None
+    u_obj = uuid.UUID(val)
+    return u_obj
+
+
 def format_date(d):
     if isinstance(d, datetime.date):
         return d.strftime('%d.%m.%Y')
