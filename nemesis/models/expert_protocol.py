@@ -10,8 +10,18 @@ class ExpertProtocol(db.Model):
     __tablename__ = u'ExpertProtocol'
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(16), index=True)
+    code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(255), nullable=False)
+
+    _schemes = db.relationship('ExpertScheme', backref='protocol')
+
+    @property
+    def schemes(self):
+        return self._schemes
+
+    @schemes.setter
+    def schemes(self, value):
+        pass
 
 
 class ExpertScheme(db.Model):
@@ -23,11 +33,17 @@ class ExpertScheme(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     name = db.Column(db.Unicode(255), nullable=False)
-    code = db.Column(db.String(16), index=True)
+    code = db.Column(db.Unicode(16), index=True)
     number = db.Column(db.Unicode(16), nullable=False, index=True)
     protocol_id = db.Column(db.Integer, db.ForeignKey('ExpertProtocol.id'), nullable=False, index=True)
 
-    protocol = db.relationship('ExpertProtocol')
+    scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme')
+    # measures = db.relationship('Measure', secondary='ExpertSchemeMeasure',
+    #    secondaryjoin='and_(ExpertScheme.id==ExpertSchemeMeasure.scheme_id, Measure.id==ExpertSchemeMeasure.measure_id)')
+
+    @property
+    def mkbs(self):
+        return self.scheme_mkbs
 
 
 class ExpertSchemeMKB(db.Model):
@@ -38,7 +54,6 @@ class ExpertSchemeMKB(db.Model):
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
 
     mkb = db.relationship('MKB')
-    scheme = db.relationship('ExpertScheme')
 
 
 class ExpertSchemeMeasure(db.Model):
@@ -48,10 +63,6 @@ class ExpertSchemeMeasure(db.Model):
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
     schedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), nullable=False, index=True)
-
-    scheme = db.relationship('ExpertScheme')
-    measure = db.relationship('Measure')
-    schedule = db.relationship('MeasureSchedule')
 
 
 class Measure(db.Model):
@@ -63,7 +74,7 @@ class Measure(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     measureType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureType.id'), nullable=False, index=True)
-    code = db.Column(db.String(16), index=True)
+    code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(512), nullable=False)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     uuid = db.Column(UUIDColumn(), nullable=False)
@@ -80,7 +91,7 @@ class rbMeasureType(db.Model):
     _table_description = u'Типы мероприятий'
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(16), index=True, nullable=False)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
 
     def __json__(self):
@@ -108,7 +119,7 @@ class rbMeasureScheduleType(db.Model):
     _table_description = u'Типы расписаний мероприятий'
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(16), index=True, nullable=False)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
 
     def __json__(self):
