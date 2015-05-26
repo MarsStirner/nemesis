@@ -37,13 +37,18 @@ class ExpertScheme(db.Model):
     number = db.Column(db.Unicode(16), nullable=False, index=True)
     protocol_id = db.Column(db.Integer, db.ForeignKey('ExpertProtocol.id'), nullable=False, index=True)
 
-    scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme')
-    # measures = db.relationship('Measure', secondary='ExpertSchemeMeasure',
-    #    secondaryjoin='and_(ExpertScheme.id==ExpertSchemeMeasure.scheme_id, Measure.id==ExpertSchemeMeasure.measure_id)')
+    scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme', cascade_backrefs=False)
+    scheme_measures = db.relationship('ExpertSchemeMeasureAssoc')
 
     @property
     def mkbs(self):
         return self.scheme_mkbs
+
+    @mkbs.setter
+    def mkbs(self, mkb_list):
+        return  # todo: saving here
+        if mkb_list is not None:
+            self.scheme_mkbs = mkb_list
 
 
 class ExpertSchemeMKB(db.Model):
@@ -53,16 +58,33 @@ class ExpertSchemeMKB(db.Model):
     mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False, index=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
 
-    mkb = db.relationship('MKB')
+    _mkb = db.relationship('MKB')
+
+    @property
+    def mkb(self):
+        return self._mkb
+
+    @mkb.setter
+    def mkb(self, value):
+        self.mkb_id = value
 
 
-class ExpertSchemeMeasure(db.Model):
+class ExpertSchemeMeasureAssoc(db.Model):
     __tablename__ = u'ExpertSchemeMeasure'
 
     id = db.Column(db.Integer, primary_key=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
-    schedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), nullable=False, index=True)
+
+    _measure = db.relationship('Measure')
+
+    @property
+    def measure(self):
+        return self._measure
+
+    @measure.setter
+    def measure(self, value):
+        self.measure_id = value
 
 
 class Measure(db.Model):
@@ -147,6 +169,6 @@ class EventMeasure(db.Model):
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
     event = db.relationship('Event')
-    scheme_measure = db.relationship('ExpertSchemeMeasure')
+    scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
     action = db.relationship('Action', foreign_keys=[action_id])
