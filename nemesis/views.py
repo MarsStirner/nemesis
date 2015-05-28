@@ -235,6 +235,8 @@ def logout():
     if token:
         requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
         response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
+    if 'BEAKER_SESSION' in app.config:
+        response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
     return response
 
 
