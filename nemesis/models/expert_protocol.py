@@ -77,6 +77,7 @@ class ExpertSchemeMeasureAssoc(db.Model):
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
 
     _measure = db.relationship('Measure')
+    schedules = db.relationship('MeasureSchedule', backref='scheme_measure', cascade_backrefs=False)
 
     @property
     def measure(self):
@@ -104,8 +105,16 @@ class Measure(db.Model):
     templateAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
     measure_type = db.relationship('rbMeasureType')
-    action_type = db.relationship('ActionType')
+    _action_type = db.relationship('ActionType')
     template_action = db.relationship('Action')
+
+    @property
+    def action_type(self):
+        return self._action_type
+
+    @action_type.setter
+    def action_type(self, val):
+        self.actionType_id = val
 
 
 class rbMeasureType(db.Model):
@@ -128,12 +137,21 @@ class MeasureSchedule(db.Model):
     __tablename__ = u'MeasureSchedule'
 
     id = db.Column(db.Integer, primary_key=True)
+    schemeMeasure_id = db.Column(db.Integer, db.ForeignKey('ExpertSchemeMeasure.id'), index=True)
     scheduleType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureScheduleType.id'), index=True)
     offsetStart = db.Column(db.Integer, nullable=False)
     offsetEnd = db.Column(db.Integer, nullable=False)
     repeatCount = db.Column(db.Integer, nullable=False, server_default=u"'1'", default=1)
 
-    measure_schedule_type = db.relationship('rbMeasureScheduleType')
+    _schedule_type = db.relationship('rbMeasureScheduleType')
+
+    @property
+    def schedule_type(self):
+        return self._schedule_type
+
+    @schedule_type.setter
+    def schedule_type(self, val):
+        self.scheduleType_id = val
 
 
 class rbMeasureScheduleType(db.Model):
