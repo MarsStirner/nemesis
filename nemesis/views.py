@@ -212,10 +212,13 @@ def logout():
         session.pop(key, None)
     # Tell Flask-Principal the user is anonymous
     identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+    response = redirect(request.args.get('next') or '/')
     token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
     if token:
         requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
-    return redirect(request.args.get('next') or '/')
+    if 'BEAKER_SESSION' in app.config:
+        response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+    return response
 
 
 @app.route('/doctor_to_assist/', methods=['GET', 'POST'])
