@@ -38,7 +38,7 @@ class ExpertScheme(db.Model):
     protocol_id = db.Column(db.Integer, db.ForeignKey('ExpertProtocol.id'), nullable=False, index=True)
 
     scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme', cascade_backrefs=False)
-    scheme_measures = db.relationship('ExpertSchemeMeasureAssoc')
+    scheme_measures = db.relationship('ExpertSchemeMeasureAssoc', backref='scheme')
 
     @property
     def mkbs(self):
@@ -75,9 +75,10 @@ class ExpertSchemeMeasureAssoc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), index=True)
 
     _measure = db.relationship('Measure')
-    schedules = db.relationship('MeasureSchedule', backref='scheme_measure', cascade_backrefs=False)
+    schedule = db.relationship('MeasureSchedule', backref='scheme_measure', cascade_backrefs=False, uselist=False)
 
     @property
     def measure(self):
@@ -104,7 +105,7 @@ class Measure(db.Model):
     actionType_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
     templateAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
-    measure_type = db.relationship('rbMeasureType')
+    _measure_type = db.relationship('rbMeasureType')
     _action_type = db.relationship('ActionType')
     template_action = db.relationship('Action')
 
@@ -115,6 +116,14 @@ class Measure(db.Model):
     @action_type.setter
     def action_type(self, val):
         self.actionType_id = val
+
+    @property
+    def measure_type(self):
+        return self._measure_type
+
+    @measure_type.setter
+    def measure_type(self, val):
+        self.measureType_id = val
 
 
 class rbMeasureType(db.Model):
@@ -137,7 +146,6 @@ class MeasureSchedule(db.Model):
     __tablename__ = u'MeasureSchedule'
 
     id = db.Column(db.Integer, primary_key=True)
-    schemeMeasure_id = db.Column(db.Integer, db.ForeignKey('ExpertSchemeMeasure.id'), index=True)
     scheduleType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureScheduleType.id'), index=True)
     offsetStart = db.Column(db.Integer, nullable=False)
     offsetEnd = db.Column(db.Integer, nullable=False)

@@ -65,3 +65,11 @@ class PrenatalRiskRate(Enum):
     low = 1, u'низкий'
     medium = 2, u'средний'
     high = 3, u'высокий'
+
+
+class MeasureStatus(Enum):
+    assigned = 0, u'Назначенное'
+    upon_med_indications = 1, u'По показанию'
+    cancelled = 2, u'Отмененное'
+    overdue = 3, u'Просроченное'
+    performed = 4, u'Выполненное'
