@@ -97,6 +97,13 @@ class User(UserMixin):
                 return True
         return False
 
+    def find_role(self, role):
+        # what about list?
+        for r in self.roles:
+            if r[0] == role:
+                return r
+        return False
+
     def has_right(self, *rights):
         current_rights = set(self.current_rights)
         if self.master:
@@ -155,6 +162,9 @@ class AnonymousUser(AnonymousUserMixin):
 
     def is_admin(self):
         return False
+
+    def get_main_user(self):
+        return self
 
     def export_js(self):
         return {
@@ -478,6 +488,7 @@ class UserProfileManager(object):
     doctor_clinic = 'clinicDoctor'  # Врач поликлиники
     doctor_diag = 'diagDoctor'  # Врач диагностики
     doctor_stat = 'statDoctor'  # Врач медицинский статистик
+    doctor_otd = 'strDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
     cashier = 'kassir'  # Кассир

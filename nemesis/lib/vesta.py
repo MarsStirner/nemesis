@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import requests
+import json
 
 from nemesis.app import app
 from nemesis.systemwide import cache
@@ -45,6 +46,36 @@ class Vesta(object):
                 loc_info = data[0]
                 locality = _make_kladr_locality(loc_info)
         return locality
+
+    @classmethod
+    @cache.memoize(86400)
+    def get_kladr_locality_list(cls, level, parent_code):
+        locality_list = []
+        if len(parent_code) == 13:  # убрать после конвертации уже записанных кодов кладр
+            parent_code = parent_code[:-2]
+        url = u'{0}/find/KLD172/'.format(cls.get_url())
+        try:
+            response = requests.post(url, data=json.dumps({"level": level,
+                                                           "identparent": parent_code,
+                                                           "is_actual": "1"}))
+            response_json = response.json()
+        except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
+            logger.error(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e), exc_info=True)
+            result = Vesta.Result(False, u'Ошибка получения данных по url {0}'.format(url)), None
+        else:
+            result, data = Vesta.Result(), response_json.get('data')
+
+        if not result.success:
+            locality_list = [KladrLocality(invalid=u'Ошибка загрузки данных кладр')]
+        else:
+            if not data:
+                locality_list = [KladrLocality(invalid=u'Не найдены адреса в кладр уровня {0} по коду {1}'.format(level, parent_code))]
+            else:
+                for loc_info in data:
+                    name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
+                    locality_list.append(KladrLocality(code=loc_info['identcode'], name=name, fullname=fullname,
+                                                       parent_code=loc_info['identparent']))
+        return locality_list
 
     @classmethod
     @cache.memoize(86400)

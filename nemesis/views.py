@@ -32,7 +32,7 @@ login_manager.login_view = 'login'
 login_manager.anonymous_user = AnonymousUser
 
 
-semi_public_endpoints = ('config_js', 'current_user_js', 'logout')
+semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout')
 
 
 @app.before_request
@@ -45,6 +45,13 @@ def check_valid_login():
         login_valid = False
 
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
+
+        if not auth_token and request.method == 'GET' and 'token' in request.args and request.args.get('token'):
+            auth_token = request.args.get('token')
+            # если нет токена, то current_user должен быть AnonymousUser
+            if not isinstance(current_user._get_current_object(), AnonymousUser):
+                _logout_user()
+
         if auth_token:
             try:
                 result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
@@ -60,19 +67,16 @@ def check_valid_login():
                                 session_save_user(user)
                                 # Tell Flask-Principal the identity changed
                                 identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
-                                return redirect(request.url or UserProfileManager.get_default_url())
+                                response = redirect(request.url or UserProfileManager.get_default_url())
+                                if not request.cookies.get(app.config['CASTIEL_AUTH_TOKEN']):
+                                    response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
+                                return response
                             else:
                                 pass
                                 # errors.append(u'Аккаунт неактивен')
                         login_valid = True
                     else:
-                        # Remove the user information from the session
-                        logout_user()
-                        # Remove session keys set by Flask-Principal
-                        for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
-                            session.pop(key, None)
-                        # Tell Flask-Principal the user is anonymous
-                        identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+                        _logout_user()
 
         if not login_valid:
             # return redirect(url_for('login', next=request.url))
@@ -80,6 +84,18 @@ def check_valid_login():
         if not getattr(current_user, 'current_role', None) and request.endpoint not in semi_public_endpoints:
             if len(current_user.roles) == 1:
                 current_user.current_role = current_user.roles[0]
+                identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+                if not UserProfileManager.has_ui_assistant() and current_user.master:
+                    current_user.set_master(None)
+                    identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+            elif request.args.get('role') and current_user.has_role(request.args.get('role')):
+                _req_role = request.args.get('role')
+                if _req_role != UserProfileManager.doctor_otd:
+                    current_user.current_role = current_user.find_role(_req_role)
+                else:
+                    # Если передан врач отделения, то заменяем его на врача поликлиники
+                    current_user.current_role = current_user.find_role(UserProfileManager.doctor_clinic)
+
                 identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
                 if not UserProfileManager.has_ui_assistant() and current_user.master:
                     current_user.set_master(None)
@@ -195,7 +211,6 @@ def redirect_after_user_change():
 
 
 @app.route('/select_role/', methods=['GET', 'POST'])
-@public_endpoint
 def select_role():
     form = RoleForm()
     errors = list()
@@ -214,17 +229,15 @@ def select_role():
 @app.route('/logout/')
 @public_endpoint
 def logout():
-    # Remove the user information from the session
-    logout_user()
-    # Remove session keys set by Flask-Principal
-    for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
-        session.pop(key, None)
-    # Tell Flask-Principal the user is anonymous
-    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
+    _logout_user()
+    response = redirect(request.args.get('next') or '/')
     token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
     if token:
         requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
-    return redirect(request.args.get('next') or '/')
+        response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
+    if 'BEAKER_SESSION' in app.config:
+        response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+    return response
 
 
 @app.route('/doctor_to_assist/', methods=['GET', 'POST'])
@@ -245,7 +258,6 @@ def doctor_to_assist():
     return render_template('user/select_master_user.html')
 
 
-@cache.memoize(86400)
 def api_refbook_int(name):
     if name is None:
         return []
@@ -289,7 +301,6 @@ def api_roles_int(user_login):
 
 @app.route('/api/roles/')
 @app.route('/api/roles/<user_login>')
-@public_endpoint
 @api_method
 def api_roles(user_login):
     return api_roles_int(user_login)
@@ -426,7 +437,8 @@ def page_not_found(e):
     if request_wants_json():
         return jsonify(unicode(e), result_code=404, result_name=u'Page not found')
     flash(u'Указанный вами адрес не найден')
-    return render_template('404.html'), 404
+    template_name = '404.html' if current_user.is_authenticated() else '404_v2.html'
+    return render_template(template_name), 404
 
 
 #########################################
@@ -465,3 +477,13 @@ def on_identity_loaded(sender, identity):
     if isinstance(user_rights, dict):
         for right in user_rights.get(current_role, []):
             identity.provides.add(ActionNeed(right))
+
+
+def _logout_user():
+    # Remove the user information from the session
+    logout_user()
+    # Remove session keys set by Flask-Principal
+    for key in ('identity.name', 'identity.auth_type', 'hippo_user', 'crumbs'):
+        session.pop(key, None)
+    # Tell Flask-Principal the user is anonymous
+    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())

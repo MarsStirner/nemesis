@@ -67,6 +67,13 @@ class PrenatalRiskRate(Enum):
     high = 3, u'высокий'
 
 
+class PreeclampsiaRisk(Enum):
+    # впоследствии будет больше значений
+    undefined = 0, u'не определен'
+    has_risk = 1, u'есть риск'
+    no_risk = 2, u'нет риска'
+
+
 class MeasureStatus(Enum):
     assigned = 0, u'Назначенное'
     upon_med_indications = 1, u'По показанию'

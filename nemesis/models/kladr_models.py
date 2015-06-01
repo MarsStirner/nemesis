@@ -53,6 +53,7 @@ class KladrLocality(object):
             self.code = kwargs['code'] if 'code' in kwargs else None
             self.name = kwargs['name'] if 'name' in kwargs else None
             self.fullname = kwargs['fullname'] if 'fullname' in kwargs else None
+            self.parent_code = kwargs['parent_code'] if 'parent_code' in kwargs else None
 
     def get_region_code(self):
         if self.code:
@@ -67,11 +68,13 @@ class KladrLocality(object):
             return {
                 'code': self.code,
                 'name': self.invalid,
-                'fullname': self.invalid
+                'fullname': self.invalid,
+                'parent_code': self.invalid
             }
         else:
             return {
                 'code': self.code,
                 'name': self.name,
-                'fullname': self.fullname
+                'fullname': self.fullname,
+                'parent_code': self.parent_code
             }
