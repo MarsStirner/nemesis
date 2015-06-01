@@ -4,30 +4,60 @@
 
 
 angular.module('hitsl.core')
-.service('ApiCalls', function ($q, $http, NotificationService) {
+.service('ApiCalls', ['$q','$http', 'NotificationService', function ($q, $http, NotificationService) {
     this.wrapper = function (method, url, params, data) {
         var defer = $q.defer();
+        function process(response) {
+            if (response.status != 200 || response.data.meta.code != 200) {
+                var text = (response.status === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
+                NotificationService.notify(
+                    response.data.meta.code,
+                    text.format(data.meta.name),
+                    'danger'
+                );
+                defer.resolve(response.data.result);
+            } else {
+                defer.reject(response.data.meta);
+            }
+            return response;
+        }
         $http({
             method: method,
             url: url,
             params: params,
             data: data
         })
-        .success(function (data) {
-            defer.resolve(data.result)
-        })
-        .error(function (data, code) {
-            var text = (code === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
-            NotificationService.notify(
-                code,
-                text.format(data.meta.name),
-                'danger'
-            );
-            defer.reject(data.meta)
-        });
+        .then(process, process);
         return defer.promise;
     };
-})
+    this.simple = function (method, url, params, data) {
+        var defer = $q.defer();
+        function process(response) {
+            var data = response.data;
+            if (_.has(data, 'exception')) {
+                NotificationService.notify(
+                    data.exception,
+                    'Ошибка сервера<br/><strong>{0}</strong><br/>{1}'.format(data.exception, data.message),
+                    'danger'
+                )
+            }
+            if (data.success) {
+                defer.resolve(data);
+            } else {
+                defer.reject(data);
+            }
+            return response;
+        }
+        $http({
+            method: method,
+            url: url,
+            params: params,
+            data: data
+        })
+        .then(process, process);
+        return defer.promise;
+    }
+}])
 .service('NotificationService', ['TimeoutCallback', function (TimeoutCallback) {
     var self = this;
     var recompilers = [];
@@ -91,6 +121,7 @@ angular.module('hitsl.core')
                 NotificationService.dismiss(id);
             };
             function compile (arg) {
+                var _arg = _(arg);
                 if (_.isArray(arg)) {
                     return arg.map(compile).join('');
                 } else if (typeof arg === 'string') {
@@ -99,25 +130,26 @@ angular.module('hitsl.core')
                     return '';
                 }
                 var wrapper = '{0}';
-                if (arg.hasOwnProperty('bold') && arg.bold) {
+                if (_arg.has('bold') && arg.bold) {
                     wrapper = '<b>{0}</b>'.format(wrapper)
                 }
-                if (arg.hasOwnProperty('italic') && arg.bold) {
+                if (_arg.has('italic') && arg.bold) {
                     wrapper = '<i>{0}</i>'.format(wrapper)
                 }
-                if (arg.hasOwnProperty('underline') && arg.bold) {
+                if (_arg.has('underline') && arg.bold) {
                     wrapper = '<u>{0}</u>'.format(wrapper)
                 }
-                if (arg.hasOwnProperty('link')) {
-                    wrapper = '<a href={0}>{1}</a>'.format(arg.link, wrapper);
-                } else if (arg.hasOwnProperty('click')) {
+                if (_arg.has('link')) {
+                    //noinspection HtmlUnknownTarget
+                    wrapper = '<a href="{0}">{1}</a>'.format(arg.link, wrapper);
+                } else if (_arg.has('click')) {
                     do {
                         var uniq = _.random(0x100000000);
                     } while (scope.func_map.hasOwnProperty(uniq));
                     scope.func_map[uniq] = arg.click;
                     wrapper = '<a style="cursor:pointer" ng-click="func_map[{0}]()">{1}</a>'.format(String(uniq), wrapper)
                 }
-                if (arg.hasOwnProperty('text')) {
+                if (_arg.has('text')) {
                     return wrapper.format(compile(arg.text));
                 }
                 return '';
