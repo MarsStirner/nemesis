@@ -46,7 +46,7 @@ def check_valid_login():
 
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
 
-        if not auth_token and request.method == 'GET' and 'token' in request.args and request.args.get('token'):
+        if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
@@ -68,8 +68,7 @@ def check_valid_login():
                                 # Tell Flask-Principal the identity changed
                                 identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
                                 response = redirect(request.url or UserProfileManager.get_default_url())
-                                if not request.cookies.get(app.config['CASTIEL_AUTH_TOKEN']):
-                                    response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
+                                response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
                                 return response
                             else:
                                 pass
