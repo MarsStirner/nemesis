@@ -46,7 +46,7 @@ def check_valid_login():
 
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
 
-        if request.method == 'GET' and 'token' in request.args and request.args.get('token'):
+        if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
