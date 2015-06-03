@@ -9,6 +9,15 @@ angular.module('WebMis20')
     // А ещё хуже, если мы потеряем объект. Тогда блокировка будет очень долго висеть.
     var EzekielLock = function (name) {
         var self = this;
+
+        function set_null() {
+            self.acquired = null;
+            self.locker = null;
+            self.token = null;
+            self.expiration = null;
+            self.success = false;
+        }
+
         this.tc = new TimeoutCallback();
         this.acquire_defer = $q.defer();
 
@@ -28,9 +37,12 @@ angular.module('WebMis20')
                         'GET',
                         WMConfig.url.coldstar.ezekiel_prolong_lock.format(name),
                         {token: self.token}
-                    )
+                    ).catch(function (result) {
+                        set_null();
+                        return result;
+                    })
                 };
-                self.tc.start_interval((self.expiration - self.acquired) / 2);
+                self.tc.start_interval(0, (self.expiration - self.acquired) / 2);
                 self.release = function release_real() {
                     self.tc.kill();
                     ApiCalls.simple(
@@ -48,10 +60,11 @@ angular.module('WebMis20')
                 self.expiration = null;
                 self.success = false;
                 self.tc.kill();
-                self.tc.callback = _.bind(self, acquire);
-                self.tc.start_interval((self.expiration - self.acquired) / 2);
+                self.tc.callback = _.bind(acquire, self);
+                self.tc.start_interval(0, 20000);
             })
         }
+        set_null();
         acquire();
     };
     EzekielLock.prototype.release = function () {
@@ -64,7 +77,7 @@ angular.module('WebMis20')
         if (this.acquire_defer) {
             return this.acquire_defer.promise
         } else {
-            return $q.reject().promise;
+            return $q.resolve().promise;
         }
     };
     return EzekielLock;

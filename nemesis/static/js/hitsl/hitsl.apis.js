@@ -15,9 +15,9 @@ angular.module('hitsl.core')
                     text.format(data.meta.name),
                     'danger'
                 );
-                defer.resolve(response.data.result);
-            } else {
                 defer.reject(response.data.meta);
+            } else {
+                defer.resolve(response.data.result);
             }
             return response;
         }
