@@ -13,7 +13,6 @@ from sqlalchemy.orm import lazyload, joinedload
 from itsdangerous import json
 
 from nemesis.systemwide import login_manager, cache
-from nemesis.lib.data import get_kladr_city, get_kladr_street
 from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json, safe_dict
 from nemesis.lib.apiutils import api_method
 from nemesis.lib.vesta import Vesta
@@ -369,22 +368,6 @@ def kladr_search_street(city_code=None, search_query=None, limit=100):
     if city_code is None or search_query is None:
         return []
     return Vesta.search_kladr_street(city_code, search_query, limit)
-
-
-@app.route('/api/kladr/city/')
-@app.route('/api/kladr/city/<code>/')
-@api_method
-def kladr_city(code=None):
-    return Vesta.get_kladr_locality(code) if code else []
-
-
-@app.route('/api/kladr/street/')
-@app.route('/api/kladr/street/<code>/')
-@cache.memoize(86400)
-def kladr_street(code=None):
-    if code is None:
-        return jsonify([])
-    return jsonify([get_kladr_street(code)])
 
 
 @app.route('/clear_cache/')
