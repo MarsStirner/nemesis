@@ -19,11 +19,12 @@ angular.module('WebMis20')
         }
 
         this.tc = new TimeoutCallback();
+        this.tc.callback = acquire;
+        this.tc.start_interval(0, 10000);
         this.acquire_defer = $q.defer();
 
         function acquire() {
             self.acquire_defer.notify();
-            delete self.release;
             ApiCalls.simple(
                 'GET',
                 WMConfig.url.coldstar.ezekiel_acquire_lock.format(name),
@@ -57,6 +58,7 @@ angular.module('WebMis20')
                 };
                 self.tc.start_interval(0, (self.expiration - self.acquired) / 2 * 1000);
                 self.release = function release_real() {
+                    delete self.release;
                     self.tc.kill();
                     ApiCalls.simple(
                         'GET',
@@ -77,9 +79,6 @@ angular.module('WebMis20')
                 self.token = null;
                 self.expiration = null;
                 self.success = false;
-                self.tc.kill();
-                self.tc.callback = _.bind(acquire, self);
-                self.tc.start_interval(0, 20000);
             })
         }
         set_null();
