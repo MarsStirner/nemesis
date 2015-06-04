@@ -117,11 +117,10 @@ class Vesta(object):
 
 def _make_kladr_locality(loc_info):
     code = loc_info['identcode']
-    name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
-    if loc_info['parents']:
-        for parent in loc_info['parents']:
-            fullname = u'{0}, {1}. {2}'.format(fullname, parent['shorttype'], parent['name'])
-    return KladrLocality(code=code, name=name, fullname=fullname)
+    name = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
+    level = loc_info['level']
+    parents = map(_make_kladr_locality, loc_info.get('parents', []))
+    return KladrLocality(code=code, name=name, level=level, parents=parents)
 
 
 def _make_kladr_street(street_info):

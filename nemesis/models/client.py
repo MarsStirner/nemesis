@@ -324,7 +324,7 @@ class ClientAddress(db.Model):
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
     type = db.Column(db.Integer, nullable=False)
     address_id = db.Column(db.Integer, db.ForeignKey('Address.id'))
-    freeInput = db.Column(db.String(255), server_default="''")
+    freeInput = db.Column(db.String(255), nullable=False, server_default="''")
     version = db.Column(db.Integer, nullable=False, server_default="'0'", default=0)
     localityType = db.Column(db.Integer, nullable=False)
 
@@ -1116,12 +1116,12 @@ class Address(db.Model):
 
     @property
     def KLADRCode(self):
-        # todo: потом убрать?
+        # без учета последних двух цифр, которые относятся к версии кода
         return self.house.KLADRCode[:-2] if len(self.house.KLADRCode) == 13 else self.house.KLADRCode
 
     @property
     def KLADRStreetCode(self):
-        # todo: потом убрать?
+        # без учета последних двух цифр, которые относятся к версии кода
         return (
             self.house.KLADRStreetCode[:-2]
             if self.house.KLADRStreetCode and len(self.house.KLADRStreetCode) == 17
@@ -1144,8 +1144,8 @@ class Address(db.Model):
 
     @property
     def city_old(self):
-        if self.KLADRCode:
-            record = Kladr.query.filter(Kladr.CODE == self.KLADRCode).first()
+        if self.house.KLADRCode:
+            record = Kladr.query.filter(Kladr.CODE == self.house.KLADRCode).first()
             name = [" ".join([record.NAME, record.SOCR])]
             parent = record.parent
             while parent:
@@ -1180,8 +1180,8 @@ class Address(db.Model):
 
     @property
     def street_old(self):
-        if self.KLADRStreetCode:
-            record = Street.query.filter(Street.CODE == self.KLADRStreetCode).first()
+        if self.house.KLADRStreetCode:
+            record = Street.query.filter(Street.CODE == self.house.KLADRStreetCode).first()
             return record.NAME + " " + record.SOCR
         else:
             return ''
@@ -1189,8 +1189,8 @@ class Address(db.Model):
     @property
     def text(self):
         parts = [self.city]
-        if self.street:
-            parts.append(self.street)
+        if self.street or self.street_free:
+            parts.append(self.street or self.street_free)
         if self.number:
             parts.append(u'д.'+self.number)
         if self.corpus:
