@@ -24,7 +24,15 @@ angular.module('WebMis20')
         function acquire() {
             self.acquire_defer.notify();
             delete self.release;
-            ApiCalls.simple('GET', WMConfig.url.coldstar.ezekiel_acquire_lock.format(name), undefined, undefined, {withCredentials: true})
+            ApiCalls.simple(
+                'GET',
+                WMConfig.url.coldstar.ezekiel_acquire_lock.format(name),
+                undefined,
+                undefined,
+                {
+                    withCredentials: true,
+                    silent: true
+                })
             .then(function (result) {
                 self.acquired = result.acquire;
                 self.token = result.token;
@@ -38,7 +46,10 @@ angular.module('WebMis20')
                         WMConfig.url.coldstar.ezekiel_prolong_lock.format(name),
                         { token: self.token },
                         undefined,
-                        { withCredentials: true }
+                        {
+                            withCredentials: true,
+                            silent: true
+                        }
                     ).catch(function (result) {
                         set_null();
                         return result;
@@ -52,7 +63,10 @@ angular.module('WebMis20')
                         WMConfig.url.coldstar.ezekiel_release_lock.format(name),
                         { token: self.token },
                         undefined,
-                        { withCredentials: true }
+                        {
+                            withCredentials: true,
+                            silent: true
+                        }
                     )
                 };
                 self.acquire_defer.resolve();
