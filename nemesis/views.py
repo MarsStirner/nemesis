@@ -364,19 +364,11 @@ def kladr_search_city(search_query=None, limit=300):
 @app.route('/api/kladr/street/search/')
 @app.route('/api/kladr/street/search/<city_code>/<search_query>/')
 @app.route('/api/kladr/street/search/<city_code>/<search_query>/<limit>/')
-@cache.memoize(86400)
+@api_method
 def kladr_search_street(city_code=None, search_query=None, limit=100):
-    result = []
     if city_code is None or search_query is None:
-        return jsonify([])
-    response = requests.get(u'{0}kladr/street/search/{1}/{2}/{3}/'.format(app.config['VESTA_URL'],
-                                                                          city_code,
-                                                                          search_query,
-                                                                          limit))
-    for street in response.json()['data']:
-        data = {'code': street['identcode'], 'name': u'{0} {1}'.format(street['fulltype'], street['name'])}
-        result.append(data)
-    return jsonify(result)
+        return []
+    return Vesta.search_kladr_street(city_code, search_query, limit)
 
 
 @app.route('/api/kladr/city/')

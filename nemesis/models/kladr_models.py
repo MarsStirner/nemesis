@@ -78,3 +78,33 @@ class KladrLocality(object):
                 'fullname': self.fullname,
                 'parent_code': self.parent_code
             }
+
+    def __unicode__(self):
+        return self.invalid if hasattr(self, 'invalid') else self.fullname
+
+
+class KladrStreet(object):
+    # V KLADR level
+
+    def __init__(self, **kwargs):
+        if 'invalid' in kwargs:
+            self.invalid = kwargs['invalid']
+            self.code = kwargs['code'] if 'code' in kwargs else None
+        else:
+            self.code = kwargs['code'] if 'code' in kwargs else None
+            self.name = kwargs['name'] if 'name' in kwargs else None
+
+    def __json__(self):
+        if hasattr(self, 'invalid'):
+            return {
+                'code': self.code,
+                'name': self.invalid,
+            }
+        else:
+            return {
+                'code': self.code,
+                'name': self.name,
+            }
+
+    def __unicode__(self):
+        return self.invalid if hasattr(self, 'invalid') else self.name

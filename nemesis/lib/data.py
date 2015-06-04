@@ -368,6 +368,7 @@ def get_planned_end_datetime(action_type_id):
     return datetime.combine(plannedEndDate, plannedEndTime)
 
 
+# deprecated
 @cache.memoize(86400)
 def get_kladr_city(code):
     if len(code) == 13:  # убрать после конвертации уже записанных кодов кладр
@@ -392,6 +393,7 @@ def get_kladr_city(code):
     return result
 
 
+# deprecated
 @cache.memoize(86400)
 def get_kladr_street(code):
     if len(code) == 17:  # убрать после конвертации уже записанных кодов кладр
