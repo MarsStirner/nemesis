@@ -30,7 +30,7 @@ angular.module('hitsl.core')
         .then(process, process);
         return defer.promise;
     };
-    this.simple = function (method, url, params, data) {
+    this.simple = function (method, url, params, data, options) {
         var defer = $q.defer();
         function process(response) {
             var data = response.data;
@@ -38,7 +38,8 @@ angular.module('hitsl.core')
                 NotificationService.notify(
                     data.exception,
                     'Ошибка сервера<br/><strong>{0}</strong><br/>{1}'.format(data.exception, data.message),
-                    'danger'
+                    'danger',
+                    true
                 )
             }
             if (data.success) {
@@ -48,12 +49,12 @@ angular.module('hitsl.core')
             }
             return response;
         }
-        $http({
+        $http(angular.extend({}, options, {
             method: method,
             url: url,
             params: params,
             data: data
-        })
+        }))
         .then(process, process);
         return defer.promise;
     }
@@ -67,7 +68,7 @@ angular.module('hitsl.core')
         if (to === true) to = 3000;
         else if (!angular.isNumber(to)) to = undefined;
         var id = Math.floor(Math.random() * 65536);
-        self.notifications.push({
+        self.notifications.unshift({
             id: id,
             code: code,
             message: message,
@@ -75,12 +76,7 @@ angular.module('hitsl.core')
             to: to
         });
         if (to) {
-            this.timeouts[id] = new TimeoutCallback(
-                angular.bind(this, function () {
-                    this.dismiss(id);
-                }),
-                to
-            );
+            this.timeouts[id] = new TimeoutCallback(_.partial(this.dismiss, id), to);
             this.timeouts[id].start();
         }
         notify_recompilers();
