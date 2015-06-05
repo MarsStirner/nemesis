@@ -65,3 +65,10 @@ class PrenatalRiskRate(Enum):
     low = 1, u'низкий'
     medium = 2, u'средний'
     high = 3, u'высокий'
+
+
+class PreeclampsiaRisk(Enum):
+    # впоследствии будет больше значений
+    undefined = 0, u'не определен'
+    has_risk = 1, u'есть риск'
+    no_risk = 2, u'нет риска'

@@ -626,8 +626,8 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'E',
         require: '?ngModel',
         template:
-            '<a class="btn btn-default btn-block mkb-button [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
-                '[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]' +
+            '<a style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
+                '<span class="mkb-button col-md-12">[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]</span>' +
                 '<span class="caret" ng-if="!$model.$modelValue"></span>' +
             '</a>' +
             '<div class="well well-sm popupable" ng-show="shown" ng-mouseleave="to_hide_delay()" ng-mouseenter="to_hide_cancel()">' +

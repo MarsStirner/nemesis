@@ -36,6 +36,7 @@ class User(UserMixin):
             self.post.update(dict((key, value)
                              for key, value in person.post.__dict__.iteritems()
                              if not callable(value) and not key.startswith('__')))
+        self.org_structure = person.org_structure if person.orgStructure_id else None
         self.set_roles_rights(person)
 
         orgStructure = person.org_structure
@@ -97,6 +98,13 @@ class User(UserMixin):
                 return True
         return False
 
+    def find_role(self, role):
+        # what about list?
+        for r in self.roles:
+            if r[0] == role:
+                return r
+        return False
+
     def has_right(self, *rights):
         current_rights = set(self.current_rights)
         if self.master:
@@ -132,7 +140,7 @@ class User(UserMixin):
         if is_master:
             return u'{0}, {1}'.format(
                 initialize_name(self.lastName, self.firstName, self.patrName),
-                safe_traverse_attrs(self.speciality, 'name')
+                safe_traverse_attrs(self.speciality, 'name', default='')
             )
         else:
             return u'{0} {1}'.format(self.lastName, self.firstName)
@@ -155,6 +163,9 @@ class AnonymousUser(AnonymousUserMixin):
 
     def is_admin(self):
         return False
+
+    def get_main_user(self):
+        return self
 
     def export_js(self):
         return {
@@ -478,6 +489,7 @@ class UserProfileManager(object):
     doctor_clinic = 'clinicDoctor'  # Врач поликлиники
     doctor_diag = 'diagDoctor'  # Врач диагностики
     doctor_stat = 'statDoctor'  # Врач медицинский статистик
+    doctor_otd = 'strDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
     cashier = 'kassir'  # Кассир

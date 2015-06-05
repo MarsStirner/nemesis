@@ -295,8 +295,8 @@ angular.module('WebMis20.directives')
                 return Boolean(template.meta.length);
             };
 
-            $scope.select_all_templates();
             if (fast_print) {
+                $scope.select_all_templates();
                 if ($scope.instant_print()) {
                     $scope.print_separated();
                 } else {
@@ -837,7 +837,8 @@ angular.module('WebMis20.directives')
         return {
             restrict: 'E',
             scope: {
-                onSelect: '&?'
+                onSelect: '&?',
+                nodesSelectable: '@'
             },
             template:
                 '<div class="ui-treeview">\
@@ -847,11 +848,17 @@ angular.module('WebMis20.directives')
                                 <div class="tree-label leaf">&nbsp;</div>\
                                 [[ node.name ]]\
                             </a>\
-                            <a ng-if="node.is_node" ng-click="sas.toggle(node.id)" class="node">\
+                            <a ng-if="node.is_node && !nodesSelectable" ng-click="sas.toggle(node.id)" class="node">\
                                 <div class="tree-label"\
                                      ng-class="{\'collapsed\': !sas.selected(node.id),\
                                                 \'expanded\': sas.selected(node.id)}">&nbsp;</div>\
                                 [[ node.name ]]\
+                            </a>\
+                            <a ng-if="node.is_node && nodesSelectable" class="leaf">\
+                                <div class="tree-label" ng-click="sas.toggle(node.id)"\
+                                     ng-class="{\'collapsed\': !sas.selected(node.id),\
+                                                \'expanded\': sas.selected(node.id)}">&nbsp;</div>\
+                                <span ng-click="select(node)" ng-bind="node.name"><span>\
                             </a>\
                             <ul ng-if="node.is_node && sas.selected(node.id)">\
                                 <li sf-treecurse></li>\
@@ -1469,7 +1476,6 @@ angular.module('WebMis20.directives')
         </div>\
         <div class="modal-body">\
             <ng-form name="DiagnosisForm">\
-                <div class="table-responsive">\
                 <table class="table table-condensed">\
                     <thead>\
                     <tr>\
@@ -1495,7 +1501,7 @@ angular.module('WebMis20.directives')
                             </td>\
                         </tr>\
                         <tr>\
-                            <th class="text-right">Характер</th>\
+                            <th class="text-right">Характер <span>&nbsp;</span></th>\
                             <td>\
                                 <div class="col-sm-5 col-md-4 col-lg-4">\
                                 <ui-select class="form-control" name="diagnosis_character" theme="select2"\
@@ -1520,14 +1526,14 @@ angular.module('WebMis20.directives')
                         <tr>\
                             <th class="text-right">МКБ <span class="text-danger">*</span></th>\
                             <td>\
-                                <div class="form-group col-sm-6 col-md-5 col-lg-5"\
+                                <div class="form-group col-sm-11 col-md-11 col-lg-11"\
                                 ng-class="{\'has-error\': DiagnosisForm.mkb.$invalid}">\
                                     <ui-mkb ng-model="model.diagnosis.mkb" name="mkb" ng-required="true"></ui-mkb>\
                                 </div>\
                             </td>\
                         </tr>\
                         <tr>\
-                            <th class="text-right">Врач</th>\
+                            <th class="text-right">Врач <span>&nbsp;</span></th>\
                             <td>\
                                 <div class="form-group col-sm-6 col-md-5 col-lg-5"\
                                 ng-class="{\'has-error\': model.person == null}">\
@@ -1536,7 +1542,7 @@ angular.module('WebMis20.directives')
                             </td>\
                         </tr>\
                         <tr>\
-                            <th class="text-right">Дата окончания</th>\
+                            <th class="text-right">Дата окончания <span>&nbsp;</span></th>\
                             <td>\
                                 <div class="form-group col-sm-5 col-md-4 col-lg-4" ng-class="{\'has-error\': DiagnosisForm.end_date.$invalid}">\
                                     <wm-date name="end_date" ng-model="model.end_date" ng-required="[[params.required.end_date]]">\
@@ -1545,7 +1551,7 @@ angular.module('WebMis20.directives')
                             </td>\
                         </tr>\
                         <tr>\
-                            <th class="text-right">Результат</th>\
+                            <th class="text-right">Результат <span>&nbsp;</span></th>\
                             <td>\
                                 <div class="col-sm-5 col-md-4 col-lg-4" ng-class="{\'has-error\': DiagnosisForm.result.$invalid}">\
                                     <ui-select class="form-control" name="result" theme="select2"\
@@ -1560,7 +1566,7 @@ angular.module('WebMis20.directives')
                             </td>\
                         </tr>\
                         <tr>\
-                            <th class="text-right">Описание</th>\
+                            <th class="text-right">Описание <span>&nbsp;</span></th>\
                             <td>\
                                 <div class="col-sm-11 col-md-11 col-lg-11">\
                                 <wysiwyg ng-model="model.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
@@ -1569,7 +1575,6 @@ angular.module('WebMis20.directives')
                         </tr>\
                     </tbody>\
                 </table>\
-                </div>\
             </ng-form>\
         </div>\
         <div class="modal-footer">\

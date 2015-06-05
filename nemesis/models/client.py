@@ -324,17 +324,18 @@ class ClientAddress(db.Model):
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
     type = db.Column(db.Integer, nullable=False)
     address_id = db.Column(db.Integer, db.ForeignKey('Address.id'))
-    freeInput = db.Column(db.String(200), nullable=False)
-    version = db.Column(db.Integer, nullable=False, default=0)
+    freeInput = db.Column(db.String(255), nullable=False, server_default="''")
+    version = db.Column(db.Integer, nullable=False, server_default="'0'", default=0)
     localityType = db.Column(db.Integer, nullable=False)
 
     address = db.relationship(u'Address')
 
     @classmethod
-    def create_from_kladr(cls, addr_type, loc_type, loc_kladr_code, street_kladr_code,
+    def create_from_kladr(cls, addr_type, loc_type, loc_kladr_code, street_kladr_code, street_free,
                           house_number, corpus_number, flat_number, client):
         ca = cls(addr_type, loc_type, client)
-        addr = Address.create_new(loc_kladr_code, street_kladr_code, house_number, corpus_number, flat_number)
+        addr = Address.create_new(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number,
+                                  flat_number)
         ca.address = addr
         ca.freeInput = ''
         return ca
@@ -417,7 +418,7 @@ class ClientAddress(db.Model):
             'type': self.type,
             'address_id': self.address_id,
             'address': self.address,
-            'free_input': self.freeInput,
+            'free_input': self.freeInput if self.freeInput else None,
             'locality_type': LocalityType(self.localityType) if self.localityType is not None else None,
             'text_summary': self.__unicode__(),
             'synced': getattr(self, 'synced', False)
@@ -1094,46 +1095,57 @@ class Address(db.Model):
     house = db.relationship(u'AddressHouse')
 
     @classmethod
-    def create_new(cls, loc_kladr_code, street_kladr_code, house_number, corpus_number, flat_number):
+    def create_new(cls, loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number, flat_number):
         addr = cls()
         addr.flat = flat_number
 
         loc_kladr_code, street_kladr_code = cls.compatible_kladr(loc_kladr_code, street_kladr_code)
 
-        addr_house = AddressHouse(loc_kladr_code, street_kladr_code, house_number, corpus_number)
+        addr_house = AddressHouse(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number)
         addr.house = addr_house
         return addr
 
     @classmethod
-    def compatible_kladr(cls, kladr_code, street_kladr_code):
+    def compatible_kladr(cls, kladr_code, street_kladr_code=None):
         # Для совместимости со старыми кодами КЛАДР в НТК добавляем 00
-        kladr_code = '{0}00'.format(kladr_code) if len(kladr_code) == 11 else kladr_code
-        street_kladr_code = '{0}00'.format(street_kladr_code) if len(street_kladr_code) == 15 else street_kladr_code
+        if len(kladr_code) == 11:
+            kladr_code = '{0}00'.format(kladr_code)
+        if street_kladr_code is not None and len(street_kladr_code) == 15:
+            street_kladr_code = '{0}00'.format(street_kladr_code)
         return kladr_code, street_kladr_code
 
     @property
     def KLADRCode(self):
-        # todo: потом убрать?
+        # без учета последних двух цифр, которые относятся к версии кода
         return self.house.KLADRCode[:-2] if len(self.house.KLADRCode) == 13 else self.house.KLADRCode
 
     @property
     def KLADRStreetCode(self):
-        # todo: потом убрать?
-        return self.house.KLADRStreetCode[:-2] if len(self.house.KLADRStreetCode) == 17 else self.house.KLADRStreetCode
+        # без учета последних двух цифр, которые относятся к версии кода
+        return (
+            self.house.KLADRStreetCode[:-2]
+            if self.house.KLADRStreetCode and len(self.house.KLADRStreetCode) == 17
+            else self.house.KLADRStreetCode
+        )
+
+    @property
+    def kladr_locality(self):
+        if self.KLADRCode:
+            if not hasattr(self, '_kladr_locality'):
+                from nemesis.lib.vesta import Vesta
+                self._kladr_locality = Vesta.get_kladr_locality(self.KLADRCode)
+            return self._kladr_locality
+        else:
+            return None
 
     @property
     def city(self):
-        from nemesis.lib.data import get_kladr_city
-        text = ''
-        if self.KLADRCode:
-            city_info = get_kladr_city(self.KLADRCode)
-            text = city_info.get('fullname', u'-код региона не найден в кладр-')
-        return text
+        return self.kladr_locality.fullname if self.kladr_locality else ''
 
     @property
     def city_old(self):
-        if self.KLADRCode:
-            record = Kladr.query.filter(Kladr.CODE == self.KLADRCode).first()
+        if self.house.KLADRCode:
+            record = Kladr.query.filter(Kladr.CODE == self.house.KLADRCode).first()
             name = [" ".join([record.NAME, record.SOCR])]
             parent = record.parent
             while parent:
@@ -1149,10 +1161,36 @@ class Address(db.Model):
         return self.city
 
     @property
+    def kladr_street(self):
+        if self.KLADRStreetCode:
+            if not hasattr(self, '_kladr_street'):
+                from nemesis.lib.vesta import Vesta
+                self._kladr_street = Vesta.get_kladr_street(self.KLADRStreetCode)
+            return self._kladr_street
+        else:
+            return None
+
+    @property
+    def street(self):
+        return self.kladr_street.name if self.kladr_street else ''
+
+    @property
+    def street_free(self):
+        return self.house.streetFreeInput if self.house else None
+
+    @property
+    def street_old(self):
+        if self.house.KLADRStreetCode:
+            record = Street.query.filter(Street.CODE == self.house.KLADRStreetCode).first()
+            return record.NAME + " " + record.SOCR
+        else:
+            return ''
+
+    @property
     def text(self):
         parts = [self.city]
-        if self.street:
-            parts.append(self.street)
+        if self.street or self.street_free:
+            parts.append(self.street or self.street_free)
         if self.number:
             parts.append(u'д.'+self.number)
         if self.corpus:
@@ -1169,23 +1207,6 @@ class Address(db.Model):
     def corpus(self):
         return self.house.corpus
 
-    @property
-    def street(self):
-        from nemesis.lib.data import get_kladr_street
-        text = ''
-        if self.KLADRStreetCode:
-            street_info = get_kladr_street(self.KLADRStreetCode)
-            text = street_info.get('name', u'-код улицы не найден в кладр-')
-        return text
-
-    @property
-    def street_old(self):
-        if self.KLADRStreetCode:
-            record = Street.query.filter(Street.CODE == self.KLADRStreetCode).first()
-            return record.NAME + " " + record.SOCR
-        else:
-            return ''
-
     def __unicode__(self):
         return self.text
 
@@ -1194,14 +1215,9 @@ class Address(db.Model):
             'id': self.id,
             'deleted': self.deleted,
             'house_id': self.house_id,
-            'locality': {
-                'code': self.KLADRCode,
-                'name': self.city
-            },
-            'street': {
-                'code': self.KLADRStreetCode,
-                'name': self.street
-            },
+            'locality': self.kladr_locality,
+            'street': self.kladr_street,
+            'street_free': self.street_free,
             'house_number': self.number,
             'corpus_number': self.corpus,
             'flat_number': self.flat
@@ -1246,13 +1262,15 @@ class AddressHouse(db.Model):
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, default=0, server_default=u"'0'")
     KLADRCode = db.Column(db.String(13), nullable=False)
-    KLADRStreetCode = db.Column(db.String(17), nullable=False)
+    KLADRStreetCode = db.Column(db.String(17))
+    streetFreeInput = db.Column(db.Unicode(128))
     number = db.Column(db.String(8), nullable=False)
     corpus = db.Column(db.String(8), nullable=False)
 
-    def __init__(self, loc_code, street_code, house_number, corpus_number):
+    def __init__(self, loc_code, street_code, street_free, house_number, corpus_number):
         self.KLADRCode = loc_code
         self.KLADRStreetCode = street_code
+        self.streetFreeInput = street_free
         self.number = house_number
         self.corpus = corpus_number
 
@@ -1262,6 +1280,7 @@ class AddressHouse(db.Model):
             'deleted': self.deleted,
             'locality_code': self.KLADRCode,
             'street_code': self.KLADRStreetCode,
+            'street_free': self.streetFreeInput,
             'number': self.number,
             'corpus': self.corpus
         }

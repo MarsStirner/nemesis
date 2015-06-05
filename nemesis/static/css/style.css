@@ -406,9 +406,11 @@ div.select2-container {
 
 .mkb-button {
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow-y: hidden;
     padding-left: 10px;
     padding-right: 10px;
+    white-space: normal;
+    height: 20px;
 }
 
 .tab-content {
