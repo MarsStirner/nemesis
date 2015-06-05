@@ -36,6 +36,7 @@ class User(UserMixin):
             self.post.update(dict((key, value)
                              for key, value in person.post.__dict__.iteritems()
                              if not callable(value) and not key.startswith('__')))
+        self.org_structure = person.org_structure if person.orgStructure_id else None
         self.set_roles_rights(person)
 
         orgStructure = person.org_structure
@@ -139,7 +140,7 @@ class User(UserMixin):
         if is_master:
             return u'{0}, {1}'.format(
                 initialize_name(self.lastName, self.firstName, self.patrName),
-                safe_traverse_attrs(self.speciality, 'name')
+                safe_traverse_attrs(self.speciality, 'name', default='')
             )
         else:
             return u'{0} {1}'.format(self.lastName, self.firstName)

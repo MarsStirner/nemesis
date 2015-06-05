@@ -311,12 +311,13 @@ def api_doctors_to_assist():
         rbUserProfile.code.in_([UserProfileManager.doctor_clinic, UserProfileManager.doctor_diag])
     ).options(
         lazyload('*'),
-        joinedload(Person.speciality)
+        joinedload(Person.speciality),
+        joinedload(Person.org_structure),
     ).order_by(
         Person.lastName,
         Person.firstName
     )
-    res = [viz.make_person_with_profile(person, profile) for person, profile in persons]
+    res = [viz.make_person_for_assist(person, profile) for person, profile in persons]
     return jsonify(res)
 
 
