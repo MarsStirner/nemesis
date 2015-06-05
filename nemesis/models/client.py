@@ -905,7 +905,7 @@ class ClientSocStatus(db.Model):
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     socStatusClass_id = db.Column(db.ForeignKey('rbSocStatusClass.id'), index=True)
     socStatusType_id = db.Column(db.ForeignKey('rbSocStatusType.id'), nullable=False, index=True)
-    begDate = db.Column(db.Date, nullable=False)
+    begDate = db.Column(db.Date)
     endDate = db.Column(db.Date)
     document_id = db.Column(db.ForeignKey('ClientDocument.id'), index=True)
     note = db.Column(db.Unicode(200), nullable=False, server_default=u"''", default=u'')

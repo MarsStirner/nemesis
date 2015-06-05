@@ -149,6 +149,9 @@ angular.module('WebMis20.directives').
                             return classes_codes.indexOf(s_class) != -1;
                         };
                     };
+                    scope.begDateRequired = function () {
+                        return scope.ssClass !== '3' && scope.ssClass !== '4';
+                    }
                 },
                 template:
 '<div class="panel panel-default">\
@@ -170,7 +173,7 @@ angular.module('WebMis20.directives').
                 <label for="ss_begdate[[idPostfix]]" class="control-label">Дата начала</label>\
                 <wm-date id="ss_begdate[[idPostfix]]" name="ss_begdate[[idPostfix]]"\
                          ng-model="modelSocStatus.beg_date" ng-disabled="!edit_mode()"\
-                         ng-required="socStatusForm.$dirty">\
+                         ng-required="begDateRequired() && socStatusForm.$dirty">\
                 </wm-date>\
             </div>\
             <div class="form-group col-md-3"\

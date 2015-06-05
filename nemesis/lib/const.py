@@ -5,6 +5,8 @@ ID_DOC_GROUP_CODE = '1'
 COMP_POLICY_CODES = ('cmiOld', 'cmiTmp', 'cmiCommonPaper', 'cmiCommonElectron', 'cmiUEC', 'cmiFnkcIndustrial',
                      'cmiFnkcLocal', '0', '1')
 VOL_POLICY_CODES = ('vmi', '3')
+SS_WORK_CODE = '3'
+SS_NATIONALITY_CODE = '4'
 
 # event
 PAID_EVENT_CODE = '4'
