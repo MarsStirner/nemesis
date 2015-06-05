@@ -34,7 +34,7 @@ angular.module('WebMis20.directives').
                         if ($scope.addressModel.address) {
                             $scope.addressModel.address.locality = on ?
                                 null :
-                                ($scope.addressModel.address.locality || {});
+                                ($scope.addressModel.address.locality);
                         }
                         $scope.addressModel.dirty = true;
                     }
@@ -49,7 +49,7 @@ angular.module('WebMis20.directives').
                     if ($scope.addressModel.address) {
                         $scope.addressModel.address.street = on ?
                             null :
-                            ($scope.addressModel.address.street || {});
+                            ($scope.addressModel.address.street);
                         $scope.addressModel.address.street_free = on ?
                             ($scope.addressModel.address.street_free || '') :
                             null;
@@ -100,12 +100,17 @@ angular.module('WebMis20.directives').
                 var unregisterModesSet = scope.$watch('addressModel', function(newVal, oldVal) {
                     var newState = extractState(newVal),
                         newFullFreeInput = newState.free_input !== null && newState.free_input !== undefined,
-                        newStreeFreeInput = newState.street_free !== null && newState.street_free !== undefined;
+                        // если у виджета улицы в свободном виде будет установлен ng-required, то при стирании
+                        // значения атрибут модели будет установлен в undefined, из-за чего произойдет переключение
+                        // в режим выбора улицы из кладр. Если это нежелательное поведение, то нужно будет писать
+                        // директиву валидатор для wmAddressStreetFree, в которой менять значение модели
+                        // с undefined на '' в $parsers.
+                        newStreetFreeInput = newState.street_free !== null && newState.street_free !== undefined;
                     if (newFullFreeInput !== scope.fullFreeInputEnabled()) {
                         scope.setFullFreeInput(newFullFreeInput);
                     }
-                    if (newStreeFreeInput !== scope.streetFreeInputEnabled()) {
-                        scope.setStreetInputFree(newStreeFreeInput);
+                    if (newStreetFreeInput !== scope.streetFreeInputEnabled()) {
+                        scope.setStreetInputFree(newStreetFreeInput);
                     }
                 }, true);
                 scope.$watch('addressForm.$dirty', function(n, o) {
@@ -170,10 +175,10 @@ angular.module('WebMis20.directives').
                 <div ng-show="streetFreeInputEnabled()">\
                     <label for="[[prefix]]_street_free">Улица в свободном виде</label>\
                     <a class="btn btn-link nomarpad pull-right" ng-click="setStreetInputFree(false, true)" ng-disabled="!editMode()">Выбрать из Кладр</a>\
-                    <wm-kladr-street-free id="[[prefix]]_street_free" name="street_free"\
-                        model="addressModel.address.street_free" required="!fullFreeInputEnabled() && streetFreeInputEnabled() && addressForm.$dirty"\
+                    <wm-address-street-free id="[[prefix]]_street_free" name="street_free"\
+                        model="addressModel.address.street_free"\
                         disabled="!editMode()">\
-                    </wm-kladr-street-free>\
+                    </wm-address-street-free>\
                 </div>\
             </div>\
             <div class="form-group col-md-12" ng-show="fullFreeInputEnabled()"\
@@ -350,14 +355,13 @@ angular.module('WebMis20.directives').
 </ui-select>'
         }
     }]).
-    directive('wmKladrStreetFree', [function() {
+    directive('wmAddressStreetFree', [function() {
         return {
             require: '^wmKladrAddress',
             restrict: 'E',
             replace: true,
             scope: {
                 model: '=',
-                required: '=',
                 disabled: '='
             },
             link: function(scope, elm, attrs, kladrctrl) {
@@ -365,7 +369,7 @@ angular.module('WebMis20.directives').
             },
             template:
 '<input type="text" class="form-control" autocomplete="off"\
-    ng-model="model" ng-required="required" ng-disabled="disabled">'
+    ng-model="model" ng-disabled="disabled">'
         }
     }]).
     directive('wmKladrHouseNumber', [function() {
