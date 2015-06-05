@@ -18,6 +18,7 @@ angular.module('WebMis20.directives.goodies', [])
             $interval.cancel(this.interval_promise);
             this.interval_promise = null;
         }
+        return this;
     };
     Timeout.prototype.start = function (timeout) {
         this.kill();
@@ -25,6 +26,7 @@ angular.module('WebMis20.directives.goodies', [])
             this.timeout = timeout;
         }
         this.hideki = $timeout(this.callback, this.timeout);
+        return this;
     };
     Timeout.prototype.start_interval = function (count, timeout) {
         this.kill();
@@ -32,6 +34,7 @@ angular.module('WebMis20.directives.goodies', [])
             this.timeout = timeout;
         }
         this.interval_promise = $interval(this.callback, this.timeout, count || 0, false);
+        return this;
     };
     return Timeout;
 }])
