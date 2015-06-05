@@ -13,7 +13,6 @@ from sqlalchemy.orm import lazyload, joinedload
 from itsdangerous import json
 
 from nemesis.systemwide import login_manager, cache
-from nemesis.lib.data import get_kladr_city, get_kladr_street
 from nemesis.lib.utils import public_endpoint, jsonify, request_wants_json, safe_dict
 from nemesis.lib.apiutils import api_method
 from nemesis.lib.vesta import Vesta
@@ -312,12 +311,13 @@ def api_doctors_to_assist():
         rbUserProfile.code.in_([UserProfileManager.doctor_clinic, UserProfileManager.doctor_diag])
     ).options(
         lazyload('*'),
-        joinedload(Person.speciality)
+        joinedload(Person.speciality),
+        joinedload(Person.org_structure),
     ).order_by(
         Person.lastName,
         Person.firstName
     )
-    res = [viz.make_person_with_profile(person, profile) for person, profile in persons]
+    res = [viz.make_person_for_assist(person, profile) for person, profile in persons]
     return jsonify(res)
 
 
@@ -364,35 +364,11 @@ def kladr_search_city(search_query=None, limit=300):
 @app.route('/api/kladr/street/search/')
 @app.route('/api/kladr/street/search/<city_code>/<search_query>/')
 @app.route('/api/kladr/street/search/<city_code>/<search_query>/<limit>/')
-@cache.memoize(86400)
-def kladr_search_street(city_code=None, search_query=None, limit=100):
-    result = []
-    if city_code is None or search_query is None:
-        return jsonify([])
-    response = requests.get(u'{0}kladr/street/search/{1}/{2}/{3}/'.format(app.config['VESTA_URL'],
-                                                                          city_code,
-                                                                          search_query,
-                                                                          limit))
-    for street in response.json()['data']:
-        data = {'code': street['identcode'], 'name': u'{0} {1}'.format(street['fulltype'], street['name'])}
-        result.append(data)
-    return jsonify(result)
-
-
-@app.route('/api/kladr/city/')
-@app.route('/api/kladr/city/<code>/')
 @api_method
-def kladr_city(code=None):
-    return Vesta.get_kladr_locality(code) if code else []
-
-
-@app.route('/api/kladr/street/')
-@app.route('/api/kladr/street/<code>/')
-@cache.memoize(86400)
-def kladr_street(code=None):
-    if code is None:
-        return jsonify([])
-    return jsonify([get_kladr_street(code)])
+def kladr_search_street(city_code=None, search_query=None, limit=100):
+    if city_code is None or search_query is None:
+        return []
+    return Vesta.search_kladr_street(city_code, search_query, limit)
 
 
 @app.route('/clear_cache/')

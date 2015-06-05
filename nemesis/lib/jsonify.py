@@ -852,11 +852,12 @@ class PersonTreeVisualizer(object):
             'persons': [],
         }
 
-    def make_person_with_profile(self, person, profile):
+    def make_person_for_assist(self, person, profile):
         return {
             'id': person.id,
             'full_name': person.full_name,
-            'profile': profile
+            'profile': profile,
+            'org_structure': person.org_structure
         }
 
     def make_tree(self, persons):

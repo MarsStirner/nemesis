@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('WebMis20.directives').
-    directive('wmKladrAddress', [function () {
+    directive('wmKladrAddress', ['$rootScope', function ($rootScope) {
         return {
             restrict: 'E',
             require: '^form',
@@ -9,75 +9,110 @@ angular.module('WebMis20.directives').
             scope: {
                 prefix: '@',
                 addressModel: '=',
-                dependentAddress: '=',
                 editMode: '&'
             },
             controller: function ($scope) {
                 var widgets = $scope.widgets = {};
-                var mode = $scope.mode = {};
-                mode.kladr_addr_valid = false;
-                mode.switch_to_free_input = false;
+                var modes = $scope.modes = {
+                    full_free_input: false,
+                    street_free_input: false
+                };
 
                 this.registerWidget = function(name, w) {
                     widgets[name] = w;
                 };
-
-                $scope.inFreeInputMode = function() {
-                    return mode.switch_to_free_input;
+                $scope.fullFreeInputEnabled = function() {
+                    return modes.full_free_input;
                 };
-
-                $scope.show_warning = function () {
-                  return (!$scope.mode.kladr_addr_valid && $scope.addressForm.$dirty) &&
-                      !($scope.addressModel.synced && $scope.dependentAddress)
+                $scope.streetFreeInputEnabled = function () {
+                    return modes.street_free_input;
                 };
-
-                $scope.setFreeInputText = function(switched) {
-                    var text = '';
-                    if (switched) {
-                        text = [
-                            widgets.locality.getText(),
-                            widgets.street.getText(),
-                            'д. ' + (widgets.housenumber.model || '') + (widgets.corpusnumber.model ?
-                                                                         'к. ' + widgets.corpusnumber.model : ''),
-                            'кв. ' + (widgets.flatnumber.model || '')
-                        ].join(', ');
+                $scope.setFullFreeInput = function (on, broadcast, changeModels) {
+                    modes.full_free_input = on;
+                    if (changeModels) {
+                        $scope.setFreeInputText(on);
+                        if ($scope.addressModel.address) {
+                            $scope.addressModel.address.locality = on ?
+                                null :
+                                ($scope.addressModel.address.locality);
+                        }
+                        $scope.addressModel.dirty = true;
                     }
-                    widgets.freeinput.model = text;
+                    if ($scope.addressModel.synced && broadcast) {
+                        $rootScope.$broadcast('addressWidgetFreeInputChanged', {
+                            enabled: on
+                        });
+                    }
+                };
+                $scope.setStreetInputFree = function (on, broadcast) {
+                    modes.street_free_input = on;
+                    if ($scope.addressModel.address) {
+                        $scope.addressModel.address.street = on ?
+                            null :
+                            ($scope.addressModel.address.street);
+                        $scope.addressModel.address.street_free = on ?
+                            ($scope.addressModel.address.street_free || '') :
+                            null;
+                        $scope.addressModel.dirty = true;
+                    }
+                    if ($scope.addressModel.synced && broadcast) {
+                        $rootScope.$broadcast('addressWidgetInputStreetChanged', {
+                            enabled: on
+                        });
+                    }
+                };
+                $scope.setFreeInputText = function(enabled) {
+                    var text = null;
+                    if (enabled) {
+                        text = '{0}{, |1}{, д. |2}{, к. |3}{, кв. |4}'.formatNonEmpty(
+                            widgets.locality.getText(),
+                            $scope.streetFreeInputEnabled() ?
+                                safe_traverse($scope.addressModel, ['address', 'street_free']):
+                                widgets.street.getText(),
+                            safe_traverse($scope.addressModel, ['address', 'house_number']),
+                            safe_traverse($scope.addressModel, ['address', 'corpus_number']),
+                            safe_traverse($scope.addressModel, ['address', 'flat_number'])
+                        );
+                    }
+                    $scope.addressModel.free_input = text;
                 };
 
                 this.getLocation = function() {
-                    return widgets.locality.model;
+                    return safe_traverse($scope.addressModel, ['address', 'locality']);
                 };
 
                 $scope.clearStreet = function() {
-                    widgets.street.reset();
+                    $scope.addressModel.address.street = null;
+                    widgets.street.clearSearchInput();
+                    $scope.addressModel.address.street_free = null;
                 };
             },
             link: function(scope, elm, attrs, formCtrl) {
                 scope.addressForm = formCtrl;
-
-                scope.$watchCollection(function() {
-                    return [scope.widgets.locality.model, scope.widgets.street.model];
-                }, function(n, o) {
-                    scope.mode.kladr_addr_valid = n.filter(function(model) {
-                        return angular.isDefined(model);
-                    }).length === n.length;
-                });
-                var unregister_init_mode_set = scope.$watch('widgets.freeinput.model', function(n, o) {
-                    // для совпадающих адресов
-                    if (angular.isString(n) && n !== '') {
-                        scope.mode.switch_to_free_input = true;
-//                        unregister_init_mode_set();
-                    } else {
-                         scope.mode.switch_to_free_input = false;
+                var extractState = function (obj) {
+                    return {
+                        locality_code: safe_traverse(obj, ['address', 'locality', 'code']),
+                        free_input: obj.free_input,
+                        street_code: safe_traverse(obj, ['address', 'street', 'code']),
+                        street_free: safe_traverse(obj, ['address', 'street_free'])
+                    };
+                };
+                var unregisterModesSet = scope.$watch('addressModel', function(newVal, oldVal) {
+                    var newState = extractState(newVal),
+                        newFullFreeInput = newState.free_input !== null && newState.free_input !== undefined,
+                        // если у виджета улицы в свободном виде будет установлен ng-required, то при стирании
+                        // значения атрибут модели будет установлен в undefined, из-за чего произойдет переключение
+                        // в режим выбора улицы из кладр. Если это нежелательное поведение, то нужно будет писать
+                        // директиву валидатор для wmAddressStreetFree, в которой менять значение модели
+                        // с undefined на '' в $parsers.
+                        newStreetFreeInput = newState.street_free !== null && newState.street_free !== undefined;
+                    if (newFullFreeInput !== scope.fullFreeInputEnabled()) {
+                        scope.setFullFreeInput(newFullFreeInput);
                     }
-                });
-                scope.$watch('mode.switch_to_free_input', function(n, o) {
-                    if (n !== o) {
-                        scope.setFreeInputText(n);
-                        scope.$broadcast('switch_to_freeinput', n);
+                    if (newStreetFreeInput !== scope.streetFreeInputEnabled()) {
+                        scope.setStreetInputFree(newStreetFreeInput);
                     }
-                });
+                }, true);
                 scope.$watch('addressForm.$dirty', function(n, o) {
                     if (n !== o) {
                         scope.addressModel.dirty = n;
@@ -88,107 +123,134 @@ angular.module('WebMis20.directives').
                         scope.addressForm.$setDirty(n);
                     }
                 });
-                scope.$watch(function() {
-                    return scope.widgets.locality.model;
-                }, function(n, o) {
-                    if (n !== o) { scope.clearStreet(); }
+                scope.$watch('addressModel.address.locality', function(n, o) {
+                    if (n !== o) {
+                        scope.clearStreet();
+                    }
+                });
+                scope.$on('addressWidgetFreeInputChanged', function (event, params) {
+                    if (scope.fullFreeInputEnabled() !== params.enabled) {
+                        scope.setFullFreeInput(params.enabled);
+                    }
+                });
+                scope.$on('addressWidgetInputStreetChanged', function (event, params) {
+                    if (scope.streetFreeInputEnabled() !== params.enabled) {
+                        scope.setStreetInputFree(params.enabled);
+                    }
                 });
             },
             template:
-'<div>\
-    <div class="panel panel-default">\
-        <div class="panel-body">\
-            <div ng-transclude></div>\
-            <alert ng-show="show_warning()" type="danger">Введенный адрес не найден в справочнике адресов Кладр.\
-                <a ng-click="mode.switch_to_free_input = !mode.switch_to_free_input">\
-                [[mode.switch_to_free_input ? "Выбрать из Кладр" : "Ввести адрес вручную?"]]</a>\
-            </alert>\
-            <div class="row">\
-                <div class="form-group col-md-9"\
-                     ng-class="{\'has-error\': addressForm.$dirty &&\
-                        (addressForm.locality.$error.required || (!inFreeInputMode() && addressForm.locality.$invalid))}">\
-                    <label for="[[prefix]]_locality">Населенный пункт</label>\
-                    <wm-kladr-locality id="[[prefix]]_locality" name="locality"\
-                        model="addressModel.address.locality" required="!inFreeInputMode() && addressForm.$dirty"\
-                        disabled="mode.switch_to_free_input || !editMode()">\
-                    </wm-kladr-locality>\
-                </div>\
-                <div class="form-group col-md-3"\
-                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.locality_type.$invalid}">\
-                    <label for="[[prefix]]_locality_type">Тип населенного пункта</label>\
-                    <wm-kladr-locality-type id="[[prefix]]_locality_type" name="locality_type"\
-                        model="addressModel.locality_type" required="addressForm.$dirty"\
-                        disabled="!editMode()">\
-                    </wm-kladr-locality-type>\
-                </div>\
+'<div class="panel panel-default">\
+<div class="panel-body">\
+    <div ng-transclude></div>\
+    <div class="row">\
+    <div class="col-md-9">\
+        <div class="row">\
+            <div class="form-group col-md-12" ng-show="!fullFreeInputEnabled()"\
+                 ng-class="{\'has-error\': addressForm.$dirty &&\
+                    (addressForm.locality.$error.required || (!fullFreeInputEnabled() && addressForm.locality.$invalid))}">\
+                <label for="[[prefix]]_locality">Населенный пункт</label>\
+                <a class="btn btn-link nomarpad pull-right" ng-click="setFullFreeInput(true, true, true)" ng-disabled="!editMode()"\
+                    tooltip-popup-delay="1000" tooltip="Если населенный пункт не найден в справочнике адресов Кладр, то адрес можно заполнить полностью в свободном виде">Ввести вручную</a>\
+                <wm-kladr-locality id="[[prefix]]_locality" name="locality"\
+                    ng-model="addressModel.address.locality" ng-required="!fullFreeInputEnabled() && addressForm.$dirty"\
+                    disabled="!editMode()">\
+                </wm-kladr-locality>\
             </div>\
-\
-            <div class="row">\
-                <div class="form-group col-md-9"\
-                     ng-class="{\'has-error\': addressForm.$dirty &&\
-                        (addressForm.street.$error.required || (!inFreeInputMode() && addressForm.street.$invalid))}">\
+            <div class="form-group col-md-12" ng-show="!fullFreeInputEnabled()"\
+                 ng-class="{\'has-error\': addressForm.$dirty &&\
+                    (fullFreeInputEnabled() ? false : (\
+                        streetFreeInputEnabled() ? (addressForm.street_free.$error.required || addressForm.street_free.$invalid) :\
+                        (addressForm.street.$error.required || addressForm.street.$invalid)\
+                    ))}">\
+                <div ng-show="!streetFreeInputEnabled()">\
                     <label for="[[prefix]]_street">Улица</label>\
+                    <a class="btn btn-link nomarpad pull-right" ng-click="setStreetInputFree(true, true)" ng-disabled="!editMode()"\
+                        tooltip-popup-delay="1000" tooltip="Если введенная улица не найдена в справочнике адресов Кладр, её можно заполнить в свободном виде">Ввести вручную</a>\
                     <wm-kladr-street id="[[prefix]]_street" name="street"\
-                        model="addressModel.address.street" required="!inFreeInputMode() && addressForm.$dirty"\
-                        disabled="mode.switch_to_free_input || !editMode()">\
+                        ng-model="addressModel.address.street" ng-required="!fullFreeInputEnabled() && !streetFreeInputEnabled() && addressForm.$dirty"\
+                        disabled="!editMode()">\
                     </wm-kladr-street>\
                 </div>\
-                <div class="form-group col-md-1"\
+                <div ng-show="streetFreeInputEnabled()">\
+                    <label for="[[prefix]]_street_free">Улица в свободном виде</label>\
+                    <a class="btn btn-link nomarpad pull-right" ng-click="setStreetInputFree(false, true)" ng-disabled="!editMode()">Выбрать из Кладр</a>\
+                    <wm-address-street-free id="[[prefix]]_street_free" name="street_free"\
+                        model="addressModel.address.street_free"\
+                        disabled="!editMode()">\
+                    </wm-address-street-free>\
+                </div>\
+            </div>\
+            <div class="form-group col-md-12" ng-show="fullFreeInputEnabled()"\
+                 ng-class="{\'has-error\': addressForm.$dirty && fullFreeInputEnabled() &&\
+                    addressForm.free_input.$error.required && addressForm.free_input.$invalid}">\
+                <label for="[[prefix]]_free_input">В свободном виде</label>\
+                <a class="btn btn-link nomarpad pull-right" ng-click="setFullFreeInput(false, true, true)" ng-disabled="!editMode()">Выбрать из Кладр</a>\
+                <wm-kladr-free-input id="[[prefix]]_free_input" name="free_input"\
+                    model="addressModel.free_input" required="fullFreeInputEnabled() && addressForm.$dirty"\
+                    disabled="!editMode()">\
+                </wm-kladr-free-input>\
+            </div>\
+        </div>\
+    </div>\
+    <div class="col-md-3">\
+        <div class="row">\
+            <div class="form-group col-md-12"\
+                 ng-class="{\'has-error\': addressForm.$dirty && addressForm.locality_type.$invalid}">\
+                <label for="[[prefix]]_locality_type">Тип населенного пункта</label>\
+                <wm-kladr-locality-type id="[[prefix]]_locality_type" name="locality_type"\
+                    model="addressModel.locality_type" required="addressForm.$dirty"\
+                    disabled="!editMode()">\
+                </wm-kladr-locality-type>\
+            </div>\
+            <div ng-show="!fullFreeInputEnabled()">\
+                <div class="form-group col-md-4"\
                      ng-class="{\'has-error\': addressForm.$dirty && addressForm.house_number.$error.required && addressForm.house_number.$invalid}">\
                     <label for="[[prefix]]_house_number">Дом</label>\
                     <wm-kladr-house-number id="[[prefix]]_house_number" name="house_number"\
-                        model="addressModel.address.house_number" required="!inFreeInputMode() && addressForm.$dirty"\
-                        disabled="mode.switch_to_free_input || !editMode()">\
+                        model="addressModel.address.house_number" required="!fullFreeInputEnabled() && addressForm.$dirty"\
+                        disabled="!editMode()">\
                     </wm-kladr-house-number>\
                 </div>\
-                <div class="form-group col-md-1"\
-                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.corpus_number.$error.required && addressForm.corpus_number.$invalid}">\
+                <div class="form-group col-md-4"\
+                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.corpus_number.$invalid}">\
                     <label for="[[prefix]]_corpus_number">Корпус</label>\
                     <wm-kladr-corpus-number id="[[prefix]]_corpus_number" name="corpus_number"\
-                        model="addressModel.address.corpus_number" required="false"\
-                        disabled="mode.switch_to_free_input || !editMode()">\
+                        model="addressModel.address.corpus_number"\
+                        disabled="!editMode()">\
                     </wm-kladr-corpus-number>\
                 </div>\
-                <div class="form-group col-md-1"\
-                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.flat_number.$error.required && addressForm.flat_number.$invalid}">\
+                <div class="form-group col-md-4"\
+                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.flat_number.$invalid}">\
                     <label for="[[prefix]]_flat_number">Квартира</label>\
                     <wm-kladr-flat-number id="[[prefix]]_flat_number" name="flat_number"\
-                        model="addressModel.address.flat_number" required="false"\
-                        disabled="mode.switch_to_free_input || !editMode()">\
+                        model="addressModel.address.flat_number"\
+                        disabled="!editMode()">\
                     </wm-kladr-flat-number>\
-                </div>\
-            </div>\
-\
-            <div class="row" ng-show="inFreeInputMode()">\
-                <div class="form-group col-md-12"\
-                     ng-class="{\'has-error\': addressForm.$dirty && addressForm.free_input.$error.required && addressForm.free_input.$invalid}">\
-                    <label for="[[prefix]]_free_input">В свободном виде</label>\
-                    <wm-kladr-free-input id="[[prefix]]_free_input" name="free_input"\
-                        model="addressModel.free_input" required="inFreeInputMode() && addressForm.$dirty"\
-                        disabled="!mode.switch_to_free_input || !editMode()">\
-                    </wm-kladr-free-input>\
                 </div>\
             </div>\
         </div>\
     </div>\
+    </div>\
+</div>\
 </div>'
         };
     }]).
     directive('wmKladrLocality', ['$http', function($http) {
         return {
-            require: ['^?wmKladrAddress', 'ngModel'],
+            require: ['^?wmKladrAddress', '^ngModel'],
             restrict: 'E',
-            replace: true,
             scope: {
-                model: '=',
-                required: '=',
+                ngRequired: '=',
                 disabled: '='
             },
             controller: function($scope) {
-                $scope.getCity = function(search_q) {
-                    var url = [kladr_city + 'search/' + search_q + '/'].join('');
-                    return $http.get(url, {}).then(function(res) {
-                        return res.data.result;
+                $scope.refreshLocalityList = function(search_query) {
+                    $scope.searchInput = search_query;
+                    if (!search_query || search_query.length < 2) return [];
+                    var url = '{0}{1}/'.format(search_kladr_city, search_query);
+                    $http.get(url, {}).then(function(res) {
+                        $scope.locality_list =  res.data.result;
                     });
                 };
             },
@@ -198,30 +260,20 @@ angular.module('WebMis20.directives').
                 if (kladrCtrl) {
                     kladrCtrl.registerWidget('locality', scope);
                 }
-                modelCtrl.$formatters.push(function (value) {
-                    if (typeof value === 'object') {
-                        return value.fullname;
-                    } else {
-                        return value;
-                    }
-                });
 
                 scope.getText = function() {
-                    return modelCtrl.$viewValue;
+                    return modelCtrl.$modelValue ? modelCtrl.$modelValue.fullname : scope.searchInput;
                 };
-                scope.reset =  function() {
-                    scope.model = undefined;
-                };
-
-                scope.$on('switch_to_freeinput', function(event, on) {
-                    modelCtrl.$setValidity('editable', on);
-                });
             },
             template:
-                '<input type="text" class="form-control" placeholder="" autocomplete="off"\
-                    ng-model="model" typeahead="city as city.fullname for city in getCity($viewValue)"\
-                    typeahead-wait-ms="1000" typeahead-min-length="2" typeahead-editable="false"\
-                    ng-required="required" ng-disabled="disabled"/>'
+'<ui-select theme="bootstrap" reset-search-input="false"\
+        ng-required="ngRequired" ng-disabled="disabled">\
+    <ui-select-match placeholder="Введите адрес для поиска" allow-clear>[[$select.selected.fullname]]</ui-select-match>\
+    <ui-select-choices repeat="locality in locality_list track by $index"\
+            refresh="refreshLocalityList($select.search)">\
+        <div ng-bind-html="locality.fullname | highlight: $select.search"></div>\
+    </ui-select-choices>\
+</ui-select>'
         }
     }]).
     directive('wmKladrLocalityType', ['RefBookService', function(RefBookService) {
@@ -259,23 +311,20 @@ angular.module('WebMis20.directives').
     }]).
     directive('wmKladrStreet', ['$http', function($http) {
         return {
-            require: ['^wmKladrAddress', 'ngModel'],
+            require: ['^wmKladrAddress', '^ngModel'],
             restrict: 'E',
-            replace: true,
             scope: {
-                model: '=',
-                required: '=',
+                ngRequired: '=',
                 disabled: '='
             },
             controller: function($scope) {
-                $scope.getStreet = function(search_q) {
-                    var loc = $scope.getSelectedLocation();
-                    if (!loc) {
-                        return [];
-                    }
-                    var url = [kladr_street, 'search/', loc, '/', search_q, '/' ].join('');
-                    return $http.get(url, {}).then(function(res) {
-                        return res.data.result;
+                $scope.refreshStreetList = function(search_query) {
+                    $scope.searchInput = search_query;
+                    var locality_code = $scope.getSelectedLocation();
+                    if (!locality_code || !search_query || search_query.length < 2) return [];
+                    var url = '{0}{1}/{2}/'.format(search_kladr_street, locality_code, search_query);
+                    $http.get(url, {}).then(function(res) {
+                        $scope.street_list =  res.data.result;
                     });
                 };
             },
@@ -289,23 +338,38 @@ angular.module('WebMis20.directives').
                     return loc ? loc.code : undefined;
                 };
                 scope.getText = function() {
-                    return modelCtrl.$viewValue;
+                    return modelCtrl.$modelValue ? modelCtrl.$modelValue.name : scope.searchInput;
                 };
-                scope.reset =  function() {
-                    scope.model = undefined;
-                    modelCtrl.$setViewValue('');
-                    modelCtrl.$render();
+                scope.clearSearchInput =  function() {
+                    scope.searchInput = undefined;
                 };
-
-                scope.$on('switch_to_freeinput', function(event, on) {
-                    modelCtrl.$setValidity('editable', on);
-                });
             },
             template:
-                '<input type="text" class="form-control" autocomplete="off" placeholder=""\
-                    ng-model="model" typeahead="street as street.name for street in getStreet($viewValue)"\
-                    typeahead-wait-ms="1000" typeahead-min-length="2" typeahead-editable="false"\
-                    ng-required="required" ng-disabled="disabled"/>'
+'<ui-select theme="bootstrap" reset-search-input="false"\
+        ng-required="ngRequired" ng-disabled="disabled">\
+    <ui-select-match placeholder="Введите улицу для поиска" allow-clear>[[$select.selected.name]]</ui-select-match>\
+    <ui-select-choices repeat="street in street_list track by $index"\
+            refresh="refreshStreetList($select.search)">\
+        <div ng-bind-html="street.name | highlight: $select.search"></div>\
+    </ui-select-choices>\
+</ui-select>'
+        }
+    }]).
+    directive('wmAddressStreetFree', [function() {
+        return {
+            require: '^wmKladrAddress',
+            restrict: 'E',
+            replace: true,
+            scope: {
+                model: '=',
+                disabled: '='
+            },
+            link: function(scope, elm, attrs, kladrctrl) {
+                kladrctrl.registerWidget('streetfree', scope);
+            },
+            template:
+'<input type="text" class="form-control" autocomplete="off"\
+    ng-model="model" ng-disabled="disabled">'
         }
     }]).
     directive('wmKladrHouseNumber', [function() {

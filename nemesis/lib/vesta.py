@@ -6,7 +6,7 @@ import json
 from nemesis.app import app
 from nemesis.systemwide import cache
 from nemesis.lib.utils import logger
-from nemesis.models.kladr_models import KladrLocality
+from nemesis.models.kladr_models import KladrLocality, KladrStreet
 
 
 class Vesta(object):
@@ -79,6 +79,23 @@ class Vesta(object):
 
     @classmethod
     @cache.memoize(86400)
+    def get_kladr_street(cls, code):
+        if len(code) == 17:  # убрать после конвертации уже записанных кодов кладр
+            code = code[:-2]
+        url = u'{0}/kladr/street/{1}/'.format(cls.get_url(), code)
+        result, data = cls._get_data(url)
+        if not result.success:
+            locality = KladrStreet(invalid=u'Ошибка загрузки данных кладр')
+        else:
+            if not data:
+                locality = KladrStreet(invalid=u'Не найдена улица в кладр по коду {0}'.format(code))
+            else:
+                street_info = data[0]
+                locality = _make_kladr_street(street_info)
+        return locality
+
+    @classmethod
+    @cache.memoize(86400)
     def search_kladr_locality(cls, query, limit=300):
         url = u'{0}/kladr/psg/search/{1}/{2}/'.format(cls.get_url(), query, limit)
         result, data = cls._get_data(url)
@@ -87,11 +104,26 @@ class Vesta(object):
         else:
             return []
 
+    @classmethod
+    @cache.memoize(86400)
+    def search_kladr_street(cls, locality_code, query, limit=100):
+        url = u'{0}/kladr/street/search/{1}/{2}/{3}/'.format(cls.get_url(), locality_code, query, limit)
+        result, data = cls._get_data(url)
+        if result.success and data:
+            return [_make_kladr_street(street_info) for street_info in data]
+        else:
+            return []
+
 
 def _make_kladr_locality(loc_info):
     code = loc_info['identcode']
-    name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
-    if loc_info['parents']:
-        for parent in loc_info['parents']:
-            fullname = u'{0}, {1}. {2}'.format(fullname, parent['shorttype'], parent['name'])
-    return KladrLocality(code=code, name=name, fullname=fullname)
+    name = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
+    level = loc_info['level']
+    parents = map(_make_kladr_locality, loc_info.get('parents', []))
+    return KladrLocality(code=code, name=name, level=level, parents=parents)
+
+
+def _make_kladr_street(street_info):
+    code = street_info['identcode']
+    name = u'{0} {1}'.format(street_info['fulltype'], street_info['name'])
+    return KladrStreet(code=code, name=name)

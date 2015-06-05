@@ -332,9 +332,9 @@ angular.module('WebMis20.services').
             },
             push_soc_status: function (client, class_name, class_code) {
                 var document = null;
-                if (class_code === 2) {
+                if (class_code === '2') {
                     document = get_document_record();
-                } else if (class_code === 3) {
+                } else if (class_code === '3') {
                     document = {};
                 }
                 var new_ss = {
@@ -374,10 +374,10 @@ angular.module('WebMis20.services').
                         msg
                     ).then(function () {
                         self.delete_record(client, 'invalidities', cur_invld, 2);
-                        self.push_soc_status(client, 'invalidities', 2);
+                        self.push_soc_status(client, 'invalidities', '2');
                     });
                 } else {
-                    self.push_soc_status(client, 'invalidities', 2);
+                    self.push_soc_status(client, 'invalidities', '2');
                 }
             },
             delete_invalidity: function(client, invalidity) {
@@ -390,7 +390,7 @@ angular.module('WebMis20.services').
                 });
             },
             add_new_work: function(client) {
-                this.push_soc_status(client, 'works', 3)
+                this.push_soc_status(client, 'works', '3')
             },
             delete_work: function(client, work) {
                 var self = this;
@@ -402,7 +402,7 @@ angular.module('WebMis20.services').
                 });
             },
             add_new_nationality: function(client) {
-                this.push_soc_status(client, 'nationalities', 4)
+                this.push_soc_status(client, 'nationalities', '4')
             },
             delete_nationality: function(client, nationality) {
                 var self = this;

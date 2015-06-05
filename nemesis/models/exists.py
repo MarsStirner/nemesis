@@ -406,7 +406,7 @@ class Person(db.Model):
     post = db.relationship('rbPost')
     speciality = db.relationship('rbSpeciality', lazy=False)
     organisation = db.relationship('Organisation')
-    org_structure = db.relationship('OrgStructure',)
+    org_structure = db.relationship('OrgStructure')
     academicDegree = db.relationship('rbAcademicDegree')
     academicTitle = db.relationship('rbAcademicTitle')
     tariffCategory = db.relationship('rbTariffCategory')

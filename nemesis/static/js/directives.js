@@ -295,8 +295,8 @@ angular.module('WebMis20.directives')
                 return Boolean(template.meta.length);
             };
 
-            $scope.select_all_templates();
             if (fast_print) {
+                $scope.select_all_templates();
                 if ($scope.instant_print()) {
                     $scope.print_separated();
                 } else {

@@ -369,50 +369,6 @@ def get_planned_end_datetime(action_type_id):
 
 
 @cache.memoize(86400)
-def get_kladr_city(code):
-    if len(code) == 13:  # убрать после конвертации уже записанных кодов кладр
-        code = code[:-2]
-    result = dict()
-    try:
-        url = u'{0}kladr/city/{1}/'.format(app.config['VESTA_URL'], code)
-        response = requests.get(url)
-        response_json = response.json()
-    except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
-        logger.error(u'Ошибка получения данных региона из кладр: %s (%s)' % (e, url), exc_info=True)
-    else:
-        city = response_json.get('data')
-        if city:
-            result = city[0]
-            result['code'] = result['identcode']
-            result['fullname'] = result['name'] = u'{0}. {1}'.format(result['shorttype'], result['name'])
-            if result['parents']:
-                for parent in result['parents']:
-                    result['fullname'] = u'{0}, {1}. {2}'.format(result['fullname'], parent['shorttype'], parent['name'])
-                del result['parents']
-    return result
-
-
-@cache.memoize(86400)
-def get_kladr_street(code):
-    if len(code) == 17:  # убрать после конвертации уже записанных кодов кладр
-        code = code[:-2]
-    data = dict()
-    try:
-        url = u'{0}kladr/street/{1}/'.format(app.config['VESTA_URL'], code)
-        response = requests.get(url)
-        response_json = response.json()
-    except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
-        logger.error(u'Ошибка получения данных улицы из кладр: %s (%s)' % (e, url), exc_info=True)
-    else:
-        street = response_json.get('data')
-        if street:
-            data = street[0]
-            data['code'] = data['identcode']
-            data['name'] = u'{0} {1}'.format(data['fulltype'], data['name'])
-    return data
-
-
-@cache.memoize(86400)
 def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
     id_list = {}
 
