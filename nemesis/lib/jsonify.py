@@ -742,7 +742,7 @@ class ClientVisualizer(object):
                 'id': row[0],
                 'mark': None,
                 'date': row[1],
-                'begDateTime': datetime.datetime.combine(row[1], row[2]),
+                'begDateTime': datetime.datetime.combine(row[1], row[2] or datetime.datetime.min.time()),
                 'office': {
                     'id': row[6],
                     'code': row[7],
