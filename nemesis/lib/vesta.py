@@ -69,7 +69,7 @@ class Vesta(object):
             locality_list = [KladrLocality(invalid=u'Ошибка загрузки данных кладр')]
         else:
             if not data:
-                locality_list = [KladrLocality(invalid=u'Не найдены адреса в кладр уровня {0} по коду {1}'.format(level, parent_code))]
+                locality_list = []
             else:
                 for loc_info in data:
                     name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
