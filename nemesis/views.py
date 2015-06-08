@@ -88,10 +88,10 @@ def check_valid_login():
                     identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
             elif request.args.get('role') and current_user.has_role(request.args.get('role')):
                 _req_role = request.args.get('role')
-                if _req_role != UserProfileManager.doctor_otd:
+                if _req_role not in (UserProfileManager.doctor_otd, UserProfileManager.doctor_anest):
                     current_user.current_role = current_user.find_role(_req_role)
                 else:
-                    # Если передан врач отделения, то заменяем его на врача поликлиники
+                    # Если передан врач отделения или анестезиолог, то заменяем его на врача поликлиники
                     current_user.current_role = current_user.find_role(UserProfileManager.doctor_clinic)
 
                 identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
