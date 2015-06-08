@@ -4,7 +4,7 @@
 
 
 angular.module('hitsl.core')
-.service('ApiCalls', ['$q','$http', 'NotificationService', function ($q, $http, NotificationService) {
+.service('ApiCalls', ['$q','$http', 'NotificationService', 'Deferred', function ($q, $http, NotificationService, Deferred) {
     this.wrapper = function (method, url, params, data) {
         var defer = $q.defer();
         function process(response) {
@@ -30,10 +30,19 @@ angular.module('hitsl.core')
         .then(process, process);
         return defer.promise;
     };
-    this.simple = function (method, url, params, data, options) {
-        var defer = $q.defer();
+    this.coldstar = function (method, url, params, data, options) {
+        var defer = Deferred.new();
         function process(response) {
             var data = response.data;
+            if (response.status < 100 || !response.data) {
+                NotificationService.notify(
+                    response.status,
+                    'Неизвестная ошибка<br/><strong>{0}</strong>'.format(response.status),
+                    'danger',
+                    true
+                );
+                return defer.error(response);
+            }
             if (_.has(data, 'exception')) {
                 NotificationService.notify(
                     data.exception,
@@ -54,8 +63,7 @@ angular.module('hitsl.core')
             url: url,
             params: params,
             data: data
-        }))
-        .then(process, process);
+        })).then(process, process);
         return defer.promise;
     }
 }])
@@ -99,6 +107,128 @@ angular.module('hitsl.core')
             recompile(self.notifications);
         });
     }
+}])
+.service('Deferred', ['$timeout', function ($timeout) {
+    this.new = function () {
+        var canceller = arguments[0],
+            done = false,
+            value = undefined,
+            resolve_chain = [],
+            reject_chain = [],
+            notify_chain = [],
+            error_chain = [],
+            cancel_chain = [],
+            chain = null,
+            add = function () {
+                var args = _.toArray(arguments),
+                    chain = args.shift(),
+                    callback = args.shift();
+                chain.push({
+                    cb: callback,
+                    args: args,
+                    this: this
+                });
+                if (done) {
+                    $timeout(promote)
+                }
+                return this;
+            },
+            promote = function () {
+                var object;
+                while (chain.length > 0) {
+                    object = chain.shift();
+                    if (object.cb && _.has(object, 'args')) {
+                        try {
+                            value = object.cb.apply(object.this, [value].concat(object.args))
+                        } catch (e) {
+                            chain = error_chain;
+                            value = e;
+                        }
+                    }
+                }
+            },
+            notify = function (with_value) {
+                _.each(notify_chain, function (object) {
+                    object.cb.apply(object.this, [with_value].concat(object.args));
+                })
+            },
+            finish = function (with_chain, with_value) {
+                if (done) throw 'Already done!';
+                chain = with_chain;
+                value = with_value;
+                $timeout(promote).then(set_done);
+            },
+            cancel = function () {
+                if (done) throw 'Already done!';
+                if (canceller) value = canceller();
+                chain = cancel_chain;
+                $timeout(promote).then(set_done);
+            },
+            set_done = function () {
+                done = true;
+            },
+            promise = {
+                addResolve: _.partial(add, resolve_chain),
+                addReject: _.partial(add, reject_chain),
+                addNotify: _.partial(add, notify_chain),
+                addError: _.partial(add, error_chain),
+                addCancel: _.partial(add, cancel_chain),
+                then: function (resolve, reject, error) {
+                    if (resolve) add(resolve_chain, resolve);
+                    if (reject) add(reject_chain, reject);
+                    if (error) add(error_chain, error);
+                },
+                cancel: cancel
+            };
+        return {
+            promise: promise,
+            resolve: _.partial(finish, resolve_chain),
+            reject: _.partial(finish, reject_chain),
+            notify: notify,
+            error: _.partial(finish, error_chain),
+            cancel: cancel
+        }
+    };
+    this.resolve = function (value) {
+        return this.new().resolve(value).promise;
+    };
+    this.reject = function (value) {
+        return this.new().reject(value).promise;
+    };
+    this.all = function (promises) {
+        var deferred = this.new(),
+            counter = 0,
+            results = _.isArray(promises) ? [] : {};
+
+        _.each(promises, function(promise, key) {
+            counter++;
+            promise
+                .addResolve(function(value) {
+                    results[key] = value;
+                    if (!(--counter)) $timeout(_.partial(deferred.resolve, results));
+                    return value;
+                })
+                .addReject(function(reason) {
+                    $timeout(_.partial(deferred.reject, reason));
+                    return reason;
+                })
+                .addError(function (error) {
+                    $timeout(_.partial(deferred.error, error));
+                    return error;
+                })
+                .addCancel(function (reason) {
+                    $timeout(_.partial(deferred.cancel, reason));
+                    return reason;
+                })
+        });
+
+        if (counter === 0) {
+            deferred.resolve(results);
+        }
+
+        return deferred.promise;
+    }
+
 }])
 .directive('alertNotify', function (NotificationService, $compile) {
     return {
