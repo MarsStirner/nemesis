@@ -283,7 +283,7 @@ angular.module('hitsl.core', [])
         check_token().addReject(reload_page).addResolve(function (cas_result) {
             var time_left = Math.min(cas_result.ttl, WMConfig.settings.logout_warning_timeout),
                 deadline = cas_result.ttl - time_left;
-            IdleUserModal.open(time_left).then(
+            IdleUserModal.open(Math.floor(time_left)).then(
                 function () {
                     prolong_token().addResolve(_set_tracking, true).addError(reload_page);
                 },
