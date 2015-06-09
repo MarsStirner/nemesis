@@ -16,7 +16,7 @@ angular.module('WebMis20')
         this.eventSource = events.eventSource;
 
         function call_ez(url, token) {
-            return ApiCalls.coldstar('GET', url, {token: token}, undefined, {withCredentials: true, silent: true})
+            return ApiCalls.coldstar('POST', url, {token: token}, undefined, {withCredentials: true, silent: true})
         }
         function set_null () {
             self.acquired = null;
