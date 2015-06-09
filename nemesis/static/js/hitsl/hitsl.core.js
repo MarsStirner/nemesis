@@ -40,13 +40,195 @@ angular.module('hitsl.core', [])
         }
     };
 }])
-.service('IdleTimer', ['$window', '$document', '$rootScope', 'WMConfig', 'IdleUserModal', 'ApiCalls', function ($window, $document, $rootScope, WMConfig, IdleUserModal, ApiCalls) {
+.service('WindowCloseHandler', ['$timeout', '$rootScope', '$window', '$q', function ($timeout, $rootScope, $window, $q) {
+    var self = this,
+        handlers = [],
+        user_handlers = [],
+        onBeforeUnloadFired = false,
+        resetOnBeforeUnload = function () {
+            onBeforeUnloadFired = false;
+        },
+        call = function () {
+            var args = _.toArray(arguments), f = args.shift();
+            return f.apply(this, args);
+        },
+        changeStart = function (event) {
+            if (onBeforeUnloadFired) return;
+            event = event || $window.event;
+            onBeforeUnloadFired = true;
+            $timeout(resetOnBeforeUnload);
+            var userHandlersResults = [];
+            if (!self.suppressUserhandlers) {
+                userHandlersResults = _.filter(_.map(user_handlers, call));
+                if (userHandlersResults.length > 0) {
+                    return event.returnValue = userHandlersResults.join('\n');
+                }
+            }
+        },
+        changeEnd = function (event) {
+            // Здесь могут обработаться только синхронные обработчики. И то, если повезёт.
+            event = event || $window.event;
+            _.each(handlers, call);
+        };
+    this.addHandler = function (handler) {
+        handlers.push(handler);
+    };
+    this.addUserHandler = function (handler) {
+        user_handlers.push(handler);
+    };
+    this.suppressUserhandlers = false;
+    $window.onbeforeunload = changeStart;
+    $window.onunload = changeEnd; // Эта штука не работает на Mozilla'х
+}])
+.service('Deferred', ['$timeout', function ($timeout) {
+    var self = this,
+        ensurePromise = function (obj) {
+            if (_.has(obj, 'addResolve')) {
+                return obj;
+            } else if (_.has(obj, 'then')) {
+                var wrapper = self.new();
+                obj.then(
+                    wrapper.resolve,
+                    wrapper.reject,
+                    wrapper.notify,
+                    wrapper.error,
+                    wrapper.cancel
+                );
+                return wrapper.promise;
+            } else {
+                return self.resolve(obj);
+            }
+        },
+        timed = function (f) {
+            return function (result) {
+                return ensurePromise(
+                    $timeout(function () {
+                        return f(result);
+                    })
+                )
+            }
+        };
+    this.new = function () {
+        var canceller = arguments[0],
+            done = false,
+            value = undefined,
+            resolve_chain = [],
+            reject_chain = [],
+            notify_chain = [],
+            error_chain = [],
+            cancel_chain = [],
+            chain = null,
+            add = function () {
+                var args = _.toArray(arguments),
+                    chain = args.shift(),
+                    callback = args.shift();
+                chain.push({
+                    cb: callback,
+                    args: args,
+                    this: this
+                });
+                if (done) {
+                    $timeout(promote)
+                }
+                return this;
+            },
+            promote = function () {
+                var object;
+                while (chain.length > 0) {
+                    object = chain.shift();
+                    if (object.cb && _.has(object, 'args')) {
+                        try {
+                            value = object.cb.apply(object.this, [value].concat(object.args))
+                        } catch (e) {
+                            chain = error_chain;
+                            value = e;
+                        }
+                    }
+                }
+            },
+            notify = function (with_value) {
+                _.each(notify_chain, function (object) {
+                    object.cb.apply(object.this, [with_value].concat(object.args));
+                })
+            },
+            finish = function (with_chain, with_value) {
+                if (done) throw 'Already done!';
+                chain = with_chain;
+                value = with_value;
+                $timeout(promote).then(set_done);
+            },
+            cancel = function () {
+                if (done) throw 'Already done!';
+                if (canceller) value = canceller();
+                chain = cancel_chain;
+                $timeout(promote).then(set_done);
+            },
+            set_done = function () {
+                done = true;
+            },
+            promise = {
+                addResolve: _.partial(add, resolve_chain),
+                addReject: _.partial(add, reject_chain),
+                addNotify: _.partial(add, notify_chain),
+                addError: _.partial(add, error_chain),
+                addCancel: _.partial(add, cancel_chain),
+                then: function (resolve, reject, notify, error, cancel) {
+                    if (resolve) add(resolve_chain, resolve);
+                    if (reject) add(reject_chain, reject);
+                    if (notify) add(notify_chain, notify);
+                    if (error) add(error_chain, error);
+                    if (cancel) add(cancel_chain, cancel);
+                    return this;
+                },
+                cancel: cancel
+            };
+        return {
+            promise: promise,
+            resolve: _.partial(finish, resolve_chain),
+            reject: _.partial(finish, reject_chain),
+            notify: notify,
+            error: _.partial(finish, error_chain),
+            cancel: cancel
+        }
+    };
+    this.resolve = function (value) {
+        return this.new().resolve(value).promise;
+    };
+    this.reject = function (value) {
+        return this.new().reject(value).promise;
+    };
+    this.all = function (promises) {
+        var deferred = this.new(),
+            counter = 0,
+            results = _.isArray(promises) ? [] : {};
+        _.each(promises, function(promise, key) {
+            counter++;
+            ensurePromise(promise)
+                .then(
+                function(value) {
+                    results[key] = value;
+                    if (!(--counter)) timed(deferred.resolve)(results);
+                    return value;
+                },
+                timed(deferred.reject),
+                timed(deferred.notify),
+                timed(deferred.error),
+                timed(deferred.cancel)
+            )
+        });
+        if (counter === 0) {
+            deferred.resolve(results);
+        }
+        return deferred.promise;
+    };
+}])
+.service('IdleTimer', ['$window', '$document', 'WMConfig', 'IdleUserModal', 'ApiCalls', 'WindowCloseHandler', function ($window, $document, WMConfig, IdleUserModal, ApiCalls, WindowCloseHandler) {
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
         on_user_activity = _.throttle(postpone_everything, 10000),
         debounced_logout_warning = _.debounce(show_logout_warning, WMConfig.settings.user_idle_timeout * 1000),
         token = $window.document.cookie.replace(/(?:(?:^|.*;\s*)CastielAuthToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
     function reload_page() {
-        $rootScope.cancelFormSafeClose = true;
+        WindowCloseHandler.suppressUserhandlers = true;
         $window.location.reload(true);
     }
     function cas(url) {

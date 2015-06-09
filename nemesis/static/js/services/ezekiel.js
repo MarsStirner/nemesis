@@ -3,7 +3,7 @@
  */
 
 angular.module('WebMis20')
-.factory('EzekielLock', ['ApiCalls', 'WMConfig', 'TimeoutCallback', 'Deferred', function (ApiCalls, WMConfig, TimeoutCallback, Deferred) {
+.factory('EzekielLock', ['ApiCalls', 'WMConfig', 'TimeoutCallback', 'Deferred', 'WindowCloseHandler', function (ApiCalls, WMConfig, TimeoutCallback, Deferred, WindowCloseHandler) {
     var __locks = {};
     // Самая жопа в RPC-имплементации Ezekiel Lock - это то, что мы вполне можем не вызывать release() и тем самым
     // благополучно просрать блокировку. Через минуту она, конечно, освободится, но, блин!
@@ -19,9 +19,7 @@ angular.module('WebMis20')
             self.success = false;
         }
 
-        this.tc = new TimeoutCallback();
-        this.tc.callback = acquire;
-        this.tc.start_interval(0, 10000);
+        this.tc = new TimeoutCallback(acquire, 10000).start();
         this.acquire_defer = Deferred.new();
 
         function call_ez(url, token) {
@@ -42,7 +40,7 @@ angular.module('WebMis20')
                         call_ez(WMConfig.url.coldstar.ezekiel_prolong_lock.format(name), self.token)
                             .addError(set_null);
                     };
-                    self.tc.start_interval(0, (self.expiration - self.acquired) / 2 * 1000);
+                    self.tc.start_interval(0, 30);
                     self.release = function release_real() {
                         delete self.release;
                         delete __locks[self.token];
@@ -81,11 +79,11 @@ angular.module('WebMis20')
             return Deferred.resolve();
         }
     };
-    EzekielLock.release_all = function () {
-        return Deferred.all(_.map(_.values(__locks), function (lock) {
+    WindowCloseHandler.addHandler(function () {
+        return Deferred.all(__locks, function (lock) {
             return lock.release();
-        }))
-    };
+        })
+    });
     return EzekielLock;
 }])
 ;
