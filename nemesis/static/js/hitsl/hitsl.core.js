@@ -180,6 +180,11 @@ angular.module('hitsl.core', [])
                     if (cancel) add(cancel_chain, cancel);
                     return this;
                 },
+                anyway: function (anyway) {
+                    add(resolve_chain, anyway);
+                    add(reject_chain, anyway);
+                    return this;
+                },
                 cancel: cancel
             };
         return {
@@ -221,6 +226,26 @@ angular.module('hitsl.core', [])
         }
         return deferred.promise;
     };
+}])
+.service('OneWayEvent', [function () {
+    this.new = function () {
+        var handlers = {};
+        return {
+            send: function () {
+                var args = _.toArray(arguments),
+                    name = args.shift(),
+                    flist = handlers[name] || [];
+                return _.map(flist, function (f) {return f.apply(undefined, args)})
+            },
+            eventSource: {
+                subscribe: function (name, handler) {
+                    var handlers_list = handlers[name] = handlers[name] || [];
+                    if (!handlers_list.has(handler)) handlers_list.push(handler);
+                    return this;
+                }
+            }
+        }
+    }
 }])
 .service('IdleTimer', ['$window', '$document', 'WMConfig', 'IdleUserModal', 'ApiCalls', 'WindowCloseHandler', function ($window, $document, WMConfig, IdleUserModal, ApiCalls, WindowCloseHandler) {
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',

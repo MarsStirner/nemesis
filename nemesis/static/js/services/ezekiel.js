@@ -3,86 +3,113 @@
  */
 
 angular.module('WebMis20')
-.factory('EzekielLock', ['ApiCalls', 'WMConfig', 'TimeoutCallback', 'Deferred', 'WindowCloseHandler', function (ApiCalls, WMConfig, TimeoutCallback, Deferred, WindowCloseHandler) {
+.factory('EzekielLock', ['ApiCalls', 'WMConfig', 'TimeoutCallback', 'Deferred', 'WindowCloseHandler', 'OneWayEvent', function (ApiCalls, WMConfig, TimeoutCallback, Deferred, WindowCloseHandler, OneWayEvent) {
     var __locks = {};
     // Самая жопа в RPC-имплементации Ezekiel Lock - это то, что мы вполне можем не вызывать release() и тем самым
     // благополучно просрать блокировку. Через минуту она, конечно, освободится, но, блин!
     // А ещё хуже, если мы потеряем объект. Тогда блокировка будет очень долго висеть.
     var EzekielLock = function (name) {
-        var self = this;
+        var self = this,
+            events = OneWayEvent.new();
 
-        function set_null() {
+        this.tc = new TimeoutCallback();
+        this.eventSource = events.eventSource;
+
+        function call_ez(url, token) {
+            return ApiCalls.coldstar('GET', url, {token: token}, undefined, {withCredentials: true, silent: true})
+        }
+        function set_null () {
             self.acquired = null;
             self.locker = null;
             self.token = null;
             self.expiration = null;
             self.success = false;
         }
-
-        this.tc = new TimeoutCallback(acquire, 10000).start();
-        this.acquire_defer = Deferred.new();
-
-        function call_ez(url, token) {
-            return ApiCalls.coldstar('GET', url, {token: token}, undefined, {withCredentials: true, silent: true})
-        }
-
-        function acquire() {
-            self.acquire_defer.notify();
+        // Активные функции
+        function acquire_lock() {
+            if (self.acquired) {
+                self.release().anyway(acquire_lock);
+                return
+            }
+            set_null();
+            self.tc.kill();
+            self.tc.callback = acquire_lock;
+            self.tc.start(10000);
             call_ez(WMConfig.url.coldstar.ezekiel_acquire_lock.format(name))
-                .addResolve(function (result) {
-                    self.acquired = result.acquire;
-                    self.token = result.token;
-                    self.locker = result.locker;
-                    self.expiration = result.expiration;
-                    self.success = true;
-                    self.tc.kill();
-                    self.tc.callback = function prolong() {
-                        call_ez(WMConfig.url.coldstar.ezekiel_prolong_lock.format(name), self.token)
-                            .addError(set_null);
-                    };
-                    self.tc.start_interval(0, 30);
-                    self.release = function release_real() {
-                        delete self.release;
-                        delete __locks[self.token];
-                        self.tc.kill();
-                        return call_ez(WMConfig.url.coldstar.ezekiel_release_lock.format(name), self.token)
-                    };
-                    self.acquire_defer.resolve();
-                    self.acquire_defer = null;
-                    __locks[result.token] = self;
-                })
-                .addReject(function (result) {
-                    self.acquired = result.acquire;
-                    self.locker = result.locker;
-                    self.token = null;
-                    self.expiration = null;
-                    self.success = false;
-                })
-                .addError(function (response) {
-                    console.log(JSON.stringify(response))
-                })
+                .addResolve(lock_acquired)
+                .addReject(lock_rejected)
+                .addError(lock_lost)
         }
-        set_null();
-        acquire();
+        function prolong_lock() {
+            call_ez(WMConfig.url.coldstar.ezekiel_prolong_lock.format(name), self.token)
+                .addResolve(lock_prolonged)
+                .addReject(lock_lost)
+                .addError(lock_lost);
+        }
+        function release_lock() {
+            delete self.release;
+            delete __locks[self.token];
+            self.tc.kill();
+            return call_ez(WMConfig.url.coldstar.ezekiel_release_lock.format(name), self.token)
+                .addResolve(lock_released);
+        }
+        // Реактивные функции
+        function lock_acquired (lock) {
+            self.acquired = lock.acquire;
+            self.token = lock.token;
+            self.locker = lock.locker;
+            self.expiration = lock.expiration;
+            self.success = true;
+
+            self.tc.kill();
+            self.tc.callback = prolong_lock;
+            self.tc.start(10000);
+            self.release = release_lock;
+            __locks[lock.token] = self;
+            events.send('acquired');
+            return lock;
+        }
+        function lock_rejected (lock) {
+            self.acquired = lock.acquire_lock;
+            self.locker = lock.locker;
+            self.token = null;
+            self.expiration = null;
+            self.success = false;
+
+            self.tc.kill();
+            self.tc.callback = acquire_lock;
+            self.tc.start(10000);
+            events.send('rejected');
+            return lock;
+        }
+        function lock_lost (lock) {
+            set_null();
+            self.tc.kill();
+            self.tc.callback = acquire_lock;
+            self.tc.start(10000);
+            events.send('lost');
+            return lock;
+        }
+        function lock_released (lock) {
+            set_null();
+            events.send('released');
+            return lock;
+        }
+        function lock_prolonged (lock) {
+            events.send('prolonged');
+            self.tc.start(10000);
+            return lock;
+        }
+        acquire_lock();
     };
     EzekielLock.prototype.release = function () {
         this.tc.kill();
-        if (this.acquire_defer) {
-            this.acquire_defer.reject();
-        }
         return Deferred.resolve();
     };
-    EzekielLock.prototype.promise = function () {
-        if (this.acquire_defer) {
-            return this.acquire_defer.promise
-        } else {
-            return Deferred.resolve();
-        }
-    };
     WindowCloseHandler.addHandler(function () {
-        return Deferred.all(__locks, function (lock) {
+        return Deferred.all(_.mapObject(__locks, function (lock) {
             return lock.release();
-        })
+        }));
     });
     return EzekielLock;
 }])
