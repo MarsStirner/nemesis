@@ -63,7 +63,7 @@ angular.module('WebMis20')
 
             self.tc.kill();
             self.tc.callback = prolong_lock;
-            self.tc.start(10000);
+            self.tc.start(45000);
             self.release = release_lock;
             __locks[lock.token] = self;
             events.send('acquired');
@@ -97,7 +97,7 @@ angular.module('WebMis20')
         }
         function lock_prolonged (lock) {
             events.send('prolonged');
-            self.tc.start(10000);
+            self.tc.start(45000);
             return lock;
         }
         acquire_lock();
