@@ -674,7 +674,9 @@ class ClientVisualizer(object):
         schedulePerson = aliased(Person)
 
         where = [ScheduleClientTicket.client_id == client_id,
-                 ScheduleClientTicket.deleted == 0]
+                 ScheduleClientTicket.deleted == 0,
+                 ScheduleTicket.deleted == 0,
+                 Schedule.deleted == 0]
         if not every:
             # where.append(ScheduleClientTicket.event_id.isnot(None))
             where.append(Schedule.date >= datetime.date.today())
