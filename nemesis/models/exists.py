@@ -233,7 +233,8 @@ class Organisation(db.Model):
             'is_insurer': bool(self.isInsurer),
             'is_hospital': bool(self.isHospital),
             'address': self.Address,
-            'phone': self.phone
+            'phone': self.phone,
+            'deleted': self.deleted
         }
 
     def __int__(self):
