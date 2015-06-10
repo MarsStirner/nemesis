@@ -95,14 +95,6 @@ class rbTreatment(db.Model):
 
     treatmentType = db.relationship('rbTreatmentType')
 
-    @property
-    def treatment_type(self):
-        return self.treatmentType
-
-    @treatment_type.setter
-    def treatment_type(self, value):
-        self.treatmentType_id = value
-
     def __json__(self):
         return {
             'id': self.id,
@@ -207,17 +199,9 @@ class Organisation(db.Model):
     def is_insurer(self):
         return bool(self.isInsurer)
 
-    @is_insurer.setter
-    def is_insurer(self, value):
-        self.isInsurer = int(bool(value))
-
     @property
     def is_hospital(self):
         return bool(self.isHospital)
-
-    @is_hospital.setter
-    def is_hospital(self, value):
-        self.isHospital = int(bool(value))
 
     @property
     def kladr_locality(self):

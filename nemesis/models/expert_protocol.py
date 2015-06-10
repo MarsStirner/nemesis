@@ -13,15 +13,7 @@ class ExpertProtocol(db.Model):
     code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(255), nullable=False)
 
-    _schemes = db.relationship('ExpertScheme', backref='protocol')
-
-    @property
-    def schemes(self):
-        return self._schemes
-
-    @schemes.setter
-    def schemes(self, value):
-        pass
+    schemes = db.relationship('ExpertScheme', backref='protocol')
 
 
 class ExpertScheme(db.Model):
@@ -40,16 +32,6 @@ class ExpertScheme(db.Model):
     scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme', cascade_backrefs=False)
     scheme_measures = db.relationship('ExpertSchemeMeasureAssoc', backref='scheme')
 
-    @property
-    def mkbs(self):
-        return self.scheme_mkbs
-
-    @mkbs.setter
-    def mkbs(self, mkb_list):
-        return  # todo: saving here
-        if mkb_list is not None:
-            self.scheme_mkbs = mkb_list
-
 
 class ExpertSchemeMKB(db.Model):
     __tablename__ = u'ExpertSchemeMKB'
@@ -58,15 +40,7 @@ class ExpertSchemeMKB(db.Model):
     mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False, index=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
 
-    _mkb = db.relationship('MKB')
-
-    @property
-    def mkb(self):
-        return self._mkb
-
-    @mkb.setter
-    def mkb(self, value):
-        self.mkb_id = value
+    mkb = db.relationship('MKB')
 
 
 class ExpertSchemeMeasureAssoc(db.Model):
@@ -77,16 +51,8 @@ class ExpertSchemeMeasureAssoc(db.Model):
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
     schedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), index=True)
 
-    _measure = db.relationship('Measure')
+    measure = db.relationship('Measure')
     schedule = db.relationship('MeasureSchedule', backref='scheme_measure', cascade_backrefs=False, uselist=False)
-
-    @property
-    def measure(self):
-        return self._measure
-
-    @measure.setter
-    def measure(self, value):
-        self.measure_id = value
 
 
 class Measure(db.Model):
@@ -105,25 +71,9 @@ class Measure(db.Model):
     actionType_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
     templateAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
-    _measure_type = db.relationship('rbMeasureType')
-    _action_type = db.relationship('ActionType')
+    measure_type = db.relationship('rbMeasureType')
+    action_type = db.relationship('ActionType')
     template_action = db.relationship('Action')
-
-    @property
-    def action_type(self):
-        return self._action_type
-
-    @action_type.setter
-    def action_type(self, val):
-        self.actionType_id = val
-
-    @property
-    def measure_type(self):
-        return self._measure_type
-
-    @measure_type.setter
-    def measure_type(self, val):
-        self.measureType_id = val
 
 
 class rbMeasureType(db.Model):
@@ -151,15 +101,7 @@ class MeasureSchedule(db.Model):
     offsetEnd = db.Column(db.Integer, nullable=False)
     repeatCount = db.Column(db.Integer, nullable=False, server_default=u"'1'", default=1)
 
-    _schedule_type = db.relationship('rbMeasureScheduleType')
-
-    @property
-    def schedule_type(self):
-        return self._schedule_type
-
-    @schedule_type.setter
-    def schedule_type(self, val):
-        self.scheduleType_id = val
+    schedule_type = db.relationship('rbMeasureScheduleType')
 
 
 class rbMeasureScheduleType(db.Model):
