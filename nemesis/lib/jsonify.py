@@ -49,8 +49,9 @@ class ScheduleVisualizer(object):
         return {
             'id': client_ticket.id,
             'client_id': client_ticket.client_id,
-            'event_id': client_ticket.event_id,
-            'event_external_id': client_ticket.event.externalId if client_ticket.event else None,
+            'event_id': client_ticket.event_id if client_ticket.event and client_ticket.event.deleted == 0 else None,
+            'event_external_id':
+                client_ticket.event.externalId if client_ticket.event and client_ticket.event.deleted == 0 else None,
             'finance': client_ticket.event.finance if client_ticket.event else None,
             'appointment_type': client_ticket.appointmentType,
             'note': client_ticket.note,
