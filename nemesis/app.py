@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from flask import Flask
+from flask import Flask, url_for
 import pytz
 from werkzeug.contrib.profiler import ProfilerMiddleware
+from nemesis.lib.frontend import frontend_config
 
 app = Flask(__name__)
 
@@ -29,3 +30,47 @@ def bootstrap_app(templates_dir):
     import models
     import views
     import nemesis.context_processors
+
+
+@frontend_config
+def fc_urls():
+    """
+    Неспецифическая конфигурация фронтенда всех производных Nemesis. Общие URL'ы
+    :return:
+    """
+    config = app.config
+    coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
+    return {
+        'url': {
+            'logout': url_for("logout"),
+            'coldstar': {
+                'cas_check_token': coldstar_url + "cas/api/check/",
+                'cas_prolong_token': coldstar_url + "cas/api/prolong/",
+                'cas_release_token': coldstar_url + "cas/api/release/",
+                'scan_get_device_list': coldstar_url + "scan/list/",
+                'scan_process_scan': coldstar_url + "scan/scan",
+                'ezekiel_acquire_lock': coldstar_url + "ezekiel/acquire/{0}",
+                'ezekiel_prolong_lock': coldstar_url + "ezekiel/prolong/{0}",
+                'ezekiel_release_lock': coldstar_url + "ezekiel/release/{0}",
+            }
+        }
+    }
+
+
+@frontend_config
+def fc_settings():
+    """
+    Неспецифическая конфигурация фронтенда всех производных Nemesis. Общие настройки
+    :return:
+    """
+    from nemesis.lib.settings import Settings
+
+    settings = Settings()
+    return {
+        'settings': {
+            'user_idle_timeout': settings.getInt('Auth.UserIdleTimeout', 15 * 60),
+            'logout_warning_timeout': settings.getInt('Auth.LogoutWarningTimeout', 200),
+        }
+    }
+
+

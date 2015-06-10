@@ -5,7 +5,8 @@ from jinja2 import TemplateNotFound
 import requests
 from requests.exceptions import ConnectionError
 
-from flask import render_template, abort, request, redirect, url_for, flash, session, current_app
+from flask import render_template, abort, request, redirect, url_for, flash, session, current_app, \
+    render_template_string
 from flask.ext.principal import Identity, AnonymousIdentity, identity_changed
 from flask.ext.principal import identity_loaded, Permission, RoleNeed, UserNeed, ActionNeed
 from flask.ext.login import login_user, logout_user, login_required, current_user
@@ -187,14 +188,40 @@ def api_current_user():
 
 @app.route('/config.js')
 def config_js():
-    from nemesis.lib.settings import Settings
-    settings = Settings()
-    return render_template('config.js', settings=settings, config=app.config)
+    conf = getattr(app, 'frontend_config', {})
+    return (
+        render_template_string(
+            """'use strict'; angular.module('hitsl.core').constant('WMConfig', {{ config|tojson|safe }});""",
+            config=conf),
+        200,
+        [('Content-Type', 'application/ecmascript; charset=utf-8')]
+    )
 
 
 @app.route('/current_user.js')
 def current_user_js():
-    return render_template('current_user.js', current_user=current_user.export_js())
+    return (
+        render_template_string("""'use strict';
+angular.module('hitsl.core')
+.service('CurrentUser', ['$http', function ($http) {
+    var self = this;
+    angular.extend(self, {{ current_user | tojson | safe }});
+    self.get_main_user = function () {
+        return this.master || this;
+    };
+    self.has_right = function () {
+        return [].clone.call(arguments).filter(aux.func_in(this.get_user().rights)).length > 0;
+    };
+    self.has_role = function () {
+        return [].clone.call(arguments).filter(aux.func_in(this.roles)).length > 0;
+    };
+    self.current_role_in = function () {
+        return [].clone.call(arguments).has(this.current_role);
+    };
+}]);""", current_user=current_user.export_js()),
+        200,
+        [('Content-Type', 'application/ecmascript; charset=utf-8')]
+    )
 
 
 def session_save_user(user):

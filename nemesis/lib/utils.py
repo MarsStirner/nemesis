@@ -584,3 +584,20 @@ def transfer_fields(src, dst, names):
         setattr(dst, name, getattr(src, name))
 
 
+def blend(dest, src):
+    """
+    Слияние двух dict'ов
+    :param dest: приёмник
+    :type dest: dict
+    :param src: исочник
+    :type src: dict
+    :return: None
+    """
+    for k, v in src.iteritems():
+        if k not in dest:
+            dest[k] = {}
+        if isinstance(v, dict):
+            blend(dest[k], v)
+        else:
+            dest[k] = v
+
