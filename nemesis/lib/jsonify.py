@@ -18,7 +18,7 @@ from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_pat
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
-from nemesis.lib.utils import safe_unicode, safe_dict, logger, safe_traverse_attrs, format_date, safe_date
+from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
 from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
@@ -578,6 +578,10 @@ class ClientVisualizer(object):
         }
 
     def make_file_info(self, file_meta, with_data=True):
+        import logging
+        from nemesis.app import app
+        logger = logging.getLogger(app.config['PROJECT_NAME'])
+
         def get_file_data(fullpath):
             try:
                 with open(fullpath, 'rb') as f:
@@ -1417,6 +1421,10 @@ class ActionVisualizer(object):
         :param action:
         :return:
         """
+        import logging
+        from nemesis.app import app
+        logger = logging.getLogger(app.config['PROJECT_NAME'])
+
         at_layout = action.actionType.layout
         if at_layout:
             try:

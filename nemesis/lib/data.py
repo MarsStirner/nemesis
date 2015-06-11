@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import between, func
 from nemesis.app import app
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import logger, get_new_uuid, safe_traverse, group_concat, safe_date
+from nemesis.lib.utils import get_new_uuid, safe_traverse, group_concat, safe_date
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
@@ -200,6 +200,10 @@ def update_action(action, **kwargs):
     :param properties: список словарей для редактирования данных свойств в целом
     :return: Action
     """
+    import logging
+    from nemesis.app import app
+    logger = logging.getLogger(app.config['PROJECT_NAME'])
+
     # action attributes
     for attr in ('amount', 'account', 'status', 'person_id', 'setPerson_id', 'begDate', 'endDate', 'directionDate',
                  'isUrgent', 'plannedEndDate', 'coordPerson_id', 'coordDate', 'note', 'uet', 'payStatus',

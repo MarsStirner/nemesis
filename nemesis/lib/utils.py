@@ -14,8 +14,6 @@ from nemesis.systemwide import db
 from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
 from nemesis.models.client import Client
 from nemesis.app import app
-from pysimplelogs.logger import SimpleLogger
-from version import version
 
 
 def public_endpoint(function):
@@ -90,7 +88,8 @@ _roles = dict()
 _permissions = dict()
 
 
-with app.app_context():
+@app.before_first_request
+def init_roles():
     user_roles = db.session.query(rbUserProfile).all()
     if user_roles:
         for role in user_roles:
@@ -151,13 +150,6 @@ def rights_require(*right_codes):
         return decorator
 
     return factory
-
-
-# инициализация логгера
-logger = SimpleLogger.get_logger(app.config['SIMPLELOGS_URL'],
-                                 app.config['PROJECT_NAME'],
-                                 dict(name=app.config['PROJECT_NAME'], version=version),
-                                 app.config['DEBUG'])
 
 
 class WebMisJsonEncoder(json.JSONEncoder):
@@ -493,6 +485,10 @@ def get_new_event_ext_id(event_type_id, client_id):
 
 
 def _get_external_id_from_counter(prefix, value, separator, client_id):
+    import logging
+    from nemesis.app import app
+    logger = logging.getLogger(app.config['PROJECT_NAME'])
+
     def get_date_prefix(val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')
         if val.count('y') not in [0, 2, 4] or val.count('M') > 2 or val.count('d') > 2:

@@ -31,6 +31,16 @@ def bootstrap_app(templates_dir):
     import views
     import nemesis.context_processors
 
+    from pysimplelogs.logger import SimpleLogger
+    from version import version
+
+    SimpleLogger.get_logger(
+        app.config['SIMPLELOGS_URL'],
+        app.config['PROJECT_NAME'],
+        dict(name=app.config['PROJECT_NAME'], version=version),
+        app.config['DEBUG']
+    )
+
 
 @frontend_config
 def fc_urls():
