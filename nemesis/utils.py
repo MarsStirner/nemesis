@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from flask import g
-from flask.ext.principal import Permission, RoleNeed
+from nemesis.lib.misperms import Permission
 
 from .systemwide import db
-from nemesis.models.caesar import Settings, Roles
-from nemesis.app import app
+from nemesis.models.caesar import Settings
 
 
 def create_config_func(module_name, config_table):
@@ -33,22 +32,4 @@ def create_config_func(module_name, config_table):
 
     return _config
 
-permissions = dict()
-
-with app.app_context():
-    try:
-        roles = db.session.query(Roles).all()
-    except Exception, e:
-        print e
-        permissions['admin'] = Permission(RoleNeed('admin'))
-    else:
-        if roles:
-            for role in roles:
-                permissions[role.code] = Permission(RoleNeed(role.code))
-                permissions[role.code].description = role.description
-        else:
-            permissions['admin'] = Permission(RoleNeed('admin'))
-
-# TODO: разобратсья как покрасивше сделать
-admin_permission = permissions.get('admin')
-user_permission = permissions.get('user')
+admin_permission = Permission('admin')
