@@ -526,6 +526,10 @@ class Diagnostic(db.Model):
     action = db.relationship('Action')
     modifyPerson = db.relationship('Person', foreign_keys=[modifyPerson_id])
 
+    @property
+    def mkb(self):
+        return self.diagnosis.MKB
+
     def __int__(self):
         return self.id
 

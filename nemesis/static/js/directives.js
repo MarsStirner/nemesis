@@ -3,7 +3,7 @@
 angular.module('WebMis20.directives', ['ui.bootstrap', 'ui.select', 'ngSanitize', 'WebMis20.directives.goodies']);
 
 angular.module('WebMis20.directives')
-    .directive('rbSelect', ['$compile', '$timeout', function($compile, $timeout) {
+    .directive('rbSelect', ['$compile', function($compile) {
         return {
             restrict: 'E',
             require: '^ngModel',
@@ -22,12 +22,17 @@ angular.module('WebMis20.directives')
                         return selected ? selected.name : undefined;
                     },
                     orderBy = attrs.orderBy,
-                    ngChange = attrs.ngChange;
+                    ngChange = attrs.ngChange,
+                    allowClear = Boolean(attrs.allowClear);
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
                 var uiSelect = $('<ui-select></ui-select>');
-                var uiSelectMatch = $('<ui-select-match>[[getName($select.selected)]]</ui-select-match>');
+                var uiSelectMatch = $(
+                    '<ui-select-match allow-clear="{0}">[[getName($select.selected)]]</ui-select-match>'.format(
+                        allowClear
+                    )
+                );
                 var uiSelectChoices = $(
                     '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} | limitTo:10 track by item.id">\
                         <div ng-bind-html="getName(item) | highlight: $select.search"></div>\

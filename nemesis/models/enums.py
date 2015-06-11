@@ -72,3 +72,11 @@ class PreeclampsiaRisk(Enum):
     undefined = 0, u'не определен'
     has_risk = 1, u'есть риск'
     no_risk = 2, u'нет риска'
+
+
+class MeasureStatus(Enum):
+    assigned = 0, u'Назначенное'
+    upon_med_indications = 1, u'По показанию'
+    cancelled = 2, u'Отмененное'
+    overdue = 3, u'Просроченное'
+    performed = 4, u'Выполненное'
