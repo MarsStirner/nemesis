@@ -212,6 +212,12 @@ class ScheduleClientTicket(db.Model):
             return self.infisFrom
         return org.title
 
+    def get_date_for_new_event(self):
+        if self.ticket.attendanceType.code == 'planned':
+            return self.ticket.begDateTime
+        else:
+            return datetime.datetime.now()
+
 
 class QuotingByTime(db.Model):
     __tablename__ = u'QuotingByTime'
