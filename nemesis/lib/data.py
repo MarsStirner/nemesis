@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-
-import requests
-
+import logging
 from datetime import datetime, time, timedelta, date
+
 from flask.ext.login import current_user
 from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql.expression import between, func
-from nemesis.app import app
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import get_new_uuid, safe_traverse, group_concat, safe_date
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
@@ -18,9 +16,11 @@ from nemesis.models.enums import ActionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
-from nemesis.lib.user import UserUtils
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
+
+
+logger = logging.getLogger('simple')
 
 
 # планируемая дата выполнения (default planned end date)
@@ -200,10 +200,6 @@ def update_action(action, **kwargs):
     :param properties: список словарей для редактирования данных свойств в целом
     :return: Action
     """
-    import logging
-    from nemesis.app import app
-    logger = logging.getLogger(app.config['PROJECT_NAME'])
-
     # action attributes
     for attr in ('amount', 'account', 'status', 'person_id', 'setPerson_id', 'begDate', 'endDate', 'directionDate',
                  'isUrgent', 'plannedEndDate', 'coordPerson_id', 'coordDate', 'note', 'uet', 'payStatus',

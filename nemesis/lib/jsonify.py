@@ -2,9 +2,9 @@
 
 import datetime
 import itertools
+import logging
 import os
 import base64
-
 from collections import defaultdict
 import re
 
@@ -26,12 +26,13 @@ from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTi
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
 from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
-    Organisation, rbContactType, FileGroupDocument, FileMeta, rbDocumentType)
+    Organisation, rbContactType, FileGroupDocument)
 from nemesis.lib.user import UserUtils, UserProfileManager
-from nemesis.lib.const import VOL_POLICY_CODES, STATIONARY_EVENT_CODES
-
+from nemesis.lib.const import STATIONARY_EVENT_CODES
 
 __author__ = 'mmalkov'
+
+logger = logging.getLogger('simple')
 
 
 class Format:
@@ -578,10 +579,6 @@ class ClientVisualizer(object):
         }
 
     def make_file_info(self, file_meta, with_data=True):
-        import logging
-        from nemesis.app import app
-        logger = logging.getLogger(app.config['PROJECT_NAME'])
-
         def get_file_data(fullpath):
             try:
                 with open(fullpath, 'rb') as f:
@@ -1421,10 +1418,6 @@ class ActionVisualizer(object):
         :param action:
         :return:
         """
-        import logging
-        from nemesis.app import app
-        logger = logging.getLogger(app.config['PROJECT_NAME'])
-
         at_layout = action.actionType.layout
         if at_layout:
             try:

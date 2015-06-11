@@ -31,15 +31,46 @@ def bootstrap_app(templates_dir):
     import views
     import nemesis.context_processors
 
-    from pysimplelogs.logger import SimpleLogger
-    from version import version
+    init_logger()
 
-    SimpleLogger.get_logger(
-        app.config['SIMPLELOGS_URL'],
-        app.config['PROJECT_NAME'],
-        dict(name=app.config['PROJECT_NAME'], version=version),
-        app.config['DEBUG']
+
+def init_logger():
+    try:
+        from version import version
+    except ImportError:
+        version = 'Unversioned Nemesis'
+    import logging
+    import requests
+    from pysimplelogs.logger import SimplelogHandler
+
+    url = app.config['SIMPLELOGS_URL']
+    debug_mode = app.config['DEBUG']
+    owner = {
+        'name': app.config['PROJECT_NAME'],
+        'version': version
+    }
+
+    def __check_url():
+        try:
+            r = requests.get('{0}/api/'.format(url), timeout=2)
+            if r.status_code == 200:
+                return True
+        except requests.RequestException, e:
+            print u'Couldn\'t connect to simplelogs ({0})'.format(e)
+        return False
+
+    formatter = logging.Formatter(
+        u'%(module) - %(funcName)s - %(asctime)s - %(levelname)s - %(message)s'
+        if debug_mode else
+        u'%(message)s'
     )
+    handler = SimplelogHandler(url, owner) if __check_url() else logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger('simple')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
 
 
 @frontend_config

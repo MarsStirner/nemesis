@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import logging
 
 import requests
 import json
@@ -6,6 +7,9 @@ import json
 from nemesis.app import app
 from nemesis.systemwide import cache
 from nemesis.models.kladr_models import KladrLocality, KladrStreet
+
+
+logger = logging.getLogger('simple')
 
 
 class Vesta(object):
@@ -20,10 +24,6 @@ class Vesta(object):
 
     @classmethod
     def _get_data(cls, url):
-        import logging
-        from nemesis.app import app
-        logger = logging.getLogger(app.config['PROJECT_NAME'])
-
         try:
             response = requests.get(url)
             response_json = response.json()
@@ -53,10 +53,6 @@ class Vesta(object):
     @classmethod
     @cache.memoize(86400)
     def get_kladr_locality_list(cls, level, parent_code):
-        import logging
-        from nemesis.app import app
-        logger = logging.getLogger(app.config['PROJECT_NAME'])
-
         locality_list = []
         if len(parent_code) == 13:  # убрать после конвертации уже записанных кодов кладр
             parent_code = parent_code[:-2]

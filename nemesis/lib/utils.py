@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import functools
+import logging
 from flask import json, session, make_response
 import uuid
 from functools import wraps
@@ -14,6 +15,9 @@ from nemesis.systemwide import db
 from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
 from nemesis.models.client import Client
 from nemesis.app import app
+
+
+logger = logging.getLogger('simple')
 
 
 def public_endpoint(function):
@@ -485,10 +489,6 @@ def get_new_event_ext_id(event_type_id, client_id):
 
 
 def _get_external_id_from_counter(prefix, value, separator, client_id):
-    import logging
-    from nemesis.app import app
-    logger = logging.getLogger(app.config['PROJECT_NAME'])
-
     def get_date_prefix(val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')
         if val.count('y') not in [0, 2, 4] or val.count('M') > 2 or val.count('d') > 2:
