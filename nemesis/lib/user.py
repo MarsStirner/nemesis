@@ -490,10 +490,11 @@ class UserProfileManager(object):
     doctor_diag = 'diagDoctor'  # Врач диагностики
     doctor_stat = 'statDoctor'  # Врач медицинский статистик
     doctor_otd = 'strDoctor'  # Врач отделения
+    doctor_anest = 'anestezDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
     cashier = 'kassir'  # Кассир
-    obstetrician = 'obstetrician'  # Акушер-игнеколог
+    obstetrician = 'obstetrician'  # Акушер-гинеколог
     overseer1 = 'overseer1'
     overseer2 = 'overseer2'
     overseer3 = 'overseer3'
