@@ -39,7 +39,6 @@ semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout'
 def check_valid_login():
     if (request.endpoint and
             'static' not in request.endpoint and
-            not current_user.is_admin() and
             not getattr(app.view_functions[request.endpoint], 'is_public', False)):
 
         login_valid = False
