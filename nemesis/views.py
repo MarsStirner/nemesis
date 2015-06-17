@@ -47,7 +47,7 @@ def check_valid_login():
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
             # убираем token из url, чтобы при протухшем токене не было циклического редиректа на CAS
-            request.url = u'{0}?{1}'.format(request.url_root,
+            request.url = u'{0}?{1}'.format(request.base_url,
                                             u'&'.join([u'{0}={1}'.format(key, value)
                                                        for key, value in request.args.items()
                                                        if key != 'token']))
