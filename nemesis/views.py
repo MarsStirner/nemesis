@@ -37,8 +37,7 @@ semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout'
 
 @app.before_request
 def check_valid_login():
-    if (request.endpoint and
-            'static' not in request.endpoint and
+    if (request.endpoint and 'static' not in request.endpoint and
             not getattr(app.view_functions[request.endpoint], 'is_public', False)):
 
         login_valid = False
@@ -47,6 +46,12 @@ def check_valid_login():
 
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
+            # убираем token из url, чтобы при протухшем токене не было циклического редиректа на CAS
+            request.url = u'{0}?{1}'.format(request.base_url,
+                                            u'&'.join([u'{0}={1}'.format(key, value)
+                                                       for key, value in request.args.items()
+                                                       if key != 'token']))
+
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
                 _logout_user()
