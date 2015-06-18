@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from nemesis.models.utils import get_class_by_tablename
 
 __author__ = 'mmalkov'
 
@@ -7,7 +8,10 @@ class EnumMeta(type):
     def __new__(mcs, name, bases, kwargs):
         codes = {}
         names = {}
+
         for key, value in kwargs.iteritems():
+            if name == '__tablename__':
+                continue
             if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], int) and isinstance(value[1], basestring):
                 codes[value[0]] = key
                 names[value[0]] = value[1]
@@ -16,12 +20,16 @@ class EnumMeta(type):
         kwargs['codes'] = codes
         kwargs['names'] = names
         cls = type.__new__(mcs, name, bases, kwargs)
-        EnumBase.descendants[name] = cls
+        if '__tablename__' in kwargs:
+            EnumBase.loadable_descendants[name] = cls
+        else:
+            EnumBase.descendants[name] = cls
         return cls
 
 
 class EnumBase(object):
     descendants = {}
+    loadable_descendants = {}
 
     def __init__(self, value):
         self.value = value
@@ -53,6 +61,31 @@ class EnumBase(object):
         }
 
 
+class EnumBaseLoadable(EnumBase):
+
+    @classmethod
+    def reload(cls):
+        from nemesis.systemwide import db
+
+        klass = get_class_by_tablename(cls.__tablename__)
+        if klass:
+            codes = {}
+            names = {}
+            query = db.session.query(klass)
+            for record in query:
+                setattr(cls, record.code, (record.id, record.name))
+                codes[record.id] = record.code
+                names[record.id] = record.name
+            cls.codes = codes
+            cls.names = names
+
+
 class Enum(EnumBase):
     """Базовый класс для обёрток недо-енумов"""
+    __metaclass__ = EnumMeta
+
+
+class EnumLoadable(EnumBaseLoadable):
+    """Базовый класс для обёрток недо-енумов, которые инициализируются
+    значениями из таблиц-справочников в бд"""
     __metaclass__ = EnumMeta

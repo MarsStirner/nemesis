@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from nemesis.lib.enum import Enum
+from nemesis.lib.enum import Enum, EnumLoadable
 
 __author__ = 'mmalkov'
 
@@ -74,9 +74,5 @@ class PreeclampsiaRisk(Enum):
     no_risk = 2, u'нет риска'
 
 
-class MeasureStatus(Enum):
-    assigned = 0, u'Назначенное'
-    upon_med_indications = 1, u'По показанию'
-    cancelled = 2, u'Отмененное'
-    overdue = 3, u'Просроченное'
-    performed = 4, u'Выполненное'
+class MeasureStatus(EnumLoadable):
+    __tablename__ = 'rbMeasureStatus'
