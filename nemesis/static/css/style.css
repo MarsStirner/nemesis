@@ -892,3 +892,6 @@ a.pseudo-btn {
 .text-bold {
     font-weight: bold;
 }
+.text-white {
+  color: #ffffff;
+}
