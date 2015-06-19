@@ -3,7 +3,6 @@ import datetime
 import functools
 import logging
 import uuid
-import sys
 
 from functools import wraps
 from decimal import Decimal
@@ -608,6 +607,5 @@ def blend(dest, src):
 
 def encode_file_name(filename):
     if isinstance(filename, unicode):
-        if sys.getfilesystemencoding().lower() == 'utf-8':
-            filename = filename.encode('utf-8')
+        filename = filename.encode('utf-8')
     return filename
