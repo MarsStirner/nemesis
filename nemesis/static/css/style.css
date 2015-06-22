@@ -372,7 +372,7 @@ div.select2-container {
     margin-bottom: 10px;
 }
 .vbmargin10 {
-    margin-bottom: 10px;
+    margin-bottom: 10px !important;
 }
 
 .rmargin10 {
@@ -380,7 +380,7 @@ div.select2-container {
 }
 
 .lmargin20 {
-    margin-left: 20px;
+    margin-left: 20px !important;
 }
 
 .tmargin20 {
@@ -894,4 +894,8 @@ a.pseudo-btn {
 }
 .text-white {
   color: #ffffff;
+}
+.sidebar-collapse .user-panel {
+    display: none;
+    visibility: hidden;
 }
