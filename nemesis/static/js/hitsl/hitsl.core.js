@@ -442,6 +442,7 @@ angular.module('hitsl.ui', [
     'duScroll',              // /static/angular-scroll/angular-scroll.js
     'rcWizard',
     'nvd3ChartDirectives',
-    'legendDirectives'
+    'legendDirectives',
+    'ui.calendar'
 ])
 ;
