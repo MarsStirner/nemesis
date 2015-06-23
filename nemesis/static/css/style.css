@@ -908,6 +908,10 @@ a.pseudo-btn {
     .sidebar-mini.sidebar-collapse .sidebar-menu > li:hover > a > span:not(.pull-right),
     .sidebar-mini.sidebar-collapse .sidebar-menu > li:hover > .treeview-menu {
         width: 210px !important;
-        left: 30px !important;
+        left: 50px !important;
+    }
+
+    .sidebar-mini.sidebar-collapse .sidebar-menu > li:hover > a > span {
+        padding: 12px 5px 12px 0 !important;
     }
 }
