@@ -950,7 +950,8 @@ angular.module('WebMis20.directives')
                 canDelete: '=',
                 canEdit: '=',
                 clickable: '=',
-                risar: '='
+                risar: '=',
+                disabled: '='
             },
             controller: function ($scope) {
                 $scope.set_defaults = function (diagnosis){
@@ -1231,10 +1232,10 @@ angular.module('WebMis20.directives')
                             <td ng-click="open_action(model.action_id)">[[model.diagnosis_description ? \'есть\': \'нет\']]</td>\
                             <td style="white-space:nowrap;">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(model)"><span class="glyphicon glyphicon-pencil"></span>\
+                                        ng-click="edit_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
                                 </button>\
                                 <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(model)"><span class="glyphicon glyphicon-trash"></span>\
+                                        ng-click="delete_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
                                 </button>\
                             </td>\
                         </tr>\
@@ -1247,17 +1248,17 @@ angular.module('WebMis20.directives')
                             <td ng-click="open_action(diag.action_id)">[[diag.diagnosis_description ? \'есть\': \'нет\']]</td>\
                             <td style="white-space:nowrap;">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
+                                        ng-click="edit_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
                                 </button>\
                                 <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(diag)"><span class="glyphicon glyphicon-trash"></span>\
+                                        ng-click="delete_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
                                 </button>\
                             </td>\
                         </tr>\
                         <tr ng-show="add_new_btn_visible()">\
                             <td colspan="6">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Добавить"\
-                                        ng-click="add_new_diagnosis()">Добавить\
+                                        ng-click="add_new_diagnosis()" ng-disabled="disabled">Добавить\
                                 </button>\
                             </td>\
                         </tr>\
