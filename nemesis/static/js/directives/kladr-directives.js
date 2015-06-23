@@ -140,9 +140,7 @@ angular.module('WebMis20.directives').
                 });
             },
             template:
-'<div class="panel panel-default">\
-<div class="panel-body">\
-    <div ng-transclude></div>\
+'<div ng-transclude></div>\
     <div class="row">\
     <div class="col-md-9">\
         <div class="row">\
@@ -231,9 +229,7 @@ angular.module('WebMis20.directives').
             </div>\
         </div>\
     </div>\
-    </div>\
-</div>\
-</div>'
+    </div>'
         };
     }]).
     directive('wmKladrLocality', ['$http', function($http) {

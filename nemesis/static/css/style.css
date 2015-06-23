@@ -552,8 +552,12 @@ blockquote.danger{
 
 div.toc-affix {
     top: 0;
+    width: inherit;
     margin-top: 20px;
-    width: 200px;
+}
+div.affix-top{
+    margin-top: 0px;
+    width: 100%;
 }
 
 .toc .wrap-btn {
