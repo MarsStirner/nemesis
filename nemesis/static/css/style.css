@@ -903,3 +903,11 @@ a.pseudo-btn {
     display: none;
     visibility: hidden;
 }
+
+@media (min-width: 768px) {
+    .sidebar-mini.sidebar-collapse .sidebar-menu > li:hover > a > span:not(.pull-right),
+    .sidebar-mini.sidebar-collapse .sidebar-menu > li:hover > .treeview-menu {
+        width: 210px !important;
+        left: 30px !important;
+    }
+}
