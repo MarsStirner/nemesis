@@ -22,7 +22,8 @@ angular.module('WebMis20')
                 ngRequired = attrs.ngRequired,
                 ngModel = attrs.ngModel,
                 style = attrs.style,
-                maxDate = attrs.maxDate;
+                maxDate = attrs.maxDate,
+                autofocus = attrs.autofocus;
             var wmdate = $('<div class="input-group"></div>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
@@ -40,6 +41,9 @@ angular.module('WebMis20')
             if (ngDisabled) {
                 date_input.attr('ng-disabled', ngDisabled);
                 button.attr('ng-disabled', ngDisabled);
+            }
+            if (autofocus){
+                date_input.attr('auto-focus', '');
             }
             if (style) {
                 wmdate.attr('style', style);

@@ -23,7 +23,8 @@ angular.module('WebMis20.directives')
                     },
                     orderBy = attrs.orderBy,
                     ngChange = attrs.ngChange,
-                    allowClear = Boolean(attrs.allowClear);
+                    allowClear = Boolean(attrs.allowClear),
+                    autofocus = attrs.autofocus;
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
@@ -51,6 +52,7 @@ angular.module('WebMis20.directives')
                 if (placeholder) uiSelectMatch.attr('placeholder', placeholder);
                 if (refBook) uiSelect.attr('ref-book', refBook);
                 if (ngChange) uiSelect.attr('ng-change', ngChange);
+                if (autofocus) uiSelect.attr('autofocus', '');
                 uiSelect.append(uiSelectMatch);
                 uiSelect.append(uiSelectChoices);
                 $(element).replaceWith(uiSelect);
