@@ -64,8 +64,8 @@ angular.module('WebMis20.directives').
         </span>\
     </div>\
 </form>\
-<div ng-class="{\'text-danger\': results.length === 0, \'text-success\': results.length > 0}">\
-    <div class="row">\
+<div>\
+    <div class="row" ng-class="{\'text-danger\': results.length === 0, \'text-success\': results.length > 0}">\
         <div class="col-sm-8">\
             <span ng-if="results.length > 0" class="lead">Результаты поиска</span>\
             <span ng-if="results.length === 0 && query">Пациент не найден в базе данных</span>\
