@@ -55,6 +55,7 @@ class KladrLocality(object):
     def __init__(self, **kwargs):
         if 'invalid' in kwargs:
             self.invalid = kwargs['invalid']
+            self.name = None
             self.code = kwargs['code'] if 'code' in kwargs else None
             self.level = None
         else:

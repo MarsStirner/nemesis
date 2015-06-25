@@ -8,6 +8,7 @@ __author__ = 'viruzzz-kun'
 
 def create_or_update_diagnosis(event, json_data, action=None):
     diagnostic_id = safe_traverse(json_data, 'id')
+    deleted = json_data.get('deleted', 0)
     set_date = safe_datetime(safe_traverse(json_data, 'set_date'))
     end_date = safe_datetime(safe_traverse(json_data, 'end_date'))
     diagnosis_type_id = safe_traverse(json_data, 'diagnosis_type', 'id')
@@ -33,6 +34,7 @@ def create_or_update_diagnosis(event, json_data, action=None):
     mkbex = safe_traverse(diagnosis, 'mkbex', 'code')
     if diagnostic_id:
         diag = Diagnostic.query.get(diagnostic_id)
+        diag.deleted = deleted
         diag.setDate = set_date
         diag.endDate = end_date
         diag.diagnosisType_id = diagnosis_type_id

@@ -32,6 +32,7 @@ def bootstrap_app(templates_dir):
     import nemesis.context_processors
 
     init_logger()
+    _init_enums(app)
 
 
 def init_logger():
@@ -71,6 +72,13 @@ def init_logger():
     logger = logging.getLogger('simple')
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
+
+
+def _init_enums(app):
+    from nemesis.lib.enum import EnumBase
+    with app.app_context():
+        for EnumClass in EnumBase.loadable_descendants.itervalues():
+            EnumClass.reload()
 
 
 @frontend_config

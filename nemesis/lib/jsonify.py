@@ -5,9 +5,9 @@ import itertools
 import logging
 import os
 import base64
-from collections import defaultdict
 import re
 
+from collections import defaultdict
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql.expression import between, func
 from flask import json
@@ -18,7 +18,9 @@ from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_pat
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
-from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date
+from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
+from nemesis.lib.user import UserUtils, UserProfileManager
+from nemesis.lib.const import STATIONARY_EVENT_CODES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
 from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
@@ -27,8 +29,7 @@ from nemesis.models.actions import Action, ActionProperty, ActionType, ActionTyp
 from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
     Organisation, rbContactType, FileGroupDocument)
-from nemesis.lib.user import UserUtils, UserProfileManager
-from nemesis.lib.const import STATIONARY_EVENT_CODES
+
 
 __author__ = 'mmalkov'
 
@@ -582,7 +583,7 @@ class ClientVisualizer(object):
     def make_file_info(self, file_meta, with_data=True):
         def get_file_data(fullpath):
             try:
-                with open(fullpath, 'rb') as f:
+                with open(encode_file_name(fullpath), 'rb') as f:
                     file_encoded = base64.b64encode(f.read())
             except IOError, e:
                 logger.error(u'Невозможно загрузить файл %s' % fullpath, exc_info=True)

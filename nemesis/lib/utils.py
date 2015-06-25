@@ -2,19 +2,19 @@
 import datetime
 import functools
 import logging
-from flask import json, session, make_response
 import uuid
+
 from functools import wraps
 from decimal import Decimal
 from pytz import timezone
-from flask import g, current_app, request, abort
+from flask import current_app, request, abort, json, session, make_response
 from flask.ext.principal import Permission, RoleNeed, ActionNeed, PermissionDenied
 from flask.ext.login import current_user
-from nemesis.models.client import ClientIdentification
+
 from nemesis.systemwide import db
-from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
-from nemesis.models.client import Client
 from nemesis.app import app
+from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
+from nemesis.models.client import Client, ClientIdentification
 
 
 logger = logging.getLogger('simple')
@@ -604,3 +604,8 @@ def blend(dest, src):
         else:
             dest[k] = v
 
+
+def encode_file_name(filename):
+    if isinstance(filename, unicode):
+        filename = filename.encode('utf-8')
+    return filename

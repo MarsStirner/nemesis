@@ -120,6 +120,22 @@ class rbMeasureScheduleType(db.Model):
         }
 
 
+class rbMeasureStatus(db.Model):
+    __tablename__ = u'rbMeasureStatus'
+    _table_description = u'Типы статусов мероприятий'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(32), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
 class EventMeasure(db.Model):
     __tablename__ = u'EventMeasure'
 
@@ -132,7 +148,7 @@ class EventMeasure(db.Model):
     schemeMeasure_id = db.Column(db.Integer, db.ForeignKey('ExpertSchemeMeasure.id'), nullable=False, index=True)
     begDateTime = db.Column(db.DateTime)
     endDateTime = db.Column(db.DateTime)
-    status = db.Column(db.Integer, nullable=False, default=0)
+    status = db.Column(db.Integer, nullable=False)
     sourceAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 

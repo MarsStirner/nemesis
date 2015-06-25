@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 from sqlalchemy import types
+from sqlalchemy.engine import reflection
 from flask.ext.login import current_user
 
 
@@ -41,3 +42,25 @@ class UUIDColumn(types.TypeDecorator):
 
     def is_mutable(self):
         return False
+
+
+def get_class_by_tablename(tablename):
+    """Return class reference mapped to table.
+
+    :param tablename: String with name of table.
+    :return: Class reference or None.
+    """
+    from nemesis.systemwide import db
+
+    for c in db.Model._decl_class_registry.values():
+        if hasattr(c, '__tablename__') and c.__tablename__ == tablename and\
+                check_table_exists_in_schema(tablename):
+            return c
+
+
+def check_table_exists_in_schema(tablename):
+    from nemesis.systemwide import db
+
+    inspector = reflection.Inspector.from_engine(db.engine)
+    existing_tables = inspector.get_table_names()
+    return tablename in existing_tables

@@ -950,7 +950,8 @@ angular.module('WebMis20.directives')
                 canDelete: '=',
                 canEdit: '=',
                 clickable: '=',
-                risar: '='
+                risar: '=',
+                disabled: '='
             },
             controller: function ($scope) {
                 $scope.set_defaults = function (diagnosis){
@@ -966,19 +967,19 @@ angular.module('WebMis20.directives')
                     }
                     if ($scope.risar) {
                         var sequence = $scope.action && $scope.listMode;
-                        DiagnosisModal.openDiagnosisModalRisar(new_diagnosis, $scope.event, $scope.action, $scope.params, sequence).then(function (rslt) {
-                            var result = rslt[0], restart = rslt[1];
-                            if ($scope.listMode) {
-                                $scope.model.push(new_diagnosis);
-                            }
-                            else {
-                                $scope.model = new_diagnosis;
-                            }
-                            WMEventServices.add_diagnosis($scope.event, new_diagnosis);
-                            if (sequence && restart) {
-                                $timeout($scope.add_new_diagnosis)
-                            }
-                        });
+                        DiagnosisModal.openDiagnosisModalRisar(new_diagnosis, $scope.event, $scope.action, $scope.params, sequence).
+                            then(function (rslt) {
+                                var result = rslt[0], restart = rslt[1];
+                                if ($scope.listMode) {
+                                    $scope.model.push(new_diagnosis);
+                                }
+                                else {
+                                    $scope.model = new_diagnosis;
+                                }
+                                if (sequence && restart) {
+                                    $timeout($scope.add_new_diagnosis)
+                                }
+                            });
                     }
                     else {
                         DiagnosisModal.openDiagnosisModal(new_diagnosis, $scope.action, $scope.params).then(function () {
@@ -1100,21 +1101,7 @@ angular.module('WebMis20.directives')
                 $scope.diag_type_codes = ['2', '3', '7', '9', '11'];
                 $scope.params = params;
 
-                $scope.can_set_final_diag = true; //TODO
-//                $scope.can_set_final_diag = (
-////                        // только лечащий врач
-////                        current_user_id === event.info.exec_person.id &&
-//                    // в текущем действии еще нет заключительных диагнозов
-//                    !($scope.action.diseases instanceof Array ? (
-//                                $scope.action.diseases.length && $scope.action.diseases.some(function (diag) {
-//                                    return diag.diagnosis_type.code === '1' && diag.deleted === 0;
-//                                })
-//                            ) :($scope.action.diseases && $scope.action.diseases.diagnosis_type.code === '1' && diag.deleted === 0)) &&
-//                    // в других *закрытых* действиях нет заключительных диагнозов
-//                    event.diagnoses.filter(function (diag) {
-//                        return diag.diagnosis_type.code === '1' && diag.action.status.code === 'finished';
-//                    }).length === 0
-//                );
+                $scope.can_set_final_diag = true;
                 if ($scope.can_set_final_diag) {
                     $scope.diag_type_codes.push('1');
                 }
@@ -1231,10 +1218,10 @@ angular.module('WebMis20.directives')
                             <td ng-click="open_action(model.action_id)">[[model.diagnosis_description ? \'есть\': \'нет\']]</td>\
                             <td style="white-space:nowrap;">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(model)"><span class="glyphicon glyphicon-pencil"></span>\
+                                        ng-click="edit_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
                                 </button>\
                                 <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(model)"><span class="glyphicon glyphicon-trash"></span>\
+                                        ng-click="delete_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
                                 </button>\
                             </td>\
                         </tr>\
@@ -1247,17 +1234,17 @@ angular.module('WebMis20.directives')
                             <td ng-click="open_action(diag.action_id)">[[diag.diagnosis_description ? \'есть\': \'нет\']]</td>\
                             <td style="white-space:nowrap;">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
+                                        ng-click="edit_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
                                 </button>\
                                 <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(diag)"><span class="glyphicon glyphicon-trash"></span>\
+                                        ng-click="delete_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
                                 </button>\
                             </td>\
                         </tr>\
                         <tr ng-show="add_new_btn_visible()">\
                             <td colspan="6">\
                                 <button type="button" class="btn btn-sm btn-primary" title="Добавить"\
-                                        ng-click="add_new_diagnosis()">Добавить\
+                                        ng-click="add_new_diagnosis()" ng-disabled="disabled">Добавить\
                                 </button>\
                             </td>\
                         </tr>\
