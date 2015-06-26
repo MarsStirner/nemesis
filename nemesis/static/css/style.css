@@ -496,6 +496,10 @@ tr.row-clickable {
     margin-top: 0;
     margin-bottom: 0;
 }
+.novpadding {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
 .nohmargin{
     margin-left: 0;
     margin-right: 0;
