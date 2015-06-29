@@ -563,6 +563,9 @@ div.toc-affix {
     width: inherit;
     margin-top: 20px;
 }
+.col-md-3 div.affix.toc-affix {
+    width: calc(25% - 43px);
+}
 div.affix-top{
     margin-top: 0px;
     width: 100%;
