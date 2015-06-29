@@ -142,7 +142,7 @@ angular.module('WebMis20.directives').
             template:
 '<div ng-transclude></div>\
     <div class="row">\
-    <div class="col-md-9">\
+    <div class="col-md-8">\
         <div class="row">\
             <div class="form-group col-md-12" ng-show="!fullFreeInputEnabled()"\
                  ng-class="{\'has-error\': addressForm.$dirty &&\
@@ -191,7 +191,7 @@ angular.module('WebMis20.directives').
             </div>\
         </div>\
     </div>\
-    <div class="col-md-3">\
+    <div class="col-md-4">\
         <div class="row">\
             <div class="form-group col-md-12"\
                  ng-class="{\'has-error\': addressForm.$dirty && addressForm.locality_type.$invalid}">\
