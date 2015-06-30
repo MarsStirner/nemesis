@@ -72,8 +72,8 @@ angular.module('WebMis20.directives').
         </span>\
     </div>\
 </form>\
-<div class="panel panel-default" ng-class="{\'panel-danger\': results.length === 0, \'panel-success\': results.length > 0}">\
-    <div class="panel-heading">\
+<div class="box" ng-class="{\'box-danger\': results.length === 0, \'box-success\': results.length > 0}">\
+    <div class="box-header with-border">\
         <div class="row">\
             <div class="col-sm-8">\
                 <span ng-if="results.length > 0" class="lead">Результаты поиска</span>\
@@ -81,6 +81,7 @@ angular.module('WebMis20.directives').
             </div>\
         </div>\
     </div>\
+    <div class="box-body">\
     <table id="result_tbl" class="table table-condensed table-clickable table-hover table-striped" ng-if="results.length > 0">\
         <thead>\
         <tr>\
@@ -123,6 +124,7 @@ angular.module('WebMis20.directives').
         </tr>\
         </tbody>\
     </table>\
+    </div>\
 </div>'
         };
     }]);

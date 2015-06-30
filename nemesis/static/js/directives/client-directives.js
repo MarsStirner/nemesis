@@ -154,36 +154,32 @@ angular.module('WebMis20.directives').
                     }
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-6"\
-                 ng-class="{\'has-error\': (socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_type.$invalid}">\
-                <label for="ss_type_[[idPostfix]]">Тип</label>\
-                <ui-select class="form-control" id="ss_type_[[idPostfix]]" name="ss_type" theme="select2"\
-                           ng-model="modelSocStatus.ss_type" ng-disabled="!edit_mode()" ng-required="socStatusForm.$dirty">\
-                    <ui-select-match placeholder="">[[$select.selected.name]]</ui-select-match>\
-                    <ui-select-choices repeat="sst in rbSocStatusType.objects | filter: filter_soc_status(ssClass) | filter: $select.search">\
-                        <div ng-bind-html="sst.name | highlight: $select.search"></div>\
-                    </ui-select-choices>\
-                </ui-select>\
-            </div>\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': ((socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_begdate[[idPostfix]].$invalid)}">\
-                <label for="ss_begdate[[idPostfix]]" class="control-label">Дата начала</label>\
-                <wm-date id="ss_begdate[[idPostfix]]" name="ss_begdate[[idPostfix]]"\
-                         ng-model="modelSocStatus.beg_date" ng-disabled="!edit_mode()"\
-                         ng-required="begDateRequired() && socStatusForm.$dirty">\
-                </wm-date>\
-            </div>\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': socStatusForm.ss_enddate_[[idPostfix]].$invalid}">\
-                <label for="ss_enddate_[[idPostfix]]" class="control-label">Дата окончания</label>\
-                <wm-date id="ss_enddate_[[idPostfix]]" name="ss_enddate_[[idPostfix]]"\
-                         ng-model="modelSocStatus.end_date" ng-disabled="!edit_mode()">\
-                </wm-date>\
-            </div>\
-        </div>\
+'<div class="row">\
+    <div class="form-group col-md-6"\
+         ng-class="{\'has-error\': (socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_type.$invalid}">\
+        <label for="ss_type_[[idPostfix]]">Тип</label>\
+        <ui-select class="form-control" id="ss_type_[[idPostfix]]" name="ss_type" theme="select2"\
+                   ng-model="modelSocStatus.ss_type" ng-disabled="!edit_mode()" ng-required="socStatusForm.$dirty">\
+            <ui-select-match placeholder="">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="sst in rbSocStatusType.objects | filter: filter_soc_status(ssClass) | filter: $select.search">\
+                <div ng-bind-html="sst.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': ((socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_begdate[[idPostfix]].$invalid)}">\
+        <label for="ss_begdate[[idPostfix]]" class="control-label">Дата начала</label>\
+        <wm-date id="ss_begdate[[idPostfix]]" name="ss_begdate[[idPostfix]]"\
+                 ng-model="modelSocStatus.beg_date" ng-disabled="!edit_mode()"\
+                 ng-required="begDateRequired() && socStatusForm.$dirty">\
+        </wm-date>\
+    </div>\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': socStatusForm.ss_enddate_[[idPostfix]].$invalid}">\
+        <label for="ss_enddate_[[idPostfix]]" class="control-label">Дата окончания</label>\
+        <wm-date id="ss_enddate_[[idPostfix]]" name="ss_enddate_[[idPostfix]]"\
+                 ng-model="modelSocStatus.end_date" ng-disabled="!edit_mode()">\
+        </wm-date>\
     </div>\
 </div>'
             };
@@ -323,35 +319,31 @@ angular.module('WebMis20.directives').
                     });
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_date[[idPostfix]].$invalid}">\
-                <label for="cbt_date[[idPostfix]]" class="control-label">Дата установления</label>\
-                <wm-date id="cbt_date[[idPostfix]]" name="cbt_date[[idPostfix]]"\
-                         ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
-                </wm-date>\
-            </div>\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_type.$invalid}">\
-                <label for="cbt_type[[idPostfix]]" class="control-label">Тип</label>\
-                <ui-select class="form-control" id="cbt_type[[idPostfix]]" name="cbt_type" theme="select2"\
-                           ng-model="modelBloodType.blood_type" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
-                    <ui-select-match placeholder="Группа крови">[[$select.selected.name]]</ui-select-match>\
-                    <ui-select-choices repeat="bt in rbBloodType.objects | filter: $select.search">\
-                        <div ng-bind-html="bt.name | highlight: $select.search"></div>\
-                    </ui-select-choices>\
-                </ui-select>\
-            </div>\
-            <div class="form-group col-md-5"\
-                 ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_person.$invalid}">\
-                <label for="cbt_person[[idPostfix]]" class="control-label">Врач, установивший группу крови</label>\
-                <wm-person-select id="cbt_person[[idPostfix]]" name="cbt_person"\
-                    ng-model="modelBloodType.person" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
-                </wm-person-select>\
-            </div>\
-        </div>\
+'<div class="row">\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_date[[idPostfix]].$invalid}">\
+        <label for="cbt_date[[idPostfix]]" class="control-label">Дата установления</label>\
+        <wm-date id="cbt_date[[idPostfix]]" name="cbt_date[[idPostfix]]"\
+                 ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
+        </wm-date>\
+    </div>\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_type.$invalid}">\
+        <label for="cbt_type[[idPostfix]]" class="control-label">Тип</label>\
+        <ui-select class="form-control" id="cbt_type[[idPostfix]]" name="cbt_type" theme="select2"\
+                   ng-model="modelBloodType.blood_type" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
+            <ui-select-match placeholder="Группа крови">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="bt in rbBloodType.objects | filter: $select.search">\
+                <div ng-bind-html="bt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-5"\
+         ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_person.$invalid}">\
+        <label for="cbt_person[[idPostfix]]" class="control-label">Врач, установивший группу крови</label>\
+        <wm-person-select id="cbt_person[[idPostfix]]" name="cbt_person"\
+            ng-model="modelBloodType.person" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
+        </wm-person-select>\
     </div>\
 </div>'
             };
@@ -380,40 +372,36 @@ angular.module('WebMis20.directives').
                     });
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_name.$invalid}">\
-                <label for="alg_name[[idPostfix]]" class="control-label">[[type === \'allergy\' ? \'Вещество\' : \'Препарат\']]</label>\
-                <input type="text" class="form-control" id="alg_name[[idPostfix]]" name="alg_name"\
-                       autocomplete="off" placeholder=""\
-                       ng-model="modelAllergy.name" ng-disabled="!edit_mode()" ng-required="algForm.$dirty"/>\
-            </div>\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': (algForm.$dirty || modelAllerg.idy) && algForm.alg_power.$invalid}">\
-                <label for="alg_power[[idPostfix]]" class="control-label">Степень</label>\
-                <select class="form-control" id="alg_power[[idPostfix]]" name="alg_power"\
-                        ng-model="modelAllergy.power"\
-                        ng-options="pow as pow.name for pow in rbAllergyPower.objects track by pow.id"\
-                        ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
-                </select>\
-            </div>\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_date[[idPostfix]].$invalid}">\
-                <label for="alg_date[[idPostfix]]" class="control-label">Дата установления</label>\
-                <wm-date id="alg_date[[idPostfix]]" name="alg_date[[idPostfix]]"\
-                         ng-model="modelAllergy.date" ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
-                </wm-date>\
-            </div>\
-        </div>\
-        <div class="row">\
-            <div class="form-group col-md-12">\
-                <label for="alg_notes[idPostfix]">Примечание</label>\
-                <textarea class="form-control" id="alg_notes" name="alg_notes" rows="2" autocomplete="off"\
-                    ng-model="modelAllergy.notes" ng-disabled="!edit_mode()"></textarea>\
-            </div>\
-        </div>\
+'<div class="row">\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_name.$invalid}">\
+        <label for="alg_name[[idPostfix]]" class="control-label">[[type === \'allergy\' ? \'Вещество\' : \'Препарат\']]</label>\
+        <input type="text" class="form-control" id="alg_name[[idPostfix]]" name="alg_name"\
+               autocomplete="off" placeholder=""\
+               ng-model="modelAllergy.name" ng-disabled="!edit_mode()" ng-required="algForm.$dirty"/>\
+    </div>\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': (algForm.$dirty || modelAllerg.idy) && algForm.alg_power.$invalid}">\
+        <label for="alg_power[[idPostfix]]" class="control-label">Степень</label>\
+        <select class="form-control" id="alg_power[[idPostfix]]" name="alg_power"\
+                ng-model="modelAllergy.power"\
+                ng-options="pow as pow.name for pow in rbAllergyPower.objects track by pow.id"\
+                ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
+        </select>\
+    </div>\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_date[[idPostfix]].$invalid}">\
+        <label for="alg_date[[idPostfix]]" class="control-label">Дата установления</label>\
+        <wm-date id="alg_date[[idPostfix]]" name="alg_date[[idPostfix]]"\
+                 ng-model="modelAllergy.date" ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
+        </wm-date>\
+    </div>\
+</div>\
+<div class="row">\
+    <div class="form-group col-md-12">\
+        <label for="alg_notes[idPostfix]">Примечание</label>\
+        <textarea class="form-control" id="alg_notes" name="alg_notes" rows="2" autocomplete="off"\
+            ng-model="modelAllergy.notes" ng-disabled="!edit_mode()"></textarea>\
     </div>\
 </div>'
             };
@@ -439,36 +427,32 @@ angular.module('WebMis20.directives').
                     });
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-3"\
-                 ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_type.$invalid}">\
-                <label for="contact_type[[idPostfix]]" class="control-label">Тип</label>\
-                <ui-select class="form-control" id="contact_type[[idPostfix]]" name="contact_type" theme="select2"\
-                    ng-model="modelContact.contact_type" ng-disabled="!edit_mode()" ng-required="contactForm.$dirty"\
-                    ref-book="rbContactType">\
-                    <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                    <ui-select-choices repeat="rt in ($refBook.objects | filter: $select.search) track by rt.id">\
-                        <span ng-bind-html="rt.name | highlight: $select.search"></span>\
-                    </ui-select-choices>\
-                </ui-select>\
-            </div>\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_text.$invalid}">\
-                <label for="contact_text[[idPostfix]]" class="control-label">Номер</label>\
-                <input type="text" class="form-control" id="contact_text[[idPostfix]]" name="contact_text"\
-                       autocomplete="off" placeholder=""\
-                       ng-model="modelContact.contact_text" ng-disabled="!edit_mode()" ng-required="contactForm.$dirty"/>\
-            </div>\
-            <div class="form-group col-md-5"\
-                 ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_notes.$invalid}">\
-                <label for="contact_notes[[idPostfix]]" class="control-label">Примечание</label>\
-                <input type="text" class="form-control" id="contact_notes[[idPostfix]]" name="contact_notes"\
-                       autocomplete="off" placeholder=""\
-                       ng-model="modelContact.notes" ng-disabled="!edit_mode()" ng-required="false"/>\
-            </div>\
-        </div>\
+'<div class="row">\
+    <div class="form-group col-md-3"\
+         ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_type.$invalid}">\
+        <label for="contact_type[[idPostfix]]" class="control-label">Тип</label>\
+        <ui-select class="form-control" id="contact_type[[idPostfix]]" name="contact_type" theme="select2"\
+            ng-model="modelContact.contact_type" ng-disabled="!edit_mode()" ng-required="contactForm.$dirty"\
+            ref-book="rbContactType">\
+            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+            <ui-select-choices repeat="rt in ($refBook.objects | filter: $select.search) track by rt.id">\
+                <span ng-bind-html="rt.name | highlight: $select.search"></span>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_text.$invalid}">\
+        <label for="contact_text[[idPostfix]]" class="control-label">Номер</label>\
+        <input type="text" class="form-control" id="contact_text[[idPostfix]]" name="contact_text"\
+               autocomplete="off" placeholder=""\
+               ng-model="modelContact.contact_text" ng-disabled="!edit_mode()" ng-required="contactForm.$dirty"/>\
+    </div>\
+    <div class="form-group col-md-5"\
+         ng-class="{\'has-error\': (contactForm.$dirty || modelContact.id) && contactForm.contact_notes.$invalid}">\
+        <label for="contact_notes[[idPostfix]]" class="control-label">Примечание</label>\
+        <input type="text" class="form-control" id="contact_notes[[idPostfix]]" name="contact_notes"\
+               autocomplete="off" placeholder=""\
+               ng-model="modelContact.notes" ng-disabled="!edit_mode()" ng-required="false"/>\
     </div>\
 </div>'
             };
@@ -569,32 +553,28 @@ angular.module('WebMis20.directives').
                     });
                 },
                 template:
-'<div class="panel panel-default">\
-    <div class="panel-body">\
-        <div class="row">\
-            <div class="form-group col-md-4"\
-                 ng-class="{\'has-error\': (relationForm.$dirty || modelRelation.id) && relationForm.rel_type.$invalid}">\
-                <label for="rel_type[[idPostfix]]" class="control-label">Тип</label>\
-                <wm-relation-type-rb class="form-control" id="rel_type[[idPostfix]]" name="rel_type"\
-                    client="modelClient" relative="modelRelation.relative" direct="modelRelation.direct"\
-                    ng-model="modelRelation.rel_type"\
-                    ng-disabled="!edit_mode()" ng-required="relationForm.$dirty"/>\
-            </div>\
-            <div class="form-group col-md-1">\
-                <label for="rel_direct[[idPostfix]]" class="control-label">Связь</label>\
-                <button type="button" class="btn btn-primary form-control" id="rel_direct[[idPostfix]]"\
-                    ng-model="modelRelation.direct" ng-disabled="!edit_mode()" btn-checkbox\
-                    title="[[(modelRelation.direct) ? \'Прямая\' : \'Обратная\']]">\
-                    <span class="glyphicon glyphicon-arrow-[[(modelRelation.direct) ? \'right\' : \'left\']]"></span>\
-                </button>\
-            </div>\
-            <div class="form-group col-md-7"\
-                 ng-class="{\'has-error\': (relationForm.$dirty || modelRelation.id) && relationForm.rel_relative.$invalid}">\
-                <label for="rel_relative[[idPostfix]]" class="control-label">Родственник</label>\
-                <wm-clients-short class="form-control" id="rel_relative[[idPostfix]]" name="rel_relative"\
-                    ng-model="modelRelation.relative" ng-disabled="!edit_mode()" ng-required="relationForm.$dirty"/>\
-            </div>\
-        </div>\
+'<div class="row">\
+    <div class="form-group col-md-4"\
+         ng-class="{\'has-error\': (relationForm.$dirty || modelRelation.id) && relationForm.rel_type.$invalid}">\
+        <label for="rel_type[[idPostfix]]" class="control-label">Тип</label>\
+        <wm-relation-type-rb class="form-control" id="rel_type[[idPostfix]]" name="rel_type"\
+            client="modelClient" relative="modelRelation.relative" direct="modelRelation.direct"\
+            ng-model="modelRelation.rel_type"\
+            ng-disabled="!edit_mode()" ng-required="relationForm.$dirty"/>\
+    </div>\
+    <div class="form-group col-md-1">\
+        <label for="rel_direct[[idPostfix]]" class="control-label">Связь</label>\
+        <button type="button" class="btn btn-primary form-control" id="rel_direct[[idPostfix]]"\
+            ng-model="modelRelation.direct" ng-disabled="!edit_mode()" btn-checkbox\
+            title="[[(modelRelation.direct) ? \'Прямая\' : \'Обратная\']]">\
+            <span class="glyphicon glyphicon-arrow-[[(modelRelation.direct) ? \'right\' : \'left\']]"></span>\
+        </button>\
+    </div>\
+    <div class="form-group col-md-7"\
+         ng-class="{\'has-error\': (relationForm.$dirty || modelRelation.id) && relationForm.rel_relative.$invalid}">\
+        <label for="rel_relative[[idPostfix]]" class="control-label">Родственник</label>\
+        <wm-clients-short class="form-control" id="rel_relative[[idPostfix]]" name="rel_relative"\
+            ng-model="modelRelation.relative" ng-disabled="!edit_mode()" ng-required="relationForm.$dirty"/>\
     </div>\
 </div>'
             };
