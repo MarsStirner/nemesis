@@ -926,3 +926,17 @@ a.pseudo-btn {
         padding: 12px 5px 12px 0 !important;
     }
 }
+.skin-blue a.up_link {
+    color: #b8c7ce;
+    position: fixed;
+    bottom: 0;
+    padding: 10px 15px;
+    z-index: 850;
+}
+.skin-blue a.up_link:hover {
+    color: #fff;
+}
+
+.sidebar-mini.sidebar-collapse .main-sidebar {
+    transform: none !important;
+}
