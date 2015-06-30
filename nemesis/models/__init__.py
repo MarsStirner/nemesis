@@ -1,2 +1,7 @@
-from . import actions, client, event, exists, kladr_models, schedule, expert_protocol, utils, caesar, enums
-__all__ = ["actions", "client", "event", "exists", "schedule", "expert_protocol", "enums"]
+from . import (
+    actions, client, event, organisation, exists, kladr_models, schedule,
+    expert_protocol, risar,
+    utils, enums, caesar
+)
+
+__all__ = ["actions", "client", "event", "organisation", "exists", "schedule", "expert_protocol", "risar", "enums"]
