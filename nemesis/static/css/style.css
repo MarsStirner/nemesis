@@ -566,8 +566,11 @@ div.toc-affix {
 .col-md-3 div.affix.toc-affix {
     width: calc(25% - 43px);
 }
+div.affix-holder {
+    margin-top: -20px;
+}
 div.affix-top{
-    margin-top: 0px;
+    margin-top: 20px;
     width: 100%;
 }
 
