@@ -65,7 +65,8 @@ class Organisation(db.Model):
     OKFS = db.relationship('rbOKFS')
     uuid = db.relationship('UUID')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
-    org_ohcls = db.relationship('Organisation_OrganisationHCL', backref='organisation', cascade_backrefs=False)
+    org_obcls = db.relationship('Organisation_OrganisationBCLAssoc', backref='organisation', cascade_backrefs=False)
+    obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
 
     @property
     def is_insurer(self):
@@ -140,8 +141,8 @@ class OrganisationAccount(db.Model):
         return self.id
 
 
-class OrganisationHealthCareLevel(db.Model):
-    __tablename__ = u'OrganisationHealthCareLevel'
+class OrganisationBirthCareLevel(db.Model):
+    __tablename__ = u'OrganisationBirthCareLevel'
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
@@ -156,16 +157,15 @@ class OrganisationHealthCareLevel(db.Model):
     perinatalRiskRate_id = db.Column(db.Integer, db.ForeignKey('rbPerinatalRiskRate.id'), nullable=False, index=True)
 
     perinatal_risk_rate = db.relationship('rbPerinatalRiskRate')
+    org_obcls = db.relationship(
+        'Organisation_OrganisationBCLAssoc',
+        backref='obcl'
+    )
 
 
-class Organisation_OrganisationHCL(db.Model):
-    __tablename__ = u'Organisation_OrganisationHCL'
+class Organisation_OrganisationBCLAssoc(db.Model):
+    __tablename__ = u'Organisation_OrganisationBCL'
 
     id = db.Column(db.Integer, primary_key=True)
     org_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), nullable=False, index=True)
-    orgHCL_id = db.Column(db.Integer, db.ForeignKey('OrganisationHealthCareLevel.id'), nullable=False, index=True)
-
-    ohcl = db.relationship(
-        'OrganisationHealthCareLevel',
-        backref='org_ohcl', cascade_backrefs=False
-    )
+    orgBCL_id = db.Column(db.Integer, db.ForeignKey('OrganisationBirthCareLevel.id'), nullable=False, index=True)
