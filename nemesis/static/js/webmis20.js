@@ -585,6 +585,16 @@ var WebMis20 = angular.module('WebMis20', [
             this._selected.splice(index, 1);
         }
     };
+    SelectAll.prototype.toggle_all = function () {
+        if (this.all()) {
+            this.selectNone()
+        } else {
+            this.selectAll()
+        }
+    };
+    SelectAll.prototype.all = function () {
+        return this._source.length == this._selected.length;
+    };
     return SelectAll
 })
 .directive('wmCheckbox', ['$compile', function ($compile) {

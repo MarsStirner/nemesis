@@ -89,6 +89,7 @@ def fc_urls():
     """
     config = app.config
     coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
+    simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     return {
         'url': {
             'logout': url_for("logout"),
@@ -101,6 +102,10 @@ def fc_urls():
                 'ezekiel_acquire_lock': coldstar_url + "ezekiel/acquire/{0}",
                 'ezekiel_prolong_lock': coldstar_url + "ezekiel/prolong/{0}",
                 'ezekiel_release_lock': coldstar_url + "ezekiel/release/{0}",
+            },
+            'simargl': {
+                'simargl_es': simargl_url + 'simargl-es',
+                'simargl_rpc': simargl_url + 'simargl-rpc',
             }
         }
     }
