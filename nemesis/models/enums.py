@@ -67,6 +67,10 @@ class PrenatalRiskRate(Enum):
     high = 3, u'высокий'
 
 
+class PerinatalRiskRate(EnumLoadable):
+    __tablename__ = 'rbPerinatalRiskRate'
+
+
 class PreeclampsiaRisk(Enum):
     # впоследствии будет больше значений
     undefined = 0, u'не определен'
