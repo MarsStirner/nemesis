@@ -65,6 +65,9 @@ class Organisation(db.Model):
     OKFS = db.relationship('rbOKFS')
     uuid = db.relationship('UUID')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
+    org_obcls = db.relationship('Organisation_OrganisationBCLAssoc', cascade_backrefs=False)
+    obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
+
     org_curations = db.relationship('OrganisationCurationAssoc', backref='organisation', cascade_backrefs=False)
 
     @property
