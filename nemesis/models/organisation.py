@@ -65,8 +65,7 @@ class Organisation(db.Model):
     OKFS = db.relationship('rbOKFS')
     uuid = db.relationship('UUID')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
-    org_obcls = db.relationship('Organisation_OrganisationBCLAssoc', backref='organisation', cascade_backrefs=False)
-    obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
+    org_curations = db.relationship('OrganisationCurationAssoc', backref='organisation', cascade_backrefs=False)
 
     @property
     def is_insurer(self):
@@ -169,3 +168,15 @@ class Organisation_OrganisationBCLAssoc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     org_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), nullable=False, index=True)
     orgBCL_id = db.Column(db.Integer, db.ForeignKey('OrganisationBirthCareLevel.id'), nullable=False, index=True)
+
+    organisation = db.relationship('Organisation')
+
+
+class OrganisationCurationAssoc(db.Model):
+    __tablename__ = u'OrganisationCuration'
+
+    id = db.Column(db.Integer, primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), nullable=False, index=True)
+    personCuration_id = db.Column(db.Integer, db.ForeignKey('PersonCuration.id'), nullable=False, index=True)
+
+    person_curation = db.relationship('PersonCurationAssoc')
