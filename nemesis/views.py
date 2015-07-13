@@ -65,6 +65,12 @@ def check_valid_login():
                 if result.status_code == 200:
                     answer = result.json()
                     if answer['success']:
+                        if ('BEAKER_SESSION' in app.config and
+                                app.config['BEAKER_SESSION'].get('session.key') in request.cookies and
+                                not request.cookies.get(app.config['BEAKER_SESSION'].get('session.key'))):
+                            response = redirect(request.url)
+                            response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+                            return response
                         if not current_user.is_authenticated():
                             user = UserAuth.get_by_id(answer['user_id'])
                             if login_user(user):
