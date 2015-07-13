@@ -58,7 +58,11 @@ def check_valid_login():
 
         if auth_token:
             try:
-                result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
+                result = requests.post(
+                    app.config['COLDSTAR_URL'] + 'cas/api/check',
+                    data=json.dumps({'token': auth_token, 'prolong': True}),
+                    headers={'Referer': request.url}
+                )
             except ConnectionError:
                 raise CasNotAvailable
             else:

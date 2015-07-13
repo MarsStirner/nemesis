@@ -10,7 +10,7 @@ angular.module('WebMis20')
     // А ещё хуже, если мы потеряем объект. Тогда блокировка будет очень долго висеть.
     var EzekielLock = function (name) {
         var self = this,
-            events = OneWayEvent.new();
+            events = new OneWayEvent();
 
         this.tc = new TimeoutCallback();
         this.eventSource = events.eventSource;

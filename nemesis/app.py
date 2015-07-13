@@ -104,8 +104,8 @@ def fc_urls():
                 'ezekiel_release_lock': coldstar_url + "ezekiel/release/{0}",
             },
             'simargl': {
-                'simargl_es': simargl_url + 'simargl-es',
-                'simargl_rpc': simargl_url + 'simargl-rpc',
+                'EventSource': simargl_url + 'simargl-es',
+                'RPC': simargl_url + 'simargl-rpc',
             }
         }
     }
