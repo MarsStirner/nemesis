@@ -24,7 +24,7 @@ from forms import LoginForm, RoleForm
 from nemesis.lib.jsonify import PersonTreeVisualizer
 from nemesis.models.exists import rbUserProfile, Person
 from nemesis.app import app
-from nemesis.models import enums, event, actions, exists, schedule, client, expert_protocol
+from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol
 from nemesis.systemwide import db
 
 
@@ -65,6 +65,12 @@ def check_valid_login():
                 if result.status_code == 200:
                     answer = result.json()
                     if answer['success']:
+                        if ('BEAKER_SESSION' in app.config and
+                                app.config['BEAKER_SESSION'].get('session.key') in request.cookies and
+                                not request.cookies.get(app.config['BEAKER_SESSION'].get('session.key'))):
+                            response = redirect(request.url)
+                            response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+                            return response
                         if not current_user.is_authenticated():
                             user = UserAuth.get_by_id(answer['user_id'])
                             if login_user(user):
@@ -296,7 +302,7 @@ def api_refbook_int(name):
             ref_book = getattr(mod, name)
             return ref_book.rb()['objects']
 
-    for mod in (exists, schedule, actions, client, event, expert_protocol):
+    for mod in (exists, schedule, actions, client, event, person, organisation, expert_protocol):
         if hasattr(mod, name):
             ref_book = getattr(mod, name)
 

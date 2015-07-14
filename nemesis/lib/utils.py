@@ -10,6 +10,7 @@ from pytz import timezone
 from flask import current_app, request, abort, json, session, make_response
 from flask.ext.principal import Permission, RoleNeed, ActionNeed, PermissionDenied
 from flask.ext.login import current_user
+from sqlalchemy import func
 
 from nemesis.systemwide import db
 from nemesis.app import app
@@ -609,3 +610,22 @@ def encode_file_name(filename):
     if isinstance(filename, unicode):
         filename = filename.encode('utf-8')
     return filename
+
+
+def get_max_item_attribute_value(model, attr):
+    """
+    Получение максимального значения атрибута сущности из бд.
+    :param model: класс модели
+    :type model: db.Model
+    :param attr: атрибут модели
+    :type attr: db.Column
+    :return: max value или None
+    :rtype: int? | None
+    """
+    selectable = db.select((func.max(attr), ), from_obj=model)
+    if hasattr(model, 'deleted'):
+        selectable.append_whereclause(model.deleted == 0)
+    row = db.session.execute(selectable).first()
+    if not row:
+        return None
+    return row[0]

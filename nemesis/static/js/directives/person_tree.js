@@ -20,7 +20,7 @@ angular.module('WebMis20.directives.personTree', [])
                         <button type="button" class="btn btn-danger" ng-click="clear()"><span class="glyphicon glyphicon-remove"></span></button>\
                     </span>\
                 </span>\
-                <div class="css-treeview well well-sm scrolled-tree" ng-mouseleave="hide_tree()" ng-class="{popup: popupable}">\
+                <div class="css-treeview panel scrolled-tree" ng-mouseleave="hide_tree()" ng-class="{popup: popupable}">\
                     <ul>\
                         <li ng-repeat="spec_group in tree">\
                             <input class="group" type="checkbox" id="spec-[[spec_group.speciality.id]]" checked>\

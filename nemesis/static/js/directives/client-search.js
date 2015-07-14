@@ -64,16 +64,14 @@ angular.module('WebMis20.directives').
         </span>\
     </div>\
 </form>\
-<div class="panel panel-default" ng-class="{\'panel-danger\': results.length === 0, \'panel-success\': results.length > 0}">\
-    <div class="panel-heading">\
-        <div class="row">\
-            <div class="col-sm-8">\
-                <span ng-if="results.length > 0" class="lead">Результаты поиска</span>\
-                <span ng-if="results.length === 0 && query">Пациент не найден в базе данных</span>\
-            </div>\
-            <div class="col-sm-4 text-right" ng-if="allow_register">\
-                <button ng-click="open_new_client(\'new\')" class="btn btn-primary btn-lg">Зарегистрировать пациента</button>\
-            </div>\
+<div>\
+    <div class="row" ng-class="{\'text-danger\': results.length === 0, \'text-success\': results.length > 0}">\
+        <div class="col-sm-8">\
+            <span ng-if="results.length > 0" class="lead">Результаты поиска</span>\
+            <span ng-if="results.length === 0 && query">Пациент не найден в базе данных</span>\
+        </div>\
+        <div class="col-sm-4 text-right" ng-if="allow_register">\
+            <button ng-click="open_new_client(\'new\')" class="btn btn-primary">Зарегистрировать пациента</button>\
         </div>\
     </div>\
     <table id="result_tbl" class="table table-condensed table-clickable table-hover" ng-if="results.length > 0">\
@@ -103,7 +101,7 @@ angular.module('WebMis20.directives').
             <td ng-click="onClientSelect(result)">\
                 <div ng-repeat="policy in result.voluntary_policies"><span ng-bind-html="policy.policy_text | highlight: query"></span></div>\
             </td>\
-            <td ng-class="{\'bg-muted\': result.info.id !== client_id}" class="cursor-default">\
+            <td class="cursor-default">\
                 <wm-client-contacts contacts="result.contacts"></wm-client-contacts>\
             </td>\
         </tr>\

@@ -28,30 +28,28 @@ angular.module('WebMis20.directives')
             };
         },
         template:
-    '<div class="well well-sm">\
-        <div class="row">\
-            <div class="col-md-9">\
-                <dl class="dl-horizontal novmargin">\
-                    <dt ng-if="client.contacts.length">Контакты:</dt>\
-                        <dd ng-if="client.contacts.length">\
-                            <wm-client-contacts contacts="client.contacts"></wm-client-contacts>\
-                        </dd>\
-                    <dt>Адрес регистрации:</dt><dd ng-bind-html="format_address(client.reg_address)"></dd>\
-                    <dt>Адрес проживания:</dt><dd ng-bind-html="format_address(client.live_address)"></dd>\
-                    <dt>Документ:</dt><dd ng-bind-html="format_doc(client.id_docs)"></dd>\
-                    <dt>Медицинский полис:</dt>\
-                        <dd ng-if="client.compulsory_policy.id" ng-bind="client.compulsory_policy.policy_text"></dd>\
-                        <dd ng-repeat="pol in client.voluntary_policies">[[pol.policy_text]]</dd>\
-                </dl>\
-            </div>\
-            <div class="col-md-3">\
-                <dl class="dl-horizontal novmargin pull-right">\
-                    <dt>Код пациента:</dt><dd ng-bind-html="format_code(client.info.id)"></dd>\
-                    <dt>Дата рождения:</dt><dd ng-bind-html="format_birth_date(client.info.birth_date)"></dd>\
-                    <dt>Возраст:</dt><dd ng-bind-html="format_age(client.info.age)"></dd>\
-                    <dt>Пол:</dt><dd ng-bind-html="format_sex(client.info.sex.name)"></dd>\
-                </dl>\
-            </div>\
+    '<div class="row">\
+        <div class="col-md-9">\
+            <dl class="dl-horizontal novmargin">\
+                <dt ng-if="client.contacts.length">Контакты:</dt>\
+                    <dd ng-if="client.contacts.length">\
+                        <wm-client-contacts contacts="client.contacts"></wm-client-contacts>\
+                    </dd>\
+                <dt>Адрес регистрации:</dt><dd ng-bind-html="format_address(client.reg_address)"></dd>\
+                <dt>Адрес проживания:</dt><dd ng-bind-html="format_address(client.live_address)"></dd>\
+                <dt>Документ:</dt><dd ng-bind-html="format_doc(client.id_docs)"></dd>\
+                <dt>Медицинский полис:</dt>\
+                    <dd ng-if="client.compulsory_policy.id" ng-bind="client.compulsory_policy.policy_text"></dd>\
+                    <dd ng-repeat="pol in client.voluntary_policies">[[pol.policy_text]]</dd>\
+            </dl>\
+        </div>\
+        <div class="col-md-3">\
+            <dl class="dl-horizontal novmargin pull-right">\
+                <dt>Код пациента:</dt><dd ng-bind-html="format_code(client.info.id)"></dd>\
+                <dt>Дата рождения:</dt><dd ng-bind-html="format_birth_date(client.info.birth_date)"></dd>\
+                <dt>Возраст:</dt><dd ng-bind-html="format_age(client.info.age)"></dd>\
+                <dt>Пол:</dt><dd ng-bind-html="format_sex(client.info.sex.name)"></dd>\
+            </dl>\
         </div>\
     </div>'
     };

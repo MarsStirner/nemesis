@@ -820,12 +820,12 @@ angular.module('WebMis20.directives')
                 '<div class="toc">\
                     <ul class="nav">\
                         <li ng-repeat="node in tocName.$children" ng-class="{\'toc-selected-top\': node.tocIsActive}">\
-                            <a ng-href="#[[node.$name]]" class="wrap-btn" ng-class="{\'text-danger bg-danger\': node.$invalid()}">\
+                            <a ng-href="#[[node.$name]]" target="_self" class="wrap-btn" ng-class="{\'text-danger bg-danger\': node.$invalid()}">\
                                 [[ node.$title ]]\
                             </a>\
                             <ul ng-if="node.$children.length" class="nav">\
                                 <li ng-repeat="node in node.$children" ng-class="{\'toc-selected-bottom\': node.tocIsActive}">\
-                                    <a ng-href="#[[node.$name]]" class="wrap-btn" ng-class="{\'text-danger bg-danger\': node.$invalid()}">\
+                                    <a ng-href="#[[node.$name]]" target="_self" class="wrap-btn" ng-class="{\'text-danger bg-danger\': node.$invalid()}">\
                                         [[ node.$title ]]\
                                     </a>\
                                 </li>\
@@ -969,19 +969,19 @@ angular.module('WebMis20.directives')
                     }
                     if ($scope.risar) {
                         var sequence = $scope.action && $scope.listMode;
-                        DiagnosisModal.openDiagnosisModalRisar(new_diagnosis, $scope.event, $scope.action, $scope.params, sequence).then(function (rslt) {
-                            var result = rslt[0], restart = rslt[1];
-                            if ($scope.listMode) {
-                                $scope.model.push(new_diagnosis);
-                            }
-                            else {
-                                $scope.model = new_diagnosis;
-                            }
-                            WMEventServices.add_diagnosis($scope.event, new_diagnosis);
-                            if (sequence && restart) {
-                                $timeout($scope.add_new_diagnosis)
-                            }
-                        });
+                        DiagnosisModal.openDiagnosisModalRisar(new_diagnosis, $scope.event, $scope.action, $scope.params, sequence).
+                            then(function (rslt) {
+                                var result = rslt[0], restart = rslt[1];
+                                if ($scope.listMode) {
+                                    $scope.model.push(new_diagnosis);
+                                }
+                                else {
+                                    $scope.model = new_diagnosis;
+                                }
+                                if (sequence && restart) {
+                                    $timeout($scope.add_new_diagnosis)
+                                }
+                            });
                     }
                     else {
                         DiagnosisModal.openDiagnosisModal(new_diagnosis, $scope.action, $scope.params).then(function () {
@@ -1103,21 +1103,7 @@ angular.module('WebMis20.directives')
                 $scope.diag_type_codes = ['2', '3', '7', '9', '11'];
                 $scope.params = params;
 
-                $scope.can_set_final_diag = true; //TODO
-//                $scope.can_set_final_diag = (
-////                        // только лечащий врач
-////                        current_user_id === event.info.exec_person.id &&
-//                    // в текущем действии еще нет заключительных диагнозов
-//                    !($scope.action.diseases instanceof Array ? (
-//                                $scope.action.diseases.length && $scope.action.diseases.some(function (diag) {
-//                                    return diag.diagnosis_type.code === '1' && diag.deleted === 0;
-//                                })
-//                            ) :($scope.action.diseases && $scope.action.diseases.diagnosis_type.code === '1' && diag.deleted === 0)) &&
-//                    // в других *закрытых* действиях нет заключительных диагнозов
-//                    event.diagnoses.filter(function (diag) {
-//                        return diag.diagnosis_type.code === '1' && diag.action.status.code === 'finished';
-//                    }).length === 0
-//                );
+                $scope.can_set_final_diag = true;
                 if ($scope.can_set_final_diag) {
                     $scope.diag_type_codes.push('1');
                 }
