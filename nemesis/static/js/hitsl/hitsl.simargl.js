@@ -39,55 +39,49 @@ angular.module('hitsl.core')
         if (!get_mail_url) {
             throw 'ВСЁ ПРОПАЛО!'
         }
-        function notify_unread (result) {
-            event_source.send('unread', {
-                unread: result.unread,
-                count: result.index_count
-            });
-            return result;
-        }
-        function notify_new (result) {
-            event_source.send('new', _.first(result.messages));
-            return result
+        function get_mail_summary (pass) {
+            ApiCalls.wrapper('GET', WMConfig.url.api_user_mail_summary).then(_.partial(event_source.send, 'unread'));
+            return pass;
         }
         Simargl.when_ready(function () {
-            ApiCalls.wrapper('GET', get_mail_url).then(notify_unread);
+            get_mail_summary();
             event_source.send('ready');
         });
         Simargl.subscribe('mail', function (msg) {
-            ApiCalls.wrapper('GET', get_mail_url, {ids: msg.data.id}).then(notify_unread).then(notify_new)
+            get_mail_summary();
+            event_source.send('new:id', msg.data.id);
         });
         this.subscribe = event_source.eventSource.subscribe;
         this.set_mark = function (mark_type, ids, value) {
             var method = "PUT";
             if (! (ids instanceof Array)) ids = [ids];
             if (!value) {method = "DELETE"}
-            return ApiCalls.wrapper(method, WMConfig.url.api_user_mail_mark.format(ids.join(':'), mark_type)).then(notify_unread);
+            return ApiCalls.wrapper(method, WMConfig.url.api_user_mail_mark.format(ids.join(':'), mark_type)).then(get_mail_summary);
         };
         this.mail_move = function (folder, ids) {
             if (! (ids instanceof Array)) ids = [ids];
-            return ApiCalls.wrapper('MOVE', WMConfig.url.api_user_mail_move.format(ids.join(':'), folder)).then(notify_unread);
+            return ApiCalls.wrapper('MOVE', WMConfig.url.api_user_mail_move.format(ids.join(':'), folder)).then(get_mail_summary);
         };
         this.get_mail = function (folder, skip, limit) {
-            return ApiCalls.wrapper('GET', get_mail_url, {
-                folder: folder,
+            return ApiCalls.wrapper('GET', get_mail_url.format(folder || ''), {
                 skip: skip,
                 limit: limit
-            }).then(notify_unread)
+            }).then(get_mail_summary)
         };
         this.send_mail = function (recipient, subject, text, parent_id) {
-            ApiCalls.coldstar('POST', WMConfig.url.simargl.RPC, undefined, {
+            Simargl.send_msg({
                 topic: 'mail:new',
                 recipient: recipient,
                 sender: CurrentUser.id,
                 data: { subject: subject, text: text, parent_id: parent_id },
                 ctrl: true
-            }, {allowCredentials: true}).then(function () {
+            }).then(function (result) {
                 NotificationService.notify(undefined, 'Письмо успешно отправлено', 'success', 5000);
-                $scope.mode = 0;
-            }, function () {
+                return result;
+            }, function (result) {
                 NotificationService.notify(undefined, 'Не удалось отправить письмо', 'danger', 5000);
+                return result;
             })
-        }
+        };
     })
 ;
