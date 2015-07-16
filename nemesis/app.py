@@ -103,6 +103,9 @@ def fc_urls():
                 'ezekiel_prolong_lock': coldstar_url + "ezekiel/prolong/{0}",
                 'ezekiel_release_lock': coldstar_url + "ezekiel/release/{0}",
             },
+            'ezekiel': {
+                'EventSource': coldstar_url + "ezekiel-es/{0}",
+            },
             'simargl': {
                 'EventSource': simargl_url + 'simargl-es',
                 'RPC': simargl_url + 'simargl-rpc',
