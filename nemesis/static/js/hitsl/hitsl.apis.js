@@ -12,7 +12,7 @@ angular.module('hitsl.core')
                 var text = (response.status === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
                 NotificationService.notify(
                     response.data.meta.code,
-                    text.format(data.meta.name),
+                    text.format(response.data.meta.name),
                     'danger'
                 );
                 defer.reject(response.data.meta);
