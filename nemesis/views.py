@@ -46,10 +46,9 @@ def check_valid_login():
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
 
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
-            auth_token = request.args.pop('token')
+            auth_token = request.args.get('token')
             # убираем token из url, чтобы при протухшем токене не было циклического редиректа на CAS
-            request.url = u'{0}?{1}'.format(request.base_url, urlencode(request.args))
-            request.args['token'] = auth_token
+            request.url = u'{0}?{1}'.format(request.base_url, urlencode(i for i in request.args.items() if i[0] != 'token'))
 
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
