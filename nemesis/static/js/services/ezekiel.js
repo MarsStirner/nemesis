@@ -3,18 +3,19 @@
  */
 
 angular.module('WebMis20')
-.factory('EzekielLock', ['ApiCalls', 'WMConfig', 'TimeoutCallback', 'Deferred', 'WindowCloseHandler', 'OneWayEvent', function (ApiCalls, WMConfig, TimeoutCallback, Deferred, WindowCloseHandler, OneWayEvent) {
-    var __locks = {};
-    var EzekielLock = function (name) {
+.factory('EzekielLock', ['$rootScope', 'ApiCalls', 'WMConfig', 'OneWayEvent', function ($rootScope, ApiCalls, WMConfig, OneWayEvent) {
+    function jped (event) {return JSON.parse(event.data)}
+
+    return function (name) {
         var self = this,
             owe = new OneWayEvent(),
             eventSource = new EventSource(WMConfig.url.ezekiel.EventSource.format(name), {withCredentials: true});
 
-        function jped (event) {return JSON.parse(event.data)}
-
-        eventSource.addEventListener('acquired', _.compose(lock_acquired, jped));
-        eventSource.addEventListener('rejected', _.compose(lock_rejected, jped));
-        eventSource.addEventListener('exception', _.compose(lock_lost, jped));
+        eventSource.addEventListener('acquired', _.compose(_.bind($rootScope.$apply, $rootScope), lock_acquired, jped));
+        eventSource.addEventListener('rejected', _.compose(_.bind($rootScope.$apply, $rootScope), lock_rejected, jped));
+        eventSource.addEventListener('prolonged', _.compose(_.bind($rootScope.$apply, $rootScope), lock_prolonged, jped));
+        eventSource.addEventListener('exception', _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost, jped));
+        eventSource.onerror = _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost);
 
         this.subscribe = owe.eventSource.subscribe;
         this.release = function () {
@@ -38,8 +39,17 @@ angular.module('WebMis20')
             self.expiration = lock.expiration;
             self.success = true;
 
-            __locks[lock.token] = self;
             owe.send('acquired');
+            return lock;
+        }
+        function lock_prolonged (lock) {
+            self.acquired = lock.acquire;
+            self.token = lock.token;
+            self.locker = lock.locker;
+            self.expiration = lock.expiration;
+            self.success = true;
+
+            owe.send('prolonged');
             return lock;
         }
         function lock_rejected (lock) {
@@ -58,9 +68,5 @@ angular.module('WebMis20')
             return lock;
         }
     };
-    EzekielLock.prototype.release = function () {
-        return Deferred.resolve();
-    };
-    return EzekielLock;
 }])
 ;
