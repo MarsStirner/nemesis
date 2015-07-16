@@ -56,11 +56,11 @@ angular.module('hitsl.core')
             var method = "PUT";
             if (! (ids instanceof Array)) ids = [ids];
             if (!value) {method = "DELETE"}
-            return ApiCalls.wrapper(method, WMConfig.url.api_user_mail_mark.format(ids.join(':'), mark_type)).then(get_mail_summary);
+            return ApiCalls.wrapper(method, WMConfig.url.api_user_mail_alter.format(ids.join(':'), mark_type)).then(get_mail_summary);
         };
         this.mail_move = function (folder, ids) {
             if (! (ids instanceof Array)) ids = [ids];
-            return ApiCalls.wrapper('MOVE', WMConfig.url.api_user_mail_move.format(ids.join(':'), folder)).then(get_mail_summary);
+            return ApiCalls.wrapper('MOVE', WMConfig.url.api_user_mail_alter.format(ids.join(':'), folder)).then(get_mail_summary);
         };
         this.get_mail = function (folder, skip, limit) {
             return ApiCalls.wrapper('GET', get_mail_url.format(folder || ''), {

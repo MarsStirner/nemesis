@@ -91,6 +91,24 @@ class Person(db.Model):
     def full_name(self):
         return u'%s%s' % (self.nameText, u' (%s)' % self.speciality if self.speciality else '')
 
+    @property
+    def subscriptions(self):
+        return list(sub.object_id for sub in self._subscriptions)
+
+    def subscribe(self, object_id):
+        if object_id in self.subscriptions:
+            return
+        from .useraccount import UserSubscriptions
+        s = UserSubscriptions()
+        s.person = self
+        s.object_id = object_id
+        db.session.add(s)
+
+    def unsubscribe(self, object_id):
+        object_list = [s for s in self._subscriptions if s.object_id == object_id]
+        if object_list:
+            self._subscriptions.remove(object_list[0])
+
     def __unicode__(self):
         return self.nameText
 
