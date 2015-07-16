@@ -26,7 +26,6 @@ from nemesis.models.exists import rbUserProfile, Person
 from nemesis.app import app
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol
 from nemesis.systemwide import db
-from urllib import urlencode
 
 
 login_manager.login_view = 'login'
@@ -48,7 +47,8 @@ def check_valid_login():
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
             # убираем token из url, чтобы при протухшем токене не было циклического редиректа на CAS
-            request.url = u'{0}?{1}'.format(request.base_url, urlencode(i for i in request.args.items() if i[0] != 'token'))
+            query = '&'.join(u'{0}={1}'.format(key, value) for (key, value) in request.args.items() if key != 'token')
+            request.url = u'{0}?{1}'.format(request.base_url, query)
 
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
