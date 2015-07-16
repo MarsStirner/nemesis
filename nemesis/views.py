@@ -26,6 +26,7 @@ from nemesis.models.exists import rbUserProfile, Person
 from nemesis.app import app
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol
 from nemesis.systemwide import db
+from urllib import urlencode
 
 
 login_manager.login_view = 'login'
@@ -45,12 +46,10 @@ def check_valid_login():
         auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
 
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
-            auth_token = request.args.get('token')
+            auth_token = request.args.pop('token')
             # убираем token из url, чтобы при протухшем токене не было циклического редиректа на CAS
-            request.url = u'{0}?{1}'.format(request.base_url,
-                                            u'&'.join([u'{0}={1}'.format(key, value)
-                                                       for key, value in request.args.items()
-                                                       if key != 'token']))
+            request.url = u'{0}?{1}'.format(request.base_url, urlencode(request.args))
+            request.args['token'] = auth_token
 
             # если нет токена, то current_user должен быть AnonymousUser
             if not isinstance(current_user._get_current_object(), AnonymousUser):
@@ -58,7 +57,11 @@ def check_valid_login():
 
         if auth_token:
             try:
-                result = requests.post(app.config['COLDSTAR_URL'] + 'cas/api/check', data=json.dumps({'token': auth_token, 'prolong': True}))
+                result = requests.post(
+                    app.config['COLDSTAR_URL'] + 'cas/api/check',
+                    data=json.dumps({'token': auth_token, 'prolong': True}),
+                    headers={'Referer': request.url.encode('utf-8')}
+                )
             except ConnectionError:
                 raise CasNotAvailable
             else:

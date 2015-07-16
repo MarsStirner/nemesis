@@ -227,25 +227,24 @@ angular.module('hitsl.core', [])
         return deferred.promise;
     };
 }])
-.service('OneWayEvent', [function () {
-    this.new = function () {
+.factory('OneWayEvent', [function () {
+    var OneWayEvent = function () {
         var handlers = {};
-        return {
-            send: function () {
-                var args = _.toArray(arguments),
-                    name = args.shift(),
-                    flist = handlers[name] || [];
-                return _.map(flist, function (f) {return f.apply(undefined, args)})
-            },
-            eventSource: {
-                subscribe: function (name, handler) {
-                    var handlers_list = handlers[name] = handlers[name] || [];
-                    if (!handlers_list.has(handler)) handlers_list.push(handler);
-                    return this;
-                }
+        this.send = function () {
+            var args = _.toArray(arguments),
+                name = args.shift(),
+                flist = handlers[name] || [];
+            return _.map(flist, function (f) {return f.apply(undefined, args)})
+        };
+        this.eventSource = {
+            subscribe: function (name, handler) {
+                var handlers_list = handlers[name] = handlers[name] || [];
+                if (!handlers_list.has(handler)) handlers_list.push(handler);
+                return this;
             }
-        }
-    }
+        };
+    };
+    return OneWayEvent;
 }])
 .service('IdleTimer', ['$window', '$document', 'WMConfig', 'IdleUserModal', 'ApiCalls', 'WindowCloseHandler', function ($window, $document, WMConfig, IdleUserModal, ApiCalls, WindowCloseHandler) {
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
