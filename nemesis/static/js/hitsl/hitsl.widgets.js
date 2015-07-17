@@ -503,4 +503,39 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('wmSubscriptionBtn', ['ApiCalls', 'WMConfig', 'NotificationService', function (ApiCalls, WMConfig, NotificationService) {
+    return {
+        restrict: 'E',
+        scope: {
+            oid: '@oid'
+        },
+        replace: true,
+        template: '<button class="btn btn-default" ng-click="toggle()"><i class="fa text-yellow" ng-class="{\'fa-star\': subscribed, \'fa-star-o\': !subscribed}"></i></button>',
+        link: function (scope) {
+            scope.subscribed = false;
+            function process (method) {
+                return ApiCalls.wrapper(method, WMConfig.url.api_subscription.format(scope.oid))
+                    .then(function (result) {
+                        scope.subscribed = result;
+                        return result
+                    });
+            }
+            scope.$watch('oid', function (n, o) {
+                if (!angular.equals(n, o)) {
+                    process('GET')
+                }
+            });
+            scope.toggle = function () {
+                process((scope.subscribed)?'DELETE':'PUT').then(function (result) {
+                    NotificationService.notify(
+                        'subs',
+                        (result)?'Подписка оформлена':'Подписка отменена',
+                        'info',
+                        5000
+                    )
+                });
+            };
+        }
+    }
+}])
 ;
