@@ -758,7 +758,7 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'C',
         link: function (scope, element, attributes) {
             var $element = $(element);
-            $element.addClass('btn-group pull-right');
+            $element.addClass('pull-right');
             if (window.opener) {
                 $element.append('<button class="btn btn-danger" onclick="window.opener.focus();window.close();" title="Закрыть"><span class="glyphicon glyphicon-remove"></span></button>');
             }
