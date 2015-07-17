@@ -1,24 +1,44 @@
 # -*- coding: utf-8 -*-
+import requests
 
 __author__ = 'viruzzz-kun'
 
 
-def notify_user(person_id, subject, text, folder='system'):
-    import requests
+def int_subscribe_user(person_id, object_id, subscribe):
     from nemesis.app import app
     from nemesis.models.utils import safe_current_user_id
 
-    mail = {
+    requests.post(app.config['SIMARGL_URL'].rstrip('/') + '/simargl-rpc', json={
+        'topic': 'subscription:%s' % ('add' if subscribe else 'del'),
         'sender': safe_current_user_id(),
-        'recipient': person_id,
-        'topic': 'mail:new',
         'ctrl': True,
-        'i': True,
-        's': False,
         'data': {
-            'subject': subject,
-            'text': text,
-            'folder': folder,
+            'object_id': object_id,
+            'person_id': person_id,
         }
-    }
-    requests.post(app.config['SIMARGL_URL'].rstrip('/') + '/simargl-rpc', json=mail)
+    })
+
+
+def subscribe_user(person_id, object_id):
+    return int_subscribe_user(person_id, object_id, True)
+
+
+def unsubscribe_user(person_id, object_id):
+    return int_subscribe_user(person_id, object_id, False)
+
+
+def notify_object(object_id, reasons, kwargs, default=None):
+    from nemesis.app import app
+    from nemesis.models.utils import safe_current_user_id
+
+    requests.post(app.config['SIMARGL_URL'].rstrip('/') + '/simargl-rpc', json={
+        'sender': safe_current_user_id(),
+        'topic': 'subscription:notify',
+        'ctrl': True,
+        'data': {
+            'kwargs': kwargs,
+            'object_id': object_id,
+            'reasons': reasons,
+            'default_reason': default,
+        },
+    })
