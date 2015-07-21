@@ -760,7 +760,7 @@ var WebMis20 = angular.module('WebMis20', [
             var $element = $(element);
             $element.addClass('pull-right');
             if (window.opener) {
-                $element.append('<button class="btn btn-danger" onclick="window.opener.focus();window.close();" title="Закрыть"><span class="glyphicon glyphicon-remove"></span></button>');
+                $element.append('<button class="btn btn-sm btn-danger" onclick="window.opener.focus();window.close();" title="Закрыть"><span class="glyphicon glyphicon-remove"></span></button>');
             }
         }
     }

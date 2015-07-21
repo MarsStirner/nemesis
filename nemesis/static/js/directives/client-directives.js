@@ -598,7 +598,7 @@ angular.module('WebMis20.directives').
                 },
                 template:
 '<span>\
-    <a ng-click="open(modelAttach.id)">[[ modelAttach.file_document.name ]]</a> (Страницы\
+    <a class="btn-link" ng-click="open(modelAttach.id)">[[ modelAttach.file_document.name ]]</a> (Страницы\
         <span ng-repeat="page in modelAttach.file_document.files">\
             <a href="javascript:void(0)" ng-click="open(modelAttach.id, page.idx)">[[page.idx + 1]]</a>\
         </span>) от [[modelAttach.attach_date | asDate]]\
@@ -649,7 +649,6 @@ angular.module('WebMis20.directives').
 '<wm-client-file-attach-item ng-if="itemVisible()" model-attach="modelAttach"\
     on-open="open(fa_id, page_idx)">\
 </wm-client-file-attach-item>\
-</span>\
 <button type="button" class="btn btn-sm btn-primary" ng-click="addNew()" ng-if="btnAddVisible()"\
     title="Добавить копию документа">Добавить копию документа\
 </button>'
