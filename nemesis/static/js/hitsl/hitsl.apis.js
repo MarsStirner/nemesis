@@ -114,7 +114,7 @@ angular.module('hitsl.core')
         scope: {},
         link: function (scope, element, attributes) {
             var template =
-                '<div class="alert alert-{0}" role="alert" {3}>\
+                '<div class="alert alert-{0} novmargin" role="alert" {3}>\
                     <button type="button" class="close" ng-click="$dismiss({2})">\
                         <span aria-hidden="true">&times;</span>\
                         <span class="sr-only">Close</span>\

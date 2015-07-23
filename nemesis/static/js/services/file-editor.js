@@ -45,6 +45,7 @@ angular.module('WebMis20')
     var _getTemplate = function(openMode, attachType) {
         var template = '\
 <div class="modal-header">\
+    <button aria-label="Закрыть" ng-click="$dismiss()" class="close" type="button"><span aria-hidden="true">×</span></button>\
     <h3 class="modal-title" ng-bind="getTitleText()"></h3>\
 </div>\
 <div class="modal-body">\
@@ -78,7 +79,6 @@ angular.module('WebMis20')
         </div>\
         <div class="row">\
             <div class="col-md-12">\
-                <div alert-notify></div>\
                 <div id="image_editor" ng-show="imageSelected()">\
                     <div class="modal-scrollable-block">\
                         <wm-image-editor id="image_editor" model-image="currentFile.file.image" mime-type="[[currentFile.file.mime]]"\
@@ -132,7 +132,7 @@ angular.module('WebMis20')
 <div ng-show="mode === \'select_from_fs\'">\
     <ul>\
     <li><h4>Выбрать файл</h4></li>\
-    <input type="file" wm-input-file file="currentFile.file" on-change="generateFileName()"\
+    <input type="file" wm-input-file file="currentFile.file" on-change="generateFileName(true)"\
         accept="image/*,.pdf,.txt,.odt,.doc,.docx,.ods,.xls,.xlsx">\
     </ul>\
 </div>\
@@ -143,7 +143,7 @@ angular.module('WebMis20')
     <div class="form-group">\
         <label for="docName">Наименование</label>\
         <input type="text" class="form-control" id="docName" ng-model="file_attach.file_document.name"\
-            ng-disabled="!canEdit()">\
+            ng-disabled="!canEdit()" ng-change="generateFileName(true)">\
     </div>\
     <div class="form-group">\
         <label for="documentType">Тип документа</label>\
@@ -424,7 +424,7 @@ angular.module('WebMis20')
                 return
             }
             var docFileName = $scope.file_attach.file_document.name,
-                name = '{0}{_(|1|)}_Лист_№{2}'.formatNonEmpty(
+                name = '{0}{_(|1|)}_лист_{2}'.formatNonEmpty(
                     unspace(docFileName ? docFileName :
                             safe_traverse($scope.file_attach, ['doc_type', 'name'], 'Файл')
                     ),
@@ -439,6 +439,7 @@ angular.module('WebMis20')
                 safe_traverse($scope.file_attach, ['relation_type', 'leftName'], '')
             );
             $scope.file_attach.file_document.name = name;
+            $scope.generateFileName(true);
         };
         $scope.$watch('file_attach.rel_type', function (n, o) {
             if (n !== 'relative') {
