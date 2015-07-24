@@ -368,8 +368,8 @@ div.select2-container {
 }
 
 .vmargin10 {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
 }
 .vbmargin10 {
     margin-bottom: 10px !important;
@@ -500,6 +500,10 @@ tr.row-clickable {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
+.nohpadding {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
 .nohmargin{
     margin-left: 0;
     margin-right: 0;
@@ -561,16 +565,13 @@ blockquote.danger{
 div.toc-affix {
     top: 0;
     width: inherit;
-    margin-top: 20px;
 }
 .col-md-3 div.affix.toc-affix {
     width: calc(25% - 43px);
 }
 div.affix-holder {
-    margin-top: -20px;
 }
 div.affix-top{
-    margin-top: 20px;
     width: 100%;
 }
 
@@ -785,6 +786,11 @@ ng-form {
 .modal-full-screen .modal-content {
     height: 97%;
 }
+
+.modal-full-screen .modal-dialog {
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
 .modal-full-screen .modal-body {
     max-height: calc(100% - 150px);
     height: 100%;
@@ -876,7 +882,7 @@ a.pseudo-btn {
 }
 
 .row .vertical-divider {
-  border-right: 3px solid #d2def9;
+  border-right: 1px solid #eee;
 }
 
 /*formstamp widgets*/
@@ -941,4 +947,14 @@ a.pseudo-btn {
 
 .sidebar-mini.sidebar-collapse .main-sidebar {
     transform: none !important;
+}
+.image_editor {
+    display: block;
+    height: calc(100% - 44px);
+    border: 1px solid rgb(221, 221, 221);
+    padding:10px;
+    overflow: auto;
+}
+input.jcrop-keymgr {
+    left: -1200px !important;
 }

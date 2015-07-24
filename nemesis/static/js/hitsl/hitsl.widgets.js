@@ -182,13 +182,13 @@ angular.module('WebMis20')
         restrict: 'E',
         template: function () {
             var toolbar = '\
-<div class="btn-toolbar marginal bg-muted" role="toolbar" aria-label="...">\
-    <div class="btn-group btn-group-lg pull-right" role="group" aria-label="...">\
+<div class="btn-toolbar vbmargin10" role="toolbar" aria-label="...">\
+    <div class="btn-group pull-right" role="group" aria-label="...">\
         <button type="button" class="btn btn-default" ng-click="resetImage()" ng-disabled="!btnResetEnabled()" title="Вернуться к исходному изображению">\
             <span class="fa fa-refresh"></span>\
         </button>\
     </div>\
-    <div class="btn-group btn-group-lg rmargin10" role="group" aria-label="...">\
+    <div class="btn-group" role="group" aria-label="...">\
         <button type="button" class="btn btn-default" ng-click="rotate(\'left\')" ng-disabled="!btnRotateEnabled()" title="Повернуть против часовой стрелки">\
             <span class="fa fa-rotate-left"></span>\
         </button>\
@@ -196,11 +196,11 @@ angular.module('WebMis20')
             <span class="fa fa-rotate-right"></span>\
         </button>\
     </div>\
-    <div class="btn-group btn-group-lg rmargin10" role="group" aria-label="...">\
+    <div class="btn-group" role="group" aria-label="...">\
         <button type="button" class="btn btn-default" ng-click="zoom(1)" ng-disabled="!btnZoomInEnabled()" title="Увеличить">\
             <span class="fa fa-plus"></span>\
         </button>\
-        <label class="label label-default">[[scalePct]] %</label>\
+        <!--<label class="label label-default">[[scalePct]] %</label>-->\
         <button type="button" class="btn btn-default" ng-click="zoom(-1)" ng-disabled="!btnZoomOutEnabled()" title="Уменьшить">\
             <span class="fa fa-minus"></span>\
         </button>\
@@ -208,20 +208,20 @@ angular.module('WebMis20')
             <span class="fa fa-arrows-alt"></span>\
         </button>\
     </div>\
-    <div class="btn-group btn-group-lg" role="group" aria-label="...">\
+    <div class="btn-group" role="group" aria-label="...">\
         <button type="button" class="btn btn-default" ng-click="cropStart()" ng-disabled="!btnCropStartEnabled()" title="Обрезать изображение">\
             <span class="fa fa-crop"></span>\
         </button>\
-        <button type="button" class="btn btn-default btn-success" ng-click="cropApply()" ng-disabled="!btnCropApplyEnabled()" title="Подтвердить">\
+        <button type="button" class="btn btn-success" ng-click="cropApply()" ng-show="!btnCropStartEnabled()" ng-disabled="!btnCropApplyEnabled()" title="Подтвердить">\
             <span class="fa fa-check"></span>\
         </button>\
-        <button type="button" class="btn btn-default btn-danger" ng-click="cropCancel()" ng-disabled="!btnCropCancelEnabled()" title="Отменить">\
+        <button type="button" class="btn btn-danger" ng-click="cropCancel()" ng-show="!btnCropStartEnabled()" ng-disabled="!btnCropCancelEnabled()" title="Отменить">\
             <span class="fa fa-times"></span>\
         </button>\
     </div>\
 </div>';
             var editor = '<canvas></canvas>';
-            return '{0}<div id="imageContainer" style="display: block; height: 100%">{1}</div>'.format(toolbar, editor);
+            return '{0}<div id="imageContainer" class="image_editor">{1}</div>'.format(toolbar, editor);
         },
         scope: {
             modelImage: '=',
