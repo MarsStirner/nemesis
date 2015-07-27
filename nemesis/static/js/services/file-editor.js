@@ -67,25 +67,30 @@ angular.module('WebMis20')
             </div>\
         </div>\
         <div class="row vmargin10" id="pages">\
-            <div class="col-md-8 form-inline">\
+            <div class="col-md-12">\
+                <ul class="pagination-nomargin pagination-sm pagination"><li class="disabled"><span>Страницы</span></li></ul>\
+                <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1"\
+                    ng-model="selected.currentPage" ng-change="pageChanged()" previous-text="&lsaquo;"\
+                    next-text="&rsaquo;" class="pagination-nomargin pagination-sm">\
+                </pagination>\
+                <div class="btn-group pull-right">\
+                    <button type="button" class="btn btn-sm btn-default" title="Удалить страницу" ng-click="deletePage()" ng-if="canEdit()">\
+                        <span class="glyphicon glyphicon-minus"></span>\
+                    </button>\
+                    <button type="button" class="btn btn-sm btn-default" title="Добавить страницу" ng-click="addPage()" ng-if="canEdit()">\
+                        <span class="glyphicon glyphicon-plus"></span>\
+                    </button>\
+                </div>\
+            </div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-12">\
                 <label class="control-label">Имя файла</label>\
-                <input type="text" class="form-control" ng-model="currentFile.name" style="width: inherit;">\
+                <input type="text" class="form-control" ng-model="currentFile.name">\
                 <!--<button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" ng-if="canEdit()"\
                     title="Сформировать имя файла">\
                     <span class="glyphicon glyphicon-repeat"></span>\
                 </button>-->\
-            </div>\
-            <div class="col-md-4">\
-                <button type="button" class="btn btn-sm btn-danger pull-right" ng-click="deletePage()" ng-if="canEdit()">\
-                    <span class="glyphicon glyphicon-minus" title="Удалить страницу"></span>\
-                </button>\
-                <button type="button" class="btn btn-sm btn-success pull-right" ng-click="addPage()" ng-if="canEdit()">\
-                    <span class="glyphicon glyphicon-plus" title="Добавить страницу"></span>\
-                </button>\
-                <pagination total-items="file_attach.file_document.totalPages()" items-per-page="1"\
-                    ng-model="selected.currentPage" ng-change="pageChanged()" previous-text="&lsaquo;"\
-                    next-text="&rsaquo;" class="pagination-nomargin pull-right">\
-                </pagination>\
             </div>\
         </div>\
     </div>\

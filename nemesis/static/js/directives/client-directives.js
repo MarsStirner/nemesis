@@ -597,12 +597,10 @@ angular.module('WebMis20.directives').
                     };
                 },
                 template:
-'<span>\
-    <a class="btn-link" ng-click="open(modelAttach.id)">[[ modelAttach.file_document.name ]]</a> (Страницы\
+'<a href="javascript:void(0);" class="btn-link" ng-click="open(modelAttach.id)">[[ modelAttach.file_document.name ]]</a> (Страницы\
         <span ng-repeat="page in modelAttach.file_document.files">\
             <a href="javascript:void(0)" ng-click="open(modelAttach.id, page.idx)">[[page.idx + 1]]</a>\
-        </span>) от [[modelAttach.attach_date | asDate]]\
-</span>'
+        </span>) от [[modelAttach.attach_date | asDate]]'
             };
         }
     ]).
