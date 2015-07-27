@@ -157,6 +157,7 @@ class OrganisationBirthCareLevel(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     idx = db.Column(db.Integer, nullable=False, server_default="'0'")
     perinatalRiskRate_id = db.Column(db.Integer, db.ForeignKey('rbPerinatalRiskRate.id'), nullable=False, index=True)
+    color = db.Column(db.String(6))
 
     perinatal_risk_rate = db.relationship('rbPerinatalRiskRate')
     org_obcls = db.relationship(

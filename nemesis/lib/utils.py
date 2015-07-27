@@ -430,6 +430,22 @@ def safe_uuid(val):
     return u_obj
 
 
+def safe_hex_color(val):
+    if not isinstance(val, basestring):
+        return None
+    if val.startswith('#') and len(val) == 7:
+        return val[1:]
+
+
+def format_hex_color(val):
+    if not isinstance(val, basestring):
+        return None
+    if len(val) == 6:
+        val = '#' + val
+    if val.startswith('#') and len(val) == 7:
+        return val
+
+
 def format_date(d):
     if isinstance(d, datetime.date):
         return d.strftime('%d.%m.%Y')
