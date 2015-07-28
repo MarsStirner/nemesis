@@ -63,6 +63,8 @@ class User(UserMixin):
             code, name = value
         else:
             code, name = value, ''
+        if not code:
+            return
         self._current_role = code
         self._current_role_name = name
         self.action_type_personally = [
