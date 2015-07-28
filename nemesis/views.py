@@ -106,6 +106,9 @@ def check_valid_login():
                 else:
                     # Если передан врач отделения или анестезиолог, то заменяем его на врача поликлиники
                     current_user.current_role = current_user.find_role(UserProfileManager.doctor_clinic)
+                    if not current_user.current_role:
+                        # Если у пользователя нет роли "Врач поликлиники", пробуем заменить на роль "Мед. сестра (ассистент врача)"
+                        current_user.current_role = current_user.find_role(UserProfileManager.nurse_assist)
 
                 identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
                 if not UserProfileManager.has_ui_assistant() and current_user.master:

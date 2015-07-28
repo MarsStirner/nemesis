@@ -958,3 +958,10 @@ a.pseudo-btn {
 input.jcrop-keymgr {
     left: -1200px !important;
 }
+.navbar-nav > .user-menu > .dropdown-menu > li.user-header a.show_assist{
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+.navbar-nav > .user-menu > .dropdown-menu > li.user-header a.show_assist:hover{
+    color: rgba(255, 255, 255, 1);
+}
