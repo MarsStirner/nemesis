@@ -48,9 +48,9 @@ angular.module('WebMis20')
     <button aria-label="Закрыть" ng-click="$dismiss()" class="close" type="button"><span aria-hidden="true">×</span></button>\
     <h3 class="modal-title" ng-bind-html="getTitleText()"></h3>\
 </div>\
-<div class="modal-body">\
+<div class="modal-body" style="overflow-y: auto">\
     <div class="row">\
-    <div class="col-md-4 vertical-divider" id="docInfo">\
+    <div class="col-md-4 vertical-divider" id="docInfo" style="overflow-x: hidden">\
         <div id="addFileBlock" ng-show="addFileBlockVisible()">{0}</div>\
         <div id="metaInfoBlock" class="modal-scrollable-block2">{1}</div>\
     </div>\
