@@ -538,4 +538,25 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('wmColorPicker', [function () {
+    return {
+        restrict: 'E',
+        require: 'ngModel',
+        scope: {
+            ngModel: '='
+        },
+        template:
+'<input type="color" ng-model=ngModel>\
+<span class="lmargin20 fa fa-times text-danger" title="Очистить" ng-if="colorSelected()" ng-click="clearColor()"></span>\
+',
+        link: function (scope, element, attrs, ngModelCtrl) {
+            scope.colorSelected = function () {
+                return Boolean(ngModelCtrl.$modelValue);
+            };
+            scope.clearColor = function () {
+                ngModelCtrl.$setViewValue(null);
+            }
+        }
+    }
+}])
 ;
