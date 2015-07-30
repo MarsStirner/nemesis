@@ -955,9 +955,9 @@ a.pseudo-btn {
 }
 .image_editor {
     display: block;
-    height: calc(100% - 44px);
+    height: calc(100% - 40px);
     border: 1px solid rgb(221, 221, 221);
-    padding:10px;
+    padding:9px;
     overflow: auto;
 }
 input.jcrop-keymgr {
