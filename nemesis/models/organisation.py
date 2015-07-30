@@ -59,6 +59,8 @@ class Organisation(db.Model):
     miacCode = db.Column(db.String(10), nullable=False)
     isOrganisation = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
+    isLPU = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    isStationary = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     net = db.relationship('rbNet')
     OKPF = db.relationship('rbOKPF')
@@ -77,6 +79,14 @@ class Organisation(db.Model):
     @property
     def is_hospital(self):
         return bool(self.isHospital)
+
+    @property
+    def is_lpu(self):
+        return bool(self.isLPU)
+
+    @property
+    def is_stationary(self):
+        return bool(self.isStationary)
 
     @property
     def kladr_locality(self):
@@ -106,6 +116,8 @@ class Organisation(db.Model):
             'infis': self.infisCode,
             'is_insurer': bool(self.isInsurer),
             'is_hospital': bool(self.isHospital),
+            'is_lpu': self.is_lpu,
+            'is_stationary': self.is_stationary,
             'address': self.Address,
             'phone': self.phone,
             'deleted': self.deleted

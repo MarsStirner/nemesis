@@ -17,6 +17,7 @@ angular.module('WebMis20.directives')
                     placeholder = attrs.placeholder,
                     ngModel = attrs.ngModel,
                     refBook = attrs.refBook,
+                    customFilter = attrs.customFilter,
                     extraFilter = attrs.extraFilter,
                     getName = attrs.customName ? scope.$eval(attrs.customName) : function (selected) {
                         return selected ? selected.name : undefined;
@@ -35,11 +36,12 @@ angular.module('WebMis20.directives')
                     )
                 );
                 var uiSelectChoices = $(
-                    '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} | limitTo:10 track by item.id">\
+                    '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} {2} | limitTo:10 track by item.id">\
                         <div ng-bind-html="getName(item) | highlight: $select.search"></div>\
                     </ui-select-choices>'
                     .format(
                         extraFilter ? (extraFilter + ' | '): '',
+                        customFilter ? ('| filter: ' + customFilter): '',
                         orderBy ? ('| orderBy: ' + orderBy) : ''
                     )
                 );
