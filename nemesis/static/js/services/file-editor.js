@@ -52,7 +52,7 @@ angular.module('WebMis20')
     <div class="row">\
     <div class="col-md-4 vertical-divider" id="docInfo" style="overflow-x: hidden">\
         <div id="addFileBlock" ng-show="addFileBlockVisible()">{0}</div>\
-        <div id="metaInfoBlock" class="modal-scrollable-block2">{1}</div>\
+        <div id="metaInfoBlock">{1}</div>\
     </div>\
     <div class="col-md-8" id="pageInfo">\
         <div class="row">\
@@ -85,8 +85,10 @@ angular.module('WebMis20')
         </div>\
         <div class="row vmargin10">\
             <div class="col-md-12">\
-                <label class="control-label">Имя файла</label>\
-                <input type="text" class="form-control" ng-model="currentFile.name">\
+                <div class="input-group">\
+                    <div class="input-group-addon">Имя файла</div>\
+                    <input type="text" class="form-control" ng-model="currentFile.name">\
+                </div>\
                 <!--<button type="button" class="btn btn-sm btn-primary" ng-click="generateFileName(true)" ng-if="canEdit()"\
                     title="Сформировать имя файла">\
                     <span class="glyphicon glyphicon-repeat"></span>\

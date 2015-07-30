@@ -784,15 +784,18 @@ ng-form {
 
 .modal-full-screen .modal-dialog,
 .modal-full-screen .modal-content {
-    height: 97%;
+    height: 98%;
 }
 
 .modal-full-screen .modal-dialog {
-    margin-top: 20px;
-    margin-bottom: 5px;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+.modal-full-screen > .modal-lg {
+    width: 90%;
 }
 .modal-full-screen .modal-body {
-    max-height: calc(100% - 150px);
+    max-height: calc(100% - 143px);
     height: 100%;
 }
 
