@@ -635,6 +635,9 @@ angular.module('WebMis20.directives').
                             idx: page_idx
                         });
                     };
+                    scope.print = function (file) {
+                        scope.onPrint(file);
+                    };
 
                     scope.btnAddVisible = function () {
                         return scope.modelDoc.id && !scope.modelAttach.id;
