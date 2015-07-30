@@ -50,7 +50,7 @@ angular.module('WebMis20')
 </div>\
 <div class="modal-body" style="overflow-y: auto">\
     <div class="row">\
-    <div class="col-md-4 vertical-divider" id="docInfo" style="overflow-x: hidden">\
+    <div class="col-md-4 vertical-divider" id="docInfo">\
         <div id="addFileBlock" ng-show="addFileBlockVisible()">{0}</div>\
         <div id="metaInfoBlock">{1}</div>\
     </div>\
