@@ -71,6 +71,7 @@ class Organisation(db.Model):
     obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
 
     org_curations = db.relationship('OrganisationCurationAssoc', backref='organisation', cascade_backrefs=False)
+    org_curators = db.relationship('PersonCurationAssoc', secondary='OrganisationCuration')
 
     @property
     def is_insurer(self):
