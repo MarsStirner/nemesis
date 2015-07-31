@@ -182,7 +182,7 @@ angular.module('WebMis20')
         restrict: 'E',
         template: function () {
             var toolbar = '\
-<div class="btn-toolbar vbmargin10" role="toolbar" aria-label="...">\
+<div class="btn-toolbar" role="toolbar" aria-label="...">\
     <div class="btn-group pull-right" role="group" aria-label="...">\
         <button type="button" class="btn btn-default" ng-click="resetImage()" ng-disabled="!btnResetEnabled()" title="Вернуться к исходному изображению">\
             <span class="fa fa-refresh"></span>\

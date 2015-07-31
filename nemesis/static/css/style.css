@@ -801,7 +801,7 @@ ng-form {
     width: 90%;
 }
 .modal-full-screen .modal-body {
-    max-height: calc(100% - 142px);
+    max-height: calc(100% - 140px);
     height: 100%;
 }
 
@@ -959,10 +959,11 @@ a.pseudo-btn {
 }
 .image_editor {
     display: block;
-    height: calc(100% - 40px);
+    height: calc(100% - 35px);
     border: 1px solid rgb(221, 221, 221);
-    padding:9px;
+    padding:8px;
     overflow: auto;
+    margin-top: 6px;
 }
 input.jcrop-keymgr {
     left: -1200px !important;

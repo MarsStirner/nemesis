@@ -58,7 +58,7 @@ angular.module('WebMis20')
         <div class="row">\
             <div class="col-md-12">\
                 <div id="image_editor" ng-show="imageSelected()">\
-                    <div style="height: 600px">\
+                    <div style="height: 610px">\
                         <wm-image-editor id="image_editor" model-image="currentFile.file.image" mime-type="[[currentFile.file.mime]]"\
                             read-only="checkImageRO()"></wm-image-editor>\
                     </div>\
@@ -83,7 +83,7 @@ angular.module('WebMis20')
                 </div>\
             </div>\
         </div>\
-        <div class="row vmargin10">\
+        <div class="row">\
             <div class="col-md-12">\
                 <div class="input-group">\
                     <div class="input-group-addon">Имя файла</div>\
