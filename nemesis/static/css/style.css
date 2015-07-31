@@ -965,6 +965,9 @@ a.pseudo-btn {
     overflow: auto;
     margin-top: 6px;
 }
+.image_editor canvas{
+    display: block;
+}
 input.jcrop-keymgr {
     left: -1200px !important;
 }
