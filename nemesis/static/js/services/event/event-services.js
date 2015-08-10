@@ -9,7 +9,7 @@ angular.module('WebMis20.services').
             });
         }
         function check_event_ache_result_required() {
-            return new Settings().get_string('Event.mandatoryResult') == '1'; // FIXME: change factory to service
+            return Settings.get_string('Event.mandatoryResult') == '1';
         }
 
         function check_event_results(event) {
@@ -266,6 +266,9 @@ angular.module('WebMis20.services').
             delete_action: function (event, action) {
                 var self = this;
                 return $http.delete(url_for_actions_api_delete_action + action.id);
+            },
+            integration1codvdEnabled: function() {
+                return Settings.get_string('Event.Payment.1CODVD') == '1';
             }
         };
     }]).

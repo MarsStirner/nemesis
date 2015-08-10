@@ -30,8 +30,8 @@ angular.module('WebMis20.services.models').
         };
         return this;
     }]).
-    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMEventServiceGroup', 'WMEventPaymentList',
-        function($http, $q, WMClient, WMEventServiceGroup, WMEventPaymentList) {
+    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMEventServiceGroup', 'WMEventPaymentList', 'WMEventServices', 'PaymentKind',
+        function($http, $q, WMClient, WMEventServiceGroup, WMEventPaymentList, WMEventServices, PaymentKind) {
             var WMEvent = function(event_id, client_id, ticket_id) {
                 this.event_id = parseInt(event_id);
                 this.client_id = client_id;
@@ -75,9 +75,12 @@ angular.module('WebMis20.services.models').
                     self.stationary_info = data.result.stationary_info;
 
                     var p = data.result.payment;
+                    var paymentKind = WMEventServices.integration1codvdEnabled() ?
+                        PaymentKind.perService :
+                        PaymentKind.perEvent;
                     self.payment = {
                         local_contract: (p && p.local_contract) ? p.local_contract : null,
-                        payments: new WMEventPaymentList(p ? p.payments : [])
+                        payments: new WMEventPaymentList(p ? p.payments : [], paymentKind)
                     };
                     self.services = data.result.services && data.result.services.map(function(service) {
                         return new WMEventServiceGroup(service, self.payment.payments);
@@ -439,9 +442,14 @@ angular.module('WebMis20.services.models').
             return WMEventServiceGroup;
         }
     ]).
-    factory('WMEventPaymentList', [
-        function() {
-            var WMEventPaymentList = function (payment_data) {
+    value('PaymentKind', {
+        perEvent: 0,
+        perService: 1
+    }).
+    factory('WMEventPaymentList', ['PaymentKind',
+        function (PaymentKind) {
+            var WMEventPaymentList = function (payment_data, paymentKind) {
+                this.paymentKind = paymentKind;
                 this.payments = payment_data;
                 this.charges = [];
                 this.total_in = null;
@@ -476,34 +484,53 @@ angular.module('WebMis20.services.models').
                 this.refresh();
             };
             WMEventPaymentList.prototype.refresh = function () {
-                var bank = this.total_in;
-                this.charges.sort(function (a, b) {
-                    var a = a.action,
-                        b = b.action;
-                    if (a.action_id) {
-                        if (b.action_id) {
-                            return a.beg_date > b.beg_date ?
-                                1 :
-                                (a.beg_date === b.beg_date ? (a.action_id > b.action_id ? 1 : -1) : -1);
+                var self = this;
+                if (this.paymentKind === PaymentKind.perEvent) {
+                    var bank = this.total_in;
+                    this.charges.sort(function (a, b) {
+                        var a = a.action,
+                            b = b.action;
+                        if (a.action_id) {
+                            if (b.action_id) {
+                                return a.beg_date > b.beg_date ?
+                                    1 :
+                                    (a.beg_date === b.beg_date ? (a.action_id > b.action_id ? 1 : -1) : -1);
+                            }
+                        } else {
+                            return -1;
                         }
-                    } else {
                         return -1;
-                    }
-                    return -1;
-                }).forEach(function (ch) {
-                    ch.suffice = bank >= ch.action.sum;
-                    bank -= ch.action.sum;
-                });
+                    }).forEach(function (ch) {
+                        ch.suffice = bank >= ch.action.sum;
+                        bank -= ch.action.sum;
+                    });
 
-                this.total_in = this.payments.reduce(function (sum, cur_pay) {
-                    return sum + cur_pay.sum;
-                }, 0);
-
-                this.total_out = this.charges.reduce(function (sum, cur_ch) {
-                    return sum + cur_ch.action.sum;
-                }, 0);
-
-                this.diff = this.total_out - this.total_in;
+                    this.total_in = this.payments.reduce(function (sum, cur_pay) {
+                        return sum + cur_pay.sum;
+                    }, 0);
+                    this.total_out = this.charges.reduce(function (sum, cur_ch) {
+                        return sum + cur_ch.action.sum;
+                    }, 0);
+                    this.diff = this.total_out - this.total_in;
+                } else if (this.paymentKind === PaymentKind.perService) {
+                    var paid_action_id_list = _.pluck(this.payments, 'action_id'),
+                        charged_action_id_list = this.charges.map(function (ch) {
+                            return ch.action.action_id;
+                        });
+                    this.charges.forEach(function (ch) {
+                        ch.suffice = paid_action_id_list.has(ch.action.action_id);
+                    });
+                    this.total_in = this.payments.reduce(function (sum, cur_pay) {
+                        return sum + cur_pay.sum;
+                    }, 0);
+                    this.total_in_for_charges = this.payments.reduce(function (sum, cur_pay) {
+                        return sum + (charged_action_id_list.has(cur_pay.action_id) ? cur_pay.sum : 0);
+                    }, 0);
+                    this.total_out = this.charges.reduce(function (sum, cur_ch) {
+                        return sum + cur_ch.action.sum;
+                    }, 0);
+                    this.diff = this.total_out - this.total_in;
+                }
             };
             return WMEventPaymentList;
         }

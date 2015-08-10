@@ -388,27 +388,25 @@ var WebMis20 = angular.module('WebMis20', [
         }
     }
 }])
-.factory('Settings', ['RefBookService', '$rootScope', function(RefBookService, $rootScope) {
-    var Settings = function() {
-        this.rb_dict = {};
-        this.rb = RefBookService.get('Setting');
-        if (this.rb.objects.length) {
-            this.init();
-        }
-        var self = this;
-        $rootScope.$on('rb_load_success_Setting', function() {
-            self.init();
-        });
-    };
+.service('Settings', ['RefBookService', '$rootScope', function(RefBookService, $rootScope) {
+    var self = this;
+    self.rb_dict = {};
+    self.rb = RefBookService.get('Setting');
+    if (self.rb.objects.length) {
+        self.init();
+    }
+    $rootScope.$on('rb_load_success_Setting', function() {
+        self.init();
+    });
 
-    Settings.prototype.init = function() {
+    self.init = function() {
         var d = this.rb && this.rb.objects || [];
         for (var i=0; i < d.length; i++) {
             this.rb_dict[d[i].path] = d[i].value;
         }
     };
 
-    Settings.prototype.get_string = function(val, def) {
+    self.get_string = function(val, def) {
         if ($.isEmptyObject(this.rb_dict)) return null;
         var default_val = '';
         if (arguments.length > 1) {
@@ -416,8 +414,6 @@ var WebMis20 = angular.module('WebMis20', [
         }
         return this.rb_dict[val] || default_val;
     };
-
-    return Settings;
 }])
 .factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser',
         function ($window, $http, $rootScope, $timeout, CurrentUser) {
