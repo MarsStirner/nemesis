@@ -450,16 +450,18 @@ angular.module('WebMis20.services.models').
         function (PaymentKind) {
             var WMEventPaymentList = function (payment_data, paymentKind) {
                 this.paymentKind = paymentKind;
-                this.payments = payment_data;
                 this.charges = [];
-                this.total_in = null;
-                this.total_out = null;
-                this.diff = null;
-                this.refresh();
+                this.total_in = 0;
+                this.total_out = 0;
+                this.diff = 0;
+                this.total_discount = 0;
+                this.set_payments(payment_data);
             };
             WMEventPaymentList.prototype.add_charge = function (action) {
                 this.charges.push({
-                    action: action
+                    action: action,
+                    suffice: null,
+                    income: 0
                 });
                 this.refresh();
             };
@@ -480,11 +482,21 @@ angular.module('WebMis20.services.models').
                 }
             };
             WMEventPaymentList.prototype.set_payments = function (payments) {
-                this.payments = payments;
+                if (this.paymentKind === PaymentKind.perEvent) {
+                    this.payments = payments;
+                } else if (this.paymentKind === PaymentKind.perService) {
+                    var self = this;
+                    self.payments = {};
+                    angular.forEach(payments, function (pay) {
+                        if (!self.payments.hasOwnProperty(pay.action_id)) {
+                            self.payments[pay.action_id] = [];
+                        }
+                        self.payments[pay.action_id].push(pay);
+                    });
+                }
                 this.refresh();
             };
             WMEventPaymentList.prototype.refresh = function () {
-                var self = this;
                 if (this.paymentKind === PaymentKind.perEvent) {
                     var bank = this.total_in;
                     this.charges.sort(function (a, b) {
@@ -513,23 +525,29 @@ angular.module('WebMis20.services.models').
                     }, 0);
                     this.diff = this.total_out - this.total_in;
                 } else if (this.paymentKind === PaymentKind.perService) {
-                    var paid_action_id_list = _.pluck(this.payments, 'action_id'),
-                        charged_action_id_list = this.charges.map(function (ch) {
-                            return ch.action.action_id;
-                        });
+                    var self = this;
                     this.charges.forEach(function (ch) {
-                        ch.suffice = paid_action_id_list.has(ch.action.action_id);
+                        ch.income = 0;
+                        angular.forEach(self.payments[ch.action.action_id], function (pay) {
+                            var pay_sum_total = pay.sum > 0 ?
+                                (pay.sum + pay.sum_discount) :
+                                (pay.sum - pay.sum_discount);
+                            ch.income += pay_sum_total;
+                        });
+                        ch.suffice = ch.action.sum <= ch.income;
                     });
-                    this.total_in = this.payments.reduce(function (sum, cur_pay) {
-                        return sum + cur_pay.sum;
-                    }, 0);
-                    this.total_in_for_charges = this.payments.reduce(function (sum, cur_pay) {
-                        return sum + (charged_action_id_list.has(cur_pay.action_id) ? cur_pay.sum : 0);
-                    }, 0);
+                    self.total_in = 0;
+                    self.total_discount = 0;
+                    angular.forEach(this.payments, function (payment_list, action_id) {
+                        angular.forEach(payment_list, function (pay) {
+                            self.total_in += pay.sum;
+                            self.total_discount += pay.sum > 0 ? pay.sum_discount : -pay.sum_discount;
+                        });
+                    });
                     this.total_out = this.charges.reduce(function (sum, cur_ch) {
                         return sum + cur_ch.action.sum;
                     }, 0);
-                    this.diff = this.total_out - this.total_in;
+                    this.diff = this.total_out - this.total_in - this.total_discount;
                 }
             };
             return WMEventPaymentList;
