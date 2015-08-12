@@ -66,7 +66,11 @@ class Event(db.Model):
     result = db.relationship(u'rbResult')
     typeAsset = db.relationship(u'rbEmergencyTypeAsset')
     localContract = db.relationship(u'EventLocalContract', backref=db.backref('event'))
-    payments = db.relationship('EventPayment', backref=db.backref('event'))
+    payments = db.relationship(
+        'EventPayment',
+        backref=db.backref('event'),
+        primaryjoin="and_(EventPayment.master_id == Event.id, EventPayment.deleted == 0)"
+    )
     client = db.relationship(u'Client')
     diagnostics = db.relationship(
         u'Diagnostic', lazy=True, innerjoin=True,
@@ -413,10 +417,11 @@ class EventPayment(db.Model):
     bank_id = db.Column(db.Integer, index=True)
     numberCreditCard = db.Column(db.String(64))
     cashBox = db.Column(db.String(32), nullable=False)
-    sumDiscount = db.Column(db.Float(asdecimal=True), nullable=False)
+    sumDiscount = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'))
     service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'))
-    localContract_id = db.Column(db.Integer, db.ForeignKey('Event_LocalContract.id'))
+    actionSum = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
+    sumDisc = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
 
     createPerson = db.relationship('Person')
     cashOperation = db.relationship(u'rbCashOperation')
@@ -429,7 +434,6 @@ class EventPayment(db.Model):
             'sum_discount': self.sumDiscount,
             'action_id': self.action_id,
             'service_id': self.service_id,
-            'localContract_id': self.localContract_id,
         }
 
 

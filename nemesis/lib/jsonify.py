@@ -1121,12 +1121,43 @@ class EventVisualizer(object):
             payments = []
         else:
             local_contract = self.make_event_local_contract(event)
-            payments = [payment
-                        for payment in event.payments
-                        if payment.master_id == event.id] if event else []
+            payments = self.make_payments(event) if event else []
         return {
             'local_contract': local_contract,
             'payments': payments
+        }
+
+    def make_payments(self, event):
+        from blueprints.event.lib.utils import integration_1codvd_enabled
+        if integration_1codvd_enabled():
+            return [
+                self.make_payment_for_action(payment)
+                for payment in event.payments if payment.master_id == event.id
+            ]
+        else:
+            return [
+                self.make_payment_for_event(payment)
+                for payment in event.payments if payment.master_id == event.id
+            ]
+
+    def make_payment_for_event(self, payment):
+        return {
+            'id': payment.id,
+            'date': payment.date,
+            'sum': payment.sum,
+            'sum_discount': payment.sumDiscount,
+            'action_id': payment.action_id,
+            'service_id': payment.service_id,
+        }
+
+    def make_payment_for_action(self, payment):
+        return {
+            'id': payment.id,
+            'date': payment.date,
+            'sum': payment.actionSum,
+            'sum_discount': payment.sumDisc,
+            'action_id': payment.action_id,
+            'service_id': payment.service_id,
         }
 
     def make_event_local_contract(self, event):
