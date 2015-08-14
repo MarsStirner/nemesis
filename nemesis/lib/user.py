@@ -7,6 +7,7 @@ from flask.ext.login import UserMixin, AnonymousUserMixin, current_user
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_traverse_attrs, initialize_name
 from nemesis.models.exists import Person, vrbPersonWithSpeciality
+from nemesis.app import app
 from ..models.actions import ActionType_User
 from ..models.exists import rbUserProfile
 
@@ -583,4 +584,4 @@ class UserProfileManager(object):
     def get_default_url(cls):
         if cls._get_user_role() == cls.nurse_admission:
             return url_for('patients.index')
-        return url_for('index')
+        return url_for(app.config.get('DEFAULT_ENDPOINT', 'index'))
