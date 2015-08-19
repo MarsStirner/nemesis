@@ -69,7 +69,7 @@ angular.module('hitsl.core')
             }).then(get_mail_summary)
         };
         this.send_mail = function (recipient, subject, text, parent_id) {
-            Simargl.send_msg({
+            return Simargl.send_msg({
                 topic: 'mail:new',
                 recipient: recipient,
                 sender: CurrentUser.id,

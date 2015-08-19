@@ -965,7 +965,7 @@ angular.module('WebMis20.directives')
                     }
                 };
                 $scope.add_new_diagnosis = function () {
-                    var new_diagnosis = WMEventServices.get_new_diagnosis($scope.action.action);
+                    var new_diagnosis = WMEventServices.get_new_diagnosis($scope.action);
                     if ($scope.params && $scope.params['defaults']){
                         $scope.set_defaults(new_diagnosis)
                     }
@@ -1035,7 +1035,7 @@ angular.module('WebMis20.directives')
                     return scope.canAddNew && (scope.listMode ? true : !scope.model)
                 };
                 if (scope.action && ! scope.risar) {
-                    WMEventCache.get(scope.action.action.event_id).then(function (event) {
+                    WMEventCache.get(scope.action.event_id).then(function (event) {
                         scope.event = event;
                     });
                 }
@@ -1052,14 +1052,14 @@ angular.module('WebMis20.directives')
                 $scope.params = params;
 
                 $scope.event = null;
-                WMEventCache.get(action.action.event_id).then(function (event) {
+                WMEventCache.get(action.event_id).then(function (event) {
                     $scope.event = event;
                     $scope.can_set_final_diag = (
                         // только лечащий врач
                         (CurrentUser.id === event.info.exec_person.id ||
                             CurrentUser.get_main_user().id === event.info.exec_person.id) &&
                         // в текущем действии еще нет заключительных диагнозов
-                        action.action.properties.filter(function (prop) {
+                        action.properties.filter(function (prop) {
                             return (prop.type.type_name === 'Diagnosis' && (
                                 prop.type.vector ? (
                                     prop.value.length && prop.value.some(function (diag) {
