@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 from nemesis.systemwide import db
 
 
@@ -58,3 +59,42 @@ class TerritorialRate(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     rate_type = db.relationship('rbRateType')
+
+
+class Errand(db.Model):
+    __tablename__ = u'Errand'
+    _table_description = u'поручения'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    number = db.Column(db.String(30), nullable=False)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    setPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
+    execPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
+    text = db.Column(db.Text, nullable=False)
+    plannedExecDate = db.Column(db.DateTime, nullable=False)
+    execDate = db.Column(db.DateTime, nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), index=True)
+    result = db.Column(db.Text, nullable=False)
+    readingDate = db.Column(db.DateTime)
+    status = db.Column(db.Integer, nullable=False)
+
+    event = db.relationship('Event')
+    setPerson = db.relationship('Person', foreign_keys=[setPerson_id])
+    execPerson = db.relationship('Person', foreign_keys=[execPerson_id])
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'event_id': self.event_id,
+            'create_datetime':self.createDatetime,
+            'number': self.number,
+            'set_person': self.setPerson,
+            'exec_person': self.execPerson,
+            'text': self.text,
+            'planned_exec_date': self.plannedExecDate,
+            'exec_date': self.execDate,
+            'result': self.result,
+            'reading_date': self.readingDate
+        }

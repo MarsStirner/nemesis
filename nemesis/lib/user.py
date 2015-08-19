@@ -500,6 +500,7 @@ class UserProfileManager(object):
     overseer1 = 'overseer1'
     overseer2 = 'overseer2'
     overseer3 = 'overseer3'
+    ambulance = 'ambulance'
 
     ui_groups = {
         'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist],
@@ -508,7 +509,7 @@ class UserProfileManager(object):
         'registrator_cut': [nurse_admission],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
-        'risar': [admin, obstetrician, overseer1, overseer2, overseer3],
+        'risar': [admin, obstetrician, overseer1, overseer2, overseer3, ambulance],
         'overseers': [admin, overseer1, overseer2, overseer3],
         'overseers_low': [admin, overseer1, overseer2],
         'overseers_high': [admin, overseer3],
