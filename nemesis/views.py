@@ -42,7 +42,14 @@ def check_valid_login():
 
         login_valid = False
 
-        auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
+        # На доменах кука дублируется для всех поддоменов/хостов, поэтому получить её из dict'а невозможно - попадает
+        # наименее специфичное значение. Надо разбирать вручную и брать первое.
+        auth_token = None
+        for cook in request.environ.get('HTTP_COOKIE').split(';'):
+            name, value = cook.split('=', 1)
+            if name.strip() == app.config['CASTIEL_AUTH_TOKEN']:
+                auth_token = value.strip()
+                break
 
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
