@@ -87,7 +87,8 @@ def check_valid_login():
                                 # Tell Flask-Principal the identity changed
                                 identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
                                 response = redirect(request.url or UserProfileManager.get_default_url())
-                                response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
+                                # Если эту строку раскомментировать, то в домене не будет работать никогда.
+                                # response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
                                 return response
                             else:
                                 pass
