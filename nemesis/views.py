@@ -42,7 +42,16 @@ def check_valid_login():
 
         login_valid = False
 
-        auth_token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
+        # На доменах кука дублируется для всех поддоменов/хостов, поэтому получить её из dict'а невозможно - попадает
+        # наименее специфичное значение. Надо разбирать вручную и брать первое.
+        auth_token = None
+        http_cookie = request.environ.get('HTTP_COOKIE')
+        if http_cookie:
+            for cook in http_cookie.split(';'):
+                name, value = cook.split('=', 1)
+                if name.strip() == app.config['CASTIEL_AUTH_TOKEN']:
+                    auth_token = value.strip()
+                    break
 
         if request.method == 'GET' and 'token' in request.args and request.args.get('token') != auth_token:
             auth_token = request.args.get('token')
@@ -80,7 +89,8 @@ def check_valid_login():
                                 # Tell Flask-Principal the identity changed
                                 identity_changed.send(current_app._get_current_object(), identity=Identity(answer['user_id']))
                                 response = redirect(request.url or UserProfileManager.get_default_url())
-                                response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
+                                # Если эту строку раскомментировать, то в домене не будет работать никогда.
+                                # response.set_cookie(app.config['CASTIEL_AUTH_TOKEN'], auth_token)
                                 return response
                             else:
                                 pass
