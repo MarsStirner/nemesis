@@ -72,7 +72,7 @@ class Action(db.Model):
     def properties_ordered(self):
         return sorted(self.properties, key=lambda ap: ap.type.idx)
 
-    @cached_property
+    @property
     def propsByCode(self):
         return dict(
             (prop.type.code, prop)

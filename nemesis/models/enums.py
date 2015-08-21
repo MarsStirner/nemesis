@@ -70,12 +70,29 @@ class PrenatalRiskRate(Enum):
 class PerinatalRiskRate(EnumLoadable):
     __tablename__ = 'rbPerinatalRiskRate'
 
+    # assumed values
+    # undefined = 1, u'не определен'
+    # low = 2, u'низкий'
+    # medium = 3, u'средний'
+    # high = 4, u'высокий'
+
 
 class PreeclampsiaRisk(Enum):
     # впоследствии будет больше значений
     undefined = 0, u'не определен'
     has_risk = 1, u'есть риск'
     no_risk = 2, u'нет риска'
+
+
+class PregnancyPathology(EnumLoadable):
+    __tablename__ = 'rbPregnancyPathology'
+
+    # assumed values
+    # undefined = 1, u'Неопределенная'
+    # extragenital = 2, u'Экстрагенитальная'
+    # obstetric = 3, u'Акушерско-гинекологическая'
+    # infectious = 4, u'Инфекционно-паразитарная'
+    # combined = 5, u'Сочетанная'
 
 
 class MeasureStatus(EnumLoadable):
