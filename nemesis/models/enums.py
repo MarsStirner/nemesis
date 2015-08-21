@@ -80,3 +80,7 @@ class PreeclampsiaRisk(Enum):
 
 class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
+
+
+class ErrandStatus(EnumLoadable):
+    __tablename__ = 'rbErrandStatus'

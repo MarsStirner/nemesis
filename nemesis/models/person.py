@@ -123,7 +123,8 @@ class Person(db.Model):
             'regional_code': self.regionalCode,
             'org_structure': self.org_structure,
             'organisation': self.organisation,
-            'full_name': self.full_name
+            'full_name': self.full_name,
+            'short_name': self.shortNameText
         }
 
     def __int__(self):

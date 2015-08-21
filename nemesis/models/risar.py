@@ -79,7 +79,7 @@ class Errand(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), index=True)
     result = db.Column(db.Text, nullable=False)
     readingDate = db.Column(db.DateTime)
-    status = db.Column(db.Integer, nullable=False)
+    status_id = db.Column(db.ForeignKey('rbErrandStatus.id'), nullable=False)
 
     event = db.relationship('Event')
     setPerson = db.relationship('Person', foreign_keys=[setPerson_id])
@@ -89,7 +89,7 @@ class Errand(db.Model):
         return {
             'id': self.id,
             'event_id': self.event_id,
-            'create_datetime':self.createDatetime,
+            'create_datetime': self.createDatetime,
             'number': self.number,
             'set_person': self.setPerson,
             'exec_person': self.execPerson,
@@ -98,4 +98,20 @@ class Errand(db.Model):
             'exec_date': self.execDate,
             'result': self.result,
             'reading_date': self.readingDate
+        }
+
+
+class rbErrandStatus(db.Model):
+    __tablename__ = u'rbErrandStatus'
+    _table_description = u'статусы поручений'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
         }
