@@ -59,3 +59,32 @@ class TerritorialRate(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     rate_type = db.relationship('rbRateType')
+
+
+class rbPregnancyPathology(db.Model):
+    __tablename__ = u'rbPregnancyPathology'
+    _table_description = u'Патологии беременности'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    pp_mkbs = db.relationship('rbPregnancyPathologyMkbAssoc')
+    mkbs = db.relationship('MKB', secondary='rbPregnancyPathologyMkb')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
+class rbPregnancyPathologyMkbAssoc(db.Model):
+    __tablename__ = u'rbPregnancyPathologyMkb'
+
+    id = db.Column(db.Integer, primary_key=True)
+    pathology_id = db.Column(db.Integer, db.ForeignKey('rbPregnancyPathology.id'), nullable=False, index=True)
+    mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False, index=True)
+
+    mkb = db.relationship('MKB')

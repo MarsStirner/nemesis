@@ -51,6 +51,10 @@ class EnumBase(object):
         return cls.descendants.get(name)
 
     @classmethod
+    def getId(cls, code):
+        return getattr(cls, code)[0]
+
+    @classmethod
     def rb(cls):
         return {
             'objects': [{
