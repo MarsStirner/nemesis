@@ -110,7 +110,8 @@ def fc_urls():
                 'EventSource': simargl_url + 'simargl-es',
                 'RPC': simargl_url + 'simargl-rpc',
             }
-        }
+        },
+        'cas_token_name': config['CASTIEL_AUTH_TOKEN']
     }
 
 

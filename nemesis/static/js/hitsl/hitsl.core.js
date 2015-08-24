@@ -250,7 +250,8 @@ angular.module('hitsl.core', [])
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
         on_user_activity = _.throttle(postpone_everything, 10000),
         debounced_logout_warning = _.debounce(show_logout_warning, WMConfig.settings.user_idle_timeout * 1000),
-        token = $window.document.cookie.replace(/(?:(?:^|.*;\s*)CastielAuthToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+        token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
+        var token = $window.document.cookie.replace(token_regex, "$1");
     function reload_page() {
         WindowCloseHandler.suppressUserhandlers = true;
         $window.location.reload(true);
