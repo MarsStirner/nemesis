@@ -75,12 +75,11 @@ angular.module('WebMis20.services.models').
                     self.stationary_info = data.result.stationary_info;
 
                     var p = data.result.payment;
-                    var paymentKind = WMEventServices.integration1codvdEnabled() ?
-                        PaymentKind.perService :
-                        PaymentKind.perEvent;
+                    var paymentKind = data.result.payment.payment_kind;
                     self.payment = {
                         local_contract: (p && p.local_contract) ? p.local_contract : null,
-                        payments: new WMEventPaymentList(p ? p.payments : [], paymentKind)
+                        payments: new WMEventPaymentList(p ? p.payments : [], paymentKind),
+                        paymentKind: paymentKind
                     };
                     self.services = data.result.services && data.result.services.map(function(service) {
                         return new WMEventServiceGroup(service, self.payment.payments);
