@@ -82,7 +82,7 @@ def check_valid_login():
                             response = redirect(request.url)
                             response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
                             return response
-                        if not current_user.is_authenticated():
+                        if not current_user.is_authenticated() or current_user.id != answer['user_id']:
                             user = UserAuth.get_by_id(answer['user_id'])
                             if login_user(user):
                                 session_save_user(user)
