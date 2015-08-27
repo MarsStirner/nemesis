@@ -1,8 +1,9 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMEventServices', ['$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser',
-            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser) {
+    service('WMEventServices', [
+            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind',
+            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind) {
         function contains_sg (event, at_id, service_id) {
             return event.services.some(function (sg) {
                 return sg.at_id === at_id && (sg.service_id !== undefined ? sg.service_id === service_id : true);
@@ -267,8 +268,8 @@ angular.module('WebMis20.services').
                 var self = this;
                 return $http.delete(url_for_actions_api_delete_action + action.id);
             },
-            integration1codvdEnabled: function() {
-                return Settings.get_string('Event.Payment.1CODVD') == '1';
+            isPaymentPerService: function(event) {
+                return safe_traverse(event, ['payment', 'paymentKind']) === PaymentKind.perService;
             }
         };
     }]).

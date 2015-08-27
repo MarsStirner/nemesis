@@ -426,6 +426,9 @@ class EventPayment(db.Model):
     createPerson = db.relationship('Person')
     cashOperation = db.relationship(u'rbCashOperation')
 
+    def is_per_service(self):
+        return self.action_id is not None
+
     def __json__(self):
         return {
             'id': self.id,

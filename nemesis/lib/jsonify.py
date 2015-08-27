@@ -1115,21 +1115,24 @@ class EventVisualizer(object):
         return usal
 
     def make_event_payment(self, event, client=None):
+        from blueprints.event.lib.utils import get_event_payment_kind
+        payment_kind = get_event_payment_kind(event)
         if client:
             cvis = ClientVisualizer()
             local_contract = cvis.make_payer_for_lc(client)
             payments = []
         else:
             local_contract = self.make_event_local_contract(event)
-            payments = self.make_payments(event) if event else []
+            payments = self.make_payments(event, payment_kind) if event else []
         return {
             'local_contract': local_contract,
-            'payments': payments
+            'payments': payments,
+            'payment_kind': payment_kind
         }
 
-    def make_payments(self, event):
-        from blueprints.event.lib.utils import integration_1codvd_enabled
-        if integration_1codvd_enabled():
+    def make_payments(self, event, payment_kind):
+        from blueprints.event.lib.utils import PaymentKind
+        if payment_kind == PaymentKind.per_service:
             return [
                 self.make_payment_for_action(payment)
                 for payment in event.payments if payment.master_id == event.id
