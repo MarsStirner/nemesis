@@ -101,3 +101,13 @@ class MeasureStatus(EnumLoadable):
 
 class ErrandStatus(EnumLoadable):
     __tablename__ = 'rbErrandStatus'
+
+
+class MedicationPrescriptionStatus(Enum):
+    draft = 0, u'Черновик'
+    active = 1, u'Активное'
+    on_hold = 2, u'Приостановлено'
+    completed = 3, u'Завершено'
+    entered_in_error = 4, u'Ошибочное'
+    stopped = 5, u'Остановлено'
+    superseded = 6, u'Заменено'

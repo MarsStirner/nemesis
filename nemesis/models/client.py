@@ -285,6 +285,14 @@ class Client(db.Model):
                 return reg.freeInput == live.freeInput
         return False
 
+    @property
+    def prescriptions(self):
+        from .event import Event
+        from .actions import Action
+        from .prescriptions import MedicalPrescription
+
+        return MedicalPrescription.query.join(Action, Event).filter(Event.client_id == self.id).all()
+
     def __unicode__(self):
         return self.nameText
 

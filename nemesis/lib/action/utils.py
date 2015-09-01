@@ -27,3 +27,7 @@ def action_is_lab(action):
         if not action:
             return False
     return action.actionType.isRequiredTissue or action.actionType.mnem == 'LAB'
+
+
+def action_is_prescriptions(action):
+    return True

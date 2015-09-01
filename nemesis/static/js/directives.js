@@ -170,13 +170,234 @@ angular.module('WebMis20.directives')
      </table>'
         };
     }])
-    .directive('uiAlertList', ['$compile', function ($compile) {
+    .directive('medicationPrescriptions', ['$modal', 'CurrentUser', function ($modal, CurrentUser) {
+        function get_rls_name (rls) {
+            if (!rls) { return '-' }
+            else if (rls.dosage.unit) {
+                return '{0} ({1} {2}; {3}; {4})'.format(
+                    rls.trade_name,
+                    rls.dosage.value,
+                    rls.dosage.unit.code,
+                    rls.form,
+                    rls.packing
+                )
+            } else {
+                return '{0} ({1}; {2})'.format(
+                    rls.trade_name,
+                    rls.form,
+                    rls.packing
+                )
+            }
+        }
+        function controller ($scope, $modalInstance, model) {
+            $scope.model = model;
+            $scope.get_rls_name = get_rls_name;
+            $scope.model_incomplete = function () {
+                return !model.rls
+                    || !model.dose || !model.dose.value || !model.dose.unit
+                    || !model.frequency || !model.frequency.value || !model.frequency.unit
+                    || !model.duration || !model.duration.value || !model.duration.unit
+                    || !model.method
+            }
+        }
+        function edit_dialog (model) {
+            var deferred = $modal.open({
+                templateUrl: '/WebMis20/modal-prescription-edit.html',
+                controller: controller,
+                size: 'lg',
+                resolve: {
+                    model: function () {
+                        return model;
+                    }
+                }
+            });
+            return deferred.result;
+        }
+        function cancel_dialog (model) {
+            var deferred = $modal.open({
+                templateUrl: '/WebMis20/modal-prescription-cancel.html',
+                controller: controller,
+                size: 'lg',
+                resolve: {
+                    model: function () {
+                        return model;
+                    }
+                }
+            });
+            return deferred.result;
+        }
+        return {
+            restrict: 'E',
+            scope: {
+                model: '=',
+                action: '='
+            },
+            link: function (scope, element, attrs) {
+                scope.edit = function (p) {
+                    edit_dialog(_.deepCopy(p)).then(function (model) {
+                        angular.extend(p, model);
+                    })
+                };
+                scope.remove = function (p) {
+                    cancel_dialog(_.deepCopy(p)).then(function (model) {
+                        angular.extend(p, model);
+                        p.deleted = true;
+                    })
+                };
+                scope.add = function () {
+                    edit_dialog({}).then(function (model) {
+                        scope.model.push(model)
+                    })
+                };
+                scope.restore = function (p) {
+                    delete p.deleted;
+                };
+                scope.get_rls_name = get_rls_name;
+                scope.canEdit = function (p) {
+                    var is_editor = [
+                        safe_traverse(p, ['related', 'action_person_id'])
+                    ].has(CurrentUser.id);
+                    return (is_editor && !p.closed) || !p.id;
+                };
+                scope.canRemove = function (p) {
+                    var cancellers = [
+                        safe_traverse(p, ['related', 'action_person_id']),
+                        safe_traverse(p, ['related', 'action_set_person_id']),
+                        safe_traverse(p, ['related', 'event_exec_person_id'])
+                    ],
+                        is_canceller = cancellers.has(CurrentUser.id);
+                    return (is_canceller && !p.closed) || !p.id
+                };
+                scope.canAdd = function () {
+                    return safe_traverse(scope, ['action', 'person', 'id']) == CurrentUser.id
+                }
+            },
+            templateUrl: '/WebMis20/prescription-edit.html'
+        }
+    }])
+    .run(['$templateCache', function ($templateCache) {
+        $templateCache.put(
+            '/WebMis20/prescription-edit.html',
+            '<table class="table">\
+                <thead>\
+                <tr>\
+                    <th>Препарат</th>\
+                    <th>Доза</th>\
+                    <th>Частота</th>\
+                    <th>Длительность</th>\
+                    <th>Путь введения</th>\
+                    <th colspan="2">Примечание</th>\
+                </tr>\
+                </thead>\
+                <tbody ng-repeat="p in model">\
+                    <tr ng-if="p.deleted">\
+                        <td colspan="7" class="text-center"><a href="#" ng-click="restore(p)">Восстановить</a></td>\
+                    </tr>\
+                    <tr ng-if="!p.deleted">\
+                        <td>[[ get_rls_name(p.rls) ]]</td>\
+                        <td class="text-nowrap">[[ p.dose.value ]] [[ p.dose.unit.short_name ]]</td>\
+                        <td class="text-nowrap">[[ p.frequency.value ]] раз в [[ p.frequency.unit.short_name ]]</td>\
+                        <td class="text-nowrap">[[ p.duration.value ]] [[ p.duration.unit.short_name ]]</td>\
+                        <td>[[ p.method.name ]]</td>\
+                        <td>[[ p.note ]]</td>\
+                        <td class="nowrap">\
+                            <div class="pull-right">\
+                                <button class="btn btn-primary" ng-click="edit(p)" ng-if="canEdit(p)"><i class="fa fa-pencil"></i></button>\
+                                <button class="btn btn-danger" ng-click="remove(p)" ng-if="canRemove(p)"><i class="fa fa-trash"></i></button>\
+                            </div>\
+                        </td>\
+                    </tr>\
+                    <tr ng-if="p.status.id >= 5">\
+                        <td colspan="7">\
+                            <div class="pull-right">\
+                                Отменено <span class="text-bold">[[ p.modify_person.name ]]</span> @ <span class="text-bold">[[ p.modify_datetime | asDateTime ]]</span>\
+                            </div>\
+                        </td>\
+                    </tr>\
+                </tbody>\
+                <tbody ng-if="canAdd()">\
+                    <tr>\
+                        <td colspan="6">&nbsp;</td>\
+                        <td>\
+                            <button class="btn btn-success pull-right" ng-click="add()"><i class="fa fa-plus"></i></button>\
+                        </td>\
+                    </tr>\
+                </tbody>\
+            </table>'
+        );
+        $templateCache.put(
+            '/WebMis20/modal-prescription-edit.html',
+            '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+    <button type="button" class="close" ng-click="$dismiss(\'cancel\')">&times;</button>\
+    <h4 class="modal-title" id="myModalLabel">Назначение препарата</h4>\
+</div>\
+<div class="modal-body">\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Наименование препарата</label></div>\
+            <div class="col-md-8">\
+                <ui-select ref-book="rlsNomen" theme="select2" ng-model="model.rls">\
+                    <ui-select-match>[[ get_rls_name($select.selected) ]]</ui-select-match>\
+                    <ui-select-choices repeat="item in $refBook.objects | filter: $select.search | orderBy:\'trade_name\' | limitTo:10 track by item.id">\
+                        <div ng-bind-html="get_rls_name(item) | highlight: $select.search"></div>\
+                    </ui-select-choices>\
+                </ui-select>\
+            </div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Доза</label></div>\
+            <div class="col-md-4"><input class="form-control" ng-model="model.dose.value" valid-number></div>\
+            <div class="col-md-4"><rb-select ref-book="rbUnitsGroup/counted" ng-model="model.dose.unit"></rb-select></div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Частота</label></div>\
+            <div class="col-md-3"><input class="form-control" ng-model="model.frequency.value" valid-number></div>\
+            <div class="col-md-1">раз в</div>\
+            <div class="col-md-4"><rb-select ref-book="rbUnitsGroup/time" ng-model="model.frequency.unit"></rb-select></div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Длительность</label></div>\
+            <div class="col-md-4"><input class="form-control" ng-model="model.duration.value" valid-number></div>\
+            <div class="col-md-4"><rb-select ref-book="rbUnitsGroup/time" ng-model="model.duration.unit"></rb-select></div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Путь введения</label></div>\
+            <div class="col-md-8"><rb-select ref-book="rbMethodOfAdministration" ng-model="model.method"></rb-select></div>\
+        </div>\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Примечание</label></div>\
+            <div class="col-md-8"><input class="form-control" ng-model="model.note"></div>\
+        </div>\
+</div>\
+<div class="modal-footer">\
+    <button type="button" class="btn btn-success" ng-disabled="model_incomplete()" ng-click="$close(model)">Сохранить</button>\
+    <button type="button" class="btn btn-default" ng-click="$dismiss(\'cancel\')">Отмена</button>\
+</div>'
+        );
+        $templateCache.put(
+            '/WebMis20/modal-prescription-cancel.html',
+            '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+    <button type="button" class="close" ng-click="$dismiss(\'cancel\')">&times;</button>\
+    <h4 class="modal-title" id="myModalLabel">Отмена назначение препарата</h4>\
+</div>\
+<div class="modal-body">\
+        <div class="row vmargin10">\
+            <div class="col-md-4"><label>Причина отмены</label></div>\
+            <div class="col-md-8">\
+                <input class="form-control" ng-model="model.reason">\
+            </div>\
+        </div>\
+</div>\
+<div class="modal-footer">\
+    <button type="button" class="btn btn-success" ng-disabled="!model.reason" ng-click="$close(model)">Сохранить</button>\
+    <button type="button" class="btn btn-default" ng-click="$dismiss(\'cancel\')">Отмена</button>\
+</div>'
+        );
+    }])
+    .directive('uiAlertList', [function () {
         return {
             restrict: 'A',
-            link: function (scope, element, attrs) {
-                var e = $(element);
-                var subelement = $(
-                    '<alert ng-repeat="alert in ' + attrs.uiAlertList + '" type="alert.type" close="alerts.splice(index, 1)">\
+            template: function (element, attrs) {
+                return '<alert ng-repeat="alert in {0}" type="alert.type" close="alerts.splice(index, 1)">\
                         <span ng-bind="alert.text"></span> <span ng-if="alert.code">[[ [alert.code] ]]</span>\
                         <span ng-if="alert.data.detailed_msg">\
                             <a href="javascript:void(0);"  ng-click="show_details = !show_details">\
@@ -184,10 +405,7 @@ angular.module('WebMis20.directives')
                             </a>\
                             <span ng-show="show_details">[[alert.data.detailed_msg]]: [[alert.data.err_msg]]</span>\
                         </span>\
-                    </alert>'
-                );
-                e.prepend(subelement);
-                $compile(subelement)(scope);
+                    </alert>'.format(attrs.uiAlertList)
             }
         }
     }])
