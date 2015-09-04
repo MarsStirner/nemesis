@@ -106,7 +106,7 @@ class Client(db.Model):
     blood_history = db.relationship(
         u'BloodHistory',
         backref=db.backref('client'),
-        order_by='desc(BloodHistory.id)',
+        order_by='desc(BloodHistory.bloodDate)',
         lazy='dynamic'
     )
     client_relations = db.relationship(

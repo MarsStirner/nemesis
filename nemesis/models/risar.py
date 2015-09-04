@@ -111,6 +111,7 @@ class Errand(db.Model):
     status_id = db.Column(db.ForeignKey('rbErrandStatus.id'), nullable=False)
 
     event = db.relationship('Event')
+    status = db.relationship('rbErrandStatus')
     setPerson = db.relationship('Person', foreign_keys=[setPerson_id])
     execPerson = db.relationship('Person', foreign_keys=[execPerson_id])
 
