@@ -5,14 +5,16 @@ from datetime import datetime, time, timedelta, date
 from flask.ext.login import current_user
 from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql.expression import between, func
+from nemesis.models.prescriptions import MedicalPrescription
+from nemesis.models.utils import safe_current_user_id
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
-from nemesis.models.enums import ActionStatus
+from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
@@ -160,6 +162,31 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     return action
 
 
+def update_action_prescriptions(action, prescriptions):
+    if not prescriptions:
+        return
+    prescriptions_map = dict(
+        (presc.id, presc)
+        for presc in action.medication_prescriptions
+    )
+    for presc in prescriptions:
+        p_obj = prescriptions_map.get(presc.get('id'))
+        if not p_obj:
+            if presc.get('deleted'):
+                continue
+            p_obj = MedicalPrescription()
+            p_obj.modifyPerson_id = p_obj.createPerson_id = safe_current_user_id()
+            action.medication_prescriptions.append(p_obj)
+
+        p_obj.set_json(presc)
+
+        if not presc.get('deleted'):
+            p_obj.reasonOfCancel = None
+            p_obj.status_id = safe_traverse(presc, 'status', 'id', default=MedicationPrescriptionStatus.active[0])
+        else:
+            p_obj.status_id = safe_traverse(presc, 'status', 'id', default=MedicationPrescriptionStatus.stopped[0])
+
+
 def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None):
     """
     Создание действия для сохранения в бд.
@@ -173,6 +200,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     :return: Action model
     """
     action = create_action(action_type_id, event_id, src_action, assigned, properties, data)
+    update_action_prescriptions(action, data.get('prescriptions'))
 
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
@@ -221,6 +249,8 @@ def update_action(action, **kwargs):
             continue
         prop.value = prop_desc['value']
         prop.isAssigned = prop_desc['is_assigned']
+
+    update_action_prescriptions(action, kwargs.get('prescriptions'))
 
     return action
 
