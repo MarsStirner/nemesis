@@ -169,6 +169,13 @@ class Event(db.Model):
     def is_budget(self):
         return self.eventType.finance.code == BUDGET_EVENT_CODE
 
+    @property
+    def prescriptions(self):
+        from .actions import Action
+        from .prescriptions import MedicalPrescription
+
+        return MedicalPrescription.query.join(Action).filter(Action.event_id == self.id).all()
+
     def __unicode__(self):
         return unicode(self.eventType)
 

@@ -15,7 +15,7 @@ from flask import json
 from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
-from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab
+from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
@@ -972,7 +972,8 @@ class EventVisualizer(object):
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
             'note': event.note,
-            'actions': self.make_ultra_small_actions(event)
+            'actions': self.make_ultra_small_actions(event),
+            'prescriptions': event.prescriptions,
         }
 
     def make_diagnoses(self, event):
@@ -1432,6 +1433,7 @@ class ActionVisualizer(object):
             #FIXME: Мелочь, конечно, но использование двойного отрицания не особо красиво. Зачем здесь делать "not", чтобы потом в интефейсе проверять "!ro".
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
             'layout': self.make_action_layout(action),
+            'prescriptions': action.medication_prescriptions,
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
@@ -1459,15 +1461,25 @@ class ActionVisualizer(object):
         at_layout = action.actionType.layout
         if at_layout:
             try:
-                at_layout = json.loads(at_layout)
+                return json.loads(at_layout)
             except ValueError:
                 logger.warning('Bad layout for ActionType with id = %s' % action.actionType.id)
-            else:
-                return at_layout
+
         if action_is_lab(action):
             layout = self.make_table_layout(action)
         else:
             layout = self.make_default_two_cols_layout(action)
+
+        if action_is_bak_lab(action):
+            layout['children'].append({
+                'tagName': 'bak_lab_view',
+            })
+
+        if action_is_prescriptions(action):
+            layout['children'].append({
+                'tagName': 'prescriptions'
+            })
+
         return layout
 
     def make_default_layout(self, action):
@@ -1501,10 +1513,11 @@ class ActionVisualizer(object):
 
         layout = {
             'tagName': 'root',
-            'children': []
+            'children': [
+                make_row(*pair)
+                for pair in pairwise(action.properties_ordered)
+            ]
         }
-        for ap, next_ap in pairwise(action.properties_ordered):
-            layout['children'].append(make_row(ap, next_ap))
         return layout
 
     def make_table_layout(self, action):
@@ -1519,10 +1532,6 @@ class ActionVisualizer(object):
             }]
         }
 
-        if action_is_bak_lab(action):
-            layout['children'].append({
-                'tagName': 'bak_lab_view',
-            })
         return layout
 
     def make_property(self, prop):
