@@ -277,6 +277,7 @@ class vrbPersonWithSpeciality(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(12), nullable=False, index=True)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     name = db.Column(db.String(101), nullable=False, index=True)
     orgStructure_id = db.Column(db.ForeignKey('OrgStructure.id'))
     speciality_id = db.Column(db.ForeignKey('rbSpeciality.id'))
