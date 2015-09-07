@@ -161,7 +161,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         link: function (scope, element, attributes, ngModel) {
             scope.$model = ngModel;
             var toolbar = $($templateCache.get('/WebMis20/wysiwyg-toolbar.html'));
-            var editor = $('<div style="padding: 10px; overflow: auto; min-height: 40px; max-height: 500px" class="wysiwyg-panel" contenteditable="[[contenteditable]]"></div>');
+            var editor = $('<div style="padding: 10px; overflow: auto; min-height: 40px; max-height: 500px" class="wysiwyg-panel long-words" contenteditable="[[contenteditable]]"></div>');
             var replace = $('<div class="panel panel-default" style="padding: 0"></div>');
             toolbar.find('.dropdown-menu input')
                 .click(function() {return false;})

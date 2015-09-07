@@ -978,3 +978,8 @@ input.jcrop-keymgr {
 .navbar-nav > .user-menu > .dropdown-menu > li.user-header a.show_assist:hover{
     color: rgba(255, 255, 255, 1);
 }
+
+.long-words{
+    word-wrap: break-word;
+    word-break: break-word;
+}
