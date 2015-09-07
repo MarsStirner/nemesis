@@ -1574,7 +1574,7 @@ angular.module('WebMis20.directives')
             </ng-form>\
         </div>\
         <div class="modal-footer">\
-            <label ng-hide="!sequence"><input type="checkbox" class="checkbox checkbox-inline" ng-model="restart">Добавить ещё одно сведение</label>\
+            <label ng-hide="!sequence"><input type="checkbox" class="checkbox checkbox-inline" ng-model="restart">Создать ещё</label>\
             <button type="button" class="btn btn-success" ng-click="$close([model, restart])"\
             ng-disabled="DiagnosisForm.$invalid">Сохранить</button>\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
