@@ -315,5 +315,15 @@ _.mixin({
         } else {
             return obj;
         }
+    },
+    indexOfObj: function (array, predicate) {
+        var idx = -1;
+        _.some(array, function (value, index) {
+            if (predicate(value)) {
+                idx = index;
+                return true;
+            }
+        });
+        return idx;
     }
 });

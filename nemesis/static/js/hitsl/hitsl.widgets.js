@@ -559,4 +559,34 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('wmMkbMultiple', [function() {
+    return {
+        restrict: 'E',
+        require: 'ngModel',
+        replace: true,
+        scope: {
+        },
+        template: '\
+<div>\
+<ui-select multiple theme="select2" ref-book="MKB" close-on-select="false">\
+    <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
+    <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
+        <div ng-bind-html="mkb.code | highlight: $select.search"></div>\
+        <small style="font-style: italic" ng-bind-html="mkb.name"></small>\
+    </ui-select-choices>\
+</ui-select>\
+</div>',
+        link: function (scope, elem, attrs, ngModelCtrl) {
+            scope.placeholder = attrs.placeholder;
+
+            var used_codes = [];
+            scope.$watch(function () { return ngModelCtrl.$modelValue; }, function (n, o) {
+                used_codes = n.map(function (mkb) { return mkb.code });
+            });
+            scope.filterMkbChoices = function (mkb) {
+                return !used_codes.has(mkb.code);
+            };
+        }
+    }
+}])
 ;
