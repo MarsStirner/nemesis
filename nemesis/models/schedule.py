@@ -114,6 +114,7 @@ class Schedule(db.Model):
     office_id = db.Column(db.ForeignKey('Office.id'))
     reasonOfAbsence_id = db.Column(db.Integer, db.ForeignKey('rbReasonOfAbsence.id'))
     receptionType_id = db.Column(db.Integer, db.ForeignKey('rbReceptionType.id'))
+    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), index=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
@@ -123,6 +124,7 @@ class Schedule(db.Model):
     person = db.relationship('Person', foreign_keys=person_id)
     reasonOfAbsence = db.relationship('rbReasonOfAbsence', lazy='joined')
     receptionType = db.relationship('rbReceptionType', lazy='joined')
+    finance = db.relationship('rbFinance', lazy='joined')
     tickets = db.relationship(
         'ScheduleTicket', lazy=False, primaryjoin=
         "and_(ScheduleTicket.schedule_id == Schedule.id, ScheduleTicket.deleted == 0)",

@@ -69,6 +69,7 @@ class ScheduleVisualizer(object):
             'client': ticket.client.shortNameText if client_id else None,
             'attendance_type': ticket.attendanceType,
             'office': ticket.schedule.office.code if ticket.schedule.office else None,
+            'finance': ticket.schedule.finance.code if ticket.schedule.finance else None,
             'record': self.make_client_ticket_record(client_ticket) if client_ticket else None
         }
 
@@ -214,6 +215,7 @@ class ScheduleVisualizer(object):
             'endTime': schedule.endTime,
             'roa': schedule.reasonOfAbsence,
             'reception_type': safe_dict(schedule.receptionType),
+            'finance': safe_dict(schedule.finance),
             'tickets': CITO_tickets + planned_tickets + extra_tickets
         }
 
