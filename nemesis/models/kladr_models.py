@@ -120,6 +120,7 @@ class KladrStreet(object):
         if 'invalid' in kwargs:
             self.invalid = kwargs['invalid']
             self.code = kwargs['code'] if 'code' in kwargs else None
+            self.name = None
         else:
             self.code = kwargs['code'] if 'code' in kwargs else None
             self.name = kwargs['name'] if 'name' in kwargs else None
