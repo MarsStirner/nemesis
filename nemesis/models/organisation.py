@@ -70,7 +70,6 @@ class Organisation(db.Model):
     org_obcls = db.relationship('Organisation_OrganisationBCLAssoc', cascade_backrefs=False)
     obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
 
-    org_curations = db.relationship('OrganisationCurationAssoc', backref='organisation', cascade_backrefs=False)
     org_curators = db.relationship('PersonCurationAssoc', secondary='OrganisationCuration')
 
     @property
@@ -173,10 +172,7 @@ class OrganisationBirthCareLevel(db.Model):
     color = db.Column(db.String(6))
 
     perinatal_risk_rate = db.relationship('rbPerinatalRiskRate')
-    org_obcls = db.relationship(
-        'Organisation_OrganisationBCLAssoc',
-        backref='obcl'
-    )
+    orgs = db.relationship('Organisation', secondary='Organisation_OrganisationBCL')
 
 
 class Organisation_OrganisationBCLAssoc(db.Model):

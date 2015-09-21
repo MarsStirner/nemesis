@@ -41,6 +41,7 @@ class ExpertSchemeMKBAssoc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False, index=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
+    deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
 
 
 class ExpertSchemeMeasureAssoc(db.Model):
