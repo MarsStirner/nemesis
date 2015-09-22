@@ -76,7 +76,7 @@ class Person(db.Model):
     tariffCategory = db.relationship('rbTariffCategory')
     user_profiles = db.relation('rbUserProfile', secondary='Person_Profiles')
     uuid = db.relationship('UUID')
-    person_curations = db.relationship('PersonCurationAssoc', backref='person', cascade_backrefs=False)
+    curation_levels = db.relationship('rbOrgCurationLevel', secondary='PersonCuration')
 
     @property
     def nameText(self):
@@ -324,4 +324,5 @@ class PersonCurationAssoc(db.Model):
     person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False, index=True)
     orgCurationLevel_id = db.Column(db.Integer, db.ForeignKey('rbOrgCurationLevel.id'), nullable=False, index=True)
 
+    person = db.relationship('Person')
     org_curation_level = db.relationship('rbOrgCurationLevel')

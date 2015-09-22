@@ -99,6 +99,27 @@ class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
 
 
+class MeasureScheduleType(EnumLoadable):
+    __tablename__ = 'rbMeasureScheduleType'
+
+    # assumed values
+    # after_visit = 1, u'После каждого посещения врача'
+    # after_first_visit = 2, u'После первого посещения'
+    # within_pregnancy_range = 3, u'Диапазон срока беременности'
+    # upon_med_indication = 4, u'По показаниям'
+    # upon_diag_set = 5, u'При постановке диагноза'
+    # in_presence_diag = 6, u'При наличии дополнительных диагнозов'
+
+
+class MeasureScheduleApplyType(EnumLoadable):
+    __tablename__ = 'rbMeasureScheduleApplyType'
+
+    # assumed values
+    # before_next_visit = 1, u'До следующего осмотра'
+    # range_up_to = 2, u'Контрольный срок'
+    # bounds = 3, u'Границы повторения'
+
+
 class ErrandStatus(EnumLoadable):
     __tablename__ = 'rbErrandStatus'
 
