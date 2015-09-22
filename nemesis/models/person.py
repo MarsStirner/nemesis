@@ -133,6 +133,7 @@ class Person(db.Model):
 
 class rbSpeciality(db.Model):
     __tablename__ = 'rbSpeciality'
+    _table_description = u'Специальности'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
@@ -206,6 +207,7 @@ class rbAcademicTitle(db.Model):
 
 class rbPost(db.Model):
     __tablename__ = 'rbPost'
+    _table_description = u'Должности'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)

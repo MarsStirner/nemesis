@@ -630,6 +630,7 @@ class rbMedicalKind(db.Model):
 
 class rbEventTypePurpose(db.Model):
     __tablename__ = u'rbEventTypePurpose'
+    _table_description = u'Цели обращения'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
@@ -712,6 +713,7 @@ class rbService(db.Model):
 
 class rbRequestType(db.Model):
     __tablename__ = u'rbRequestType'
+    _table_description = u'Типы обращений'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False, index=True)
@@ -732,6 +734,7 @@ class rbRequestType(db.Model):
 
 class rbResult(db.Model):
     __tablename__ = u'rbResult'
+    _table_description = u'Исходы лечения'
 
     id = db.Column(db.Integer, primary_key=True)
     eventPurpose_id = db.Column(db.ForeignKey('rbEventTypePurpose.id'), nullable=False, index=True)
