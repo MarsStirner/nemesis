@@ -75,7 +75,7 @@ angular.module('WebMis20.services.models').
                     self.stationary_info = data.result.stationary_info;
 
                     var p = data.result.payment;
-                    var paymentKind = data.result.payment.payment_kind;
+                    var paymentKind = p ? p.payment_kind : null;
                     self.payment = {
                         local_contract: (p && p.local_contract) ? p.local_contract : null,
                         payments: new WMEventPaymentList(p ? p.payments : [], paymentKind),
