@@ -4,13 +4,15 @@ try:
 except ImportError:
     from distutils.core import setup
 
+from nemesis.nemesis_version import version
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
     name='nemesis',
-    version='0.1.0',
+    version=version,
     url='https://github.com/hitsl/nemesis',
     author='hitsl',
     description='Base MIS module.',
