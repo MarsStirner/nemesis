@@ -306,6 +306,12 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 });
             });
 
+            editor.on('blur', function () {
+                scope.$apply(function () {
+                    updateModel();
+                });
+            });
+
             scope.insertText = function (myValue) {
                 editor.focus();
                 restoreSelection();
