@@ -31,7 +31,7 @@ setup(
         'Requests',
         'sphinxit',
         'Flask-Beaker',
-        'Flask-Login',
+        'Flask-Login==0.2.11',
         'Flask-Principal',
     ],
     classifiers=[
