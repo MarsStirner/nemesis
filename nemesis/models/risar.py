@@ -145,3 +145,19 @@ class rbErrandStatus(db.Model):
             'code': self.code,
             'name': self.name
         }
+
+
+class rbPreEclampsiaRate(db.Model):
+    __tablename__ = u'rbPreEclampsiaRate'
+    _table_description = u'Степени преэклампсии'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
