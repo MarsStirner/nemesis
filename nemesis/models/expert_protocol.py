@@ -200,6 +200,7 @@ class EventMeasure(db.Model):
     begDateTime = db.Column(db.DateTime)
     endDateTime = db.Column(db.DateTime)
     status = db.Column(db.Integer, nullable=False)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     sourceAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 

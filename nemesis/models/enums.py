@@ -98,6 +98,14 @@ class PregnancyPathology(EnumLoadable):
 class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
 
+    # assumed values
+    # assigned = 1, u'Назначенное'
+    # waiting = 2, u'Ожидает результатов'
+    # upon_med_indications = 3, u'По показанию'
+    # cancelled = 4, u'Отмененное'
+    # overdue = 5, u'Просроченное'
+    # performed = 6, u'Выполненное'
+
 
 class MeasureScheduleType(EnumLoadable):
     __tablename__ = 'rbMeasureScheduleType'
