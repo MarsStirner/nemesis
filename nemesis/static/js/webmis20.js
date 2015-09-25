@@ -268,7 +268,7 @@ var WebMis20 = angular.module('WebMis20', [
 .filter('highlight', function() {
     return function (input, query) {
         if (input) {
-            var query_array = query.split(' ');
+            var query_array = query.replace(/\s+/g, ' ').split(' ');
             input = input.toString();
             for (var i = 0; i < query_array.length; i++) {
                 input = input.replace(new RegExp('('+ query_array[i] + ')', 'gi'), '<mark>$1</mark>');
