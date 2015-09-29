@@ -51,12 +51,14 @@ class rbFinance(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(8), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -115,12 +117,14 @@ class rbTreatmentType(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.UnicodeText, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name
+            'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -636,6 +640,7 @@ class rbEventTypePurpose(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     codePlace = db.Column(db.String(2))
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
@@ -643,6 +648,7 @@ class rbEventTypePurpose(db.Model):
             'code': self.code,
             'name': self.name,
             'code_place': self.codePlace,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -719,13 +725,15 @@ class rbRequestType(db.Model):
     code = db.Column(db.String(16), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     relevant = db.Column(db.Integer, nullable=False, server_default=u"'1'")
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'relevant': bool(self.relevant)
+            'relevant': bool(self.relevant),
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -742,6 +750,7 @@ class rbResult(db.Model):
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     continued = db.Column(db.Integer, nullable=False)
     regionalCode = db.Column(db.String(8), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
 
@@ -753,7 +762,8 @@ class rbResult(db.Model):
             'name': self.name,
             'continued': bool(self.continued),
             'regional_code': self.regionalCode,
-            'event_purpose': self.eventPurpose
+            'event_purpose': self.eventPurpose,
+            'deleted': self.deleted
         }
 
     def __int__(self):

@@ -150,6 +150,7 @@ class rbSpeciality(db.Model):
     mkbFilter = db.Column(db.String(32), nullable=False)
     regionalCode = db.Column(db.String(16), nullable=False)
     quotingEnabled = db.Column(db.Integer, server_default=u"'0'")
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     service = db.relationship('rbService')
 
@@ -163,6 +164,7 @@ class rbSpeciality(db.Model):
             'MKB_filter': self.mkbFilter,
             'regional_code': self.regionalCode,
             'quoting_enabled': bool(self.quotingEnabled),
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -216,6 +218,7 @@ class rbPost(db.Model):
     key = db.Column(db.String(6), nullable=False, index=True)
     high = db.Column(db.String(6), nullable=False)
     flatCode = db.Column(db.String(65), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
@@ -226,6 +229,7 @@ class rbPost(db.Model):
             'key': self.key,
             'high': self.high,
             'flat_code': self.flatCode,
+            'deleted': self.deleted
         }
 
     def __int__(self):
