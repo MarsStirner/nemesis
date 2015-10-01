@@ -124,6 +124,8 @@ class Person(db.Model):
             'org_structure': self.org_structure,
             'organisation': self.organisation,
             'full_name': self.full_name,
+            'snils': self.SNILS,
+            'inn': self.INN,
             'short_name': self.shortNameText
         }
 
