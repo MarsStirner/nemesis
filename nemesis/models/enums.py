@@ -119,6 +119,12 @@ class MeasureScheduleType(EnumLoadable):
     # in_presence_diag = 6, u'При наличии дополнительных диагнозов'
 
 
+# TODO: think about usage
+class MeasureScheduleTypeKind(Enum):
+    absolute_dates = 1, u''
+    relative_dates = 2, u''
+
+
 class MeasureScheduleApplyType(EnumLoadable):
     __tablename__ = 'rbMeasureScheduleApplyType'
 
@@ -126,6 +132,12 @@ class MeasureScheduleApplyType(EnumLoadable):
     # before_next_visit = 1, u'До следующего осмотра'
     # range_up_to = 2, u'Контрольный срок'
     # bounds = 3, u'Границы повторения'
+
+
+# TODO: think about usage
+class MeasureScheduleApplyTypeKind(Enum):
+    single = 1, u''
+    repetitive = 2, u''
 
 
 class ErrandStatus(EnumLoadable):

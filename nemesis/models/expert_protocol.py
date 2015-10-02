@@ -3,6 +3,7 @@
 import datetime
 
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
+from nemesis.models.enums import MeasureStatus
 from nemesis.systemwide import db
 
 
@@ -208,3 +209,11 @@ class EventMeasure(db.Model):
     scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
     action = db.relationship('Action', foreign_keys=[action_id])
+
+    @property
+    def is_active(self):
+        return self.status != MeasureStatus.cancelled[0]
+
+    @property
+    def is_used(self):
+        return False
