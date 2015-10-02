@@ -73,6 +73,13 @@ def init_logger():
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
+    if debug_mode and not isinstance(handler, logging.StreamHandler):
+        # Для дебаг мода дублируем ошибки на стандартный вывод
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
 
 def _init_enums(app):
     from nemesis.lib.enum import EnumBase
