@@ -941,10 +941,10 @@ class ContractTariff(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, index=True)
-    eventType_id = db.Column(db.Integer, index=True)
+    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, default=None, index=True)
+    eventType_id = db.Column(db.ForeignKey('EventType.id'), index=True)
     tariffType = db.Column(db.Integer, nullable=False)
-    service_id = db.Column(db.Integer, index=True)
+    service_id = db.Column(db.ForeignKey('rbService.id'), index=True)
     code = db.Column(db.Unicode(64), nullable=True)
     name = db.Column(db.Unicode(256), nullable=True)
     tariffCategory_id = db.Column(db.Integer, index=True)
@@ -973,6 +973,8 @@ class ContractTariff(db.Model):
 
     rbServiceFinance = db.relationship(u'rbServiceFinance')
     price_list = db.relation('PriceList')
+    event_type = db.relation('EventType')
+    service = db.relation('rbService')
 
 
 class Bank(db.Model):
@@ -1552,10 +1554,11 @@ class PriceList(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.SmallInteger, nullable=False, default='0')
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False, index=True)
+    name = db.Column(db.Unicode(100), nullable=False)
 
     finance = db.relationship(u'rbFinance')
