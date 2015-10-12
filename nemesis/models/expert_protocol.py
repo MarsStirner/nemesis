@@ -193,9 +193,9 @@ class EventMeasure(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    createPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    modifyPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), nullable=False, index=True)
     schemeMeasure_id = db.Column(db.Integer, db.ForeignKey('ExpertSchemeMeasure.id'), nullable=False, index=True)
     begDateTime = db.Column(db.DateTime)
@@ -209,6 +209,8 @@ class EventMeasure(db.Model):
     scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
     action = db.relationship('Action', foreign_keys=[action_id])
+    create_person = db.relationship('Person', foreign_keys=[createPerson_id])
+    modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
 
     @property
     def is_active(self):
