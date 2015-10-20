@@ -10,8 +10,8 @@ def safe_current_user_id():
 
 
 def get_model_by_name(name):
-    from nemesis.models import exists, schedule, actions, client, event
-    for mod in (exists, schedule, actions, client, event):
+    from nemesis.models import exists, schedule, actions, client, event, risar
+    for mod in (exists, schedule, actions, client, event, risar):
         if hasattr(mod, name):
             return getattr(mod, name)
     return None

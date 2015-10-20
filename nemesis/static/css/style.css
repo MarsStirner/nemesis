@@ -526,6 +526,7 @@ blockquote.danger{
 
 .timepicker_popup{
     margin-top: 1px;
+    margin-left: -80px;
     padding: 0px 10px;
     position: absolute;
     background: #FFF;
