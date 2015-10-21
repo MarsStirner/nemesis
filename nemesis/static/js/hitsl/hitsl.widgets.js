@@ -98,7 +98,7 @@ angular.module('WebMis20')
 '<div class="input-group">\
 <input type="text" id="[[id]]" name="[[name]]" class="form-control"\
        ng-model="ngModel" autocomplete="off"\
-       ng-required="ngRequired" show-time ng-disabled="ngDisabled"/>\
+       ng-required="ngRequired" show-time ng-disabled="ngDisabled" />\
 <span class="input-group-btn">\
     <button class="btn btn-default" type="button" ng-click="open_timepicker_popup()" ng-disabled="ngDisabled">\
         <i class="glyphicon glyphicon-time"></i>\
@@ -139,6 +139,7 @@ angular.module('WebMis20')
                 if (value && !(value instanceof Date)) {
                     if (/^([01]\d|2[0-3]):([0-5]\d)$/.test(value)) {
                         var parts = value.split(':');
+                        oldValue = oldValue || new Date();
                         oldValue.setHours(parts[0]);
                         oldValue.setMinutes(parts[1]);
                     }
