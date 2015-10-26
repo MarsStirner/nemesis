@@ -834,6 +834,17 @@ class PersonTreeVisualizer(object):
             'name': person.shortNameText,
         }
 
+    def make_full_person(self, person):
+        speciality = self.make_short_speciality(person.speciality) if person.speciality else None
+        return {
+            'id': person.id,
+            'name': person.shortNameText,
+            'fullname': person.nameText,
+            'speciality': speciality,
+            'org_structure': person.org_structure,
+            'description': u'%s%s' % (person.nameText, u' (%s)' % speciality['name'] if speciality else u'')
+        }
+
     def make_person_ws(self, person):
         name = person.shortNameText
         speciality = self.make_short_speciality(person.speciality) if person.speciality else None
