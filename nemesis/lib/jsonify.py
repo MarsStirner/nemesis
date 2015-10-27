@@ -1461,6 +1461,13 @@ class ActionVisualizer(object):
             'person_id': action.person_id,
         }
 
+    def make_action_wo_diagnosis_props(self, action):
+        action = self.make_action(action)
+        for prop in action['properties']:
+            if prop['type'].typeName == 'Diagnosis':
+                prop['value'] = [] if prop['type'].isVector else None
+        return action
+
     def make_action_layout(self, action):
         """
         :type action: Action

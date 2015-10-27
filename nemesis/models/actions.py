@@ -481,9 +481,13 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
             diag_list = []
             json_data = json_data or []
             for diag_data in json_data:
-                d = create_or_update_diagnosis(action.event, diag_data, action)
-                deleted = safe_traverse(diag_data, 'deleted')
-                db.session.add(d)
+                if isinstance(diag_data, dict):
+                    d = create_or_update_diagnosis(action.event, diag_data, action)
+                    deleted = safe_traverse(diag_data, 'deleted')
+                    db.session.add(d)
+                else:
+                    d = diag_data
+                    deleted = d.deleted
                 if deleted:
                     delete_diagnosis(d)
                 else:
@@ -492,10 +496,13 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
         else:
             current_value = prop.value_raw
             if json_data is not None:
-                d = create_or_update_diagnosis(action.event, json_data, action)
+                if not isinstance(json_data, dict):
+                    d = create_or_update_diagnosis(action.event, json_data, action)
+                    db.session.add(d)
+                else:
+                    d = json_data
                 if current_value is not None and current_value != d.id:
                     delete_diagnosis(None, current_value)
-                db.session.add(d)
             else:
                 if current_value is not None:
                     delete_diagnosis(None, current_value)
