@@ -45,12 +45,14 @@ angular.module('WebMis20.services.models').
                 this.can_read_diagnoses = false;
                 this.can_edit_diagnoses = false;
                 this.can_create_actions = [false, false, false, false];
+                this.url_new = null;
+                this.url_get = null;
                 return this;
             };
 
             WMEvent.prototype.reload = function() {
                 var self = this;
-                var url = this.is_new() ? url_event_new : url_event_get;
+                var url = this.is_new() ? this.url_new : this.url_get;
                 var params = this.is_new() ? {
                     client_id: this.client_id,
                     ticket_id: this.ticket_id
@@ -122,6 +124,26 @@ angular.module('WebMis20.services.models').
             };
 
             return WMEvent;
+        }
+    ]).
+    factory('WMPoliclinicEvent', ['WMEvent', function(WMEvent) {
+            var WMPoliclinicEvent = function (event_id, client_id, ticket_id) {
+                WMEvent.call(this, event_id, client_id, ticket_id);
+                this.url_new = url_event_new;
+                this.url_get = url_event_get;
+            };
+            WMPoliclinicEvent.inheritsFrom(WMEvent);
+            return WMPoliclinicEvent
+        }
+    ]).
+    factory('WMStationaryEvent', ['WMEvent', function(WMEvent) {
+            var WMStationaryEvent = function (event_id, client_id, ticket_id) {
+                WMEvent.call(this, event_id, client_id, ticket_id);
+                this.url_new = url_event_stationary_new;
+                this.url_get = url_event_get;
+            };
+            WMStationaryEvent.inheritsFrom(WMEvent);
+            return WMStationaryEvent
         }
     ]).
     factory('WMEventServiceGroup', ['$rootScope', 'WMEventServices', 'PrintingService',
