@@ -6,7 +6,11 @@ from flask.ext.login import current_user
 
 
 def safe_current_user_id():
-    return int(current_user.get_id()) if current_user else None
+    try:
+        user_id = int(current_user.get_id()) if current_user else None
+    except ValueError:
+        user_id = None
+    return user_id
 
 
 def get_model_by_name(name):
