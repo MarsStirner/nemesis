@@ -8,7 +8,7 @@ from flask.ext.login import current_user
 def safe_current_user_id():
     try:
         user_id = int(current_user.get_id()) if current_user else None
-    except ValueError:
+    except (ValueError, TypeError):
         user_id = None
     return user_id
 
