@@ -98,13 +98,15 @@ class PregnancyPathology(EnumLoadable):
 class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
 
-    # assumed values
-    # assigned = 1, u'Назначенное'
-    # waiting = 2, u'Ожидает результатов'
-    # upon_med_indications = 3, u'По показанию'
-    # cancelled = 4, u'Отмененное'
-    # overdue = 5, u'Просроченное'
-    # performed = 6, u'Выполненное'
+    created = 1, u'Создано'
+    assigned = 2, u'Назначенное'
+    waiting = 3, u'Ожидает результатов'
+    upon_med_indications = 4, u'По показанию'
+    overdue = 5, u'Просроченное'
+    performed = 6, u'Выполненное'
+    cancelled = 7, u'Отмененное'
+    cancelled_dupl = 8, u'Отмененное, как дубль'
+    cancelled_changed_data = 9, u'Отмененное, при изменении срока'
 
 
 class MeasureScheduleType(EnumLoadable):
@@ -138,6 +140,11 @@ class MeasureScheduleApplyType(EnumLoadable):
 class MeasureScheduleApplyTypeKind(Enum):
     single = 1, u''
     repetitive = 2, u''
+
+
+class EventMeasureActuality(Enum):
+    not_actual = 0, u'Неактуально'
+    actual = 1, u'Актуально'
 
 
 class ErrandStatus(EnumLoadable):

@@ -201,6 +201,7 @@ class EventMeasure(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     sourceAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
+    is_actual = db.Column(db.Integer, server_default="'1'")
 
     event = db.relationship('Event')
     scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
@@ -208,11 +209,3 @@ class EventMeasure(db.Model):
     action = db.relationship('Action', foreign_keys=[action_id])
     create_person = db.relationship('Person', foreign_keys=[createPerson_id])
     modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
-
-    @property
-    def is_active(self):
-        return self.status != MeasureStatus.cancelled[0]
-
-    @property
-    def is_used(self):
-        return False
