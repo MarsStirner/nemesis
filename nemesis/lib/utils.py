@@ -26,6 +26,11 @@ def public_endpoint(function):
     return function
 
 
+def public_api(func):
+    func.is_public_api = True
+    return func
+
+
 def breadcrumb(view_title):
     def decorator(f):
         @functools.wraps(f)
