@@ -3,6 +3,7 @@
 import datetime
 import itertools
 import logging
+
 import os
 import base64
 import re
@@ -20,7 +21,7 @@ from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
 from nemesis.lib.user import UserUtils, UserProfileManager
-from nemesis.lib.const import STATIONARY_EVENT_CODES
+from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
 from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
@@ -836,6 +837,17 @@ class PersonTreeVisualizer(object):
             'name': person.shortNameText,
         }
 
+    def make_full_person(self, person):
+        speciality = self.make_short_speciality(person.speciality) if person.speciality else None
+        return {
+            'id': person.id,
+            'name': person.shortNameText,
+            'fullname': person.nameText,
+            'speciality': speciality,
+            'org_structure': person.org_structure,
+            'description': u'%s%s' % (person.nameText, u' (%s)' % speciality['name'] if speciality else u'')
+        }
+
     def make_person_ws(self, person):
         name = person.shortNameText
         speciality = self.make_short_speciality(person.speciality) if person.speciality else None
@@ -1453,6 +1465,13 @@ class ActionVisualizer(object):
             'set_person_id': action.setPerson_id,
             'person_id': action.person_id,
         }
+
+    def make_action_wo_sensitive_props(self, action):
+        action = self.make_action(action)
+        for prop in action['properties']:
+            if prop['type'].typeName in NOT_COPYABLE_VALUE_TYPES:
+                prop['value'] = [] if prop['type'].isVector else None
+        return action
 
     def make_action_layout(self, action):
         """
