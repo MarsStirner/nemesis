@@ -3,7 +3,6 @@
 import datetime
 
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
-from nemesis.models.enums import MeasureStatus
 from nemesis.systemwide import db
 
 
@@ -24,7 +23,8 @@ class ExpertScheme(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now,
+                               onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     name = db.Column(db.Unicode(255), nullable=False)
     code = db.Column(db.Unicode(16), index=True)
@@ -64,18 +64,21 @@ class Measure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now,
+                               onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     measureType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureType.id'), nullable=False, index=True)
     code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(512), nullable=False)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     uuid = db.Column(UUIDColumn(), nullable=False)
-    actionType_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
+    appointmentAt_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
+    resultAt_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
     templateAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
     measure_type = db.relationship('rbMeasureType')
-    action_type = db.relationship('ActionType')
+    appointment_at = db.relationship('ActionType', foreign_keys=[appointmentAt_id])
+    result_at = db.relationship('ActionType', foreign_keys=[resultAt_id])
     template_action = db.relationship('Action')
 
 
@@ -191,8 +194,10 @@ class EventMeasure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now,
+                               onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id,
+                                onupdate=safe_current_user_id)
     event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), nullable=False, index=True)
     schemeMeasure_id = db.Column(db.Integer, db.ForeignKey('ExpertSchemeMeasure.id'), nullable=False, index=True)
     begDateTime = db.Column(db.DateTime)
@@ -200,12 +205,14 @@ class EventMeasure(db.Model):
     status = db.Column(db.Integer, nullable=False)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     sourceAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
-    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
+    appointmentAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
+    resultAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     is_actual = db.Column(db.Integer, server_default="'1'")
 
     event = db.relationship('Event')
     scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
-    action = db.relationship('Action', foreign_keys=[action_id])
+    result_action = db.relationship('Action', foreign_keys=[resultAction_id])
+    appointment_action = db.relationship('Action', foreign_keys=[appointmentAction_id])
     create_person = db.relationship('Person', foreign_keys=[createPerson_id])
     modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
