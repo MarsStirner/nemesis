@@ -496,7 +496,7 @@ class ActionProperty_Diagnosis(ActionProperty__ValueType):
         else:
             current_value = prop.value_raw
             if json_data is not None:
-                if not isinstance(json_data, dict):
+                if isinstance(json_data, dict):
                     d = create_or_update_diagnosis(action.event, json_data, action)
                     db.session.add(d)
                 else:
