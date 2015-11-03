@@ -51,12 +51,14 @@ class rbFinance(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(8), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -115,12 +117,14 @@ class rbTreatmentType(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.UnicodeText, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name
+            'name': self.name,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -630,11 +634,13 @@ class rbMedicalKind(db.Model):
 
 class rbEventTypePurpose(db.Model):
     __tablename__ = u'rbEventTypePurpose'
+    _table_description = u'Цели обращения'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     codePlace = db.Column(db.String(2))
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
@@ -642,6 +648,7 @@ class rbEventTypePurpose(db.Model):
             'code': self.code,
             'name': self.name,
             'code_place': self.codePlace,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -712,18 +719,21 @@ class rbService(db.Model):
 
 class rbRequestType(db.Model):
     __tablename__ = u'rbRequestType'
+    _table_description = u'Типы обращений'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     relevant = db.Column(db.Integer, nullable=False, server_default=u"'1'")
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'relevant': bool(self.relevant)
+            'relevant': bool(self.relevant),
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -732,6 +742,7 @@ class rbRequestType(db.Model):
 
 class rbResult(db.Model):
     __tablename__ = u'rbResult'
+    _table_description = u'Исходы лечения'
 
     id = db.Column(db.Integer, primary_key=True)
     eventPurpose_id = db.Column(db.ForeignKey('rbEventTypePurpose.id'), nullable=False, index=True)
@@ -739,6 +750,7 @@ class rbResult(db.Model):
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     continued = db.Column(db.Integer, nullable=False)
     regionalCode = db.Column(db.String(8), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
 
@@ -750,7 +762,8 @@ class rbResult(db.Model):
             'name': self.name,
             'continued': bool(self.continued),
             'regional_code': self.regionalCode,
-            'event_purpose': self.eventPurpose
+            'event_purpose': self.eventPurpose,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -928,10 +941,10 @@ class ContractTariff(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, index=True)
-    eventType_id = db.Column(db.Integer, index=True)
+    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, default='0', index=True)
+    eventType_id = db.Column(db.ForeignKey('EventType.id'), index=True)
     tariffType = db.Column(db.Integer, nullable=False)
-    service_id = db.Column(db.Integer, index=True)
+    service_id = db.Column(db.ForeignKey('rbService.id'), index=True)
     code = db.Column(db.Unicode(64), nullable=True)
     name = db.Column(db.Unicode(256), nullable=True)
     tariffCategory_id = db.Column(db.Integer, index=True)
@@ -956,8 +969,12 @@ class ContractTariff(db.Model):
     createPerson_id = db.Column(db.Integer)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
+    priceList_id = db.Column(db.Integer, db.ForeignKey('PriceList.id'), index=True)
 
     rbServiceFinance = db.relationship(u'rbServiceFinance')
+    price_list = db.relation('PriceList')
+    event_type = db.relation('EventType')
+    service = db.relation('rbService')
 
 
 class Bank(db.Model):
@@ -1530,3 +1547,18 @@ class ClientQuoting(db.Model):
     version = db.Column(db.Integer, nullable=False)
 
     master = db.relationship(u'Client')
+
+
+class PriceList(db.Model):
+    __tablename__ = u'PriceList'
+
+    id = db.Column(db.Integer, primary_key=True)
+    deleted = db.Column(db.SmallInteger, nullable=False, default='0')
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False, index=True)
+    name = db.Column(db.Unicode(100), nullable=False)
+
+    finance = db.relationship(u'rbFinance')

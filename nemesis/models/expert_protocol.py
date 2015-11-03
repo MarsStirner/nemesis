@@ -12,6 +12,7 @@ class ExpertProtocol(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(255), nullable=False)
+    deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
 
     schemes = db.relationship('ExpertScheme', backref='protocol')
 
@@ -27,20 +28,20 @@ class ExpertScheme(db.Model):
     name = db.Column(db.Unicode(255), nullable=False)
     code = db.Column(db.Unicode(16), index=True)
     number = db.Column(db.Unicode(16), nullable=False, index=True)
+    deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
     protocol_id = db.Column(db.Integer, db.ForeignKey('ExpertProtocol.id'), nullable=False, index=True)
 
-    scheme_mkbs = db.relationship('ExpertSchemeMKB', backref='scheme', cascade_backrefs=False)
+    mkbs = db.relationship('MKB', secondary='ExpertSchemeMKB')
     scheme_measures = db.relationship('ExpertSchemeMeasureAssoc', backref='scheme')
 
 
-class ExpertSchemeMKB(db.Model):
+class ExpertSchemeMKBAssoc(db.Model):
     __tablename__ = u'ExpertSchemeMKB'
 
     id = db.Column(db.Integer, primary_key=True)
     mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False, index=True)
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
-
-    mkb = db.relationship('MKB')
+    deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
 
 
 class ExpertSchemeMeasureAssoc(db.Model):
@@ -50,6 +51,7 @@ class ExpertSchemeMeasureAssoc(db.Model):
     scheme_id = db.Column(db.Integer, db.ForeignKey('ExpertScheme.id'), nullable=False, index=True)
     measure_id = db.Column(db.Integer, db.ForeignKey('Measure.id'), nullable=False, index=True)
     schedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), index=True)
+    deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
 
     measure = db.relationship('Measure')
     schedule = db.relationship('MeasureSchedule', backref='scheme_measure', cascade_backrefs=False, uselist=False)
@@ -76,8 +78,40 @@ class Measure(db.Model):
     template_action = db.relationship('Action')
 
 
+class MeasureSchedule_ScheduleTypeAssoc(db.Model):
+    __tablename__ = u'MeasureSchedule_ScheduleType'
+
+    id = db.Column(db.Integer, primary_key=True)
+    measureSchedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), nullable=False)
+    scheduleType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureScheduleType.id'), nullable=False, index=True)
+
+
+class MeasureScheduleAdditionalMKBAssoc(db.Model):
+    __tablename__ = u'MeasureScheduleAdditionalMKB'
+
+    id = db.Column(db.Integer, primary_key=True)
+    measureSchedule_id = db.Column(db.Integer, db.ForeignKey('MeasureSchedule.id'), nullable=False, index=True)
+    mkb_id = db.Column(db.Integer, db.ForeignKey('MKB.id'), nullable=False)
+
+
 class rbMeasureType(db.Model):
     __tablename__ = u'rbMeasureType'
+    _table_description = u'Типы мероприятий'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
+class rbMeasureScheduleApplyType(db.Model):
+    __tablename__ = u'rbMeasureScheduleApplyType'
     _table_description = u'Типы мероприятий'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -96,12 +130,29 @@ class MeasureSchedule(db.Model):
     __tablename__ = u'MeasureSchedule'
 
     id = db.Column(db.Integer, primary_key=True)
-    scheduleType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureScheduleType.id'), index=True)
-    offsetStart = db.Column(db.Integer, nullable=False)
-    offsetEnd = db.Column(db.Integer, nullable=False)
-    repeatCount = db.Column(db.Integer, nullable=False, server_default=u"'1'", default=1)
+    boundsLowEventRange = db.Column(db.Integer)
+    boundsLowEventRangeUnits_id = db.Column(db.Integer, db.ForeignKey('rbUnits.id'))
+    boundsHighEventRange = db.Column(db.Integer)
+    boundsHighEventRangeUnits_id = db.Column(db.Integer, db.ForeignKey('rbUnits.id'))
+    additionalText = db.Column(db.Text)
+    applyType_id = db.Column(db.Integer, db.ForeignKey('rbMeasureScheduleApplyType.id'))
+    boundsLowApplyRange = db.Column(db.Integer)
+    boundsLowApplyRangeUnits_id = db.Column(db.Integer, db.ForeignKey('rbUnits.id'))
+    boundsHighApplyRange = db.Column(db.Integer)
+    boundsHighApplyRangeUnits_id = db.Column(db.Integer, db.ForeignKey('rbUnits.id'))
+    count = db.Column(db.Integer, default=1)
+    applyPeriod = db.Column(db.Integer)
+    applyPeriodUnits_id = db.Column(db.Integer, db.ForeignKey('rbUnits.id'))
+    frequency = db.Column(db.Integer)
 
-    schedule_type = db.relationship('rbMeasureScheduleType')
+    apply_type = db.relationship('rbMeasureScheduleApplyType')
+    bounds_low_event_range_unit = db.relationship('rbUnits', foreign_keys=[boundsLowEventRangeUnits_id])
+    bounds_high_event_range_unit = db.relationship('rbUnits', foreign_keys=[boundsHighEventRangeUnits_id])
+    bounds_low_apply_range_unit = db.relationship('rbUnits', foreign_keys=[boundsLowApplyRangeUnits_id])
+    bounds_high_apply_range_unit = db.relationship('rbUnits', foreign_keys=[boundsHighApplyRangeUnits_id])
+    apply_period_unit = db.relationship('rbUnits', foreign_keys=[applyPeriodUnits_id])
+    schedule_types = db.relationship('rbMeasureScheduleType', secondary='MeasureSchedule_ScheduleType')
+    additional_mkbs = db.relationship('MKB', secondary='MeasureScheduleAdditionalMKB')
 
 
 class rbMeasureScheduleType(db.Model):

@@ -10,7 +10,6 @@ from nemesis.systemwide import cache
 __author__ = 'viruzzz-kun'
 
 
-@cache.memoize(timeout=86400)
 def api_refbook_int(name, code=None):
     if name is None:
         return []
