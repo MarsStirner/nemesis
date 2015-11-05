@@ -60,13 +60,6 @@ class IntoleranceType(Enum):
     medicine = 1, u'Медикаментозная непереносимость'
 
 
-class PrenatalRiskRate(Enum):
-    undefined = 0, u'не определен'
-    low = 1, u'низкий'
-    medium = 2, u'средний'
-    high = 3, u'высокий'
-
-
 class PerinatalRiskRate(EnumLoadable):
     __tablename__ = 'rbPerinatalRiskRate'
 
