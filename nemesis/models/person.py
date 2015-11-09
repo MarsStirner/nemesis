@@ -76,7 +76,7 @@ class Person(db.Model):
     tariffCategory = db.relationship('rbTariffCategory')
     user_profiles = db.relation('rbUserProfile', secondary='Person_Profiles')
     uuid = db.relationship('UUID')
-    person_curations = db.relationship('PersonCurationAssoc', backref='person', cascade_backrefs=False)
+    curation_levels = db.relationship('rbOrgCurationLevel', secondary='PersonCuration')
 
     @property
     def nameText(self):
@@ -124,6 +124,8 @@ class Person(db.Model):
             'org_structure': self.org_structure,
             'organisation': self.organisation,
             'full_name': self.full_name,
+            'snils': self.SNILS,
+            'inn': self.INN,
             'short_name': self.shortNameText
         }
 
@@ -133,6 +135,7 @@ class Person(db.Model):
 
 class rbSpeciality(db.Model):
     __tablename__ = 'rbSpeciality'
+    _table_description = u'Специальности'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
@@ -149,6 +152,7 @@ class rbSpeciality(db.Model):
     mkbFilter = db.Column(db.String(32), nullable=False)
     regionalCode = db.Column(db.String(16), nullable=False)
     quotingEnabled = db.Column(db.Integer, server_default=u"'0'")
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     service = db.relationship('rbService')
 
@@ -162,6 +166,7 @@ class rbSpeciality(db.Model):
             'MKB_filter': self.mkbFilter,
             'regional_code': self.regionalCode,
             'quoting_enabled': bool(self.quotingEnabled),
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -206,6 +211,7 @@ class rbAcademicTitle(db.Model):
 
 class rbPost(db.Model):
     __tablename__ = 'rbPost'
+    _table_description = u'Должности'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
@@ -214,6 +220,7 @@ class rbPost(db.Model):
     key = db.Column(db.String(6), nullable=False, index=True)
     high = db.Column(db.String(6), nullable=False)
     flatCode = db.Column(db.String(65), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     def __json__(self):
         return {
@@ -224,6 +231,7 @@ class rbPost(db.Model):
             'key': self.key,
             'high': self.high,
             'flat_code': self.flatCode,
+            'deleted': self.deleted
         }
 
     def __int__(self):
@@ -322,4 +330,5 @@ class PersonCurationAssoc(db.Model):
     person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False, index=True)
     orgCurationLevel_id = db.Column(db.Integer, db.ForeignKey('rbOrgCurationLevel.id'), nullable=False, index=True)
 
+    person = db.relationship('Person')
     org_curation_level = db.relationship('rbOrgCurationLevel')

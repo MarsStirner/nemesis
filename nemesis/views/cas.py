@@ -61,6 +61,8 @@ def check_valid_login():
             if not isinstance(current_user._get_current_object(), AnonymousUser):
                 _logout_user()
 
+        is_public_api = getattr(app.view_functions[request.endpoint], 'is_public_api', False)
+
         if auth_token:
             try:
                 result = requests.post(
@@ -71,7 +73,11 @@ def check_valid_login():
             except ConnectionError:
                 raise CasNotAvailable
             else:
-                if result.status_code == 200:
+                ok = result.status_code == 200
+                if ok and is_public_api:
+                    return
+
+                if ok:
                     answer = result.json()
                     if answer['success']:
                         if ('BEAKER_SESSION' in app.config and

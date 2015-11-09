@@ -98,7 +98,7 @@ angular.module('WebMis20')
 '<div class="input-group">\
 <input type="text" id="[[id]]" name="[[name]]" class="form-control"\
        ng-model="ngModel" autocomplete="off"\
-       ng-required="ngRequired" show-time ng-disabled="ngDisabled"/>\
+       ng-required="ngRequired" show-time ng-disabled="ngDisabled" />\
 <span class="input-group-btn">\
     <button class="btn btn-default" type="button" ng-click="open_timepicker_popup()" ng-disabled="ngDisabled">\
         <i class="glyphicon glyphicon-time"></i>\
@@ -139,6 +139,7 @@ angular.module('WebMis20')
                 if (value && !(value instanceof Date)) {
                     if (/^([01]\d|2[0-3]):([0-5]\d)$/.test(value)) {
                         var parts = value.split(':');
+                        oldValue = oldValue || new Date();
                         oldValue.setHours(parts[0]);
                         oldValue.setMinutes(parts[1]);
                     }
@@ -556,6 +557,36 @@ angular.module('WebMis20')
             scope.clearColor = function () {
                 ngModelCtrl.$setViewValue(null);
             }
+        }
+    }
+}])
+.directive('wmMkbMultiple', [function() {
+    return {
+        restrict: 'E',
+        require: 'ngModel',
+        replace: true,
+        scope: {
+        },
+        template: '\
+<div>\
+<ui-select multiple theme="select2" ref-book="MKB" close-on-select="false">\
+    <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
+    <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
+        <div ng-bind-html="mkb.code | highlight: $select.search"></div>\
+        <small style="font-style: italic" ng-bind-html="mkb.name"></small>\
+    </ui-select-choices>\
+</ui-select>\
+</div>',
+        link: function (scope, elem, attrs, ngModelCtrl) {
+            scope.placeholder = attrs.placeholder;
+
+            var used_codes = [];
+            scope.$watch(function () { return ngModelCtrl.$modelValue; }, function (n, o) {
+                used_codes = n.map(function (mkb) { return mkb.code });
+            });
+            scope.filterMkbChoices = function (mkb) {
+                return !used_codes.has(mkb.code);
+            };
         }
     }
 }])

@@ -23,6 +23,9 @@ angular.module('WebMis20')
             set_null();
             owe.send('released');
         };
+        this.close = function () {
+            eventSource.close();
+        };
 
         function set_null () {
             self.acquired = null;
@@ -53,7 +56,7 @@ angular.module('WebMis20')
             return lock;
         }
         function lock_rejected (lock) {
-            self.acquired = lock.acquire_lock;
+            self.acquired = lock.acquire;
             self.locker = lock.locker;
             self.token = null;
             self.expiration = null;
