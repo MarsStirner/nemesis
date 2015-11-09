@@ -45,17 +45,17 @@ angular.module('WebMis20.services.models').
                 this.can_read_diagnoses = false;
                 this.can_edit_diagnoses = false;
                 this.can_create_actions = [false, false, false, false];
-                this.url_new = null;
-                this.url_get = null;
+                this.request_type_kind = null;
                 return this;
             };
 
             WMEvent.prototype.reload = function() {
                 var self = this;
-                var url = this.is_new() ? this.url_new : this.url_get;
+                var url = this.is_new() ? url_event_new : url_event_get;
                 var params = this.is_new() ? {
                     client_id: this.client_id,
-                    ticket_id: this.ticket_id
+                    ticket_id: this.ticket_id,
+                    request_type_kind: this.request_type_kind
                 } : {
                     event_id: this.event_id
                 };
@@ -99,7 +99,8 @@ angular.module('WebMis20.services.models').
                     payment: this.payment,
                     services: this.services,
                     ticket_id: this.ticket_id,
-                    close_event: close_event
+                    close_event: close_event,
+                    request_type_kind: this.request_type_kind
                 })
                 .success(function(response) {
                     var event_id = response.result.id,
@@ -129,20 +130,42 @@ angular.module('WebMis20.services.models').
     factory('WMPoliclinicEvent', ['WMEvent', function(WMEvent) {
             var WMPoliclinicEvent = function (event_id, client_id, ticket_id) {
                 WMEvent.call(this, event_id, client_id, ticket_id);
-                this.url_new = url_event_new;
-                this.url_get = url_event_get;
+                this.request_type_kind = "policlinic";
             };
             WMPoliclinicEvent.inheritsFrom(WMEvent);
             return WMPoliclinicEvent
         }
     ]).
-    factory('WMStationaryEvent', ['WMEvent', function(WMEvent) {
+    factory('WMStationaryEvent', ['WMEvent', '$q', '$http', function(WMEvent, $q, $http) {
             var WMStationaryEvent = function (event_id, client_id, ticket_id) {
                 WMEvent.call(this, event_id, client_id, ticket_id);
-                this.url_new = url_event_stationary_new;
-                this.url_get = url_event_get;
+                this.request_type_kind = "stationary";
             };
             WMStationaryEvent.inheritsFrom(WMEvent);
+            WMStationaryEvent.prototype.save = function() {
+                var self = this;
+                var deferred = $q.defer();
+                $http.post(url_event_save, {
+                    event: this.info,
+                    received: this.stationary_info.received,
+                    payment: this.payment,
+                    services: this.services,
+                    ticket_id: this.ticket_id,
+                    request_type_kind: this.request_type_kind
+                })
+                .success(function(response) {
+                    var event_id = response.result.id,
+                        error_text = response.result.error_text;
+                    deferred.resolve({
+                        event_id: event_id,
+                        error_text: error_text
+                    });
+                })
+                .error(function(response) {
+                    deferred.reject(response.meta.name);
+                });
+                return deferred.promise;
+            };
             return WMStationaryEvent
         }
     ]).

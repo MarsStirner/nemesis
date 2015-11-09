@@ -914,7 +914,7 @@ class EventVisualizer(object):
             data['payment'] = self.make_event_payment(event)
             data['services'] = self.make_event_services(event.id)
         if event.is_stationary:
-            data['stationary_info'] = self.make_event_stationary_info(event)
+            data['stationary_info'] = self.make_event_stationary_info(event, new)
         return data
 
     def make_short_event(self, event):
@@ -1382,18 +1382,43 @@ class EventVisualizer(object):
             'event': self.make_short_event(payment.event)
         }
 
-    def make_event_stationary_info(self, event):
+    def represent_received(self, action):
+        evis = EventVisualizer()
+        result = None
+        if action:
+            result = dict(
+                (code, prop.value)
+                for (code, prop) in action.propsByCode.iteritems()
+            )
+            result['diag_received'] = evis.make_diagnostic_record(result['diag_received'])
+            result['diag_received1'] = evis.make_diagnostic_record(result['diag_received1'])
+            result['diag_received2'] = evis.make_diagnostic_record(result['diag_received2'])
+            result['beg_date'] = action.begDate
+            result['person'] = action.person
+            result['flatCode'] = action.actionType.flatCode
+            result['event_id'] = action.event_id
+            result['id'] = action.id
+        return result
+
+    def make_event_stationary_info(self, event, new=False):
         pviz = PersonTreeVisualizer()
         hosp_length = get_hosp_length(event)
         patient_cur_os = get_patient_location(event)
         hospital_bed = get_patient_hospital_bed(event)
+        received = event.received if new else db.session.query(Action).join(
+            ActionType).filter(
+                Action.event_id == event.id,
+                Action.deleted == 0,
+                ActionType.flatCode == 'received'
+            ).first()
         return {
             'admission_date': event.setDate,
             'discharge_date': event.execDate,
             'hosp_length': hosp_length,
             'patient_current_os': patient_cur_os,
             'hospital_bed': hospital_bed,
-            'attending_doctor': pviz.make_person_ws(event.execPerson) if event.execPerson else None
+            'attending_doctor': pviz.make_person_ws(event.execPerson) if event.execPerson else None,
+            'received': self.represent_received(received)
         }
 
 

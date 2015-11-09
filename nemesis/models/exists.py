@@ -1149,6 +1149,42 @@ class rbDispanser(db.Model):
         return self.id
 
 
+class rbHospitalisationGoal(db.Model):
+    __tablename__ = u'rbHospitalisationGoal'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbHospitalisationOrder(db.Model):
+    __tablename__ = u'rbHospitalisationOrder'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
 class rbServiceFinance(db.Model):
     __tablename__ = u'rbServiceFinance'
 
