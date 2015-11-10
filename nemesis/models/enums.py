@@ -100,6 +100,7 @@ class MeasureStatus(EnumLoadable):
     cancelled = 7, u'Отмененное'
     cancelled_dupl = 8, u'Отмененное, как дубль'
     cancelled_changed_data = 9, u'Отмененное, при изменении срока'
+    cancelled_invalid = 10, u'Отмененное, как недействительное'
 
 
 class MeasureScheduleType(EnumLoadable):
