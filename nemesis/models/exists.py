@@ -941,7 +941,7 @@ class ContractTariff(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, default='0', index=True)
+    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, default=None, index=True)
     eventType_id = db.Column(db.ForeignKey('EventType.id'), index=True)
     tariffType = db.Column(db.Integer, nullable=False)
     service_id = db.Column(db.ForeignKey('rbService.id'), index=True)
