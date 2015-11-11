@@ -553,8 +553,8 @@ def get_patient_location(event, dt=None):
     return current_os
 
 
-def _get_stationary_location_query(event, dt=None):
-    query = _get_moving_query(event, dt, False)
+def _get_stationary_location_query(event, dt=None, moving_query=None):
+    query = moving_query if moving_query is not None else _get_moving_query(event, dt, False)
     query = query.join(
         ActionProperty
     ).join(
