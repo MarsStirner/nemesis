@@ -969,10 +969,8 @@ class ContractTariff(db.Model):
     createPerson_id = db.Column(db.Integer)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
-    priceList_id = db.Column(db.Integer, db.ForeignKey('PriceList.id'), index=True)
 
     rbServiceFinance = db.relationship(u'rbServiceFinance')
-    price_list = db.relation('PriceList')
 
 
 class Bank(db.Model):
@@ -1545,17 +1543,3 @@ class ClientQuoting(db.Model):
     version = db.Column(db.Integer, nullable=False)
 
     master = db.relationship(u'Client')
-
-
-class PriceList(db.Model):
-    __tablename__ = u'PriceList'
-
-    id = db.Column(db.Integer, primary_key=True)
-    deleted = db.Column(db.SmallInteger, nullable=False, default='0')
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
-    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False, index=True)
-
-    finance = db.relationship(u'rbFinance')
