@@ -1395,16 +1395,13 @@ class EventVisualizer(object):
         }
 
     def represent_received(self, action):
-        evis = EventVisualizer()
+        avis = ActionVisualizer()
         result = None
         if action:
             result = dict(
-                (code, prop.value)
+                (code, avis.make_property(prop))
                 for (code, prop) in action.propsByCode.iteritems()
             )
-            result['diag_received'] = evis.make_diagnostic_record(result['diag_received'])
-            result['diag_received1'] = evis.make_diagnostic_record(result['diag_received1'])
-            result['diag_received2'] = evis.make_diagnostic_record(result['diag_received2'])
             result['beg_date'] = action.begDate
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
