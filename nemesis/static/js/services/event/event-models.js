@@ -49,6 +49,33 @@ angular.module('WebMis20.services.models').
                 return this;
             };
 
+            WMEvent.prototype.get_data = function(self, data){
+                self.info = data.result.event;
+                self.ro = data.result.ro;
+                self.has_access_to_payment_info = data.result.has_access_to_payment_info;
+                self.can_read_diagnoses = data.result.can_read_diagnoses;
+                self.can_edit_diagnoses = data.result.can_edit_diagnoses;
+                self.can_create_actions = data.result.can_create_actions;
+                var client_info = self.info.client;
+                self.info.client = new WMClient();
+                self.info.client.init_from_obj({
+                    client_data: client_info
+                }, 'for_event');
+                self.diagnoses = data.result.diagnoses || [];
+
+                var p = data.result.payment;
+                var paymentKind = p ? p.payment_kind : null;
+                self.payment = {
+                    local_contract: (p && p.local_contract) ? p.local_contract : null,
+                    payments: new WMEventPaymentList(p ? p.payments : [], paymentKind),
+                    paymentKind: paymentKind
+                };
+                self.services = data.result.services && data.result.services.map(function(service) {
+                    return new WMEventServiceGroup(service, self.payment.payments);
+                }) || [];
+                self.is_closed = self.closed();
+            }
+
             WMEvent.prototype.reload = function() {
                 var self = this;
                 var url = this.is_new() ? url_event_new : url_event_get;
@@ -62,31 +89,7 @@ angular.module('WebMis20.services.models').
                 return $http.get(url, {
                     params: params
                 }).success(function (data) {
-                    self.info = data.result.event;
-                    self.ro = data.result.ro;
-                    self.has_access_to_payment_info = data.result.has_access_to_payment_info;
-                    self.can_read_diagnoses = data.result.can_read_diagnoses;
-                    self.can_edit_diagnoses = data.result.can_edit_diagnoses;
-                    self.can_create_actions = data.result.can_create_actions;
-                    var client_info = self.info.client;
-                    self.info.client = new WMClient();
-                    self.info.client.init_from_obj({
-                        client_data: client_info
-                    }, 'for_event');
-                    self.diagnoses = data.result.diagnoses || [];
-                    self.stationary_info = data.result.stationary_info;
-
-                    var p = data.result.payment;
-                    var paymentKind = p ? p.payment_kind : null;
-                    self.payment = {
-                        local_contract: (p && p.local_contract) ? p.local_contract : null,
-                        payments: new WMEventPaymentList(p ? p.payments : [], paymentKind),
-                        paymentKind: paymentKind
-                    };
-                    self.services = data.result.services && data.result.services.map(function(service) {
-                        return new WMEventServiceGroup(service, self.payment.payments);
-                    }) || [];
-                    self.is_closed = self.closed();
+                    self.get_data(self, data);
                 });
             };
 
@@ -142,12 +145,23 @@ angular.module('WebMis20.services.models').
                 this.request_type_kind = "stationary";
             };
             WMStationaryEvent.inheritsFrom(WMEvent);
+            WMStationaryEvent.prototype.get_data = function(self, data) {
+                WMEvent.prototype.get_data(self, data);
+                self.admission_date = data.result.admission_date;
+                self.discharge_date = data.result.discharge_date;
+                self.hosp_length = data.result.hosp_length;
+                self.patient_current_os = data.result.patient_current_os;
+                self.hospital_bed = data.result.hospital_bed;
+                self.attending_doctor = data.result.attending_doctor;
+                self.received = data.result.received;
+                self.movings = data.result.movings;
+            }
             WMStationaryEvent.prototype.save = function() {
                 var self = this;
                 var deferred = $q.defer();
                 $http.post(url_event_save, {
                     event: this.info,
-                    received: this.stationary_info.received,
+                    received: this.received,
                     payment: this.payment,
                     services: this.services,
                     ticket_id: this.ticket_id,
