@@ -1405,6 +1405,7 @@ class StationaryEventVisualizer(EventVisualizer):
                 for (code, prop) in action.propsByCode.iteritems()
             )
             result['beg_date'] = action.begDate
+            result['end_date'] = action.endDate
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
             result['event_id'] = action.event_id
