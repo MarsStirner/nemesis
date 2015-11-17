@@ -1456,7 +1456,8 @@ class StationaryEventVisualizer(EventVisualizer):
             'code': hosp_bed.code,
             'name': hosp_bed.name,
             'occupied': hosp_bed.occupied,
-            'chosen': hosp_bed.chosen
+            'chosen': hosp_bed.chosen,
+            'profile': hosp_bed.profile
         }
 
 re_html_body = re.compile(ur'<body(\s*.*?)>(.*)</body>', re.I | re.U | re.S)
