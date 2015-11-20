@@ -47,3 +47,24 @@ class rbUnits(db.Model):
             'short_name': self.shortname,
             'group_id': self.group_id
         }
+
+
+class rbFinance(db.Model):
+    __tablename__ = 'rbFinance'
+    _table_description = u'Источники финансирования'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(8), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'deleted': self.deleted
+        }
+
+    def __int__(self):
+        return self.id

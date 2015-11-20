@@ -74,7 +74,7 @@ angular.module('WebMis20.services.models').
                     return new WMEventServiceGroup(service, self.payment.payments);
                 }) || [];
                 self.is_closed = self.closed();
-            }
+            };
 
             WMEvent.prototype.reload = function() {
                 var self = this;
