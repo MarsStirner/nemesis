@@ -1433,7 +1433,7 @@ class StationaryEventVisualizer(EventVisualizer):
     def make_movings(self, event):
         movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
                                                                    Action.deleted == 0,
-                                                                   ActionType.flatCode == 'moving').all()
+                                                                   ActionType.flatCode == 'moving').all() if event.id else []
         return [self.make_moving_info(moving) for moving in movings]
 
     def make_event_stationary_info(self, event):
