@@ -32,7 +32,7 @@ class Event(db.Model):
     setPerson_id = db.Column(db.Integer, index=True)
     execDate = db.Column(db.DateTime, index=True)
     execPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True)
-    isPrimaryCode = db.Column("isPrimary", db.Integer, nullable=False)
+    isPrimaryCode = db.Column("isPrimary", db.Integer)
     order = db.Column(db.Integer, nullable=False)
     result_id = db.Column(db.Integer, db.ForeignKey('rbResult.id'), index=True)
     nextEventDate = db.Column(db.DateTime)
