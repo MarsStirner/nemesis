@@ -820,7 +820,7 @@ class Contract(db.Model):
     visitExposition = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     actionExposition = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     exposeDiscipline = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    priceList_id = db.Column(db.Integer)
+    # priceList_id = db.Column(db.Integer)
     coefficient = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
     coefficientEx = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
 
@@ -831,8 +831,8 @@ class Contract(db.Model):
     payerAccount = db.relationship(u'OrganisationAccount', foreign_keys='Contract.payerAccount_id')
     specifications = db.relationship(u'ContractSpecification',
                                      primaryjoin="and_(ContractSpecification.master_id == Contract.id, ContractSpecification.deleted == 0)")
-    contingent = db.relationship(u'ContractContingent',
-                                 primaryjoin="and_(ContractContingent.master_id == Contract.id, ContractContingent.deleted == 0)")
+    # contingent = db.relationship(u'ContractContingent',
+    #                              primaryjoin="and_(ContractContingent.master_id == Contract.id, ContractContingent.deleted == 0)")
     tariff = db.relationship('ContractTariff',
                              primaryjoin='and_(ContractTariff.master_id == Contract.id, ContractTariff.deleted == 0)')
 
@@ -868,7 +868,7 @@ class Contract(db.Model):
 
             'finance': self.finance,
             'specifications': self.specifications,
-            'contingent': self.contingent
+            # 'contingent': self.contingent
         }
 
     def __int__(self):
@@ -880,7 +880,7 @@ class ContractContingent(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, index=True)
+    # master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, index=True)
     client_id = db.Column(db.Integer, index=True)
     attachType_id = db.Column(db.Integer, index=True)
     org_id = db.Column(db.Integer, index=True)
@@ -897,7 +897,7 @@ class ContractContingent(db.Model):
     def __json__(self):
         return {
             'id': self.id,
-            'master_id': self.master_id,
+            # 'master_id': self.master_id,
             'client_id': self.client_id,
             'insurer_id': self.insurer_id,
             'org_id': self.org_id,
@@ -911,7 +911,7 @@ class ContractContragent(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    master_id = db.Column(db.Integer, nullable=False, index=True)
+    # master_id = db.Column(db.Integer, nullable=False, index=True)
     insurer_id = db.Column(db.Integer, nullable=False, index=True)
     payer_id = db.Column(db.Integer, nullable=False, index=True)
     payerAccount_id = db.Column(db.Integer, nullable=False, index=True)
