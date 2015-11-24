@@ -925,8 +925,6 @@ class EventVisualizer(object):
         elif UserProfileManager.has_ui_cashier():
             data['payment'] = self.make_event_payment(event)
             data['services'] = self.make_event_services(event.id)
-        if event.is_stationary:
-            data['stationary_info'] = self.make_event_stationary_info(event)
         return data
 
     def make_short_event(self, event):
@@ -1114,7 +1112,8 @@ class EventVisualizer(object):
             Action.actionType
         ).filter(
             Action.event_id == event.id,
-            Action.deleted == 0
+            Action.deleted == 0,
+            ActionType.class_ != 3
         )
 
         def make_usa(action):
@@ -1394,6 +1393,49 @@ class EventVisualizer(object):
             'event': self.make_short_event(payment.event)
         }
 
+
+class StationaryEventVisualizer(EventVisualizer):
+
+    def make_action_info(self, action):
+        avis = ActionVisualizer()
+        result = None
+        if action:
+            result = dict(
+                (code, avis.make_property(prop))
+                for (code, prop) in action.propsByCode.iteritems()
+            )
+            result['beg_date'] = action.begDate
+            result['end_date'] = action.endDate
+            result['person'] = action.person
+            result['flatCode'] = action.actionType.flatCode
+            result['event_id'] = action.event_id
+            result['id'] = action.id
+        return result
+
+    def make_received(self, event, new=False):
+        action = event.received if new else db.session.query(Action).join(
+            ActionType).filter(
+                Action.event_id == event.id,
+                Action.deleted == 0,
+                ActionType.flatCode == 'received'
+            ).first()
+
+        return self.make_action_info(action)
+
+    def make_moving_info(self, moving):
+        result = self.make_action_info(moving)
+        if moving.event.eventType.requestType.code == 'clinic':
+            result['hb_days'] = (moving.endDate - moving.begDate).days + 1 if moving.endDate else None
+        elif moving.event.eventType.requestType.code == 'hospital':
+            result['hb_days'] = (moving.endDate.date() - moving.begDate.date()).days if moving.endDate else None
+        return result
+
+    def make_movings(self, event):
+        movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
+                                                                   Action.deleted == 0,
+                                                                   ActionType.flatCode == 'moving').all() if event.id else []
+        return [self.make_moving_info(moving) for moving in movings]
+
     def make_event_stationary_info(self, event):
         pviz = PersonTreeVisualizer()
         hosp_length = get_hosp_length(event)
@@ -1408,6 +1450,23 @@ class EventVisualizer(object):
             'attending_doctor': pviz.make_person_ws(event.execPerson) if event.execPerson else None
         }
 
+    def make_event_info_for_current_role(self, event, new=False):
+        data = super(StationaryEventVisualizer, self).make_event_info_for_current_role(event, new)
+        data.update(self.make_event_stationary_info(event))
+        data['received'] = self.make_received(event, new)
+        data['movings'] = self.make_movings(event)
+        return data
+
+    def make_hosp_bed(self, hosp_bed):
+        return {
+            'id': hosp_bed.id,
+            'org_structure_id': hosp_bed.master_id,
+            'code': hosp_bed.code,
+            'name': hosp_bed.name,
+            'occupied': hosp_bed.occupied,
+            'chosen': hosp_bed.chosen,
+            'profile': hosp_bed.profile
+        }
 
 re_html_body = re.compile(ur'<body(\s*.*?)>(.*)</body>', re.I | re.U | re.S)
 re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.S)

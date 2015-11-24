@@ -27,6 +27,12 @@ class ActionStatus(Enum):
     no_result = 4, u'Без результата'
 
 
+class RequestTypeKind(Enum):
+    stationary = 0, u'Стационар'  # rbRequestType.code - clinic, hospital
+    policlinic = 1, u'Поликлиника'  # rbRequestType.code - policlinic, diagnostic
+    dispensary = 2, u'Диспансер'  # rbRequestType.code - 5
+
+
 class Gender(Enum):
     male = 1, u'М'
     female = 2, u'Ж'
