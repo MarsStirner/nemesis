@@ -2,6 +2,8 @@
 import datetime
 import requests
 from werkzeug.utils import cached_property
+
+from nemesis.models.diagnosis import ActionType_rbDiagnosisType
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.app import app
@@ -860,6 +862,7 @@ class ActionType(db.Model):
         primaryjoin='and_(ActionType_TissueType.master_id == ActionType.id, ActionType_TissueType.idx == 0)',
         uselist=False
     )
+    diagnosis_types = db.relationship('rbDiagnosisTypeN', secondary=ActionType_rbDiagnosisType)
 
     def get_property_type_by_name(self, name):
         return self.property_types.filter(ActionPropertyType.name == name).first()

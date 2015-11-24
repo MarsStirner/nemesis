@@ -23,7 +23,8 @@ from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, form
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
-from nemesis.models.event import Event, EventType, Diagnosis
+from nemesis.models.event import Event, EventType
+from nemesis.models.diagnosis import Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
@@ -994,10 +995,7 @@ class EventVisualizer(object):
         """
         @type event: Event
         """
-        result = []
-        for diagnostic in event.diagnostics:
-            result.append(self.make_diagnostic_record(diagnostic))
-        return result
+        return map(self.make_diagnostic_record, event.diagnostics)
 
     def make_diagnose_row(self, diagnostic, diagnosis):
         """

@@ -3,12 +3,13 @@
 import datetime
 import re
 
+from nemesis.lib.agesex import AgeSex, parseAgeSelector
 from nemesis.lib.const import PAYER_EVENT_CODES, STATIONARY_EVENT_CODES, DIAGNOSTIC_EVENT_CODES, \
     POLICLINIC_EVENT_CODES, PAID_EVENT_CODE, OMS_EVENT_CODE, DMS_EVENT_CODE, BUDGET_EVENT_CODE, DAY_HOSPITAL_CODE
-from nemesis.lib.agesex import AgeSex, parseAgeSelector
 from nemesis.lib.settings import Settings
 from nemesis.models.client import ClientDocument
-from nemesis.models.exists import Person, rbPost, rbCashOperation, rbService
+from nemesis.models.diagnosis import EventType_rbDiagnosisType
+from nemesis.models.exists import Person, rbPost, rbService
 from nemesis.models.utils import safe_current_user_id
 from nemesis.systemwide import db
 
@@ -72,15 +73,17 @@ class Event(db.Model):
         primaryjoin="and_(EventPayment.master_id == Event.id, EventPayment.deleted == 0)"
     )
     client = db.relationship(u'Client')
-    diagnostics = db.relationship(
-        u'Diagnostic', lazy=True, innerjoin=True,
-        primaryjoin="and_(Event.id == Diagnostic.event_id, Diagnostic.deleted == 0)"
-    )
     visits = db.relationship(
         u'Visit',
         primaryjoin="and_(Event.id == Visit.event_id, Visit.deleted == 0)"
     )
     uuid = db.relationship('UUID')
+
+    @property
+    def diagnostics(self):
+        from .actions import Action
+        from .diagnosis import Diagnostic
+        return Diagnostic.query.join(Action).filter(Action.event == self).all()
 
     @property
     def payer_required(self):
@@ -249,6 +252,7 @@ class EventType(db.Model):
     service = db.relationship(u'rbService')
     requestType = db.relationship(u'rbRequestType', lazy=False)
     scene = db.relationship(u'rbScene')
+    diagnosis_types = db.relationship('rbDiagnosisTypeN', secondary=EventType_rbDiagnosisType)
 
     @classmethod
     def get_default_et(cls):
@@ -445,107 +449,6 @@ class EventPayment(db.Model):
             'action_id': self.action_id,
             'service_id': self.service_id,
         }
-
-
-class Diagnosis(db.Model):
-    __tablename__ = u'Diagnosis'
-
-    id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
-    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
-    client_id = db.Column(db.ForeignKey('Client.id'), index=True, nullable=False)
-    diagnosisType_id = db.Column(db.ForeignKey('rbDiagnosisType.id'), index=True, nullable=False)
-    character_id = db.Column(db.ForeignKey('rbDiseaseCharacter.id'), index=True)
-    MKB = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
-    MKBEx = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
-    dispanser_id = db.Column(db.ForeignKey('rbDispanser.id'), index=True)
-    traumaType_id = db.Column(db.ForeignKey('rbTraumaType.id'), index=True)
-    setDate = db.Column(db.Date)
-    endDate = db.Column(db.Date)
-    mod_id = db.Column(db.ForeignKey('Diagnosis.id'), index=True)
-    person_id = db.Column(db.ForeignKey('Person.id'), index=True)
-    # diagnosisName = db.Column(db.String(64), nullable=False)
-
-    person = db.relationship('Person', foreign_keys=[person_id], lazy=False, innerjoin=True)
-    client = db.relationship('Client')
-    diagnosisType = db.relationship('rbDiagnosisType', lazy=False, innerjoin=True)
-    character = db.relationship('rbDiseaseCharacter', lazy=False)
-    mkb = db.relationship('MKB', foreign_keys=[MKB])
-    mkb_ex = db.relationship('MKB', foreign_keys=[MKBEx])
-    dispanser = db.relationship('rbDispanser', lazy=False)
-    mod = db.relationship('Diagnosis', remote_side=[id])
-    traumaType = db.relationship('rbTraumaType', lazy=False)
-
-    def __int__(self):
-        return self.id
-
-    def __json__(self):
-        return {
-            'id': self.id,
-            'diagnosisType': self.diagnosisType,
-            'character': self.character
-        }
-
-
-class Diagnostic(db.Model):
-    __tablename__ = u'Diagnostic'
-
-    id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
-    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
-    event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)
-    diagnosis_id = db.Column(db.ForeignKey('Diagnosis.id'), index=True)
-    diagnosisType_id = db.Column(db.ForeignKey('rbDiagnosisType.id'), index=True, nullable=False)
-    character_id = db.Column(db.ForeignKey('rbDiseaseCharacter.id'), index=True)
-    stage_id = db.Column(db.ForeignKey('rbDiseaseStage.id'), index=True)
-    phase_id = db.Column(db.ForeignKey('rbDiseasePhases.id'), index=True)
-    dispanser_id = db.Column(db.ForeignKey('rbDispanser.id'), index=True)
-    sanatorium = db.Column(db.Integer, nullable=False)
-    hospital = db.Column(db.Integer, nullable=False)
-    traumaType_id = db.Column(db.ForeignKey('rbTraumaType.id'), index=True)
-    speciality_id = db.Column(db.Integer, nullable=False, index=True)
-    person_id = db.Column(db.ForeignKey('Person.id'), index=True)
-    healthGroup_id = db.Column(db.ForeignKey('rbHealthGroup.id'), index=True)
-    result_id = db.Column(db.ForeignKey('rbResult.id'), index=True)
-    setDate = db.Column(db.DateTime, nullable=False)
-    endDate = db.Column(db.DateTime)
-    notes = db.Column(db.Text, nullable=False, default='')
-    rbAcheResult_id = db.Column(db.ForeignKey('rbAcheResult.id'), index=True)
-    version = db.Column(db.Integer, nullable=False, default=0)
-    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
-    diagnosis_description = db.Column(db.Text)
-
-    rbAcheResult = db.relationship(u'rbAcheResult', innerjoin=True)
-    result = db.relationship(u'rbResult', innerjoin=True)
-    person = db.relationship('Person', foreign_keys=[person_id])
-    event = db.relationship('Event', innerjoin=True)
-    diagnoses = db.relationship(
-        'Diagnosis', innerjoin=True, lazy=False, uselist=True,
-        primaryjoin='and_(Diagnostic.diagnosis_id == Diagnosis.id, Diagnosis.deleted == 0)'
-    )
-    diagnosis = db.relationship('Diagnosis')
-    diagnosisType = db.relationship('rbDiagnosisType', lazy=False, innerjoin=True)
-    character = db.relationship('rbDiseaseCharacter')
-    stage = db.relationship('rbDiseaseStage', lazy=False)
-    phase = db.relationship('rbDiseasePhases', lazy=False)
-    dispanser = db.relationship('rbDispanser')
-    traumaType = db.relationship('rbTraumaType')
-    healthGroup = db.relationship('rbHealthGroup', lazy=False)
-    action = db.relationship('Action')
-    modifyPerson = db.relationship('Person', foreign_keys=[modifyPerson_id])
-
-    @property
-    def mkb(self):
-        return self.diagnosis.MKB
-
-    def __int__(self):
-        return self.id
 
 
 def modify_service_code(original, *args):
