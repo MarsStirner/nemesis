@@ -80,20 +80,43 @@ class Contract_Contingent(db.Model):
         }
 
 
-# class ContractSpecification(db.Model):
-#     __tablename__ = u'Contract_Specification'
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-#     master_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False, index=True)
-#     eventType_id = db.Column(db.Integer, db.ForeignKey('EventType.id'), nullable=False, index=True)
-#
-#     def __json__(self):
-#         return {
-#             'id': self.id,
-#             'master_id': self.master_id,
-#             'event_type_id': self.eventType_id
-#         }
+class PriceList(db.Model):
+    __tablename__ = u'PriceList'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(255), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False)
+    begDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date, nullable=False)
+    draft = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+
+    finance = db.relationship(u'rbFinance')
+
+
+class PriceListItem(db.Model):
+    __tablename__ = u'PriceListItem'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    priceList_id = db.Column(db.Integer, db.ForeignKey('PriceList.id'), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
+    serviceCodeOW = db.Column(db.Unicode(64))
+    serviceNameOW = db.Column(db.Unicode(256))
+    begDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date, nullable=False)
+    price = db.Column(db.Numeric(15, 2), nullable=False)
+
+    service = db.relationship(u'rbService')
 
 
 class ContractTariff(db.Model):

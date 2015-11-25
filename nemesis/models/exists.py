@@ -1381,18 +1381,3 @@ class ClientQuoting(db.Model):
     version = db.Column(db.Integer, nullable=False)
 
     master = db.relationship(u'Client')
-
-
-class PriceList(db.Model):
-    __tablename__ = u'PriceList'
-
-    id = db.Column(db.Integer, primary_key=True)
-    deleted = db.Column(db.SmallInteger, nullable=False, default='0')
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False, index=True)
-    name = db.Column(db.Unicode(100), nullable=False)
-
-    finance = db.relationship(u'rbFinance')

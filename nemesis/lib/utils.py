@@ -428,6 +428,18 @@ def safe_bool(val):
     return bool(val)
 
 
+def safe_double(val):
+    if not val:
+        return None
+    if isinstance(val, basestring):
+        val = val.replace(',', '.')
+    try:
+        val = float(val)
+    except ValueError:
+        val = None
+    return val
+
+
 def safe_uuid(val):
     if not isinstance(val, basestring):
         return None
