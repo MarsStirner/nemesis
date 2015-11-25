@@ -31,6 +31,7 @@ class Contract(db.Model):
     finance = db.relationship('rbFinance')
     contract_type = db.relationship('rbContractType')
     contingent_list = db.relationship('Contract_Contingent', backref='contract')
+    pricelist_list = db.relationship('PriceList', secondary='Contract_PriceList')
     # tariff = db.relationship('ContractTariff',
     #                          primaryjoin='and_(ContractTariff.master_id == Contract.id, ContractTariff.deleted == 0)')
 
@@ -117,6 +118,13 @@ class PriceListItem(db.Model):
     price = db.Column(db.Numeric(15, 2), nullable=False)
 
     service = db.relationship(u'rbService')
+
+
+class Contract_PriceListAssoc(db.Model):
+    __tablename__ = u'Contract_PriceList'
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False)
+    priceList_id = db.Column(db.Integer, db.ForeignKey('PriceList.id'), nullable=False)
 
 
 class ContractTariff(db.Model):

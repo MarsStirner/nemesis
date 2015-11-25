@@ -714,4 +714,39 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectPriceListSearch', ['AccountingService', function (AccountingService) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.description.short ]]</ui-select-match>\
+<ui-select-choices repeat="pl in pl_list">\
+    <div>\
+        <span>[[ pl.id ]]</span> <span>[[ pl.code ]] [[ pl.name ]] ([[ pl.finance.name ]])</span>\
+    </div>\
+    <div>\
+        <span>с [[ pl.beg_date | asDate ]] по [[ pl.end_date | asDate ]]</span>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выбери прайс-лист';
+                    var refresh_pricelists = function (finance_id) {
+                        return AccountingService.get_pricelists(finance_id)
+                            .then(function (pl_list) {
+                                scope.pl_list = pl_list;
+                            });
+                    };
+                    scope.$watch(tAttrs.finance, function (newVal, oldVal) {
+                        refresh_pricelists(newVal.id);
+                    });
+                }
+            }
+        }
+    }
+}])
 ;
