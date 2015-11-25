@@ -1423,11 +1423,19 @@ class StationaryEventVisualizer(EventVisualizer):
 
         return self.make_action_info(action)
 
+    def make_moving_info(self, moving):
+        result = self.make_action_info(moving)
+        if moving.event.eventType.requestType.code == 'clinic':
+            result['hb_days'] = (moving.endDate - moving.begDate).days + 1 if moving.endDate else None
+        elif moving.event.eventType.requestType.code == 'hospital':
+            result['hb_days'] = (moving.endDate.date() - moving.begDate.date()).days if moving.endDate else None
+        return result
+
     def make_movings(self, event):
         movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
                                                                    Action.deleted == 0,
-                                                                   ActionType.flatCode == 'moving').all()
-        return map(self.make_action_info, movings)
+                                                                   ActionType.flatCode == 'moving').all() if event.id else []
+        return [self.make_moving_info(moving) for moving in movings]
 
     def make_event_stationary_info(self, event):
         pviz = PersonTreeVisualizer()
