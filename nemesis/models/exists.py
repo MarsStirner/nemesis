@@ -663,9 +663,11 @@ class rbPrintTemplate(db.Model):
     name = db.Column(db.Unicode(64), nullable=False)
     context = db.Column(db.String(64), nullable=False)
     fileName = db.Column(db.String(128), nullable=False)
-    default = db.Column(db.Unicode, nullable=False)
+    default = db.Column(db.Text, nullable=False)
     dpdAgreement = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     render = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    templateText = db.Column(db.Text, nullable=False)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
 
 class rbService(db.Model):
