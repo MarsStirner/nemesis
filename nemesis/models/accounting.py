@@ -20,7 +20,7 @@ class Contract(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('Contract_Contragent.id'), nullable=False)
     payer_id = db.Column(db.Integer, db.ForeignKey('Contract_Contragent.id'), nullable=False)
     begDate = db.Column(db.Date, nullable=False)
-    endDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date)
     finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False)
     contractType_id = db.Column(db.Integer, db.ForeignKey('rbContractType.id'), nullable=False)
     resolution = db.Column(db.String(512), nullable=False)
@@ -30,7 +30,7 @@ class Contract(db.Model):
     payer = db.relationship('Contract_Contragent', foreign_keys=[payer_id])
     finance = db.relationship('rbFinance')
     contract_type = db.relationship('rbContractType')
-    contingent = db.relationship('ContractContingent')
+    contingent_list = db.relationship('Contract_Contingent', backref='contract')
     # tariff = db.relationship('ContractTariff',
     #                          primaryjoin='and_(ContractTariff.master_id == Contract.id, ContractTariff.deleted == 0)')
 
@@ -62,7 +62,7 @@ class Contract_Contragent(db.Model):
     org = db.relationship('Organisation')
 
 
-class ContractContingent(db.Model):
+class Contract_Contingent(db.Model):
     __tablename__ = u'Contract_Contingent'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -144,12 +144,16 @@ class rbContractType(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(8), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    counterPartyOne = db.Column(db.SmallInteger, nullable=False)
+    counterPartyTwo = db.Column(db.SmallInteger, nullable=False)
+    usingInsurancePolicy = db.Column(db.SmallInteger, nullable=False)
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'using_insurance_policy': self.usingInsurancePolicy
         }
 
     def __int__(self):

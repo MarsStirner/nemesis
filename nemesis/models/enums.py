@@ -144,3 +144,8 @@ class ContragentType(Enum):
     undefined = 0, u'не выбрано'
     individual = 1, u'Физ. лицо'
     legal = 2, u'Юр. лицо'
+
+
+class ContractTypeInsurance(Enum):
+    without_policy = 0, u'без использования страховых полисов'
+    with_policy = 1, u'с использованием страховых полисов'

@@ -45,11 +45,28 @@ WebMis20
                     );
                     return $q.reject(result);
                 });
+        },
+        del: function (contract_id) {
+            return wrapper('DELETE', WMConfig.url.api_contract_delete + contract_id);
+        },
+        get_available: function (args) {
+            return wrapper('GET', WMConfig.url.api_contract_get_available, args);
         }
     };
     this.contragent = {
         get_list: function (args) {
             return wrapper('POST', WMConfig.url.api_contragent_list, {}, args);
+        }
+    };
+    this.contingent = {
+        get: function (contingent_id, args) {
+            var url = WMConfig.url.api_contingent_get;
+            if (contingent_id) {
+                url += contingent_id;
+            } else {
+                url += '?new=true';
+            }
+            return wrapper('GET', url, args);
         }
     };
     //this.measure = {

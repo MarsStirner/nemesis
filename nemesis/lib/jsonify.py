@@ -631,7 +631,6 @@ class ClientVisualizer(object):
         """Данные пациента, используемые в интерфейсе обращения."""
         info = self.make_client_info_for_view_frame(client, with_expired_vpol=bool(event.id))
         info['relations'] = [self.make_relation_info(client.id, relation) for relation in client.client_relations]
-        info['work_org_id'] = client.works[0].org_id if client.works else None,  # FIXME: ...
         return info
 
     def make_search_client_info(self, client):
@@ -963,6 +962,8 @@ class EventVisualizer(object):
         @type event: Event
         """
         cvis = ClientVisualizer()
+        from blueprints.accounting.lib.represent import ContractRepr
+        cont_repr = ContractRepr()
         return {
             'id': event.id,
             'create_person_id': event.createPerson_id,
@@ -979,7 +980,7 @@ class EventVisualizer(object):
             'exec_person': event.execPerson,
             'result': event.result,
             'ache_result': event.rbAcheResult,
-            'contract': event.contract,
+            'contract': cont_repr.represent_contract_full(event.contract),
             'event_type': event.eventType,
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
