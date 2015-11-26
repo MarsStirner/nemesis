@@ -66,13 +66,6 @@ class IntoleranceType(Enum):
     medicine = 1, u'Медикаментозная непереносимость'
 
 
-class PrenatalRiskRate(Enum):
-    undefined = 0, u'не определен'
-    low = 1, u'низкий'
-    medium = 2, u'средний'
-    high = 3, u'высокий'
-
-
 class PerinatalRiskRate(EnumLoadable):
     __tablename__ = 'rbPerinatalRiskRate'
 
@@ -104,6 +97,17 @@ class PregnancyPathology(EnumLoadable):
 class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
 
+    created = 1, u'Создано'
+    assigned = 2, u'Назначенное'
+    waiting = 3, u'Ожидает результатов'
+    upon_med_indications = 4, u'По показанию'
+    overdue = 5, u'Просроченное'
+    performed = 6, u'Выполненное'
+    cancelled = 7, u'Отмененное'
+    cancelled_dupl = 8, u'Отмененное, как дубль'
+    cancelled_changed_data = 9, u'Отмененное, при изменении срока'
+    cancelled_invalid = 10, u'Отмененное, как недействительное'
+
 
 class MeasureScheduleType(EnumLoadable):
     __tablename__ = 'rbMeasureScheduleType'
@@ -124,6 +128,11 @@ class MeasureScheduleApplyType(EnumLoadable):
     # before_next_visit = 1, u'До следующего осмотра'
     # range_up_to = 2, u'Контрольный срок'
     # bounds = 3, u'Границы повторения'
+
+
+class EventMeasureActuality(Enum):
+    not_actual = 0, u'Неактуально'
+    actual = 1, u'Актуально'
 
 
 class ErrandStatus(EnumLoadable):

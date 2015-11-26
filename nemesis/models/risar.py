@@ -12,7 +12,8 @@ class rbPerinatalRiskRate(db.Model):
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
 
-    prr_mkbs = db.relationship('rbPerinatalRiskRateMkb', backref='rbPerinatalRiskRate', cascade_backrefs=False)
+    prr_mkbs = db.relationship('rbPerinatalRiskRateMkbAssoc', backref='rbPerinatalRiskRate', cascade_backrefs=False)
+    mkbs = db.relationship('MKB', secondary='rbPerinatalRiskRateMkb')
 
     def __json__(self):
         return {
@@ -22,7 +23,7 @@ class rbPerinatalRiskRate(db.Model):
         }
 
 
-class rbPerinatalRiskRateMkb(db.Model):
+class rbPerinatalRiskRateMkbAssoc(db.Model):
     __tablename__ = u'rbPerinatalRiskRateMkb'
 
     id = db.Column(db.Integer, primary_key=True)

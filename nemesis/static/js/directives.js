@@ -526,10 +526,12 @@ angular.module('WebMis20.directives')
 
             if (fast_print) {
                 $scope.select_all_templates();
-                if ($scope.instant_print()) {
+                var dont_need_meta = $scope.instant_print(),
+                    no_template_choice = $scope.selected_templates.length === 1;
+                if (dont_need_meta && no_template_choice) {
                     $scope.print_separated();
                 } else {
-                    $scope.page = 1;
+                    $scope.page = no_template_choice ? (dont_need_meta ? 0 : 1) : 0;
                 }
             }
         };
@@ -624,7 +626,8 @@ angular.module('WebMis20.directives')
             scope: {
                 $ps: '=ps',
                 beforePrint: '&?',
-                lazyLoadContext: '@?'
+                lazyLoadContext: '@?',
+                fastPrint: '=?'
             },
             link: function (scope, element, attrs) {
                 var resolver_call = attrs.resolve;
@@ -650,7 +653,8 @@ angular.module('WebMis20.directives')
                     if (!scope.$ps.is_loaded()) {
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
-                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
+                                    scope.fastPrint);
                             }, function () {
                                 MessageBox.error(
                                     'Печать недоступна',
@@ -658,7 +662,8 @@ angular.module('WebMis20.directives')
                                 );
                             });
                     } else {
-                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
+                                    scope.fastPrint);
                     }
                 };
             }
