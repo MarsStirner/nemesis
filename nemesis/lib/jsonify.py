@@ -535,6 +535,9 @@ class ClientVisualizer(object):
         else:
             files = []
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
+        works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
+        invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
+        nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
         return {
             'info': client,
             'id_document': client.id_document if client.id else None,
@@ -545,7 +548,9 @@ class ClientVisualizer(object):
             'blood_history': client.blood_history.all() if client.id else None,
             'allergies': client.allergies.all() if client.id else None,
             'intolerances': client.intolerances.all() if client.id else None,
-            'soc_statuses': client.soc_statuses,
+            'works': works,
+            'invalidities': invalidities,
+            'nationalities': nationalities,
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
