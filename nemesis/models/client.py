@@ -871,24 +871,30 @@ class ClientWork(db.Model):
     __tablename__ = u'ClientWork'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     org_id = db.Column(db.ForeignKey('Organisation.id'), index=True)
     shortName = db.Column('freeInput', db.String(200), nullable=False)
     post = db.Column(db.String(200), nullable=False)
-    stage = db.Column(db.Integer, nullable=False)
-    OKVED = db.Column(db.String(10), nullable=False)
-    version = db.Column(db.Integer, nullable=False)
-    rank_id = db.Column(db.Integer, nullable=False)
-    arm_id = db.Column(db.Integer, nullable=False)
+    stage = db.Column(db.Integer)
+    OKVED = db.Column(db.String(10), nullable=False, server_default=u"''")
+    version = db.Column(db.Integer, nullable=False, default=0)
+    rank_id = db.Column(db.Integer)
+    arm_id = db.Column(db.Integer)
+    soc_status_id = db.Column(db.ForeignKey('ClientSocStatus.id'), nullable=False)
 
     client = db.relationship(u'Client')
     organisation = db.relationship(u'Organisation')
     # hurts = db.relationship(u'ClientworkHurt')
+
+    def __init__(self, organisation, post, client):
+        self.shortName = organisation
+        self.post = post
+        self.client = client
 
     def __unicode__(self):
         parts = []
@@ -899,6 +905,14 @@ class ClientWork(db.Model):
         if self.OKVED:
             parts.append(u'ОКВЭД: '+self._OKVED)
         return ', '.join(parts)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'deleted': self.deleted,
+            'organisation': self.shortName,
+            'post': self.post
+        }
 
 
 class ClientSocStatus(db.Model):
@@ -924,6 +938,8 @@ class ClientSocStatus(db.Model):
     socStatusType = db.relationship(u'rbSocStatusType', lazy=False)
     self_document = db.relationship(u'ClientDocument', lazy=False)
 
+    work = db.relationship(u'ClientWork', uselist=False, backref=db.backref('soc_status'))
+
     @property
     def classes(self):
         return self.socStatusType.classes
@@ -943,13 +959,14 @@ class ClientSocStatus(db.Model):
         else:
             return self.getClientDocument()
 
-    def __init__(self, soc_stat_class, soc_stat_type, beg_date, end_date, client, document):
+    def __init__(self, soc_stat_class, soc_stat_type, beg_date, end_date, client, document, note):
         self.socStatusClass_id = int(soc_stat_class) if soc_stat_class else None
         self.socStatusType_id = int(soc_stat_type) if soc_stat_type else None
         self.begDate = beg_date
         self.self_document = document
         self.endDate = end_date
         self.client = client
+        self.note = note
 
     def getClientDocument(self):
         documents = ClientDocument.query().filter(ClientDocument.clientId == self.client_id).\
@@ -972,7 +989,9 @@ class ClientSocStatus(db.Model):
             'deleted': self.deleted,
             'beg_date': self.begDate,
             'end_date': self.endDate,
-            'self_document': self.self_document
+            'self_document': self.self_document,
+            'work': self.work,
+            'note': self.note
         }
 
 

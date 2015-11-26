@@ -22,7 +22,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
-from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
+from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType, Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
@@ -535,6 +535,9 @@ class ClientVisualizer(object):
         else:
             files = []
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
+        works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
+        invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
+        nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
         return {
             'info': client,
             'id_document': client.id_document if client.id else None,
@@ -545,7 +548,9 @@ class ClientVisualizer(object):
             'blood_history': client.blood_history.all() if client.id else None,
             'allergies': client.allergies.all() if client.id else None,
             'intolerances': client.intolerances.all() if client.id else None,
-            'soc_statuses': client.soc_statuses,
+            'works': works,
+            'invalidities': invalidities,
+            'nationalities': nationalities,
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
@@ -1456,7 +1461,22 @@ class StationaryEventVisualizer(EventVisualizer):
         data.update(self.make_event_stationary_info(event))
         data['received'] = self.make_received(event, new)
         data['movings'] = self.make_movings(event)
+        data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
+        data['allergies'] = self.make_intolerances(event.client.allergies, 0)
         return data
+
+    def make_intolerances(self, lst, code):
+        return [self.make_intolerance(obj, code) for obj in lst]
+
+    def make_intolerance(self, obj, code):
+        return {
+            'type': IntoleranceType(code),
+            'id': obj.id,
+            'date': obj.createDate,
+            'name': obj.name,
+            'power': AllergyPower(obj.power),
+            'note': obj.notes,
+        }
 
     def make_hosp_bed(self, hosp_bed):
         return {

@@ -129,9 +129,14 @@ angular.module('WebMis20.directives').
                     ssClass: '@',
                     idPostfix: '@',
                     modelSocStatus: '=',
+                    client: '=',
+                    edit_type: '&editType',
                     edit_mode: '&editMode'
                 },
                 link: function(scope, elm, attrs, formCtrl) {
+                    if (!attrs.editType) {
+                        scope.edit_type = function(){return true};
+                    }
                     scope.socStatusForm = formCtrl;
                     scope.rbSocStatusType = RefBookService.get('rbSocStatusType');
 
@@ -159,7 +164,7 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': (socStatusForm.$dirty || modelSocStatus.id) && socStatusForm.ss_type.$invalid}">\
         <label for="ss_type_[[idPostfix]]">Тип</label>\
         <ui-select class="form-control" id="ss_type_[[idPostfix]]" name="ss_type" theme="select2"\
-                   ng-model="modelSocStatus.ss_type" ng-disabled="!edit_mode()" ng-required="socStatusForm.$dirty">\
+                   ng-model="modelSocStatus.ss_type" ng-disabled="!edit_mode() || !edit_type()" ng-required="socStatusForm.$dirty">\
             <ui-select-match placeholder="">[[$select.selected.name]]</ui-select-match>\
             <ui-select-choices repeat="sst in rbSocStatusType.objects | filter: filter_soc_status(ssClass) | filter: $select.search">\
                 <div ng-bind-html="sst.name | highlight: $select.search"></div>\

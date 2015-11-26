@@ -40,6 +40,8 @@ angular.module('WebMis20.services.models').
                 this.payment = null;
                 this.diagnoses = [];
                 this.services = [];
+                this.allergies = [];
+                this.intolerances = [];
                 this.ro = false;
                 this.has_access_to_payment_info = false;
                 this.can_read_diagnoses = false;
@@ -51,6 +53,8 @@ angular.module('WebMis20.services.models').
 
             WMEvent.prototype.get_data = function(self, data){
                 self.info = data.result.event;
+                self.allergies = data.result.allergies;
+                self.intolerances = data.result.intolerances;
                 self.ro = data.result.ro;
                 self.has_access_to_payment_info = data.result.has_access_to_payment_info;
                 self.can_read_diagnoses = data.result.can_read_diagnoses;
