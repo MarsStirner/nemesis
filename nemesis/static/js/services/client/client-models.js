@@ -43,16 +43,10 @@ angular.module('WebMis20.services.models').
                     self.intolerances = intolerances !== null ? intolerances : [];
                 }
                 function add_soc_statuses() {
-                    self.soc_statuses = data.client_data.soc_statuses;
-                    self.invalidities = self.soc_statuses.filter(function(status) {
-                        return status.ss_class.code == 2;
-                    });
-                    self.works = self.soc_statuses.filter(function(status) {
-                        return status.ss_class.code == 3;
-                    });
-                    self.nationalities = self.soc_statuses.filter(function(status) {
-                        return status.ss_class.code == 4;
-                    });
+//                    self.soc_statuses = data.client_data.soc_statuses;
+                    self.invalidities = data.client_data.invalidities;
+                    self.works = data.client_data.works;
+                    self.nationalities = data.client_data.nationalities;
                 }
                 function add_relations() {
                     var relations = data.client_data.relations;
@@ -185,11 +179,9 @@ angular.module('WebMis20.services.models').
                 data.blood_types = this._get_entity_changes('blood_types');
                 data.allergies = this._get_entity_changes('allergies');
                 data.intolerances = this._get_entity_changes('intolerances');
-                var soc_status_changes = [].
-                    concat(this._get_entity_changes('invalidities') || []).
-                    concat(this._get_entity_changes('works') || []).
-                    concat(this._get_entity_changes('nationalities') || []);
-                data.soc_statuses = soc_status_changes.length ? soc_status_changes : undefined;
+                data.invalidities = this._get_entity_changes('invalidities');
+                data.works = this._get_entity_changes('works');
+                data.nationalities = this._get_entity_changes('nationalities');
                 data.relations = this._get_entity_changes('relations');
                 data.contacts = this._get_entity_changes('contacts');
 
