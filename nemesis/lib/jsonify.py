@@ -86,6 +86,7 @@ class ScheduleVisualizer(object):
             'client': cviz.make_short_client_info(ticket.client) if client_id else None,
             'attendance_type': ticket.attendanceType,
             'office': ticket.schedule.office.code if ticket.schedule.office else None,
+            'finance': ticket.schedule.finance.code if ticket.schedule.finance else None,
             'record': self.make_client_ticket_record(client_ticket) if client_ticket else None
         }
 
