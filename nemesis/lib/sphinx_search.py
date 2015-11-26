@@ -44,7 +44,11 @@ class SearchPatient():
         return result
 
 
-class SearchEventService():
+class SearchEventService(object):
+
+    @classmethod
+    def get_search(cls):
+        return Search(indexes=['event_service'], config=SearchConfig)
 
     @staticmethod
     def search(query, eventType_id=None, contract_id=None, speciality_id=None):
