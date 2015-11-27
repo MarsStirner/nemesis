@@ -913,22 +913,13 @@ class EventVisualizer(object):
             'can_create_actions': (
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
-            )
+            ),
+            'services': self.make_event_grouped_services(event.id)
         }
-        if new:
-            data['payment'] = self.make_event_payment(None)
-        elif UserProfileManager.has_ui_admin():
+        if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
         elif UserProfileManager.has_ui_doctor():
             data['diagnoses'] = self.make_diagnoses(event)
-        elif UserProfileManager.has_ui_registrator():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
-        elif UserProfileManager.has_ui_cashier():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
         return data
 
     def make_short_event(self, event):
@@ -1245,6 +1236,14 @@ class EventVisualizer(object):
                 'event_info': make_event_small_info(event)
             })
         return result
+
+    def make_event_grouped_services(self, event_id):
+        from blueprints.accounting.lib.service import ServiceController
+        from blueprints.accounting.lib.represent import ServiceRepr
+        service_ctrl = ServiceController()
+        grouped = service_ctrl.get_grouped_services_by_event(event_id)
+        service_repr = ServiceRepr()
+        return service_repr.represent_grouped_event_services(grouped)
 
     def make_event_services(self, event_id):
 

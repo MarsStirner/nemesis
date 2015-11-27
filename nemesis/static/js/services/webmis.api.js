@@ -74,4 +74,9 @@ WebMis20
             return wrapper('POST', WMConfig.url.api_pricelist_list, {}, args);
         }
     };
+    this.service = {
+        search_mis_action_services: function (args) {
+            return wrapper('POST', WMConfig.url.api_service_search, {}, args)
+        }
+    }
 }]);

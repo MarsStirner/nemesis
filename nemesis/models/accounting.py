@@ -189,3 +189,20 @@ class rbContractType(db.Model):
 
     def __int__(self):
         return self.id
+
+
+class Service(db.Model):
+    __tablename__ = u'Service'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    priceListItem_id = db.Column(db.Integer, db.ForeignKey('PriceListItem.id'), nullable=False)
+    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'))
+    amount = db.Column(db.Float, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+
+    price_list_item = db.relationship('PriceListItem')
+    action = db.relationship('Action')
