@@ -1462,7 +1462,16 @@ class StationaryEventVisualizer(EventVisualizer):
         data['movings'] = self.make_movings(event)
         data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
         data['allergies'] = self.make_intolerances(event.client.allergies, 0)
+        data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
         return data
+
+    def make_blood_history(self, obj):
+        return {
+            'id': obj.id,
+            'blood_type': obj.bloodType,
+            'date': obj.bloodDate,
+            'person': obj.person
+        }
 
     def make_intolerances(self, lst, code):
         return [self.make_intolerance(obj, code) for obj in lst]
