@@ -39,6 +39,7 @@ angular.module('WebMis20.services.models').
                 this.info = null;
                 this.diagnoses = [];
                 this.services = [];
+                this.invoices = [];
                 this.allergies = [];
                 this.intolerances = [];
                 this.ro = false;
@@ -64,6 +65,7 @@ angular.module('WebMis20.services.models').
                 }, 'for_event');
                 self.diagnoses = data.result.diagnoses || [];
                 self.services = data.result.services;
+                self.invoices = data.result.invoices;
                 self.is_closed = self.closed();
             };
 

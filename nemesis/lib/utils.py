@@ -440,6 +440,13 @@ def safe_double(val):
     return val
 
 
+def safe_decimal(val):
+    if not val:
+        return None
+    val = Decimal(val)
+    return val
+
+
 def safe_uuid(val):
     if not isinstance(val, basestring):
         return None

@@ -29,14 +29,14 @@ WebMis20
                 method = 'PUT';
             }
             return wrapper(method, url, {}, data)
-                .then(function (action) {
+                .then(function (contract) {
                     NotificationService.notify(
                         200,
                         'Успешно сохранено',
                         'success',
                         5000
                     );
-                    return action;
+                    return contract;
                 }, function (result) {
                     NotificationService.notify(
                         500,
@@ -76,7 +76,55 @@ WebMis20
     };
     this.service = {
         search_mis_action_services: function (args) {
-            return wrapper('POST', WMConfig.url.api_service_search, {}, args)
+            return wrapper('POST', WMConfig.url.api_service_search, {}, args);
+        },
+        save_service_list: function (args) {
+            return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
         }
-    }
+    };
+    this.invoice = {
+        get: function (invoice_id, args) {
+            var url = WMConfig.url.api_invoice_get;
+            if (invoice_id) {
+                url += invoice_id;
+            } else {
+                url += '?new=true';
+            }
+            if (args) {
+                return wrapper('POST', url, undefined, args);
+            } else {
+                return wrapper('GET', url, args);
+            }
+        },
+        save: function (invoice_id, data) {
+            var url = WMConfig.url.api_invoice_save,
+                method;
+            if (invoice_id) {
+                url += invoice_id;
+                method = 'POST';
+            } else {
+                method = 'PUT';
+            }
+            return wrapper(method, url, {}, data)
+                .then(function (invoice) {
+                    NotificationService.notify(
+                        200,
+                        'Успешно сохранено',
+                        'success',
+                        5000
+                    );
+                    return invoice;
+                }, function (result) {
+                    NotificationService.notify(
+                        500,
+                        'Ошибка сохранения, свяжитесь с администратором',
+                        'danger'
+                    );
+                    return $q.reject(result);
+                });
+        },
+        del: function (invoice_id) {
+            return wrapper('DELETE', WMConfig.url.api_invoice_delete + invoice_id);
+        }
+    };
 }]);

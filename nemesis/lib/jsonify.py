@@ -914,7 +914,8 @@ class EventVisualizer(object):
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
             ),
-            'services': self.make_event_grouped_services(event.id)
+            'services': self.make_event_grouped_services(event.id),
+            'invoices': self.make_event_invoices(event.id)
         }
         if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
@@ -1244,6 +1245,16 @@ class EventVisualizer(object):
         grouped = service_ctrl.get_grouped_services_by_event(event_id)
         service_repr = ServiceRepr()
         return service_repr.represent_grouped_event_services(grouped)
+
+    def make_event_invoices(self, event_id):
+        from blueprints.accounting.lib.invoice import InvoiceController
+        from blueprints.accounting.lib.represent import InvoiceRepr
+        invoice_ctrl = InvoiceController()
+        invoice_list = invoice_ctrl.get_listed_data({
+            'event_id': event_id
+        })
+        invoice_repr = InvoiceRepr()
+        return invoice_repr.represent_listed_invoices(invoice_list)
 
     def make_event_services(self, event_id):
 

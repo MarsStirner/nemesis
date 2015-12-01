@@ -2,6 +2,8 @@
 
 import datetime
 
+from sqlalchemy import orm
+
 from nemesis.systemwide import db
 from nemesis.models.utils import safe_current_user_id
 
@@ -206,3 +208,50 @@ class Service(db.Model):
 
     price_list_item = db.relationship('PriceListItem')
     action = db.relationship('Action')
+
+
+class Invoice(db.Model):
+    __tablename__ = u'Invoice'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    contract_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False)
+    setDate = db.Column(db.Date, nullable=False)
+    settleDate = db.Column(db.Date)
+    number = db.Column(db.Unicode(20), nullable=False)
+    deedNumber = db.Column(db.Unicode(20))
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    note = db.Column(db.Unicode(255))
+    draft = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+
+    contract = db.relationship('Contract')
+    item_list = db.relationship('InvoiceItem', backref='invoice')
+
+    def __init__(self):
+        self.total_sum = self._get_recalc_total_sum()
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self.total_sum = self._get_recalc_total_sum()
+
+    def _get_recalc_total_sum(self):
+        from blueprints.accounting.lib.utils import calc_invoice_total_sum
+        return calc_invoice_total_sum(self)
+
+
+class InvoiceItem(db.Model):
+    __tablename__ = u'InvoiceItem'
+
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'), nullable=False)
+    concreteService_id = db.Column(db.Integer, db.ForeignKey('Service.id'))
+    # discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
+    price = db.Column(db.Numeric(15, 2), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    sum = db.Column(db.Numeric(15, 2), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+
+    service = db.relationship(u'Service')

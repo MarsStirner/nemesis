@@ -9,7 +9,7 @@ from nemesis.models.prescriptions import MedicalPrescription
 from nemesis.models.utils import safe_current_user_id
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
@@ -253,6 +253,32 @@ def update_action(action, **kwargs):
     update_action_prescriptions(action, kwargs.get('prescriptions'))
 
     return action
+
+
+def format_action_data(json_data):
+    set_person_id = safe_traverse(json_data, 'set_person', 'id')
+    person_id = safe_traverse(json_data, 'person', 'id')
+    data = {
+        'begDate': safe_datetime(json_data['beg_date']),
+        'endDate': safe_datetime(json_data['end_date']),
+        'plannedEndDate': safe_datetime(json_data['planned_end_date']),
+        'directionDate': safe_datetime(json_data['direction_date']),
+        'isUrgent': json_data['is_urgent'],
+        'status': json_data['status']['id'],
+        'setPerson_id': set_person_id,
+        'person_id':  person_id,
+        'setPerson': Person.query.get(set_person_id) if set_person_id else None,
+        'person':  Person.query.get(person_id) if person_id else None,
+        'note': json_data['note'],
+        'amount': json_data['amount'],
+        'account': json_data['account'] or 0,
+        'uet': json_data['uet'],
+        'payStatus': json_data['pay_status'] or 0,
+        'coordDate': safe_datetime(json_data['coord_date']),
+        'office': json_data['office'],
+        'properties': json_data['properties']
+    }
+    return data
 
 
 def create_JT(action, orgstructure_id):
