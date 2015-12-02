@@ -131,6 +131,15 @@ class rbTreatmentType(db.Model):
         return self.id
 
 
+class rbTest(db.Model):
+    __tablename__ = u'rbTest'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False, index=True)
+    name = db.Column(db.String(128), nullable=False, index=True)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+
+
 class rbBloodType(db.Model):
     __tablename__ = 'rbBloodType'
 
