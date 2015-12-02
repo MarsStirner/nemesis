@@ -397,6 +397,10 @@ class ClientAddress(db.Model):
         return self.address.corpus if self.address else ''
 
     @property
+    def flat(self):
+        return self.address.flat if self.address else ''
+
+    @property
     def is_russian(self):
         return bool(self.KLADRCode)
 
