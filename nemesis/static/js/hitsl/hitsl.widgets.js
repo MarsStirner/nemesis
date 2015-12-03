@@ -742,7 +742,9 @@ angular.module('WebMis20')
                             });
                     };
                     scope.$watch(tAttrs.finance, function (newVal, oldVal) {
-                        refresh_pricelists(newVal.id);
+                        if (newVal) {
+                            refresh_pricelists(newVal.id);
+                        }
                     });
                 }
             }
