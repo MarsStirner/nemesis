@@ -56,6 +56,12 @@ WebMis20
     this.contragent = {
         get_list: function (args) {
             return wrapper('POST', WMConfig.url.api_contragent_list, {}, args);
+        },
+        search_payer: function (args) {
+            return wrapper('POST', WMConfig.url.api_contragent_search_payer, {}, args);
+        },
+        get_payer: function (payer_id) {
+            return wrapper('GET', WMConfig.url.api_contragent_payer_get + payer_id);
         }
     };
     this.contingent = {
@@ -125,6 +131,61 @@ WebMis20
         },
         del: function (invoice_id) {
             return wrapper('DELETE', WMConfig.url.api_invoice_delete + invoice_id);
+        },
+        search: function (args) {
+            return wrapper('POST', WMConfig.url.api_invoice_search, {}, args);
+        }
+    };
+    this.finance_trx = {
+        get_new: function (args) {
+            var url = WMConfig.url.api_finance_transaction_get;
+            url += '?new=true';
+            return wrapper('GET', url, args);
+        },
+        make_trx: function (trx_type_code, data) {
+            var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_make, trx_type_code);
+            return wrapper('PUT', url, {}, data)
+                .then(function (payer) {
+                    NotificationService.notify(
+                        200,
+                        'Транзакция сохранена',
+                        'success',
+                        5000
+                    );
+                    return payer;
+                }, function (result) {
+                    NotificationService.notify(
+                        500,
+                        'Ошибка сохранения, свяжитесь с администратором',
+                        'danger'
+                    );
+                    return $q.reject(result);
+                });
+        },
+        get_new_invoice_trxes: function (args) {
+            var url = WMConfig.url.api_finance_transaction_invoice_get;
+            url += '?new=true';
+            return wrapper('GET', url, args);
+        },
+        make_invoice_trx: function (trx_type_code, data) {
+            var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_invoice_make, trx_type_code);
+            return wrapper('PUT', url, {}, data)
+                .then(function (invoice) {
+                    NotificationService.notify(
+                        200,
+                        'Транзакция сохранена',
+                        'success',
+                        5000
+                    );
+                    return invoice;
+                }, function (result) {
+                    NotificationService.notify(
+                        500,
+                        'Ошибка сохранения, свяжитесь с администратором',
+                        'danger'
+                    );
+                    return $q.reject(result);
+                });
         }
     };
 }]);

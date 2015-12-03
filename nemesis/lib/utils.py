@@ -429,7 +429,7 @@ def safe_bool(val):
 
 
 def safe_double(val):
-    if not val:
+    if val is None:
         return None
     if isinstance(val, basestring):
         val = val.replace(',', '.')
@@ -441,10 +441,19 @@ def safe_double(val):
 
 
 def safe_decimal(val):
-    if not val:
+    if val is None:
         return None
     val = Decimal(val)
     return val
+
+
+def format_money(val, scale=2):
+    if val is None:
+        return None
+    if isinstance(val, Decimal):
+        twoplaces = Decimal(10) ** -scale
+        val = val.quantize(twoplaces)
+    return '{{0:.{0}f}}'.format(scale).format(val)
 
 
 def safe_uuid(val):

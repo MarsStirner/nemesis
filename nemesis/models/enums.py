@@ -155,6 +155,23 @@ class ContragentType(Enum):
     legal = 2, u'Юр. лицо'
 
 
+class ContractContragentType(Enum):
+    payer = 0, u'Плательщик'
+    recipient = 1, u'Получатель'
+
+
 class ContractTypeInsurance(Enum):
     without_policy = 0, u'без использования страховых полисов'
     with_policy = 1, u'с использованием страховых полисов'
+
+
+class FinanceTransactionType(Enum):
+    payer_balance = 1, u'Движение средств на счёте плательщика'
+    invoice = 2, u'Движение средств по выставленным счетам'
+
+
+class FinanceTransactionOperation(Enum):
+    payer_balance_in = 1, u'Поступление денежных средств'
+    payer_balance_out = 2, u'Возврат денежных средств'
+    invoice_pay = 3, u'Оплата по счёту'
+    invoice_cancel = 4, u'Отмена оплаты по счёту'

@@ -63,6 +63,11 @@ class Contract_Contragent(db.Model):
 
     client = db.relationship('Client')
     org = db.relationship('Organisation')
+    payer_contract_list = db.relationship(
+        'Contract',
+        primaryjoin='and_(Contract_Contragent.id == Contract.payer_id, Contract.deleted == 0)'
+    )
+    payer_finance_trx_list = db.relationship('FinanceTransaction')
 
 
 class Contract_Contingent(db.Model):
@@ -255,3 +260,56 @@ class InvoiceItem(db.Model):
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     service = db.relationship(u'Service')
+
+
+class FinanceTransaction(db.Model):
+    __tablename__ = u'FinanceTransaction'
+
+    id = db.Column(db.Integer, primary_key=True)
+    trxDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    trxType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceTransactionType.id'), nullable=False)
+    contragent_id = db.Column(db.Integer, db.ForeignKey('Contract_Contragent.id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'))
+    payType_id = db.Column(db.Integer, db.ForeignKey('rbPayType.id'))
+    sum = db.Column(db.Numeric(15, 2), nullable=False)
+
+    contragent = db.relationship('Contract_Contragent')
+    invoice = db.relationship('Invoice')
+    trx_type = db.relationship('rbFinanceTransactionType')
+    pay_type = db.relationship('rbPayType')
+
+
+class rbFinanceTransactionType(db.Model):
+    __tablename__ = 'rbFinanceTransactionType'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbPayType(db.Model):
+    __tablename__ = 'rbPayType'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
