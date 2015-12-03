@@ -134,6 +134,7 @@ angular.module('WebMis20.services.models').
             var WMStationaryEvent = function (event_id, client_id, ticket_id) {
                 WMEvent.call(this, event_id, client_id, ticket_id);
                 this.request_type_kind = "stationary";
+                this.blood_history = [];
             };
             WMStationaryEvent.inheritsFrom(WMEvent);
             WMStationaryEvent.prototype.get_data = function(self, data) {
@@ -146,6 +147,7 @@ angular.module('WebMis20.services.models').
                 self.attending_doctor = data.result.attending_doctor;
                 self.received = data.result.received;
                 self.movings = data.result.movings;
+                self.blood_history = data.result.blood_history;
             }
             WMStationaryEvent.prototype.save = function() {
                 var self = this;

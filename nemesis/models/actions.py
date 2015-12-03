@@ -294,7 +294,7 @@ class ActionPropertyType(db.Model):
     penalty = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     visibleInJobTicket = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     isAssignable = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    test_id = db.Column(db.Integer, index=True)
+    test_id = db.Column(db.Integer, db.ForeignKey('rbTest.id'), index=True)
     defaultEvaluation = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     toEpicrisis = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     code = db.Column(db.String(25), index=True)
@@ -307,6 +307,7 @@ class ActionPropertyType(db.Model):
 
     unit = db.relationship('rbUnit')
     template = db.relationship('ActionPropertyTemplate')
+    test = db.relationship('rbTest')
 
     @classmethod
     def parse_value_domain(cls, value_domain, type_name):

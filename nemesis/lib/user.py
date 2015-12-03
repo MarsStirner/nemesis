@@ -504,9 +504,9 @@ class UserProfileManager(object):
     ambulance = 'ambulance'
 
     ui_groups = {
-        'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist],
+        'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist, doctor_otd],
         'diag_doctor': [admin, doctor_diag, nurse_assist],
-        'registrator': [admin, reg_clinic],
+        'registrator': [admin, reg_clinic, doctor_otd],
         'registrator_cut': [nurse_admission],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
