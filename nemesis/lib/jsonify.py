@@ -1239,7 +1239,7 @@ class EventVisualizer(object):
         return result
 
     def make_event_grouped_services(self, event_id):
-        from blueprints.accounting.lib.service import ServiceController
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
         from blueprints.accounting.lib.represent import ServiceRepr
         service_ctrl = ServiceController()
         grouped = service_ctrl.get_grouped_services_by_event(event_id)
@@ -1247,7 +1247,7 @@ class EventVisualizer(object):
         return service_repr.represent_grouped_event_services(grouped)
 
     def make_event_invoices(self, event_id):
-        from blueprints.accounting.lib.invoice import InvoiceController
+        from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
         from blueprints.accounting.lib.represent import InvoiceRepr
         invoice_ctrl = InvoiceController()
         invoice_list = invoice_ctrl.get_listed_data({
