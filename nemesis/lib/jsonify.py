@@ -636,7 +636,6 @@ class ClientVisualizer(object):
         """Данные пациента, используемые в интерфейсе обращения."""
         info = self.make_client_info_for_view_frame(client, with_expired_vpol=bool(event.id))
         info['relations'] = [self.make_relation_info(client.id, relation) for relation in client.client_relations]
-        info['work_org_id'] = client.works[0].org_id if client.works else None,  # FIXME: ...
         return info
 
     def make_search_client_info(self, client):
@@ -914,22 +913,14 @@ class EventVisualizer(object):
             'can_create_actions': (
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
-            )
+            ),
+            'services': self.make_event_grouped_services(event.id),
+            'invoices': self.make_event_invoices(event.id)
         }
-        if new:
-            data['payment'] = self.make_event_payment(None)
-        elif UserProfileManager.has_ui_admin():
+        if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
         elif UserProfileManager.has_ui_doctor():
             data['diagnoses'] = self.make_diagnoses(event)
-        elif UserProfileManager.has_ui_registrator():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
-        elif UserProfileManager.has_ui_cashier():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
         return data
 
     def make_short_event(self, event):
@@ -968,6 +959,8 @@ class EventVisualizer(object):
         @type event: Event
         """
         cvis = ClientVisualizer()
+        from blueprints.accounting.lib.represent import ContractRepr
+        cont_repr = ContractRepr()
         return {
             'id': event.id,
             'create_person_id': event.createPerson_id,
@@ -984,7 +977,7 @@ class EventVisualizer(object):
             'exec_person': event.execPerson,
             'result': event.result,
             'ache_result': event.rbAcheResult,
-            'contract': event.contract,
+            'contract': cont_repr.represent_contract_full(event.contract),
             'event_type': event.eventType,
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
@@ -1244,6 +1237,24 @@ class EventVisualizer(object):
                 'event_info': make_event_small_info(event)
             })
         return result
+
+    def make_event_grouped_services(self, event_id):
+        from blueprints.accounting.lib.service import ServiceController
+        from blueprints.accounting.lib.represent import ServiceRepr
+        service_ctrl = ServiceController()
+        grouped = service_ctrl.get_grouped_services_by_event(event_id)
+        service_repr = ServiceRepr()
+        return service_repr.represent_grouped_event_services(grouped)
+
+    def make_event_invoices(self, event_id):
+        from blueprints.accounting.lib.invoice import InvoiceController
+        from blueprints.accounting.lib.represent import InvoiceRepr
+        invoice_ctrl = InvoiceController()
+        invoice_list = invoice_ctrl.get_listed_data({
+            'event_id': event_id
+        })
+        invoice_repr = InvoiceRepr()
+        return invoice_repr.represent_listed_invoices(invoice_list)
 
     def make_event_services(self, event_id):
 
