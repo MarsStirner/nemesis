@@ -786,7 +786,7 @@ class ClientVisualizer(object):
             for row in load_all
         ]
 
-    def make_events(self, client, event_filter):
+    def make_events(self, client, event_filter=None):
         events = client.events
         if event_filter == 'stationary':
             events = events.join(EventType, rbRequestType).filter(rbRequestType.code.in_(STATIONARY_EVENT_CODES))
