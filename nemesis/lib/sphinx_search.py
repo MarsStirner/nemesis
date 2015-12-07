@@ -26,9 +26,9 @@ class SearchPerson():
 class SearchPatient():
 
     @staticmethod
-    def search(name):
+    def search(name, limit=100):
         search = Search(indexes=['patient'], config=SearchConfig)
-        search = search.match(name).limit(0, 100)
+        search = search.match(name).limit(0, limit)
         search = search.options(field_weights={'code': 100,
                                                'lastName': 90,
                                                'birthDate_f1': 80,
