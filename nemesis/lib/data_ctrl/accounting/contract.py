@@ -15,6 +15,7 @@ from nemesis.models.enums import ContragentType, ContractTypeInsurance, Contract
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_traverse
 from nemesis.lib.const import COMP_POLICY_CODES, VOL_POLICY_CODES, OMS_EVENT_CODE, DMS_EVENT_CODE
 from nemesis.lib.apiutils import ApiException
+from nemesis.lib.data_ctrl.utils import get_default_org
 from .utils import calc_payer_balance
 from .pricelist import PriceListController
 
@@ -43,9 +44,16 @@ class ContractController(BaseModelController):
         contract.deleted = 0
 
         contract.payer = self.contragent_ctrl.get_new_contragent()
-        contract.recipient = self.contragent_ctrl.get_new_contragent()
+        default_org = get_default_org()
+        contract.recipient = self.contragent_ctrl.get_new_contragent({
+            'org_id': default_org.id
+        })
 
-        contract.contingent = []
+        contract.contingent_list = []
+        if 'client_id' in params:
+            contract.contingent_list.append(self.contingent_ctrl.get_new_contingent({
+                'client_id': params['client_id']
+            }))
         return contract
 
     def get_contract(self, contract_id):
@@ -142,6 +150,11 @@ class ContragentController(BaseModelController):
         if params is None:
             params = {}
         ca = Contract_Contragent()
+        if 'org_id' in params:
+            org_id = safe_int(params.get('org_id'))
+            org = self.session.query(Organisation).get(org_id)
+            ca.organisation_id = org_id
+            ca.org = org
         ca.deleted = 0
         return ca
 
@@ -193,6 +206,10 @@ class ContingentController(BaseModelController):
         cont = Contract_Contingent()
         if contract_id:
             cont.contract_id = contract_id
+        client_id = safe_int(params.get('client_id'))
+        cont.client_id = client_id
+        if client_id:
+            cont.client = self.session.query(Client).get(client_id)
         cont.deleted = 0
         return cont
 

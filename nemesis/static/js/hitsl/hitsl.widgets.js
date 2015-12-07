@@ -661,7 +661,7 @@ angular.module('WebMis20')
 '<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.short_descr ]]</ui-select-match>\
 <ui-select-choices repeat="ca in ca_list" refresh="get_contragents($select.search)">\
     <div><span ng-bind-html="ca.full_descr | highlight: $select.search"></span></div>\
-</ui-select-choices> ');
+</ui-select-choices>');
 
             return {
                 pre: function preLink(scope, iElement, iAttrs, controller) {},

@@ -3,14 +3,14 @@ import datetime
 
 from flask.ext.login import current_user
 
-from nemesis.app import app
 from nemesis.lib.data import create_action
 from nemesis.models.actions import ActionType
 from nemesis.models.client import Client
 from nemesis.models.enums import EventPrimary, EventOrder
 from nemesis.models.event import (Event, EventType)
-from nemesis.models.exists import (Organisation, Person)
+from nemesis.models.exists import Person
 from nemesis.models.schedule import ScheduleClientTicket
+from nemesis.lib.data_ctrl.utils import get_default_org
 
 
 class EventBuilder(object):
@@ -23,7 +23,7 @@ class EventBuilder(object):
         return self.event
 
     def create_base_info(self):
-        self.event.organisation = Organisation.query.filter_by(infisCode=str(app.config['ORGANISATION_INFIS_CODE'])).first()
+        self.event.organisation = get_default_org()
         if self.ticket_id:
             self.set_info_from_ticket()
         elif self.client_id:
