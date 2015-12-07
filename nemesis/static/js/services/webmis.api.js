@@ -7,14 +7,14 @@ WebMis20
     var self = this;
     var wrapper = ApiCalls.wrapper;
     this.contract = {
-        get: function (contract_id) {
+        get: function (contract_id, args) {
             var url = WMConfig.url.api_contract_get;
             if (contract_id) {
                 url += contract_id;
             } else {
                 url += '?new=true';
             }
-            return wrapper('GET', url);
+            return wrapper('GET', url, args);
         },
         get_list: function (args) {
             return wrapper('GET', WMConfig.url.api_contract_list, args);

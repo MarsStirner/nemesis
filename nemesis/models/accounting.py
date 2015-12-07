@@ -243,7 +243,7 @@ class Invoice(db.Model):
         self.total_sum = self._get_recalc_total_sum()
 
     def _get_recalc_total_sum(self):
-        from blueprints.accounting.lib.utils import calc_invoice_total_sum
+        from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
         return calc_invoice_total_sum(self)
 
 
