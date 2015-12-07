@@ -219,57 +219,6 @@ var WebMis20 = angular.module('WebMis20', [
         return out;
     }
 })
-.filter('contract_filter', function() {
-    return function(items, event_info) {
-        var out = [];
-        if (angular.isArray(items) && event_info && event_info.event_type) {
-            var client_info = event_info.client,
-                event_set_date = aux.format_date(event_info.set_date);
-
-            items.forEach(function(item) {
-                var itemMatches = false;
-                if (item.finance.id == event_info.event_type.finance.id && item.recipient.id == event_info.organisation.id){
-                    item.specifications.forEach(function(spec){
-                        if(spec.event_type_id == event_info.event_type.id){
-                            itemMatches = true;
-                        }
-                    });
-                    if (item.contingent && itemMatches){
-                        item.contingent.forEach(function(cont){
-                            if((!cont.sex || cont.sex == client_info.info.sex.id) &&
-                               (!cont.org_id || cont.org_id == client_info.work_org_id) &&
-                               (!cont.insurer_id || cont.insurer_id == client_info.compulsory_policy.insurer_id) &&
-                                 (!cont.policyType_id || cont.policyType_id == client_info.compulsory_policy.policyType_id)){
-                                itemMatches = true;
-                                if (client_info.voluntary_policies.length > 0){
-                                    itemMatches = false;
-                                    client_info.voluntary_policies.forEach(function(vol_policy){
-                                        if(!itemMatches && (!cont.insurer_id || cont.insurer_id == vol_policy.insurer_id) &&
-                                            (!cont.policyType_id || cont.policyType_id == vol_policy.policyType_id)) {
-                                            itemMatches = true;
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
-                }
-
-                if (event_set_date) {
-                    var item_begDate = aux.format_date(item.begDate);
-                    var item_endDate = aux.format_date(item.endDate);
-                    if (!(item_begDate <= event_set_date && item_endDate >= event_set_date)){
-                        itemMatches = false;
-                    }
-                }
-                if (itemMatches) {
-                    out.push(item);
-                }
-            });
-        }
-        return out;
-    }
-})
 .filter('highlight', function() {
     return function (input, query) {
         if (input) {

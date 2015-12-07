@@ -3,7 +3,7 @@ import requests
 from nemesis.app import app
 from nemesis.lib.utils import safe_dict
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol, \
-    rls, refbooks, risar
+    rls, refbooks, risar, accounting
 from nemesis.lib.apiutils import api_method
 from nemesis.systemwide import cache
 
@@ -33,7 +33,8 @@ def api_refbook_int(name, code=None):
             ref_book = getattr(mod, name)
             return ref_book.rb()['objects']
 
-    for mod in (exists, schedule, actions, client, event, person, organisation, expert_protocol, rls, refbooks, risar):
+    for mod in (exists, schedule, actions, client, event, person, organisation, expert_protocol, rls, refbooks, risar,
+                accounting):
         if hasattr(mod, name):
             ref_book = getattr(mod, name)
 
