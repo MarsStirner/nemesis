@@ -849,6 +849,7 @@ class ActionType(db.Model):
     jobType_id = db.Column(db.ForeignKey('rbJobType.id'), index=True)
     mnem = db.Column(db.String(32), server_default=u"''")
     layout = db.Column(db.Text)
+    hasPrescriptions = db.Column(db.Integer, index=True)
 
     services = db.relationship(u'ActionType_Service')
     nomenclatureService = db.relationship(u'rbService', foreign_keys='ActionType.nomenclativeService_id')

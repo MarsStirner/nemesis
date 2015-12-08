@@ -30,4 +30,4 @@ def action_is_lab(action):
 
 
 def action_is_prescriptions(action):
-    return True
+    return action.actionType.hasPrescriptions
