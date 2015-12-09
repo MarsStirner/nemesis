@@ -1082,15 +1082,21 @@ class BloodHistory(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
     bloodType_id = db.Column(db.Integer, db.ForeignKey('rbBloodType.id'), nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False)
+    bloodPhenotype_id = db.Column(db.Integer, db.ForeignKey('rbBloodPhenotype.id'), nullable=False)
+    bloodKell_id = db.Column(db.Integer, db.ForeignKey('rbBloodKell.id'), nullable=False)
 
     bloodType = db.relationship("rbBloodType")
     person = db.relationship('Person')
+    bloodPhenotype = db.relationship("rbBloodPhenotype")
+    bloodKell = db.relationship("rbBloodKell")
 
-    def __init__(self, blood_type, date, person, client):
+    def __init__(self, blood_type, date, person, client, blood_phenotype, blood_kell):
         self.bloodType_id = int(blood_type) if blood_type else None
         self.bloodDate = date
         self.person_id = int(person) if person else None
         self.client = client
+        self.bloodPhenotype_id = int(blood_phenotype) if blood_phenotype else None
+        self.bloodKell_id = int(blood_kell) if blood_kell else None
 
     def __int__(self):
         return self.id
@@ -1100,7 +1106,9 @@ class BloodHistory(db.Model):
             'id': self.id,
             'blood_type': self.bloodType,
             'date': self.bloodDate,
-            'person': self.person
+            'person': self.person,
+            'blood_phenotype': self.bloodPhenotype,
+            'blood_kell': self.bloodKell
         }
 
 

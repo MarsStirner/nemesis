@@ -158,7 +158,7 @@ class rbBloodPhenotype(db.Model):
 
 
 class rbBloodKell(db.Model):
-    __tablename__ = 'rbrbBloodKell'
+    __tablename__ = 'rbBloodKell'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
