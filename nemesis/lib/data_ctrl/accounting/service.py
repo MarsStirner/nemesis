@@ -5,16 +5,17 @@ import datetime
 from sqlalchemy import exists
 from sqlalchemy.orm import join
 
-from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem
+from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount
 from nemesis.models.client import Client
 from nemesis.models.actions import Action
-from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal
+from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import int_get_atl_dict_all, create_action, update_action, format_action_data
 from nemesis.lib.agesex import recordAcceptableEx
 from .contract import ContractController
+from .utils import calc_item_sum
 
 
 class ServiceController(BaseModelController):
@@ -34,8 +35,9 @@ class ServiceController(BaseModelController):
             params = {}
         service = Service()
         price_list_item_id = safe_int(params.get('price_list_item_id'))
+        service.priceListItem_id = price_list_item_id
         if price_list_item_id:
-            service.priceListItem_id = price_list_item_id
+            service.price_list_item = self.session.query(PriceListItem).get(price_list_item_id)
         service.amount = 1
         service.deleted = 0
         return service
@@ -46,18 +48,25 @@ class ServiceController(BaseModelController):
 
     def update_service(self, service, json_data):
         json_data = self._format_service_data(json_data)
-        for attr in ('amount', 'priceListItem_id', 'price_list_item'):
+        for attr in ('amount', 'priceListItem_id', 'price_list_item', 'discount_id', 'discount'):
             if attr in json_data:
                 setattr(service, attr, json_data.get(attr))
-        # self.update_contract_ca_payer(contract, json_data['payer'])
         return service
 
     def _format_service_data(self, data):
-        data['amount'] = safe_double(data['service']['amount'])
-        data['priceListItem_id'] = safe_int(data['service']['price_list_item_id'])
-        data['price_list_item'] = self.session.query(PriceListItem).filter(
-            PriceListItem.id == data['service']['price_list_item_id']
-        ).first()
+        if 'amount' in data:
+            data['amount'] = safe_double(data['amount'])
+        if 'price_list_item_id' in data:
+            price_list_item_id = safe_int(data['price_list_item_id'])
+            data['priceListItem_id'] = price_list_item_id
+            data['price_list_item'] = self.session.query(PriceListItem).get(price_list_item_id)
+        if 'discount_id' in data or 'discount' in data:
+            if 'discount_id' in data:
+                discount_id = safe_int(data.get('discount_id'))
+            else:
+                discount_id = safe_int(safe_traverse(data, 'discount', 'id'))
+            data['discount_id'] = discount_id
+            data['discount'] = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
         return data
 
     def search_mis_action_services(self, args):
@@ -71,7 +80,7 @@ class ServiceController(BaseModelController):
         data = search_result['result']['items']
         for item in data:
             item['amount'] = 1
-            item['sum'] = item['price'] * item['amount']
+            item['sum'] = safe_decimal(item['price']) * safe_decimal(item['amount'])
         data = self._filter_mis_action_search_results(args, data)
         return data
 
@@ -119,7 +128,7 @@ class ServiceController(BaseModelController):
                 'action': service.action
             })
             grouped[idx]['sg_data']['total_amount'] += service.amount
-            grouped[idx]['sg_data']['total_sum'] += (service.price_list_item.price * safe_decimal(service.amount))
+            grouped[idx]['sg_data']['total_sum'] += service.sum_
         return {
             'grouped': grouped,
             'sg_map': sg_map
@@ -149,10 +158,10 @@ class ServiceController(BaseModelController):
                     service = self.get_service(service_id)
                     action = self.get_service_action(service.action_id)
                 else:
-                    service = self.get_new_service(service_data)
+                    service = self.get_new_service(service_data['service'])
                     action = self.get_new_service_action(service_data, event_id)
                     service.action = action
-                service = self.update_service(service, service_data)
+                service = self.update_service(service, service_data['service'])
                 action = self.update_service_action(action, service_data)
                 result.append(service)
                 result.append(action)
@@ -166,6 +175,16 @@ class ServiceController(BaseModelController):
                 join(Service, InvoiceItem, InvoiceItem.service).join(Invoice)
             ).where(Service.id == service.id).where(Invoice.deleted == 0).where(Service.deleted == 0)
         ).scalar()
+
+    def calc_service_sum(self, service, params):
+        price = service.price_list_item.price
+        new_amount = safe_double(params.get('amount', service.amount))
+        discount_id = safe_int(params.get('discount_id'))
+        if discount_id:
+            discount = self.session.query(ServiceDiscount).get(discount_id)
+        else:
+            discount = None
+        return calc_item_sum(price, new_amount, discount)
 
 
 class ServiceSelecter(BaseSelecter):
