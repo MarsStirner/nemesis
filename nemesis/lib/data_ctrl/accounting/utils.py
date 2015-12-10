@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from nemesis.models.enums import ContragentType, FinanceTransactionType
+from decimal import Decimal
+
+from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType
 from nemesis.lib.utils import safe_decimal
 from nemesis.lib.const import PAID_EVENT_CODE
 
@@ -60,7 +62,15 @@ def calc_invoice_sum_wo_discounts(invoice):
 
 
 def calc_payer_balance(payer):
-    return sum(trx.sum for trx in payer.payer_finance_trx_list)
+    balance = Decimal('0')
+    for trx in payer.payer_finance_trx_list:
+        if trx.financeOperationType_id in (FinanceOperationType.payer_balance_in[0],
+                                           FinanceOperationType.invoice_cancel[0]):
+            balance += trx.sum
+        elif trx.financeOperationType_id in (FinanceOperationType.payer_balance_out[0],
+                                             FinanceOperationType.invoice_pay[0]):
+            balance -= trx.sum
+    return balance
 
 
 def get_finance_trx_type(trx_type_code):

@@ -299,6 +299,7 @@ class FinanceTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     trxDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     trxType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceTransactionType.id'), nullable=False)
+    financeOperationType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceOperationType.id'), nullable=False)
     contragent_id = db.Column(db.Integer, db.ForeignKey('Contract_Contragent.id'), nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'))
     payType_id = db.Column(db.Integer, db.ForeignKey('rbPayType.id'))
@@ -307,11 +308,30 @@ class FinanceTransaction(db.Model):
     contragent = db.relationship('Contract_Contragent')
     invoice = db.relationship('Invoice')
     trx_type = db.relationship('rbFinanceTransactionType')
+    operation_type = db.relationship('rbFinanceOperationType')
     pay_type = db.relationship('rbPayType')
 
 
 class rbFinanceTransactionType(db.Model):
     __tablename__ = 'rbFinanceTransactionType'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbFinanceOperationType(db.Model):
+    __tablename__ = 'rbFinanceOperationType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(16), nullable=False)
