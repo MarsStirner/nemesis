@@ -2,16 +2,20 @@
 
 import datetime
 
+from decimal import Decimal
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import union
 
-from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, Contract_Contragent
+from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, Contract_Contragent, ServiceDiscount
 from nemesis.models.actions import Action
 from nemesis.models.client import Client
 from nemesis.models.organisation import Organisation
+from nemesis.models.enums import FinanceOperationType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
+from .service import ServiceController
+from .finance_trx import FinanceTrxController
 from .utils import calc_invoice_total_sum, calc_invoice_item_sum
 
 
@@ -101,6 +105,30 @@ class InvoiceController(BaseModelController):
         listed_data = selecter.get_all()
         return listed_data
 
+    def get_invoice_payment_info(self, invoice):
+        trx_ctrl = FinanceTrxController()
+        op_list = trx_ctrl.get_invoice_finance_operations(invoice)
+
+        pay_sum = Decimal('0')
+        cancel_sum = Decimal('0')
+        for op in op_list:
+            if op.op_type.value == FinanceOperationType.invoice_pay[0]:
+                pay_sum += op.op_sum
+            if op.op_type.value == FinanceOperationType.invoice_cancel[0]:
+                cancel_sum += op.op_sum
+        paid_sum = pay_sum - cancel_sum
+        invoice_total_sum = invoice.total_sum
+        paid = paid_sum >= invoice_total_sum
+        debt_sum = invoice_total_sum - paid_sum
+        settle_date = invoice.settleDate
+        return {
+            'paid': paid,
+            'invoice_total_sum': invoice_total_sum,
+            'paid_sum': paid_sum,
+            'debt_sum': debt_sum,
+            'settle_date': settle_date
+        }
+
 
 class InvoiceSelecter(BaseSelecter):
 
@@ -182,6 +210,10 @@ class InvoiceItemController(BaseModelController):
             item.concreteService_id = params['concreteService_id']
         if 'service' in params:
             item.service = params['service']
+        if 'discount_id' in params:
+            item.discount_id = params['discount_id']
+        if 'discount' in params:
+            item.discount = params['discount']
         if 'price' in params:
             item.price = params['price']
         if 'amount' in params:
@@ -196,16 +228,25 @@ class InvoiceItemController(BaseModelController):
 
     def update_invoice_item(self, item, json_data, invoice):
         json_data = self._format_invoice_item_data(json_data)
-        for attr in ('price', 'amount', 'concreteService_id', 'service', ):
+        for attr in ('price', 'amount', 'concreteService_id', 'service', 'discount_id', 'discount', ):
             if attr in json_data:
                 setattr(item, attr, json_data.get(attr))
         item.sum = self.calc_invoice_item_sum(item)
+        if item.service:
+            self.update_invoice_item_service(item, dict(discount_id=json_data.get('discount_id')))
         item.invoice = invoice
         return item
+
+    def update_invoice_item_service(self, invoice_item, data):
+        service_ctrl = ServiceController()
+        service = service_ctrl.update_service(invoice_item.service, data)
+        invoice_item.service = service
 
     def _format_invoice_item_data(self, data):
         service_id = safe_int(data['service_id'])
         service = self.session.query(Service).get(service_id)
+        discount_id = safe_int(safe_traverse(data, 'discount', 'id'))
+        discount = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
         pricelist_price = service.price_list_item.price
         data_price = safe_decimal(data['price'])
         if data_price != pricelist_price:
@@ -215,16 +256,22 @@ class InvoiceItemController(BaseModelController):
         data['amount'] = safe_double(data['amount'])
         data['concreteService_id'] = service_id
         data['service'] = service
+        data['discount_id'] = discount_id
+        data['discount'] = discount
         return data
 
     def _format_new_invoice_item_data(self, service_data):
         service_id = safe_int(service_data['service']['id'])
         service = self.session.query(Service).get(service_id)
+        discount_id = safe_int(safe_traverse(service_data['service'], 'discount', 'id'))
+        discount = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
         price = service.price_list_item.price
         amount = safe_double(service_data['service']['amount'])
         data = {
             'concreteService_id': service_id,
             'service': service,
+            'discount_id': discount_id,
+            'discount': discount,
             'price': price,
             'amount': amount,
         }

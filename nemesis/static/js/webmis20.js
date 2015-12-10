@@ -171,28 +171,6 @@ var WebMis20 = angular.module('WebMis20', [
         return _.pluck(array, attribute)
     }
 })
-.filter('action_group_filter', function ($filter) {
-    // TODO: подумать об удалении, теперь нигде не используется
-    return function (items, group) {
-        if (items instanceof Array) {
-            var ff;
-            switch (group) {
-                case 'medical_documents':
-                    ff = function (item) {return item.type.class == 0}; break;
-                case 'treatments':
-                    ff = function (item) {return item.type.class == 2}; break;
-                case 'diagnostics':
-                    ff = function (item) {return item.type.class == 1 && item.type.is_required_tissue == false}; break;
-                case 'lab':
-                    ff = function (item) {return item.type.class == 1 && item.type.is_required_tissue == true}; break;
-                default:
-                    throw 'action_group_filter'
-            }
-            return items.filter(ff)
-        }
-        return items;
-    }
-})
 .filter('event_type_filter', function() {
     return function(items, props) {
         var out = [];
@@ -284,6 +262,11 @@ var WebMis20 = angular.module('WebMis20', [
         return out;
     };
 })
+.filter('moneyCut', ['$filter', function ($filter) {
+    return function (value) {
+        return /\.00$/.test(value) ? value.substring(0, value.length - 3) : value;
+    }
+}])
 // Services
 .factory('RefBook', ['$http', '$rootScope', function ($http, $rootScope) {
     var RefBook = function (name) {

@@ -118,7 +118,7 @@ class ContractController(BaseModelController):
     def _format_contract_data(self, data):
         finance_id = safe_traverse(data, 'finance', 'id')
         contract_type_id = safe_traverse(data, 'contract_type', 'id')
-        data['number'] = data['number']
+        data['number'] = safe_unicode(data['number'])
         data['date'] = safe_date(data['date'])
         data['begDate'] = safe_date(data['beg_date'])
         data['endDate'] = safe_date(data['end_date'])

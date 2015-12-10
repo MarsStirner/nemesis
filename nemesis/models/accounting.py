@@ -210,9 +210,39 @@ class Service(db.Model):
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'))
     amount = db.Column(db.Float, nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
 
     price_list_item = db.relationship('PriceListItem')
     action = db.relationship('Action')
+    discount = db.relationship('ServiceDiscount')
+
+    def __init__(self):
+        self.sum_ = self._get_recalc_sum()
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self.sum_ = self._get_recalc_sum()
+
+    def _get_recalc_sum(self):
+        from nemesis.lib.data_ctrl.accounting.utils import calc_service_sum
+        return calc_service_sum(self) if self.priceListItem_id is not None else 0
+
+
+class ServiceDiscount(db.Model):
+    __tablename__ = u'ServiceDiscount'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    code = db.Column(db.Unicode(32))
+    name = db.Column(db.Unicode(1024), nullable=False)
+    valuePct = db.Column(db.Float)
+    valueFixed = db.Column(db.Numeric(15, 2))
+    begDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
 
 class Invoice(db.Model):
@@ -253,13 +283,14 @@ class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'), nullable=False)
     concreteService_id = db.Column(db.Integer, db.ForeignKey('Service.id'))
-    # discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
+    discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
     price = db.Column(db.Numeric(15, 2), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     sum = db.Column(db.Numeric(15, 2), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     service = db.relationship(u'Service')
+    discount = db.relationship('ServiceDiscount')
 
 
 class FinanceTransaction(db.Model):
@@ -268,6 +299,7 @@ class FinanceTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     trxDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     trxType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceTransactionType.id'), nullable=False)
+    financeOperationType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceOperationType.id'), nullable=False)
     contragent_id = db.Column(db.Integer, db.ForeignKey('Contract_Contragent.id'), nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'))
     payType_id = db.Column(db.Integer, db.ForeignKey('rbPayType.id'))
@@ -276,11 +308,30 @@ class FinanceTransaction(db.Model):
     contragent = db.relationship('Contract_Contragent')
     invoice = db.relationship('Invoice')
     trx_type = db.relationship('rbFinanceTransactionType')
+    operation_type = db.relationship('rbFinanceOperationType')
     pay_type = db.relationship('rbPayType')
 
 
 class rbFinanceTransactionType(db.Model):
     __tablename__ = 'rbFinanceTransactionType'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbFinanceOperationType(db.Model):
+    __tablename__ = 'rbFinanceOperationType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(16), nullable=False)
