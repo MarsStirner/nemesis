@@ -1481,7 +1481,9 @@ class StationaryEventVisualizer(EventVisualizer):
             'id': obj.id,
             'blood_type': obj.bloodType,
             'date': obj.bloodDate,
-            'person': obj.person
+            'person': obj.person,
+            'blood_phenotype': obj.bloodPhenotype,
+            'blood_kell': obj.bloodKell
         }
 
     def make_intolerances(self, lst, code):

@@ -316,6 +316,9 @@ angular.module('WebMis20.directives').
                 link: function(scope, elm, attrs, formCtrl) {
                     scope.cbtForm = formCtrl;
                     scope.rbBloodType = RefBookService.get('rbBloodType');
+                    scope.rbBloodPhenotype = RefBookService.get('rbBloodPhenotype');
+                    scope.rbBloodKell = RefBookService.get('rbBloodKell');
+
 
                     scope.$watch('cbtForm.$dirty', function(n, o) {
                         if (n !== o) {
@@ -332,7 +335,7 @@ angular.module('WebMis20.directives').
                  ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
         </wm-date>\
     </div>\
-    <div class="form-group col-md-4"\
+    <div class="form-group col-md-2"\
          ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_type.$invalid}">\
         <label for="cbt_type[[idPostfix]]" class="control-label">Тип</label>\
         <ui-select class="form-control" id="cbt_type[[idPostfix]]" name="cbt_type" theme="select2"\
@@ -343,12 +346,34 @@ angular.module('WebMis20.directives').
             </ui-select-choices>\
         </ui-select>\
     </div>\
-    <div class="form-group col-md-5"\
+    <div class="form-group col-md-3"\
          ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_person.$invalid}">\
         <label for="cbt_person[[idPostfix]]" class="control-label">Врач, установивший группу крови</label>\
         <wm-person-select id="cbt_person[[idPostfix]]" name="cbt_person"\
             ng-model="modelBloodType.person" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
         </wm-person-select>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_type.$invalid}">\
+        <label for="cbt_phenotype[[idPostfix]]" class="control-label">Фенотип Rh</label>\
+        <ui-select class="form-control" id="cbt_phenotype[[idPostfix]]" name="cbt_phenotype" theme="select2"\
+                   ng-model="modelBloodType.blood_phenotype" ng-disabled="!edit_mode()">\
+            <ui-select-match placeholder="Фенотип Rh">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="bt in rbBloodPhenotype.objects | filter: $select.search">\
+                <div ng-bind-html="bt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-2"\
+         ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_type.$invalid}">\
+        <label for="cbt_kell[[idPostfix]]" class="control-label">Kell</label>\
+        <ui-select class="form-control" id="cbt_kell[[idPostfix]]" name="cbt_kell" theme="select2"\
+                   ng-model="modelBloodType.blood_kell" ng-disabled="!edit_mode()">\
+            <ui-select-match placeholder="Kell">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="bt in rbBloodKell.objects | filter: $select.search">\
+                <div ng-bind-html="bt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
     </div>\
 </div>'
             };

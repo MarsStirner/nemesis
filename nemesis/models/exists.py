@@ -139,6 +139,42 @@ class rbBloodType(db.Model):
         return self.id
 
 
+class rbBloodPhenotype(db.Model):
+    __tablename__ = 'rbBloodPhenotype'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbBloodKell(db.Model):
+    __tablename__ = 'rbBloodKell'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+    def __int__(self):
+        return self.id
+
+
 class OrgStructure(db.Model):
     __tablename__ = 'OrgStructure'
 
