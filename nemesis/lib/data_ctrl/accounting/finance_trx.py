@@ -4,7 +4,7 @@ import datetime
 
 from nemesis.models.accounting import (FinanceTransaction, rbFinanceTransactionType, rbPayType,
    Contract_Contragent, Invoice)
-from nemesis.models.enums import FinanceTransactionType, FinanceTransactionOperation
+from nemesis.models.enums import FinanceTransactionType, FinanceOperationType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController
@@ -161,12 +161,32 @@ class FinanceTrxController(BaseModelController):
         return item_list
 
     def _get_trx_sum(self, finance_operation_id, sum_):
-        if finance_operation_id in (FinanceTransactionOperation.payer_balance_in[0],
-                                    FinanceTransactionOperation.invoice_cancel[0]):
+        if finance_operation_id in (FinanceOperationType.payer_balance_in[0],
+                                    FinanceOperationType.invoice_cancel[0]):
             sum_ = abs(sum_)
-        elif finance_operation_id in (FinanceTransactionOperation.payer_balance_out[0],
-                                      FinanceTransactionOperation.invoice_pay[0]):
+        elif finance_operation_id in (FinanceOperationType.payer_balance_out[0],
+                                      FinanceOperationType.invoice_pay[0]):
             sum_ = -abs(sum_)
         else:
             raise ApiException(422, u'Unknown finance operation')
         return sum_
+
+    def get_invoice_finance_operations(self, invoice):
+        trx_list = self.session.query(FinanceTransaction).filter(
+            FinanceTransaction.invoice_id == invoice.id
+        ).all()
+        op_list = []
+        for trx in trx_list:
+            op_sum = trx.sum
+            op_type = FinanceOperationType.invoice_pay[0] if op_sum <= 0 else FinanceOperationType.invoice_cancel[0]
+            fo = FinanceOperation(op_type, op_sum, trx)
+            op_list.append(fo)
+        return op_list
+
+
+class FinanceOperation(object):
+
+    def __init__(self, op_type_id, op_sum, trx):
+        self.op_type = FinanceOperationType(op_type_id)
+        self.op_sum = abs(op_sum)
+        self.trx = trx

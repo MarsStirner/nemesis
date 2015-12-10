@@ -170,7 +170,7 @@ class FinanceTransactionType(Enum):
     invoice = 2, u'Движение средств по выставленным счетам'
 
 
-class FinanceTransactionOperation(Enum):
+class FinanceOperationType(Enum):
     payer_balance_in = 1, u'Поступление денежных средств'
     payer_balance_out = 2, u'Возврат денежных средств'
     invoice_pay = 3, u'Оплата по счёту'

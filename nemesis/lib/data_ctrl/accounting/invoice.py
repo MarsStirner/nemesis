@@ -2,6 +2,7 @@
 
 import datetime
 
+from decimal import Decimal
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import union
 
@@ -9,6 +10,7 @@ from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, C
 from nemesis.models.actions import Action
 from nemesis.models.client import Client
 from nemesis.models.organisation import Organisation
+from nemesis.models.enums import FinanceOperationType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
@@ -102,6 +104,30 @@ class InvoiceController(BaseModelController):
         selecter.apply_sort_order(**args)
         listed_data = selecter.get_all()
         return listed_data
+
+    def get_invoice_payment_info(self, invoice):
+        trx_ctrl = FinanceTrxController()
+        op_list = trx_ctrl.get_invoice_finance_operations(invoice)
+
+        pay_sum = Decimal('0')
+        cancel_sum = Decimal('0')
+        for op in op_list:
+            if op.op_type.value == FinanceOperationType.invoice_pay[0]:
+                pay_sum += op.op_sum
+            if op.op_type.value == FinanceOperationType.invoice_cancel[0]:
+                cancel_sum += op.op_sum
+        paid_sum = pay_sum - cancel_sum
+        invoice_total_sum = invoice.total_sum
+        paid = paid_sum >= invoice_total_sum
+        debt_sum = invoice_total_sum - paid_sum
+        settle_date = invoice.settleDate
+        return {
+            'paid': paid,
+            'invoice_total_sum': invoice_total_sum,
+            'paid_sum': paid_sum,
+            'debt_sum': debt_sum,
+            'settle_date': settle_date
+        }
 
 
 class InvoiceSelecter(BaseSelecter):
