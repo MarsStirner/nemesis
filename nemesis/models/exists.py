@@ -2,6 +2,7 @@
 import datetime
 
 from sqlalchemy import Table
+from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
@@ -119,6 +120,21 @@ class rbTest(db.Model):
     code = db.Column(db.String(16), nullable=False, index=True)
     name = db.Column(db.String(128), nullable=False, index=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+
+
+class rbTestTubeType(db.Model):
+    __tablename__ = u'rbTestTubeType'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(64))
+    name = db.Column(db.String(128), nullable=False)
+    volume = db.Column(db.Float(asdecimal=True), nullable=False)
+    unit_id = db.Column(db.ForeignKey('rbUnit.id'), nullable=False, index=True)
+    covCol = db.Column(db.String(64))
+    image = db.Column(MEDIUMBLOB)
+    color = db.Column(db.String(8))
+
+    unit = db.relationship(u'rbUnit')
 
 
 class rbBloodType(db.Model):

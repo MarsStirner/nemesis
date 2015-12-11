@@ -926,6 +926,7 @@ class ActionType_TissueType(db.Model):
     tissueType_id = db.Column(db.ForeignKey('rbTissueType.id'), index=True)
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
 
     master = db.relationship(u'ActionType')
     tissueType = db.relationship(u'rbTissueType')
@@ -1006,6 +1007,8 @@ class TakenTissueJournal(db.Model):
     note = db.Column(db.String(128), nullable=False, default='')
     barcode = db.Column(db.Integer, nullable=False)  # set with trigger
     period = db.Column(db.Integer, nullable=False)  # set with trigger
+    testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
+    status = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     client = db.relationship(u'Client')
     execPerson = db.relationship(u'Person')
@@ -1015,6 +1018,24 @@ class TakenTissueJournal(db.Model):
     @property
     def barcode_s(self):
         return code128C(self.barcode).decode('windows-1252')
+
+    def __json__(self):
+        return {'id': self.id,
+                'datetime': self.datetimeTaken,
+                'client': self.client,
+                'execPerson': self.execPerson,
+                'tissueType': self.tissueType
+        }
+
+
+class Action_TakenTissueJournal(db.Model):
+    __tablename__ = u'Action_TakenTissueJournal'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.ForeignKey('Action.id'), index=True)
+    takenTissueJournal_id = db.Column(db.ForeignKey('TakenTissueJournal.id'), index=True)
+
+    action = db.relationship(u'Action')
 
 
 class OrgStructure_HospitalBed(db.Model):
