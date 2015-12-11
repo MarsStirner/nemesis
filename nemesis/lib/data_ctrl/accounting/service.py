@@ -15,6 +15,7 @@ from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import int_get_atl_dict_all, create_action, update_action, format_action_data
 from nemesis.lib.agesex import recordAcceptableEx
 from .contract import ContractController
+from .pricelist import PriceListItemController
 from .utils import calc_item_sum
 
 
@@ -38,7 +39,8 @@ class ServiceController(BaseModelController):
         service.priceListItem_id = price_list_item_id
         if price_list_item_id:
             service.price_list_item = self.session.query(PriceListItem).get(price_list_item_id)
-        service.amount = 1
+        amount = safe_double(params.get('amount', 1))
+        service.amount = amount
         service.deleted = 0
         return service
 
@@ -167,6 +169,21 @@ class ServiceController(BaseModelController):
                 result.append(action)
         return result
 
+    def get_new_service_for_new_action(self, action):
+        pli_ctrl = PriceListItemController()
+        pli_list = pli_ctrl.get_available_pli_list_for_new_action(action)
+        if len(pli_list) == 0:
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для создаваемого Action')
+        elif len(pli_list) > 1:
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для создаваемого Action')
+        pli = pli_list[0]
+        amount = safe_double(action.amount)
+        new_service = self.get_new_service({
+            'price_list_item_id': pli.id,
+            'amount': amount
+        })
+        return new_service
+
     def check_service_in_invoice(self, service):
         if not service.id:
             return False
@@ -224,15 +241,3 @@ class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):
     def apply_limit(self, **limit_args):
         self.search = self.search.limit(0, 100)
         return self
-
-    # def search(query, eventType_id=None, contract_id=None, speciality_id=None):
-    #     search = search.match(query)
-    #     if eventType_id:
-    #         search = search.filter(eventType_id__eq=int(eventType_id))
-    #     if contract_id:
-    #         search = search.filter(contract_id__eq=int(contract_id))
-    #     if speciality_id:
-    #         search = search.filter(speciality_id__in=[0, int(speciality_id)])
-    #     search = search.limit(0, 100)
-    #     result = search.ask()
-    #     return result

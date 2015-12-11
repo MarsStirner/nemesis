@@ -20,6 +20,7 @@ from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
+from nemesis.lib.action.utils import action_needs_service
 
 
 logger = logging.getLogger('simple')
@@ -208,6 +209,14 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
         for prop in action.properties:
             if prop.type.typeName == 'JobTicket':
                 prop.value = create_JT(action, os_id)
+
+    # Service
+    if action_needs_service(action):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        new_service = service_ctrl.get_new_service_for_new_action(action)
+        new_service.action = action
+        db.session.add(new_service)
 
     return action
 
