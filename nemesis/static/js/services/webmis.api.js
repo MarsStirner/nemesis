@@ -87,6 +87,9 @@ WebMis20
         save_service_list: function (args) {
             return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
         },
+        get_list_grouped: function (event_id) {
+            return wrapper('GET', WMConfig.url.api_service_list_grouped + event_id);
+        },
         calc_sum: function (args) {
             return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
         }
