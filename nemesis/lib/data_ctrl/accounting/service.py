@@ -184,6 +184,20 @@ class ServiceController(BaseModelController):
         })
         return new_service
 
+    def get_action_service(self, action):
+        action_id = action.id
+        if not action_id:
+            return None
+        service_list = self.session.query(Service).join(Action).filter(
+            Service.deleted == 0,
+            Action.id == action_id,
+        ).all()
+        if len(service_list) > 1:
+            raise ApiException(409, u'Найдено более одной услуги Service для Action с id = {0}'.format(action_id))
+        elif len(service_list) == 0:
+            return None
+        return service_list[0]
+
     def check_service_in_invoice(self, service):
         if not service.id:
             return False
@@ -192,6 +206,49 @@ class ServiceController(BaseModelController):
                 join(Service, InvoiceItem, InvoiceItem.service).join(Invoice)
             ).where(Service.id == service.id).where(Invoice.deleted == 0).where(Service.deleted == 0)
         ).scalar()
+
+    def get_service_invoice(self, service):
+        service_id = service.id
+        invoice_list = self.session.query(Invoice).join(InvoiceItem).filter(
+            Invoice.deleted == 0,
+            InvoiceItem.deleted == 0,
+            InvoiceItem.concreteService_id == service_id
+        ).all()
+        if len(invoice_list) == 0:
+            return None
+        elif len(invoice_list) > 1:
+            raise ApiException(409, u'Услуга Service с id = {0} находится в нескольких счетах'.format(service_id))
+        return invoice_list[0]
+
+    def check_service_is_paid(self, service):
+        if not service.id:
+            return False
+        # optimise in 1 query?
+        invoice = self.get_service_invoice(service)
+        if invoice is None:
+            return False
+        from .invoice import InvoiceController
+        invoice_ctrl = InvoiceController()
+        invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
+        return invoice_payment['paid']
+
+    def get_service_payment_info(self, service):
+        if not service.id:
+            return False
+        # optimise in 1 query?
+        invoice = self.get_service_invoice(service)
+        if invoice is not None:
+            from .invoice import InvoiceController
+            invoice_ctrl = InvoiceController()
+            invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
+            is_paid = invoice_payment['paid']
+        else:
+            is_paid = False
+        sum_ = service.sum_
+        return {
+            'sum': sum_,
+            'is_paid': is_paid
+        }
 
     def calc_service_sum(self, service, params):
         price = service.price_list_item.price
