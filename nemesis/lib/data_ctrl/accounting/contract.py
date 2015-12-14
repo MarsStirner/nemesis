@@ -43,9 +43,15 @@ class ContractController(BaseModelController):
             contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
         contract.deleted = 0
 
-        contract.payer = self.contragent_ctrl.get_new_contragent()
+        if 'payer_client_id' in params:
+            contract.payer = self.contragent_ctrl.get_contragent_for_new_contract({
+                'client_id': params['payer_client_id']
+            })
+        else:
+            contract.payer = self.contragent_ctrl.get_new_contragent()
+
         default_org = get_default_org()
-        contract.recipient = self.contragent_ctrl.get_new_contragent({
+        contract.recipient = self.contragent_ctrl.get_contragent_for_new_contract({
             'org_id': default_org.id
         })
 
@@ -76,6 +82,7 @@ class ContractController(BaseModelController):
         return contract
 
     def update_contract_ca_payer(self, contract, ca_data):
+        self.check_existing_ca(ca_data)
         contragent_id = safe_int(ca_data.get('id'))
         if contragent_id:
             contragent = self.contragent_ctrl.get_contragent(contragent_id)
@@ -87,6 +94,7 @@ class ContractController(BaseModelController):
         return contragent
 
     def update_contract_ca_recipient(self, contract, ca_data):
+        self.check_existing_ca(ca_data)
         contragent_id = safe_int(ca_data.get('id'))
         if contragent_id:
             ca_recipient = self.contragent_ctrl.get_contragent(contragent_id)
@@ -94,6 +102,15 @@ class ContractController(BaseModelController):
             ca_recipient = self.contragent_ctrl.update_contragent(contract.recipient, ca_data)
         contract.recipient = ca_recipient
         return ca_recipient
+
+    def check_existing_ca(self, ca_data):
+        contragent_id = safe_int(ca_data.get('id'))
+        client_id = safe_traverse(ca_data, 'client', 'id')
+        org_id = safe_traverse(ca_data, 'org', 'id')
+        ca = self.contragent_ctrl.get_existing_contragent(client_id, org_id, contragent_id)
+        if ca is not None:
+            raise ApiException(409, u'Невозможно сохранить контрагента - '
+                                    u'контрагент с такими параметрами уже существует')
 
     def update_contract_contingent(self, contract, cont_data):
         contingent_list = []
@@ -140,6 +157,12 @@ class ContractController(BaseModelController):
         pl_id_list = [safe_int(item[0]) for item in data_list]
         return pl_id_list
 
+    def get_last_contract_number(self):
+        last_number = self.session.query(Contract.number).filter(
+            Contract.deleted == 0
+        ).order_by(Contract.id.desc()).first()
+        return last_number[0] if last_number is not None else None
+
 
 class ContragentController(BaseModelController):
 
@@ -150,7 +173,12 @@ class ContragentController(BaseModelController):
         if params is None:
             params = {}
         ca = Contract_Contragent()
-        if 'org_id' in params:
+        if 'client_id' in params:
+            client_id = safe_int(params.get('client_id'))
+            client = self.session.query(Client).get(client_id)
+            ca.client_id = client_id
+            ca.client = client
+        elif 'org_id' in params:
             org_id = safe_int(params.get('org_id'))
             org = self.session.query(Organisation).get(org_id)
             ca.organisation_id = org_id
@@ -160,6 +188,36 @@ class ContragentController(BaseModelController):
 
     def get_contragent(self, ca_id):
         ca = self.session.query(Contract_Contragent).get(ca_id)
+        return ca
+
+    def get_contragent_for_new_contract(self, params):
+        if 'client_id' in params:
+            client_id = safe_int(params['client_id'])
+            ca = self.get_existing_contragent(client_id=client_id)
+            if ca is None:
+                ca = self.get_new_contragent(params)
+        elif 'org_id' in params:
+            org_id = safe_int(params['org_id'])
+            ca = self.get_existing_contragent(org_id=org_id)
+            if ca is None:
+                ca = self.get_new_contragent(params)
+        else:
+            ca = self.get_new_contragent()
+        return ca
+
+    def get_existing_contragent(self, client_id=None, org_id=None, not_contragent_id=None):
+        query = self.session.query(Contract_Contragent).filter(
+            Contract_Contragent.deleted == 0,
+        )
+        if client_id is not None:
+            query = query.filter(Contract_Contragent.client_id == client_id)
+        elif org_id is not None:
+            query = query.filter(Contract_Contragent.organisation_id == org_id)
+        else:
+            raise ValueError('both `client_id` and `org_id` arguments can\'t be empty')
+        if not_contragent_id is not None:
+            query = query.filter(Contract_Contragent.id != not_contragent_id)
+        ca = query.first()
         return ca
 
     def update_contragent(self, contragent, json_data):

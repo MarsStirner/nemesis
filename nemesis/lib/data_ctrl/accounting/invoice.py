@@ -4,7 +4,7 @@ import datetime
 
 from decimal import Decimal
 from sqlalchemy import or_
-from sqlalchemy.sql.expression import union
+from sqlalchemy.sql.expression import union, exists, join
 
 from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, Contract_Contragent, ServiceDiscount
 from nemesis.models.actions import Action
@@ -128,6 +128,15 @@ class InvoiceController(BaseModelController):
             'debt_sum': debt_sum,
             'settle_date': settle_date
         }
+
+    def check_event_has_invoice(self, event_id):
+        return self.session.query(
+            exists().select_from(
+                join(Invoice, InvoiceItem, Invoice.id == InvoiceItem.invoice_id).
+                    join(Service).join(Action)
+            ).where(Invoice.deleted == 0).where(Service.deleted == 0).
+                where(Action.event_id == event_id).where(Action.deleted == 0)
+        ).scalar()
 
 
 class InvoiceSelecter(BaseSelecter):
