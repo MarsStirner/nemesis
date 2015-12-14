@@ -140,6 +140,12 @@ class ContractController(BaseModelController):
         pl_id_list = [safe_int(item[0]) for item in data_list]
         return pl_id_list
 
+    def get_last_contract_number(self):
+        last_number = self.session.query(Contract.number).filter(
+            Contract.deleted == 0
+        ).order_by(Contract.id.desc()).first()
+        return last_number[0] if last_number is not None else None
+
 
 class ContragentController(BaseModelController):
 
