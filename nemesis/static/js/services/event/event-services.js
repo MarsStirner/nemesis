@@ -205,6 +205,7 @@ angular.module('WebMis20.services').
         var rt = {},
             fin = {},
             is_new = null;
+        var stat_codes = ['clinic', 'hospital', 'stationary'];
         return {
             set_state: function (request_type, finance, is_new) {
                 rt = request_type || {};
@@ -215,6 +216,9 @@ angular.module('WebMis20.services').
             },
             is_policlinic: function () {
                 return rt.code === 'policlinic';
+            },
+            is_stationary: function () {
+                return stat_codes.has(rt.code);
             },
             is_diagnostic: function () {
                 return rt.code === '4' || rt.code === 'diagnosis' || rt.code === 'diagnostic';
