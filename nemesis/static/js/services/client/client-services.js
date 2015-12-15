@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser',
-            function ($timeout, MessageBox, RefBookService, CurrentUser) {
+    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal',
+            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal) {
         function get_actual_address (client, entity) {
             var addrs =  client[entity].filter(function (el) {
                 return el.deleted === 0;
@@ -459,6 +459,48 @@ angular.module('WebMis20.services').
                     var idx = idx !== undefined ? idx : client[entity].indexOf(record);
                     client[entity].splice(idx, 1);
                 }
+            },
+            addVmpCoupon: function (client) {
+                var coupon = {
+                    id: null,
+                    number: 0,
+                    mkb: null,
+                    code: '',
+                    date: null,
+                    event: null,
+                    name: '',
+                    deleted: 0
+                };
+                client.vmp_coupons.push(coupon);
+                this.editVmpCoupon(client, coupon);
+            },
+            removeVmpCoupon: function(client, coupon) {
+                var self = this;
+                MessageBox.question(
+                    'Удаление талона ВМП',
+                    'Вы действительно хотите удалить талон ВМП?'
+                ).then(function () {
+                    self.delete_record(client, 'vmp_coupons', coupon)
+                })
+            },
+            editVmpCoupon: function(client, coupon) {
+                var self = this;
+                $modal.open({
+                    size: 'lg',
+                    templateUrl: '/nemesis/client/services/modal/edit_vmp_coupon.html',
+                    resolve: {
+                        coupon: coupon
+                    },
+                    controller: function ($scope, $modalInstance, coupon) {
+                        // Ну, блин, как-то сделать
+                    }
+                })
             }
         };
-    }]);
+    }])
+    .run(['$templateCache', function ($templateCache) {
+        $templateCache.put(
+            '/nemesis/client/services/modal/edit_vmp_coupon.html',
+            '<!-- Хрен знает, что здесь писать-->')
+    }])
+;

@@ -88,6 +88,9 @@ angular.module('WebMis20.services.models').
                         }
                     });
                 }
+                function add_vmp_coupons() {
+                    self.vmp_coupons = data.client_data.vmp_coupons;
+                }
 
                 self.info = data.client_data.info;
                 if (info_type === 'for_editing') {
@@ -99,6 +102,7 @@ angular.module('WebMis20.services.models').
                     add_relations();
                     add_contacts();
                     add_file_attaches();
+                    add_vmp_coupons();
                     self.document_history = data.client_data.document_history;
                     self.deleted_entities = {}; // deleted items to save
                 } else if (info_type === 'for_event') {
@@ -107,11 +111,13 @@ angular.module('WebMis20.services.models').
                     add_addresses();
                     add_relations();
                     add_contacts();
+                    // Do we need? add_vmp_coupons();
                 } else if (info_type === 'for_servicing') {
                     add_id_doc();
                     add_policies();
                     add_addresses();
                     add_contacts();
+                    // Do we need? add_vmp_coupons();
                     self.appointments = data.appointments;
                     self.events = data.events;
                 }
@@ -184,6 +190,7 @@ angular.module('WebMis20.services.models').
                 data.nationalities = this._get_entity_changes('nationalities');
                 data.relations = this._get_entity_changes('relations');
                 data.contacts = this._get_entity_changes('contacts');
+                data.vmp_coupons = this._get_entity_changes('vmp_coupons');
 
                 return data;
             };
