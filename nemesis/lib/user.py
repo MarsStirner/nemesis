@@ -16,7 +16,6 @@ from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
     urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventPoliclinicPaidClose,
     urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose, urEventDiagnosticBudgetClose)
-from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
 
 
 class User(UserMixin):
@@ -334,6 +333,7 @@ class UserUtils(object):
             return True
         elif current_user.has_right('evtDelOwn') and not event.is_closed:
             if current_user.id_any_in(event.execPerson_id, event.createPerson_id):
+                from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
                 invoice_ctrl = InvoiceController()
                 has_invoice = invoice_ctrl.check_event_has_invoice(event.id)
                 if has_invoice:

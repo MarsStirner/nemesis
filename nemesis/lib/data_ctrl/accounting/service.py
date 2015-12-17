@@ -71,6 +71,18 @@ class ServiceController(BaseModelController):
             data['discount'] = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
         return data
 
+    def delete_service(self, service):
+        if not self.check_can_delete_service(service):
+            raise ApiException(403, u'Невозможно удалить услугу с id = {0}'.format(service.id))
+        service.deleted = 1
+        if service.action:
+            from nemesis.lib.data import delete_action
+            try:
+                delete_action(service.action)
+            except Exception, e:
+                raise ApiException(403, unicode(e))
+        return service
+
     def search_mis_action_services(self, args):
         contract_id = safe_int(args.get('contract_id'))
         if not contract_id:
@@ -209,7 +221,11 @@ class ServiceController(BaseModelController):
 
     def get_service_invoice(self, service):
         service_id = service.id
-        invoice_list = self.session.query(Invoice).join(InvoiceItem).filter(
+        Invoice = self.model_provider.get('Invoice')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+        query = self.model_provider.get_query('Invoice')
+
+        invoice_list = query.join(InvoiceItem).filter(
             Invoice.deleted == 0,
             InvoiceItem.deleted == 0,
             InvoiceItem.concreteService_id == service_id
@@ -231,6 +247,12 @@ class ServiceController(BaseModelController):
         invoice_ctrl = InvoiceController()
         invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
         return invoice_payment['paid']
+
+    def check_can_edit_service(self, service):
+        return not service.in_invoice
+
+    def check_can_delete_service(self, service):
+        return not service.in_invoice
 
     def get_service_payment_info(self, service):
         if not service.id:

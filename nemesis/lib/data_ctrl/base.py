@@ -2,6 +2,7 @@
 
 from flask import abort
 
+from nemesis.lib.data_ctrl.model_provider import ApplicationModelProvider
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_int
 from nemesis.lib.pagination import Pagination
@@ -10,6 +11,7 @@ from nemesis.lib.pagination import Pagination
 class BaseModelController(object):
 
     session = db.session
+    model_provider = ApplicationModelProvider
 
     def __init__(self):
         pass

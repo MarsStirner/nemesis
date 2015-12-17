@@ -92,6 +92,9 @@ WebMis20
         },
         calc_sum: function (args) {
             return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
+        },
+        del: function (service_id) {
+            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
         }
     };
     this.service_discount = {

@@ -379,6 +379,7 @@ class ContragentSelecter(BaseSelecter):
 
     def apply_filter(self, **flt_args):
         if 'ca_type_code' in flt_args:
+            self.query = self.query.filter(Contract_Contragent.deleted == 0)
             ca_type_id = ContragentType.getId(flt_args['ca_type_code'])
             if ca_type_id == ContragentType.legal[0]:
                 self.query = self.query.join(Organisation)
@@ -400,6 +401,7 @@ class ContragentSelecter(BaseSelecter):
             return self
 
         if 'con_ca_type' in flt_args:
+            self.query = self.query.filter(Contract_Contragent.deleted == 0)
             con_ca_type_id = flt_args['con_ca_type']
             if con_ca_type_id == ContractContragentType.payer[0]:
                 self.query = self.query.join(

@@ -218,10 +218,41 @@ class Service(db.Model):
 
     def __init__(self):
         self.sum_ = self._get_recalc_sum()
+        self._in_invoice = None
+        self._invoice = None
+        self._invoice_loaded = False
 
     @orm.reconstructor
     def init_on_load(self):
         self.sum_ = self._get_recalc_sum()
+        self._in_invoice = None
+        self._invoice = None
+        self._invoice_loaded = False
+
+    @property
+    def in_invoice(self):
+        if self._in_invoice is None:
+            self._in_invoice = self._get_in_invoice()
+        return self._in_invoice
+
+    @property
+    def invoice(self):
+        if not self._invoice_loaded:
+            invoice = self._get_invoice()
+            self._invoice = invoice
+            self._invoice_loaded = True
+        return self.invoice
+
+    def _get_in_invoice(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        return service_ctrl.check_service_in_invoice(self)
+
+    def _get_invoice(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        invoice = service_ctrl.get_service_invoice(self)
+        return invoice
 
     def _get_recalc_sum(self):
         from nemesis.lib.data_ctrl.accounting.utils import calc_service_sum
