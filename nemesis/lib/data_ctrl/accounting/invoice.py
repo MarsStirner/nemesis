@@ -8,8 +8,6 @@ from sqlalchemy.sql.expression import union, exists, join
 
 from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, Contract_Contragent, ServiceDiscount
 from nemesis.models.actions import Action
-from nemesis.models.client import Client
-from nemesis.models.organisation import Organisation
 from nemesis.models.enums import FinanceOperationType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
@@ -25,7 +23,8 @@ class InvoiceController(BaseModelController):
         super(InvoiceController, self).__init__()
         self.item_ctrl = InvoiceItemController()
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return InvoiceSelecter()
 
     def get_new_invoice(self, params=None):
@@ -54,9 +53,7 @@ class InvoiceController(BaseModelController):
         return invoice
 
     def get_invoice(self, invoice_id):
-        invoice = self.session.query(Invoice).get(invoice_id)
-        invoice.total_sum = self.calc_invoice_total_sum(invoice)
-        return invoice
+        return self.get_selecter().get_by_id(invoice_id)
 
     def update_invoice(self, invoice, json_data):
         json_data = self._format_invoice_data(json_data)
@@ -105,6 +102,16 @@ class InvoiceController(BaseModelController):
         listed_data = selecter.get_all()
         return listed_data
 
+    def get_service_invoice(self, service):
+        service_id = service.id
+        sel = self.get_selecter()
+        invoice_list = sel.get_service_invoice(service_id)
+        if len(invoice_list) == 0:
+            return None
+        elif len(invoice_list) > 1:
+            raise ApiException(409, u'Услуга Service с id = {0} находится в нескольких счетах'.format(service_id))
+        return invoice_list[0]
+
     def get_invoice_payment_info(self, invoice):
         trx_ctrl = FinanceTrxController()
         op_list = trx_ctrl.get_invoice_finance_operations(invoice)
@@ -142,10 +149,20 @@ class InvoiceController(BaseModelController):
 class InvoiceSelecter(BaseSelecter):
 
     def __init__(self):
-        query = self.session.query(Invoice).order_by(Invoice.setDate)
+        Invoice = self.model_provider.get('Invoice')
+        query = self.model_provider.get_query('Invoice').order_by(Invoice.setDate)
         super(InvoiceSelecter, self).__init__(query)
 
     def apply_filter(self, **flt_args):
+        Invoice = self.model_provider.get('Invoice')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+        Action = self.model_provider.get('Action')
+        Service = self.model_provider.get('Service')
+        Contract = self.model_provider.get('Contract')
+        Contract_Contragent = self.model_provider.get('Contract_Contragent')
+        Client = self.model_provider.get('Client')
+        Organisation = self.model_provider.get('Organisation')
+
         if 'event_id' in flt_args:
             event_id = safe_int(flt_args['event_id'])
             self.query = self.query.join(InvoiceItem, Service, Action).filter(
@@ -204,6 +221,17 @@ class InvoiceSelecter(BaseSelecter):
             ).order_by(Invoice.settleDate.is_(None).desc(), Invoice.setDate.desc())
 
         return self
+
+    def get_service_invoice(self, service_id):
+        Invoice = self.model_provider.get('Invoice')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+
+        self.query = self.query.join(InvoiceItem).filter(
+            Invoice.deleted == 0,
+            InvoiceItem.deleted == 0,
+            InvoiceItem.concreteService_id == service_id
+        )
+        return self.get_all()
 
 
 class InvoiceItemController(BaseModelController):

@@ -28,7 +28,8 @@ class ServiceController(BaseModelController):
         super(ServiceController, self).__init__()
         self.contract_ctrl = ContractController()
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return ServiceSelecter()
 
     def get_new_service(self, params=None):
@@ -200,10 +201,8 @@ class ServiceController(BaseModelController):
         action_id = action.id
         if not action_id:
             return None
-        service_list = self.session.query(Service).join(Action).filter(
-            Service.deleted == 0,
-            Action.id == action_id,
-        ).all()
+        sel = self.get_selecter()
+        service_list = sel.get_action_service(action_id)
         if len(service_list) > 1:
             raise ApiException(409, u'Найдено более одной услуги Service для Action с id = {0}'.format(action_id))
         elif len(service_list) == 0:
@@ -219,28 +218,10 @@ class ServiceController(BaseModelController):
             ).where(Service.id == service.id).where(Invoice.deleted == 0).where(Service.deleted == 0)
         ).scalar()
 
-    def get_service_invoice(self, service):
-        service_id = service.id
-        Invoice = self.model_provider.get('Invoice')
-        InvoiceItem = self.model_provider.get('InvoiceItem')
-        query = self.model_provider.get_query('Invoice')
-
-        invoice_list = query.join(InvoiceItem).filter(
-            Invoice.deleted == 0,
-            InvoiceItem.deleted == 0,
-            InvoiceItem.concreteService_id == service_id
-        ).all()
-        if len(invoice_list) == 0:
-            return None
-        elif len(invoice_list) > 1:
-            raise ApiException(409, u'Услуга Service с id = {0} находится в нескольких счетах'.format(service_id))
-        return invoice_list[0]
-
     def check_service_is_paid(self, service):
         if not service.id:
             return False
-        # optimise in 1 query?
-        invoice = self.get_service_invoice(service)
+        invoice = service.invoice
         if invoice is None:
             return False
         from .invoice import InvoiceController
@@ -257,8 +238,7 @@ class ServiceController(BaseModelController):
     def get_service_payment_info(self, service):
         if not service.id:
             return False
-        # optimise in 1 query?
-        invoice = self.get_service_invoice(service)
+        invoice = service.invoice
         if invoice is not None:
             from .invoice import InvoiceController
             invoice_ctrl = InvoiceController()
@@ -286,7 +266,7 @@ class ServiceController(BaseModelController):
 class ServiceSelecter(BaseSelecter):
 
     def __init__(self):
-        query = self.session.query(Service)
+        query = self.model_provider.get_query('Service')
         super(ServiceSelecter, self).__init__(query)
 
     def apply_filter(self, **flt_args):
@@ -298,6 +278,16 @@ class ServiceSelecter(BaseSelecter):
                 Service.deleted == 0
             )
         return self
+
+    def get_action_service(self, action_id):
+        # вообще этому место в области экшенов
+        Service = self.model_provider.get('Service')
+        Action = self.model_provider.get('Action')
+        self.query = self.query.join(Action).filter(
+            Service.deleted == 0,
+            Action.id == action_id,
+        )
+        return self.get_all()
 
 
 class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):

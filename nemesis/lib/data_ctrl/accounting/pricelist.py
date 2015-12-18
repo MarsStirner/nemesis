@@ -13,7 +13,8 @@ from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 
 class PriceListController(BaseModelController):
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return PriceListSelecter()
 
     def get_pricelist(self, pricelist_id):
@@ -36,7 +37,8 @@ class PriceListSelecter(BaseSelecter):
 
 class PriceListItemController(BaseModelController):
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return PriceListItemSelecter()
 
     def get_pricelist_item(self, pricelist_item_id):

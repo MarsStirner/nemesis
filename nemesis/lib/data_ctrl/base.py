@@ -11,7 +11,6 @@ from nemesis.lib.pagination import Pagination
 class BaseModelController(object):
 
     session = db.session
-    model_provider = ApplicationModelProvider
 
     def __init__(self):
         pass
@@ -20,7 +19,8 @@ class BaseModelController(object):
     def set_session(cls, new_session):
         cls.session = new_session
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         raise NotImplementedError()
 
     def get_listed_data(self, args):
@@ -52,6 +52,10 @@ class BaseSelecter(object):
     def __init__(self, query):
         self.query = query
 
+    @classmethod
+    def set_model_provider(cls, provider):
+        cls.model_provider = provider
+
     def set_base_query(self):
         self.query = None
 
@@ -63,6 +67,9 @@ class BaseSelecter(object):
 
     def apply_sort_order(self, **order_args):
         pass
+
+    def get_by_id(self, item_id):
+        return self.query.get(item_id)
 
     def get_all(self):
         return self.query.all()

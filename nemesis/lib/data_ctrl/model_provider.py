@@ -13,6 +13,7 @@ class AbstractModelProvider(object):
     @classmethod
     def set_session(cls, session):
         cls.session = session
+        return cls
 
     @classmethod
     def get(cls, name):

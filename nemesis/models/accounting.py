@@ -241,7 +241,7 @@ class Service(db.Model):
             invoice = self._get_invoice()
             self._invoice = invoice
             self._invoice_loaded = True
-        return self.invoice
+        return self._invoice
 
     def _get_in_invoice(self):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
@@ -249,9 +249,9 @@ class Service(db.Model):
         return service_ctrl.check_service_in_invoice(self)
 
     def _get_invoice(self):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        service_ctrl = ServiceController()
-        invoice = service_ctrl.get_service_invoice(self)
+        from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+        invoice_ctrl = InvoiceController()
+        invoice = invoice_ctrl.get_service_invoice(self)
         return invoice
 
     def _get_recalc_sum(self):

@@ -28,7 +28,8 @@ class ContractController(BaseModelController):
         self.contingent_ctrl = ContingentController()
         self.pricelist_ctrl = PriceListController()
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return ContractSelecter()
 
     def get_new_contract(self, params=None):
@@ -166,7 +167,8 @@ class ContractController(BaseModelController):
 
 class ContragentController(BaseModelController):
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return ContragentSelecter()
 
     def get_new_contragent(self, params=None):
