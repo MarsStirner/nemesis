@@ -5,6 +5,7 @@ from werkzeug.utils import cached_property
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.app import app
+from nemesis.models.enums import TTJStatus
 from nemesis.models.utils import safe_current_user_id, get_model_by_name
 
 __author__ = 'mmalkov'
@@ -990,6 +991,12 @@ class rbTissueType(db.Model):
         }
 
 
+Action_TakenTissueJournal = db.Table('Action_TakenTissueJournal', db.Model.metadata,
+                                     db.Column('action_id', db.Integer, db.ForeignKey('Action.id')),
+                                     db.Column('takenTissueJournal_id', db.Integer, db.ForeignKey('TakenTissueJournal.id'))
+                                     )
+
+
 class TakenTissueJournal(db.Model):
     __tablename__ = u'TakenTissueJournal'
     __table_args__ = (
@@ -1008,34 +1015,35 @@ class TakenTissueJournal(db.Model):
     barcode = db.Column(db.Integer, nullable=False)  # set with trigger
     period = db.Column(db.Integer, nullable=False)  # set with trigger
     testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
-    status = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    statusCode = db.Column("status", db.Integer, nullable=False, server_default=u"'0'")
 
     client = db.relationship(u'Client')
     execPerson = db.relationship(u'Person')
     tissueType = db.relationship(u'rbTissueType')
+    testTubeType = db.relationship(u'rbTestTubeType')
     unit = db.relationship(u'rbUnit')
+    actions = db.relationship(u'Action', secondary=Action_TakenTissueJournal, lazy='joined')
 
     @property
     def barcode_s(self):
         return code128C(self.barcode).decode('windows-1252')
 
+    @property
+    def status(self):
+        return TTJStatus(self.statusCode) if self.statusCode is not None else None
+
     def __json__(self):
-        return {'id': self.id,
-                'datetime': self.datetimeTaken,
-                'client': self.client,
-                'execPerson': self.execPerson,
-                'tissueType': self.tissueType
+        return {
+            'id': self.id,
+            'datetime': self.datetimeTaken,
+            'client': self.client,
+            'execPerson': self.execPerson,
+            'tissueType': self.tissueType,
+            'testTubeType': self.testTubeType,
+            'amount': self.amount,
+            'status': self.status,
+            'isUrgent': True if filter(lambda a: a.isUrgent, self.actions) else False
         }
-
-
-class Action_TakenTissueJournal(db.Model):
-    __tablename__ = u'Action_TakenTissueJournal'
-
-    id = db.Column(db.Integer, primary_key=True)
-    action_id = db.Column(db.ForeignKey('Action.id'), index=True)
-    takenTissueJournal_id = db.Column(db.ForeignKey('TakenTissueJournal.id'), index=True)
-
-    action = db.relationship(u'Action')
 
 
 class OrgStructure_HospitalBed(db.Model):

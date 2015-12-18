@@ -175,3 +175,10 @@ class FinanceTransactionOperation(Enum):
     payer_balance_out = 2, u'Возврат денежных средств'
     invoice_pay = 3, u'Оплата по счёту'
     invoice_cancel = 4, u'Отмена оплаты по счёту'
+
+
+class TTJStatus(Enum):
+    waiting = 0, u'Ожидание'
+    in_progress = 1, u'Выполнение'
+    sending_to_lab = 3, u'Отправка в лабораторию'
+    finished = 2, u'Закончено'

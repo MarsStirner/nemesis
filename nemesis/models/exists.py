@@ -136,6 +136,15 @@ class rbTestTubeType(db.Model):
 
     unit = db.relationship(u'rbUnit')
 
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'covCol': self.covCol,
+            'unit': self.unit
+        }
+
 
 class rbBloodType(db.Model):
     __tablename__ = 'rbBloodType'
