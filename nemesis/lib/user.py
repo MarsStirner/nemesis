@@ -495,6 +495,7 @@ class UserProfileManager(object):
     doctor_anest = 'anestezDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
+    nurse = 'strNurse'  # Медсестра отделения
     cashier = 'kassir'  # Кассир
     obstetrician = 'obstetrician'  # Акушер-гинеколог
     overseer1 = 'overseer1'
@@ -513,6 +514,7 @@ class UserProfileManager(object):
         'overseers': [admin, overseer1, overseer2, overseer3],
         'overseers_low': [admin, overseer1, overseer2],
         'overseers_high': [admin, overseer3],
+        'nurse': [admin, nurse]
     }
 
     @classmethod
@@ -559,6 +561,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_assistant(cls):
         return cls._get_user_role() == cls.nurse_assist
+
+    @classmethod
+    def has_ui_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['nurse']
 
     @classmethod
     def has_ui_cashier(cls):

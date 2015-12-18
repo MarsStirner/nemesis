@@ -13,7 +13,7 @@ from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traver
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
-    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
+    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournal)
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
@@ -206,9 +206,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
         os_id = org_structure.id
-        for prop in action.properties:
-            if prop.type.typeName == 'JobTicket':
-                prop.value = create_JT(action, os_id)
+        create_TTJ_record(action)
 
     # Service
     if action_needs_service(action):
@@ -288,6 +286,42 @@ def format_action_data(json_data):
         'properties': json_data['properties']
     }
     return data
+
+
+def create_TTJ_record(action):
+    planned_end_date = action.plannedEndDate
+    if not planned_end_date:
+        raise ActionException(u'Не заполнена плановая дата исследования')
+    client_id = action.event.client_id
+    at_tissue_type = action.actionType.tissue_type
+    if at_tissue_type is None:
+        raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
+
+    ttj = TakenTissueJournal.query.filter(
+        TakenTissueJournal.client_id == client_id,
+        TakenTissueJournal.tissueType_id == at_tissue_type.tissueType_id,
+        TakenTissueJournal.datetimeTaken == planned_end_date
+    ).first()
+    if not ttj:
+        ttj = TakenTissueJournal()
+        ttj.client_id = client_id
+        ttj.tissueType_id = at_tissue_type.tissueType_id
+        ttj.amount = at_tissue_type.amount
+        ttj.unit_id = at_tissue_type.unit_id
+        ttj.datetimeTaken = planned_end_date
+        ttj.externalId = action.event.externalId
+        ttj.testTubeType_id = at_tissue_type.testTubeType_id
+    else:
+        ttj.amount += at_tissue_type.amount
+    db.session.add(ttj)
+    db.session.commit()
+
+    action_ttj = Action_TakenTissueJournal()
+    action_ttj.action_id = action.id
+    action_ttj.takenTissueJournal_id = ttj.id
+    db.session.add(action_ttj)
+
+    action.takenTissueJournal = ttj
 
 
 def create_JT(action, orgstructure_id):

@@ -5,6 +5,7 @@ from werkzeug.utils import cached_property
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.app import app
+from nemesis.models.enums import TTJStatus
 from nemesis.models.utils import safe_current_user_id, get_model_by_name
 
 __author__ = 'mmalkov'
@@ -926,6 +927,7 @@ class ActionType_TissueType(db.Model):
     tissueType_id = db.Column(db.ForeignKey('rbTissueType.id'), index=True)
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
 
     master = db.relationship(u'ActionType')
     tissueType = db.relationship(u'rbTissueType')
@@ -989,6 +991,12 @@ class rbTissueType(db.Model):
         }
 
 
+Action_TakenTissueJournal = db.Table('Action_TakenTissueJournal', db.Model.metadata,
+                                     db.Column('action_id', db.Integer, db.ForeignKey('Action.id')),
+                                     db.Column('takenTissueJournal_id', db.Integer, db.ForeignKey('TakenTissueJournal.id'))
+                                     )
+
+
 class TakenTissueJournal(db.Model):
     __tablename__ = u'TakenTissueJournal'
     __table_args__ = (
@@ -1006,15 +1014,36 @@ class TakenTissueJournal(db.Model):
     note = db.Column(db.String(128), nullable=False, default='')
     barcode = db.Column(db.Integer, nullable=False)  # set with trigger
     period = db.Column(db.Integer, nullable=False)  # set with trigger
+    testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
+    statusCode = db.Column("status", db.Integer, nullable=False, server_default=u"'0'")
 
     client = db.relationship(u'Client')
     execPerson = db.relationship(u'Person')
     tissueType = db.relationship(u'rbTissueType')
+    testTubeType = db.relationship(u'rbTestTubeType')
     unit = db.relationship(u'rbUnit')
+    actions = db.relationship(u'Action', secondary=Action_TakenTissueJournal, lazy='joined')
 
     @property
     def barcode_s(self):
         return code128C(self.barcode).decode('windows-1252')
+
+    @property
+    def status(self):
+        return TTJStatus(self.statusCode) if self.statusCode is not None else None
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'datetime': self.datetimeTaken,
+            'client': self.client,
+            'execPerson': self.execPerson,
+            'tissueType': self.tissueType,
+            'testTubeType': self.testTubeType,
+            'amount': self.amount,
+            'status': self.status,
+            'isUrgent': True if filter(lambda a: a.isUrgent, self.actions) else False
+        }
 
 
 class OrgStructure_HospitalBed(db.Model):
