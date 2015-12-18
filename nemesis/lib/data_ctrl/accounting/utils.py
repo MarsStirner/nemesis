@@ -5,6 +5,7 @@ from decimal import Decimal
 from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType
 from nemesis.lib.utils import safe_decimal
 from nemesis.lib.const import PAID_EVENT_CODE
+from nemesis.lib.data_ctrl.model_provider import ApplicationModelProvider
 
 
 def get_contragent_type(contragent):

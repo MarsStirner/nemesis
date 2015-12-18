@@ -8,7 +8,8 @@ from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 
 class ServiceDiscountController(BaseModelController):
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return ServiceDiscountSelecter()
 
     def get_service_discount(self, sd_id):
