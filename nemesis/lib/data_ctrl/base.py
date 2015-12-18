@@ -47,9 +47,16 @@ class BaseModelController(object):
 class BaseSelecter(object):
 
     session = db.session
+    model_provider = ApplicationModelProvider
 
     def __init__(self, query):
         self.query = query
+
+    def set_base_query(self):
+        self.query = None
+
+    def reset(self):
+        self.set_base_query()
 
     def apply_filter(self, **flt_args):
         pass
@@ -59,6 +66,13 @@ class BaseSelecter(object):
 
     def get_all(self):
         return self.query.all()
+
+    def get_first(self):
+        result = self.query.first()
+        return result[0] if result else None
+
+    def get_one(self):
+        return self.query.first()
 
     def paginate(self, page, per_page=20, error_out=False):
         """Returns `per_page` items from page `page`.  By default it will
