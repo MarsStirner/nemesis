@@ -665,7 +665,9 @@ class ClientDocument(db.Model):
     documentType = db.relationship(u'rbDocumentType', lazy=False)
     file_attach = db.relationship('ClientFileAttach')
 
-    def __init__(self, doc_type, serial, number, beg_date, end_date, origin, client):
+    @classmethod
+    def create(cls, doc_type, serial, number, beg_date, end_date, origin, client):
+        self = cls()
         self.documentType_id = int(doc_type) if doc_type else None
         self.serial = serial
         self.number = number
@@ -724,10 +726,10 @@ class ClientIdentification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     accountingSystem_id = db.Column(db.Integer, db.ForeignKey('rbAccountingSystem.id'), nullable=False)
@@ -1028,7 +1030,9 @@ class ClientPolicy(db.Model):
     policyType = db.relationship(u'rbPolicyType', lazy=False)
     file_attach = db.relationship('ClientFileAttach')
 
-    def __init__(self, pol_type, serial, number, beg_date, end_date, insurer, client):
+    @classmethod
+    def create(cls, pol_type, serial, number, beg_date, end_date, insurer, client):
+        self = cls()
         self.policyType_id = int(pol_type) if pol_type else None
         self.serial = serial
         self.number = number
@@ -1082,25 +1086,28 @@ class BloodHistory(db.Model):
     __tablename__ = u'BloodHistory'
 
     id = db.Column(db.Integer, primary_key=True)
-    bloodDate = db.Column(db.Date, nullable=False)
+    bloodDate = db.Column(db.Date)
     client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
     bloodType_id = db.Column(db.Integer, db.ForeignKey('rbBloodType.id'), nullable=False)
-    person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False)
-    bloodPhenotype_id = db.Column(db.Integer, db.ForeignKey('rbBloodPhenotype.id'), nullable=False)
-    bloodKell_id = db.Column(db.Integer, db.ForeignKey('rbBloodKell.id'), nullable=False)
+    person_id = db.Column(db.Integer, db.ForeignKey('Person.id'))
+    bloodPhenotype_id = db.Column(db.Integer, db.ForeignKey('rbBloodPhenotype.id'))
+    bloodKell_id = db.Column(db.Integer, db.ForeignKey('rbBloodKell.id'))
 
     bloodType = db.relationship("rbBloodType")
     person = db.relationship('Person')
     bloodPhenotype = db.relationship("rbBloodPhenotype")
     bloodKell = db.relationship("rbBloodKell")
 
-    def __init__(self, blood_type, date, person, client, blood_phenotype, blood_kell):
+    @classmethod
+    def create(cls, blood_type, date, person, client, blood_phenotype=None, blood_kell=None):
+        self = cls()
         self.bloodType_id = int(blood_type) if blood_type else None
         self.bloodDate = date
         self.person_id = int(person) if person else None
         self.client = client
         self.bloodPhenotype_id = int(blood_phenotype) if blood_phenotype else None
         self.bloodKell_id = int(blood_kell) if blood_kell else None
+        return self
 
     def __int__(self):
         return self.id
