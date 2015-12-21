@@ -49,8 +49,10 @@ class BaseSelecter(object):
     session = db.session
     model_provider = ApplicationModelProvider
 
-    def __init__(self, query):
+    def __init__(self, query=None):
         self.query = query
+        if query is None:
+            self.set_base_query()
 
     @classmethod
     def set_model_provider(cls, provider):

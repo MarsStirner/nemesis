@@ -160,9 +160,9 @@ class ContractContragentType(Enum):
     recipient = 1, u'Получатель'
 
 
-class ContractTypeInsurance(Enum):
-    without_policy = 0, u'без использования страховых полисов'
-    with_policy = 1, u'с использованием страховых полисов'
+class ContractTypeContingent(Enum):
+    arbitrary_presence = 0, u'не требуется наличие пациента в списке контингента'
+    strict_presence = 1, u'требуется наличие пациента в списке контингента'
 
 
 class FinanceTransactionType(Enum):

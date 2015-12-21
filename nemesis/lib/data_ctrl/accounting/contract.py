@@ -11,9 +11,9 @@ from nemesis.models.refbooks import rbFinance
 from nemesis.models.client import Client, ClientPolicy
 from nemesis.models.exists import rbPolicyType
 from nemesis.models.organisation import Organisation
-from nemesis.models.enums import ContragentType, ContractTypeInsurance, ContractContragentType
+from nemesis.models.enums import ContragentType, ContractTypeContingent, ContractContragentType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_traverse
-from nemesis.lib.const import COMP_POLICY_CODES, VOL_POLICY_CODES, OMS_EVENT_CODE, DMS_EVENT_CODE
+from nemesis.lib.const import VOL_POLICY_CODES, DMS_EVENT_CODE
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.utils import get_default_org
 from .utils import calc_payer_balance
@@ -153,7 +153,7 @@ class ContractController(BaseModelController):
 
     def get_contract_pricelist_id_list(self, contract_id):
         selecter = self.get_selecter()
-        selecter.set_availalble_pl_id_list(contract_id)
+        selecter.set_available_pl_id_list(contract_id)
         data_list = selecter.get_all()
         pl_id_list = [safe_int(item[0]) for item in data_list]
         return pl_id_list
@@ -280,6 +280,7 @@ class ContingentController(BaseModelController):
     def update_contingent(self, contingent, json_data, contract):
         json_data = self._format_contingent_data(json_data)
         contingent.contract = contract
+        contingent.contract_id = contract.id
         contingent.client = json_data['client']
         # TODO: in separate method
         contingent.deleted = json_data['deleted']
@@ -293,26 +294,14 @@ class ContingentController(BaseModelController):
 
 class ContractSelecter(BaseSelecter):
 
-    def __init__(self):
-        query = self.session.query(Contract)
-        super(ContractSelecter, self).__init__(query)
+    def set_base_query(self):
+        self.query = self.session.query(Contract)
 
     def set_available_contracts(self, client_id, finance_id, set_date):
         finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
-        finance_code = finance.code
-        policy_codes = (
-            COMP_POLICY_CODES
-            if finance_code == OMS_EVENT_CODE
-            else (
-                VOL_POLICY_CODES
-                if finance_code == DMS_EVENT_CODE
-                else None
-            )
-        )
-
-        contingent_query = self.session.query(Contract).join(
+        base_query = self.session.query(Contract).join(
             rbContractType
-        ).join(
+        ).outerjoin(
             Contract_Contingent
         ).filter(
             Contract.finance_id == finance_id,
@@ -321,16 +310,26 @@ class ContractSelecter(BaseSelecter):
                 Contract.begDate,
                 func.coalesce(Contract.endDate, func.curdate())
             ),
-            Contract.deleted == 0, Contract.draft == 0,
-            Contract_Contingent.client_id == client_id,
-            Contract_Contingent.deleted == 0
+            Contract.deleted == 0,
+            Contract.draft == 0
         )
 
-        if policy_codes is not None:
-            contingent_query = contingent_query.with_entities(Contract)
+        # 1 вариант - подходящие договоры по атрибутам контракта + проверка на строгое наличие контингента
+        # используется в *платных, омс и вмп* обращениях
+        contingent_query = base_query.filter(
+            func.IF(rbContractType.requireContingent == ContractTypeContingent.strict_presence[0],
+                    and_(Contract_Contingent.client_id == client_id,
+                         Contract_Contingent.deleted == 0),
+                    1)
+        )
+
+        # 2 вариант - в дополнение к выборке договора по 1ому варианту, который даст договоры с контингетом или без
+        # добавляется выборка подходящего договора по наличию у пациента полиса *дмс*, выданного организацией,
+        # являющейся плательщиком в договоре
+        if finance.code == DMS_EVENT_CODE:
+            contingent_query = contingent_query.with_entities(Contract)  # new query
             through_policy_query = self.session.query(Contract).join(
-                rbContractType, and_(Contract.contractType_id == rbContractType.id,
-                                     rbContractType.usingInsurancePolicy == ContractTypeInsurance.with_policy[0])
+                rbContractType
             ).join(
                 Contract_Contragent, and_(Contract.payer_id == Contract_Contragent.id,
                                           Contract_Contragent.deleted == 0)
@@ -341,7 +340,7 @@ class ContractSelecter(BaseSelecter):
                                    ClientPolicy.deleted == 0)
             ).join(
                 rbPolicyType, and_(ClientPolicy.policyType_id == rbPolicyType.id,
-                                   rbPolicyType.code.in_(policy_codes))
+                                   rbPolicyType.code.in_(VOL_POLICY_CODES))
             ).join(
                 Client, (ClientPolicy.clientId == Client.id)
             ).filter(
@@ -363,9 +362,9 @@ class ContractSelecter(BaseSelecter):
                 union(contingent_query, through_policy_query)
             ).order_by(Contract.date)
         else:
-            self.query = contingent_query.order_by(Contract.id)
+            self.query = contingent_query.order_by(Contract.date)
 
-    def set_availalble_pl_id_list(self, contract_id):
+    def set_available_pl_id_list(self, contract_id):
         self.query = self.query.join(Contract.pricelist_list).filter(
             Contract.id == contract_id,
             PriceList.deleted == 0
