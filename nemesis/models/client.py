@@ -363,10 +363,13 @@ class ClientAddress(db.Model):
         ca.deleted = from_addr.deleted
         return ca
 
-    def __init__(self, addr_type, loc_type, client):
+    @classmethod
+    def create(cls, addr_type, loc_type, client):
+        self = cls()
         self.type = addr_type
         self.localityType = loc_type
         self.client = client
+        return self
 
     @property
     def KLADRCode(self):
@@ -675,6 +678,7 @@ class ClientDocument(db.Model):
         self.endDate = end_date
         self.origin = origin
         self.client = client
+        return self
 
     @property
     def documentTypeCode(self):
@@ -1041,6 +1045,7 @@ class ClientPolicy(db.Model):
         self.insurer_id = int(insurer['id']) if insurer['id'] else None
         self.name = insurer['full_name'] if not insurer['id'] else None
         self.client = client
+        return self
 
     def is_valid(self, moment=None):
         if moment is None:
@@ -1147,7 +1152,7 @@ class Address(db.Model):
 
         loc_kladr_code, street_kladr_code = cls.compatible_kladr(loc_kladr_code, street_kladr_code)
 
-        addr_house = AddressHouse(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number)
+        addr_house = AddressHouse.create(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number)
         addr.house = addr_house
         return addr
 
@@ -1313,12 +1318,15 @@ class AddressHouse(db.Model):
     number = db.Column(db.String(8), nullable=False)
     corpus = db.Column(db.String(8), nullable=False)
 
-    def __init__(self, loc_code, street_code, street_free, house_number, corpus_number):
+    @classmethod
+    def create(cls, loc_code, street_code, street_free, house_number, corpus_number):
+        self = cls()
         self.KLADRCode = loc_code
         self.KLADRStreetCode = street_code
         self.streetFreeInput = street_free
         self.number = house_number
         self.corpus = corpus_number
+        return self
 
     def __json__(self):
         return {
