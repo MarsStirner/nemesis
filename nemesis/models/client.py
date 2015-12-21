@@ -735,7 +735,7 @@ class ClientIdentification(db.Model):
     accountingSystem_id = db.Column(db.Integer, db.ForeignKey('rbAccountingSystem.id'), nullable=False)
     identifier = db.Column(db.String(16), nullable=False)
     checkDate = db.Column(db.Date)
-    version = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, nullable=False, default=0)
 
     accountingSystems = db.relationship(u'rbAccountingSystem', lazy=False)
 
