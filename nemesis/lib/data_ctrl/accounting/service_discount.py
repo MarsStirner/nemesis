@@ -13,8 +13,7 @@ class ServiceDiscountController(BaseModelController):
         return ServiceDiscountSelecter()
 
     def get_service_discount(self, sd_id):
-        discount = self.session.query(ServiceDiscount).get(sd_id)
-        return discount
+        return self.get_selecter().get_by_id(sd_id)
 
 
 class ServiceDiscountSelecter(BaseSelecter):

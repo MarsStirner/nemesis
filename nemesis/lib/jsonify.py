@@ -978,7 +978,7 @@ class EventVisualizer(object):
             'exec_person': event.execPerson,
             'result': event.result,
             'ache_result': event.rbAcheResult,
-            'contract': cont_repr.represent_contract_full(event.contract),
+            'contract': cont_repr.represent_contract_with_description(event.contract),
             'event_type': event.eventType,
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
