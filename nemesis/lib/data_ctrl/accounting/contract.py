@@ -313,6 +313,58 @@ class ContractSelecter(BaseSelecter):
     def set_base_query(self):
         self.query = self.model_provider.get_query('Contract')
 
+    def apply_filter(self, **flt_args):
+        Contract = self.model_provider.get('Contract')
+        Contract_Contragent = self.model_provider.get('Contract_Contragent')
+        Organisation = self.model_provider.get('Organisation')
+        Client = self.model_provider.get('Client')
+
+        self.query = self.query.filter(Contract.deleted == 0)
+
+        if 'number' in flt_args:
+            query_str = u'%{0}%'.format(safe_unicode(flt_args['number']))
+            self.query = self.query.filter(Contract.number.like(query_str))
+        if 'finance_id' in flt_args:
+            self.query = self.query.filter(Contract.finance_id == safe_int(flt_args['finance_id']))
+        if 'payer_query' in flt_args:
+            self.query = self.query.join(
+                Contract_Contragent, Contract.payer_id == Contract_Contragent.id
+            ).outerjoin(Organisation, Client)
+            query_str = u'%{0}%'.format(safe_unicode(flt_args['payer_query']))
+            self.query = self.query.filter(or_(
+                or_(Client.firstName.like(query_str),
+                    Client.lastName.like(query_str),
+                    Client.patrName.like(query_str)),
+                or_(Organisation.shortName.like(query_str),
+                    Organisation.fullName.like(query_str))
+            ))
+        if 'recipient_query' in flt_args:
+            self.query = self.query.join(
+                Contract_Contragent, Contract.recipient_id == Contract_Contragent.id
+            ).outerjoin(Organisation, Client)
+            query_str = u'%{0}%'.format(safe_unicode(flt_args['recipient_query']))
+            self.query = self.query.filter(or_(
+                or_(Client.firstName.like(query_str),
+                    Client.lastName.like(query_str),
+                    Client.patrName.like(query_str)),
+                or_(Organisation.shortName.like(query_str),
+                    Organisation.fullName.like(query_str))
+            ))
+        if 'beg_date_from' in flt_args:
+            self.query = self.query.filter(Contract.begDate >= safe_date(flt_args['beg_date_from']))
+        if 'beg_date_to' in flt_args:
+            self.query = self.query.filter(Contract.begDate <= safe_date(flt_args['beg_date_to']))
+        if 'end_date_from' in flt_args:
+            self.query = self.query.filter(Contract.endDate >= safe_date(flt_args['end_date_from']))
+        if 'end_date_to' in flt_args:
+            self.query = self.query.filter(Contract.endDate <= safe_date(flt_args['end_date_to']))
+        if 'set_date_from' in flt_args:
+            self.query = self.query.filter(Contract.date >= safe_date(flt_args['set_date_from']))
+        if 'set_date_to' in flt_args:
+            self.query = self.query.filter(Contract.date <= safe_date(flt_args['set_date_to']))
+
+        return self
+
     def set_available_contracts(self, client_id, finance_id, set_date):
         rbFinance = self.model_provider.get('rbFinance')
         Contract = self.model_provider.get('Contract')
