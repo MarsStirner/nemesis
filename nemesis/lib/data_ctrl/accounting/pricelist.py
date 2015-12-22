@@ -18,8 +18,7 @@ class PriceListController(BaseModelController):
         return PriceListSelecter()
 
     def get_pricelist(self, pricelist_id):
-        pl = self.session.query(PriceList).get(pricelist_id)
-        return pl
+        return self.get_selecter().get_by_id(pricelist_id)
 
 
 class PriceListSelecter(BaseSelecter):
@@ -42,8 +41,7 @@ class PriceListItemController(BaseModelController):
         return PriceListItemSelecter()
 
     def get_pricelist_item(self, pricelist_item_id):
-        pli = self.session.query(PriceListItem).get(pricelist_item_id)
-        return pli
+        return self.get_selecter().get_by_id(pricelist_item_id)
 
     def get_available_pli_list_for_new_action(self, action):
         action_type_id = action.actionType.id

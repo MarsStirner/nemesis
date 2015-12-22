@@ -32,8 +32,16 @@ class Contract(db.Model):
     payer = db.relationship('Contract_Contragent', foreign_keys=[payer_id])
     finance = db.relationship('rbFinance')
     contract_type = db.relationship('rbContractType')
-    contingent_list = db.relationship('Contract_Contingent', backref='contract')
-    pricelist_list = db.relationship('PriceList', secondary='Contract_PriceList')
+    contingent_list = db.relationship(
+        'Contract_Contingent',
+        primaryjoin='and_(Contract_Contingent.contract_id == Contract.id, Contract_Contingent.deleted == 0)',
+        backref='contract'
+    )
+    pricelist_list = db.relationship(
+        'PriceList',
+        secondary='Contract_PriceList',
+        secondaryjoin='and_(Contract_PriceListAssoc.priceList_id == PriceList.id, PriceList.deleted == 0)',
+    )
     # tariff = db.relationship('ContractTariff',
     #                          primaryjoin='and_(ContractTariff.master_id == Contract.id, ContractTariff.deleted == 0)')
 
@@ -184,14 +192,14 @@ class rbContractType(db.Model):
     name = db.Column(db.Unicode(64), nullable=False)
     counterPartyOne = db.Column(db.SmallInteger, nullable=False)
     counterPartyTwo = db.Column(db.SmallInteger, nullable=False)
-    usingInsurancePolicy = db.Column(db.SmallInteger, nullable=False)
+    requireContingent = db.Column(db.SmallInteger, nullable=False)
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'using_insurance_policy': self.usingInsurancePolicy
+            'require_ontingent': self.requireContingent
         }
 
     def __int__(self):

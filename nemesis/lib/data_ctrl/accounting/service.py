@@ -46,8 +46,7 @@ class ServiceController(BaseModelController):
         return service
 
     def get_service(self, service_id):
-        contract = self.session.query(Service).get(service_id)
-        return contract
+        return self.get_selecter().get_by_id(service_id)
 
     def update_service(self, service, json_data):
         json_data = self._format_service_data(json_data)
