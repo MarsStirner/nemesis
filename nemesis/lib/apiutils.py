@@ -28,19 +28,27 @@ class ApiException(Exception):
 
     def __unicode__(self):
         if not self.extra:
-            return u'<ApiException(%s, %s)>' % (self.code, self.message)
+            return u'<ApiException(%s, u\'%s\')>' % (self.code, self.message)
         else:
-            return u'<ApiException(%s, %s, %s)' % (
+            return u'<ApiException(%s, u\'%s\', %s)' % (
                 self.code,
                 self.message,
-                u', '.join(
-                    map(lambda k, v: u'%s=%r' % (k, v), self.extra.iteritems())
-                )
+                u', '.join(u'%s=%r' % (k, v) for k, v in self.extra.iteritems())
             )
 
 
 def json_dumps(result):
     return json.dumps(result, cls=WebMisJsonEncoder, encoding='utf-8', ensure_ascii=False)
+
+
+def encode_tb(part):
+    enc = 'utf-8'
+    return [
+        part[0].decode(enc),
+        part[1],
+        part[2].decode(enc),
+        part[3].decode(enc),
+    ]
 
 
 def jsonify_ok(obj):
@@ -64,7 +72,7 @@ def jsonify_api_exception(exc, tb):
         name=exc.message,
     )
     if app.debug:
-        meta['traceback'] = tb
+        meta['traceback'] = map(encode_tb, tb)
     return flask.make_response(
         json_dumps({'meta': meta, 'result': None}),
         exc.code,
@@ -78,7 +86,7 @@ def jsonify_exception(exc, tb):
         name=repr(exc),
     )
     if app.debug:
-        meta['traceback'] = tb
+        meta['traceback'] = map(encode_tb, tb)
     return flask.make_response(
         json_dumps({'meta': meta, 'result': None}),
         500,
