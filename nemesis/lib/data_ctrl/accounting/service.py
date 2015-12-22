@@ -5,16 +5,18 @@ import datetime
 from sqlalchemy import exists
 from sqlalchemy.orm import join
 
-from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem
+from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount
 from nemesis.models.client import Client
 from nemesis.models.actions import Action
-from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal
+from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import int_get_atl_dict_all, create_action, update_action, format_action_data
 from nemesis.lib.agesex import recordAcceptableEx
 from .contract import ContractController
+from .pricelist import PriceListItemController
+from .utils import calc_item_sum
 
 
 class ServiceController(BaseModelController):
@@ -26,7 +28,8 @@ class ServiceController(BaseModelController):
         super(ServiceController, self).__init__()
         self.contract_ctrl = ContractController()
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         return ServiceSelecter()
 
     def get_new_service(self, params=None):
@@ -34,31 +37,51 @@ class ServiceController(BaseModelController):
             params = {}
         service = Service()
         price_list_item_id = safe_int(params.get('price_list_item_id'))
+        service.priceListItem_id = price_list_item_id
         if price_list_item_id:
-            service.priceListItem_id = price_list_item_id
-        service.amount = 1
+            service.price_list_item = self.session.query(PriceListItem).get(price_list_item_id)
+        amount = safe_double(params.get('amount', 1))
+        service.amount = amount
         service.deleted = 0
         return service
 
     def get_service(self, service_id):
-        contract = self.session.query(Service).get(service_id)
-        return contract
+        return self.get_selecter().get_by_id(service_id)
 
     def update_service(self, service, json_data):
         json_data = self._format_service_data(json_data)
-        for attr in ('amount', 'priceListItem_id', 'price_list_item'):
+        for attr in ('amount', 'priceListItem_id', 'price_list_item', 'discount_id', 'discount'):
             if attr in json_data:
                 setattr(service, attr, json_data.get(attr))
-        # self.update_contract_ca_payer(contract, json_data['payer'])
         return service
 
     def _format_service_data(self, data):
-        data['amount'] = safe_double(data['service']['amount'])
-        data['priceListItem_id'] = safe_int(data['service']['price_list_item_id'])
-        data['price_list_item'] = self.session.query(PriceListItem).filter(
-            PriceListItem.id == data['service']['price_list_item_id']
-        ).first()
+        if 'amount' in data:
+            data['amount'] = safe_double(data['amount'])
+        if 'price_list_item_id' in data:
+            price_list_item_id = safe_int(data['price_list_item_id'])
+            data['priceListItem_id'] = price_list_item_id
+            data['price_list_item'] = self.session.query(PriceListItem).get(price_list_item_id)
+        if 'discount_id' in data or 'discount' in data:
+            if 'discount_id' in data:
+                discount_id = safe_int(data.get('discount_id'))
+            else:
+                discount_id = safe_int(safe_traverse(data, 'discount', 'id'))
+            data['discount_id'] = discount_id
+            data['discount'] = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
         return data
+
+    def delete_service(self, service):
+        if not self.check_can_delete_service(service):
+            raise ApiException(403, u'Невозможно удалить услугу с id = {0}'.format(service.id))
+        service.deleted = 1
+        if service.action:
+            from nemesis.lib.data import delete_action
+            try:
+                delete_action(service.action)
+            except Exception, e:
+                raise ApiException(403, unicode(e))
+        return service
 
     def search_mis_action_services(self, args):
         contract_id = safe_int(args.get('contract_id'))
@@ -71,7 +94,7 @@ class ServiceController(BaseModelController):
         data = search_result['result']['items']
         for item in data:
             item['amount'] = 1
-            item['sum'] = item['price'] * item['amount']
+            item['sum'] = safe_decimal(item['price']) * safe_decimal(item['amount'])
         data = self._filter_mis_action_search_results(args, data)
         return data
 
@@ -119,7 +142,7 @@ class ServiceController(BaseModelController):
                 'action': service.action
             })
             grouped[idx]['sg_data']['total_amount'] += service.amount
-            grouped[idx]['sg_data']['total_sum'] += (service.price_list_item.price * safe_decimal(service.amount))
+            grouped[idx]['sg_data']['total_sum'] += service.sum_
         return {
             'grouped': grouped,
             'sg_map': sg_map
@@ -149,14 +172,41 @@ class ServiceController(BaseModelController):
                     service = self.get_service(service_id)
                     action = self.get_service_action(service.action_id)
                 else:
-                    service = self.get_new_service(service_data)
+                    service = self.get_new_service(service_data['service'])
                     action = self.get_new_service_action(service_data, event_id)
                     service.action = action
-                service = self.update_service(service, service_data)
+                service = self.update_service(service, service_data['service'])
                 action = self.update_service_action(action, service_data)
                 result.append(service)
                 result.append(action)
         return result
+
+    def get_new_service_for_new_action(self, action):
+        pli_ctrl = PriceListItemController()
+        pli_list = pli_ctrl.get_available_pli_list_for_new_action(action)
+        if len(pli_list) == 0:
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для создаваемого Action')
+        elif len(pli_list) > 1:
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для создаваемого Action')
+        pli = pli_list[0]
+        amount = safe_double(action.amount)
+        new_service = self.get_new_service({
+            'price_list_item_id': pli.id,
+            'amount': amount
+        })
+        return new_service
+
+    def get_action_service(self, action):
+        action_id = action.id
+        if not action_id:
+            return None
+        sel = self.get_selecter()
+        service_list = sel.get_action_service(action_id)
+        if len(service_list) > 1:
+            raise ApiException(409, u'Найдено более одной услуги Service для Action с id = {0}'.format(action_id))
+        elif len(service_list) == 0:
+            return None
+        return service_list[0]
 
     def check_service_in_invoice(self, service):
         if not service.id:
@@ -167,11 +217,55 @@ class ServiceController(BaseModelController):
             ).where(Service.id == service.id).where(Invoice.deleted == 0).where(Service.deleted == 0)
         ).scalar()
 
+    def check_service_is_paid(self, service):
+        if not service.id:
+            return False
+        invoice = service.invoice
+        if invoice is None:
+            return False
+        from .invoice import InvoiceController
+        invoice_ctrl = InvoiceController()
+        invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
+        return invoice_payment['paid']
+
+    def check_can_edit_service(self, service):
+        return not service.in_invoice
+
+    def check_can_delete_service(self, service):
+        return not service.in_invoice
+
+    def get_service_payment_info(self, service):
+        if not service.id:
+            return False
+        invoice = service.invoice
+        if invoice is not None:
+            from .invoice import InvoiceController
+            invoice_ctrl = InvoiceController()
+            invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
+            is_paid = invoice_payment['paid']
+        else:
+            is_paid = False
+        sum_ = service.sum_
+        return {
+            'sum': sum_,
+            'is_paid': is_paid
+        }
+
+    def calc_service_sum(self, service, params):
+        price = service.price_list_item.price
+        new_amount = safe_double(params.get('amount', service.amount))
+        discount_id = safe_int(params.get('discount_id'))
+        if discount_id:
+            discount = self.session.query(ServiceDiscount).get(discount_id)
+        else:
+            discount = None
+        return calc_item_sum(price, new_amount, discount)
+
 
 class ServiceSelecter(BaseSelecter):
 
     def __init__(self):
-        query = self.session.query(Service)
+        query = self.model_provider.get_query('Service')
         super(ServiceSelecter, self).__init__(query)
 
     def apply_filter(self, **flt_args):
@@ -183,6 +277,16 @@ class ServiceSelecter(BaseSelecter):
                 Service.deleted == 0
             )
         return self
+
+    def get_action_service(self, action_id):
+        # вообще этому место в области экшенов
+        Service = self.model_provider.get('Service')
+        Action = self.model_provider.get('Action')
+        self.query = self.query.join(Action).filter(
+            Service.deleted == 0,
+            Action.id == action_id,
+        )
+        return self.get_all()
 
 
 class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):
@@ -205,15 +309,3 @@ class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):
     def apply_limit(self, **limit_args):
         self.search = self.search.limit(0, 100)
         return self
-
-    # def search(query, eventType_id=None, contract_id=None, speciality_id=None):
-    #     search = search.match(query)
-    #     if eventType_id:
-    #         search = search.filter(eventType_id__eq=int(eventType_id))
-    #     if contract_id:
-    #         search = search.filter(contract_id__eq=int(contract_id))
-    #     if speciality_id:
-    #         search = search.filter(speciality_id__in=[0, int(speciality_id)])
-    #     search = search.limit(0, 100)
-    #     result = search.ask()
-    #     return result

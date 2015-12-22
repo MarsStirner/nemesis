@@ -160,9 +160,9 @@ class ContractContragentType(Enum):
     recipient = 1, u'Получатель'
 
 
-class ContractTypeInsurance(Enum):
-    without_policy = 0, u'без использования страховых полисов'
-    with_policy = 1, u'с использованием страховых полисов'
+class ContractTypeContingent(Enum):
+    arbitrary_presence = 0, u'не требуется наличие пациента в списке контингента'
+    strict_presence = 1, u'требуется наличие пациента в списке контингента'
 
 
 class FinanceTransactionType(Enum):
@@ -170,7 +170,7 @@ class FinanceTransactionType(Enum):
     invoice = 2, u'Движение средств по выставленным счетам'
 
 
-class FinanceTransactionOperation(Enum):
+class FinanceOperationType(EnumLoadable):
     payer_balance_in = 1, u'Поступление денежных средств'
     payer_balance_out = 2, u'Возврат денежных средств'
     invoice_pay = 3, u'Оплата по счёту'

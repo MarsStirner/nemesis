@@ -19,7 +19,8 @@ from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_pat
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
-from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
+from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
+    format_money)
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
@@ -977,7 +978,7 @@ class EventVisualizer(object):
             'exec_person': event.execPerson,
             'result': event.result,
             'ache_result': event.rbAcheResult,
-            'contract': cont_repr.represent_contract_full(event.contract),
+            'contract': cont_repr.represent_contract_with_description(event.contract),
             'event_type': event.eventType,
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
@@ -1080,6 +1081,7 @@ class EventVisualizer(object):
         """
         @type action: Action
         """
+        aviz = ActionVisualizer()
         return {
             'id': action.id,
             'name': action.actionType.name,
@@ -1094,6 +1096,7 @@ class EventVisualizer(object):
             'can_read': UserUtils.can_read_action(action),
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
+            'payment': aviz.make_action_payment_info(action)
         }
 
     def make_ultra_small_actions(self, event):
@@ -1754,3 +1757,13 @@ class ActionVisualizer(object):
             'comments': comments
         }
         return result
+
+    def make_action_payment_info(self, action):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        service = service_ctrl.get_action_service(action)
+        if service is None:
+            return None
+        service_payment = service_ctrl.get_service_payment_info(service)
+        service_payment['sum'] = format_money(service_payment['sum'])
+        return service_payment

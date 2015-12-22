@@ -20,6 +20,8 @@ from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
+from nemesis.lib.action.utils import action_needs_service
+from nemesis.lib.user import UserUtils
 
 
 logger = logging.getLogger('simple')
@@ -206,6 +208,15 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     if action.actionType.isRequiredTissue and org_structure:
         os_id = org_structure.id
         create_TTJ_record(action)
+
+    # Service
+    if action_needs_service(action):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        new_service = service_ctrl.get_new_service_for_new_action(action)
+        new_service.action = action
+        db.session.add(new_service)
+
     return action
 
 
@@ -250,6 +261,12 @@ def update_action(action, **kwargs):
     update_action_prescriptions(action, kwargs.get('prescriptions'))
 
     return action
+
+
+def delete_action(action):
+    if not UserUtils.can_delete_action(action):
+        raise Exception(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
+    action.delete()
 
 
 def format_action_data(json_data):

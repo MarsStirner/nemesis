@@ -356,7 +356,6 @@ class EventLocalContract(db.Model):
     documentType = db.relationship(u'rbDocumentType')
     # payments = db.relationship('EventPayment', backref=db.backref('local_contract'))
 
-    # Это что вообще?!
     @property
     def document(self):
         document = ClientDocument()

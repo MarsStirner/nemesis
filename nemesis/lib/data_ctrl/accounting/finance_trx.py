@@ -3,8 +3,8 @@
 import datetime
 
 from nemesis.models.accounting import (FinanceTransaction, rbFinanceTransactionType, rbPayType,
-   Contract_Contragent, Invoice)
-from nemesis.models.enums import FinanceTransactionType, FinanceTransactionOperation
+   Contract_Contragent, Invoice, rbFinanceOperationType)
+from nemesis.models.enums import FinanceTransactionType, FinanceOperationType
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController
@@ -31,11 +31,13 @@ class FinanceTrxController(BaseModelController):
         new_trx = self.get_new_trx()
         if trx_type.value == FinanceTransactionType.payer_balance[0]:
             json_data = self._format_trx_payer_balance_data(json_data)
-            for attr in ('contragent_id', 'contragent', 'payType_id', 'pay_type', 'sum', 'trxType_id', 'trx_type', ):
+            for attr in ('contragent_id', 'contragent', 'payType_id', 'pay_type', 'sum', 'trxType_id', 'trx_type',
+                         'financeOperationType_id', 'operation_type', ):
                 setattr(new_trx, attr, json_data[attr])
         elif trx_type.value == FinanceTransactionType.invoice[0]:
             json_data = self._format_trx_invoice_data(json_data)
-            for attr in ('invoice_id', 'invoice', 'contragent_id', 'contragent', 'sum', 'trxType_id', 'trx_type', ):
+            for attr in ('invoice_id', 'invoice', 'contragent_id', 'contragent', 'sum', 'trxType_id', 'trx_type',
+                         'financeOperationType_id', 'operation_type', ):
                 setattr(new_trx, attr, json_data[attr])
         else:
             raise ApiException(422, u'Unsupported trx type')
@@ -54,9 +56,9 @@ class FinanceTrxController(BaseModelController):
         pay_type = self.session.query(rbPayType).get(pay_type_id)
         trx_type_id = FinanceTransactionType.payer_balance[0]
         trx_type = self.session.query(rbFinanceTransactionType).get(trx_type_id)
-        finance_operation_id = safe_int(safe_traverse(data, 'finance_operation', 'id'))
+        fin_op_type_id = safe_int(safe_traverse(data, 'finance_operation_type', 'id'))
+        fin_op_type = self.session.query(rbFinanceOperationType).get(fin_op_type_id)
         sum_ = safe_decimal(data.get('sum'))
-        sum_ = self._get_trx_sum(finance_operation_id, sum_)
 
         data['contragent_id'] = contragent_id
         data['contragent'] = contragent
@@ -64,6 +66,8 @@ class FinanceTrxController(BaseModelController):
         data['pay_type'] = pay_type
         data['trxType_id'] = trx_type_id
         data['trx_type'] = trx_type
+        data['financeOperationType_id'] = fin_op_type_id
+        data['operation_type'] = fin_op_type
         data['sum'] = sum_
         return data
 
@@ -82,9 +86,9 @@ class FinanceTrxController(BaseModelController):
             raise ApiException(404, u'Не найден плательщик с id={0}'.format(contragent_id))
         trx_type_id = FinanceTransactionType.invoice[0]
         trx_type = self.session.query(rbFinanceTransactionType).get(trx_type_id)
-        finance_operation_id = safe_int(safe_traverse(data, 'finance_operation', 'id'))
+        fin_op_type_id = safe_int(safe_traverse(data, 'finance_operation_type', 'id'))
+        fin_op_type = self.session.query(rbFinanceOperationType).get(fin_op_type_id)
         sum_ = safe_decimal(data.get('sum'))
-        sum_ = self._get_trx_sum(finance_operation_id, sum_)
 
         data['invoice_id'] = invoice_id
         data['invoice'] = invoice
@@ -92,6 +96,8 @@ class FinanceTrxController(BaseModelController):
         data['contragent'] = contragent
         data['trxType_id'] = trx_type_id
         data['trx_type'] = trx_type
+        data['financeOperationType_id'] = fin_op_type_id
+        data['operation_type'] = fin_op_type
         data['sum'] = sum_
         return data
 
@@ -160,13 +166,22 @@ class FinanceTrxController(BaseModelController):
         item_list.append(invoice)
         return item_list
 
-    def _get_trx_sum(self, finance_operation_id, sum_):
-        if finance_operation_id in (FinanceTransactionOperation.payer_balance_in[0],
-                                    FinanceTransactionOperation.invoice_cancel[0]):
-            sum_ = abs(sum_)
-        elif finance_operation_id in (FinanceTransactionOperation.payer_balance_out[0],
-                                      FinanceTransactionOperation.invoice_pay[0]):
-            sum_ = -abs(sum_)
-        else:
-            raise ApiException(422, u'Unknown finance operation')
-        return sum_
+    def get_invoice_finance_operations(self, invoice):
+        trx_list = self.session.query(FinanceTransaction).filter(
+            FinanceTransaction.invoice_id == invoice.id
+        ).all()
+        op_list = []
+        for trx in trx_list:
+            op_sum = trx.sum
+            op_type_id = trx.financeOperationType_id
+            fo = FinanceOperation(op_type_id, op_sum, trx)
+            op_list.append(fo)
+        return op_list
+
+
+class FinanceOperation(object):
+
+    def __init__(self, op_type_id, op_sum, trx):
+        self.op_type = FinanceOperationType(op_type_id)
+        self.op_sum = abs(op_sum)
+        self.trx = trx

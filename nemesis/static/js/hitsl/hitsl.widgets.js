@@ -734,7 +734,7 @@ angular.module('WebMis20')
             return {
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
-                    scope.placeholder = iAttrs.placeholder || 'Выбери прайс-лист';
+                    scope.placeholder = iAttrs.placeholder || 'Выберите прайс-лист';
                     var refresh_pricelists = function (finance_id) {
                         return AccountingService.get_pricelists(finance_id)
                             .then(function (pl_list) {
@@ -746,6 +746,40 @@ angular.module('WebMis20')
                             refresh_pricelists(newVal.id);
                         }
                     });
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectServiceDiscount', ['AccountingService', function (AccountingService) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.description.short ]]</ui-select-match>\
+<ui-select-choices repeat="sd in sd_list" style="min-width: 200px; background-color: white">\
+    <div class="nowrap">\
+        <span style="font-size: larger">[[ sd.name ]]</span>\
+    </div>\
+    <div>\
+        <span class="text-muted">с [[ sd.beg_date | asDate ]] по [[ sd.end_date | asDate ]]</span>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите скидку';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    var refresh_discount_list = function () {
+                        return AccountingService.get_service_discounts()
+                            .then(function (sd_list) {
+                                scope.sd_list = sd_list;
+                            });
+                    };
+                    refresh_discount_list();
                 }
             }
         }

@@ -86,6 +86,22 @@ WebMis20
         },
         save_service_list: function (args) {
             return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
+        },
+        get_list_grouped: function (event_id) {
+            return wrapper('GET', WMConfig.url.api_service_list_grouped + event_id);
+        },
+        calc_sum: function (args) {
+            return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
+        },
+        del: function (service_id) {
+            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
+        }
+    };
+    this.service_discount = {
+        get_list: function (args) {
+            return wrapper('GET', WMConfig.url.api_service_discount_list, undefined, undefined, {
+                cache: true
+            });
         }
     };
     this.invoice = {
@@ -134,6 +150,13 @@ WebMis20
         },
         search: function (args) {
             return wrapper('POST', WMConfig.url.api_invoice_search, {}, args);
+        },
+        calc_sum: function (invoice_id, data) {
+            var url = WMConfig.url.api_invoice_calc_sum;
+            if (invoice_id) {
+                url += invoice_id;
+            }
+            return wrapper('POST', url, {}, data);
         }
     };
     this.finance_trx = {

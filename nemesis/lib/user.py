@@ -333,8 +333,11 @@ class UserUtils(object):
             return True
         elif current_user.has_right('evtDelOwn') and not event.is_closed:
             if current_user.id_any_in(event.execPerson_id, event.createPerson_id):
-                if event.payments:
-                    out_msg['message'] = u'В обращении есть платежи по услугам'
+                from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+                invoice_ctrl = InvoiceController()
+                has_invoice = invoice_ctrl.check_event_has_invoice(event.id)
+                if has_invoice:
+                    out_msg['message'] = u'В обращении есть выставленные счета'
                     return False
                 for action in event.actions:
                     # Проверка, что все действия не были изменены после создания обращения
@@ -346,10 +349,6 @@ class UserUtils(object):
                     # не закрыто
                     if action.status == ActionStatus.finished[0]:
                         out_msg['message'] = u'В обращении есть закрытые документы'
-                        return False
-                    # не отмечено "Считать"
-                    if action.account == 1:
-                        out_msg['message'] = u'В обращении есть услуги, отмеченные для оплаты'
                         return False
                 return True
         out_msg['message'] = u'У пользователя нет прав на удаление обращения'

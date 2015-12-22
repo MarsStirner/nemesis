@@ -37,35 +37,27 @@ def bootstrap_app(templates_dir):
 
 def init_logger():
     try:
-        from version import version
+        from nemesis.version import version
     except ImportError:
         version = 'Unversioned Nemesis'
     import logging
-    import requests
-    from pysimplelogs.logger import SimplelogHandler
+    from pysimplelogs2 import SimplelogHandler
 
-    url = app.config['SIMPLELOGS_URL']
     debug_mode = app.config['DEBUG']
-    owner = {
-        'name': app.config['PROJECT_NAME'],
-        'version': version
-    }
-
-    def __check_url():
-        try:
-            r = requests.get('{0}/api/'.format(url), timeout=2)
-            if r.status_code == 200:
-                return True
-        except requests.RequestException, e:
-            print u'Couldn\'t connect to simplelogs ({0})'.format(e)
-        return False
 
     formatter = logging.Formatter(
-        u'%(module) - %(funcName)s - %(asctime)s - %(levelname)s - %(message)s'
+        u'%(asctime)s - %(pathname)s:%(funcName)s [%(levelname)s] %(message)s'
         if debug_mode else
         u'%(message)s'
     )
-    handler = SimplelogHandler(url, owner) if __check_url() else logging.StreamHandler()
+
+    handler = SimplelogHandler()
+    url = app.config['SIMPLELOGS_URL']
+    handler.set_url(url)
+    handler.owner = {
+        'name': app.config['PROJECT_NAME'],
+        'version': version
+    }
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
 
@@ -73,12 +65,7 @@ def init_logger():
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
-    if debug_mode and not isinstance(handler, logging.StreamHandler):
-        # Для дебаг мода дублируем ошибки на стандартный вывод
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    logger.debug('SimpleLogs Handler initialized')
 
 
 def _init_enums(app):

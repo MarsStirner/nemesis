@@ -2,6 +2,7 @@
 
 from flask import abort
 
+from nemesis.lib.data_ctrl.model_provider import ApplicationModelProvider
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_int
 from nemesis.lib.pagination import Pagination
@@ -18,7 +19,8 @@ class BaseModelController(object):
     def set_session(cls, new_session):
         cls.session = new_session
 
-    def get_selecter(self):
+    @classmethod
+    def get_selecter(cls):
         raise NotImplementedError()
 
     def get_listed_data(self, args):
@@ -45,9 +47,22 @@ class BaseModelController(object):
 class BaseSelecter(object):
 
     session = db.session
+    model_provider = ApplicationModelProvider
 
-    def __init__(self, query):
+    def __init__(self, query=None):
         self.query = query
+        if query is None:
+            self.set_base_query()
+
+    @classmethod
+    def set_model_provider(cls, provider):
+        cls.model_provider = provider
+
+    def set_base_query(self):
+        self.query = None
+
+    def reset(self):
+        self.set_base_query()
 
     def apply_filter(self, **flt_args):
         pass
@@ -55,8 +70,18 @@ class BaseSelecter(object):
     def apply_sort_order(self, **order_args):
         pass
 
+    def get_by_id(self, item_id):
+        return self.query.get(item_id)
+
     def get_all(self):
         return self.query.all()
+
+    def get_first(self):
+        result = self.query.first()
+        return result[0] if result else None
+
+    def get_one(self):
+        return self.query.first()
 
     def paginate(self, page, per_page=20, error_out=False):
         """Returns `per_page` items from page `page`.  By default it will
