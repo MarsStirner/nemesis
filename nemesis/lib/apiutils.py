@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 import functools
+import json
 import traceback
+
+import sys
+
+import flask
+
+from nemesis.app import app
+from nemesis.lib.utils import WebMisJsonEncoder
 
 __author__ = 'viruzzz-kun'
 
@@ -10,12 +18,72 @@ class ApiException(Exception):
     :ivar code: HTTP-код ответа и соответствующий код в метаданных
     :ivar message: текстовое пояснение ошибки
     """
-    def __init__(self, code, message):
+    def __init__(self, code, message, **kwargs):
         self.code = code
         self.message = message
+        self.extra = kwargs
 
     def __str__(self):
-        return u'%s %s' % (self.code, self.message)
+        return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        if not self.extra:
+            return u'<ApiException(%s, %s)>' % (self.code, self.message)
+        else:
+            return u'<ApiException(%s, %s, %s)' % (
+                self.code,
+                self.message,
+                u', '.join(
+                    map(lambda k, v: u'%s=%r' % (k, v), self.extra.iteritems())
+                )
+            )
+
+
+def json_dumps(result):
+    return json.dumps(result, cls=WebMisJsonEncoder, encoding='utf-8', ensure_ascii=False)
+
+
+def jsonify_ok(obj):
+    return flask.make_response(
+        json_dumps({
+            'meta': {
+                'code': 200,
+                'name': 'OK',
+            },
+            'result': obj
+        }),
+        200,
+        {'content-type': 'application/json'}
+    )
+
+
+def jsonify_api_exception(exc, tb):
+    meta = dict(
+        exc.extra,
+        code=exc.code,
+        name=exc.message,
+    )
+    if app.debug:
+        meta['traceback'] = tb
+    return flask.make_response(
+        json_dumps({'meta': meta, 'result': None}),
+        exc.code,
+        {'content-type': 'application/json'}
+    )
+
+
+def jsonify_exception(exc, tb):
+    meta = dict(
+        code=500,
+        name=repr(exc),
+    )
+    if app.debug:
+        meta['traceback'] = tb
+    return flask.make_response(
+        json_dumps({'meta': meta, 'result': None}),
+        500,
+        {'content-type': 'application/json'}
+    )
 
 
 def api_method(func):
@@ -23,18 +91,17 @@ def api_method(func):
     :param func: декорируемая функция
     :type func: callable
     """
-    from nemesis.lib.utils import jsonify
-
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
         except ApiException, e:
             traceback.print_exc()
-            return jsonify(None, e.code, e.message)
+            return jsonify_api_exception(e, traceback.extract_tb(sys.exc_info()[2]))
         except Exception, e:
             traceback.print_exc()
-            return jsonify(None, 500, repr(e))
+            return jsonify_exception(e, traceback.extract_tb(sys.exc_info()[2]))
         else:
-            return jsonify(result)
+            return jsonify_ok(result)
+
     return wrapper
