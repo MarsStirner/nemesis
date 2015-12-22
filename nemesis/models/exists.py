@@ -1070,6 +1070,41 @@ class rbHospitalisationOrder(db.Model):
         return self.id
 
 
+class rbLaboratory(db.Model):
+    __tablename__ = u'rbLaboratory'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False, index=True)
+    name = db.Column(db.String(64), nullable=False, index=True)
+    protocol = db.Column(db.Integer, nullable=False)
+    address = db.Column(db.String(128), nullable=False)
+    ownName = db.Column(db.String(128), nullable=False)
+    labName = db.Column(db.String(128), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+
+class rbLaboratory_Test(db.Model):
+    __tablename__ = u'rbLaboratory_Test'
+    __table_args__ = (
+        db.Index(u'code', u'book', u'code'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    master_id = db.Column(db.ForeignKey('rbLaboratory.id'), nullable=False, index=True)
+    test_id = db.Column(db.ForeignKey('rbTest.id'), nullable=False, index=True)
+    book = db.Column(db.String(64), nullable=False)
+    code = db.Column(db.String(64), nullable=False)
+
+    test = db.relationship(u'rbTest', backref="lab_test")
+    laboratory = db.relationship(u'rbLaboratory')
+
+
 class rbServiceFinance(db.Model):
     __tablename__ = u'rbServiceFinance'
 
