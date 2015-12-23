@@ -52,7 +52,7 @@ def encode_tb(part):
 
 
 def jsonify_ok(obj):
-    return flask.make_response(
+    return (
         json_dumps({
             'meta': {
                 'code': 200,
@@ -73,7 +73,7 @@ def jsonify_api_exception(exc, tb):
     )
     if app.debug:
         meta['traceback'] = map(encode_tb, tb)
-    return flask.make_response(
+    return (
         json_dumps({'meta': meta, 'result': None}),
         exc.code,
         {'content-type': 'application/json'}
@@ -87,29 +87,43 @@ def jsonify_exception(exc, tb):
     )
     if app.debug:
         meta['traceback'] = map(encode_tb, tb)
-    return flask.make_response(
+    return (
         json_dumps({'meta': meta, 'result': None}),
         500,
         {'content-type': 'application/json'}
     )
 
 
-def api_method(func):
+def api_method(func=None, hook=None):
     """Декоратор API-функции. Автомагически оборачивает результат или исключение в jsonify-ответ
     :param func: декорируемая функция
     :type func: callable
+    :param hook: Response hook
+    :type: callable
     """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-        except ApiException, e:
-            traceback.print_exc()
-            return jsonify_api_exception(e, traceback.extract_tb(sys.exc_info()[2]))
-        except Exception, e:
-            traceback.print_exc()
-            return jsonify_exception(e, traceback.extract_tb(sys.exc_info()[2]))
-        else:
-            return jsonify_ok(result)
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+            except ApiException, e:
+                traceback.print_exc()
+                j, code, headers = jsonify_api_exception(e, traceback.extract_tb(sys.exc_info()[2]))
+                if hook:
+                    hook(code, j, e)
+            except Exception, e:
+                traceback.print_exc()
+                j, code, headers = jsonify_exception(e, traceback.extract_tb(sys.exc_info()[2]))
+                if hook:
+                    hook(code, j, e)
+            else:
+                j, code, headers = jsonify_ok(result)
+                if hook:
+                    hook(code, j)
+            return flask.make_response(j, code, headers)
 
-    return wrapper
+        return wrapper
+
+    if func is None:
+        return decorator
+    return decorator(func)
