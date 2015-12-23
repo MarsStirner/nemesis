@@ -991,10 +991,14 @@ class rbTissueType(db.Model):
         }
 
 
-Action_TakenTissueJournal = db.Table('Action_TakenTissueJournal', db.Model.metadata,
-                                     db.Column('action_id', db.Integer, db.ForeignKey('Action.id')),
-                                     db.Column('takenTissueJournal_id', db.Integer, db.ForeignKey('TakenTissueJournal.id'))
-                                     )
+class Action_TakenTissueJournalAssoc(db.Model):
+    __tablename__ = u'Action_TakenTissueJournal'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.ForeignKey('Action.id'), index=True)
+    takenTissueJournal_id = db.Column(db.ForeignKey('TakenTissueJournal.id'), index=True)
+
+    action = db.relationship(u'Action')
 
 
 class TakenTissueJournal(db.Model):
@@ -1022,7 +1026,7 @@ class TakenTissueJournal(db.Model):
     tissueType = db.relationship(u'rbTissueType')
     testTubeType = db.relationship(u'rbTestTubeType')
     unit = db.relationship(u'rbUnit')
-    actions = db.relationship(u'Action', secondary=Action_TakenTissueJournal, lazy='joined')
+    actions = db.relationship(u'Action', secondary='Action_TakenTissueJournal', lazy='joined')
 
     @property
     def barcode_s(self):
