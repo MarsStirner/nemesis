@@ -44,10 +44,10 @@ def json_dumps(result):
 def encode_tb(part):
     enc = 'utf-8'
     return [
-        part[0].decode(enc),
+        part[0].decode(enc) if part[2] else None,
         part[1],
-        part[2].decode(enc),
-        part[3].decode(enc),
+        part[2].decode(enc) if part[2] else None,
+        part[3].decode(enc) if part[3] else None,
     ]
 
 
