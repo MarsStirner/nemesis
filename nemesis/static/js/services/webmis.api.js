@@ -17,7 +17,7 @@ WebMis20
             return wrapper('GET', url, args);
         },
         get_list: function (args) {
-            return wrapper('GET', WMConfig.url.api_contract_list, args);
+            return wrapper('POST', WMConfig.url.api_contract_list, {}, args);
         },
         save: function (contract_id, data) {
             var url = WMConfig.url.api_contract_save,

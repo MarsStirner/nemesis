@@ -13,7 +13,7 @@ from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traver
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
-    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournal)
+    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
@@ -323,7 +323,7 @@ def create_TTJ_record(action):
     db.session.add(ttj)
     db.session.commit()
 
-    action_ttj = Action_TakenTissueJournal()
+    action_ttj = Action_TakenTissueJournalAssoc()
     action_ttj.action_id = action.id
     action_ttj.takenTissueJournal_id = ttj.id
     db.session.add(action_ttj)
