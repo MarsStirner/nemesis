@@ -191,9 +191,22 @@ angular.module('WebMis20.directives')
                 )
             }
         }
-        function controller ($scope, $modalInstance, model) {
+        function controller ($scope, $modalInstance, $http, model) {
             $scope.model = model;
             $scope.get_rls_name = get_rls_name;
+            $scope.get_rls = function (query){
+                if (!query) return;
+                return $http.get(url_rls_search, {
+                    params: {
+                        q: query,
+                        short: true,
+                        limit: 20
+                    }
+                })
+                .then(function (res) {
+                    return $scope.rls_list = res.data.result;
+                });
+            };
             $scope.model_incomplete = function () {
                 return !model.rls
                     || !model.dose || !model.dose.value || !model.dose.unit
@@ -337,9 +350,10 @@ angular.module('WebMis20.directives')
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Наименование препарата</label></div>\
             <div class="col-md-8">\
-                <ui-select ref-book="rlsNomen" theme="select2" ng-model="model.rls">\
+                <ui-select theme="select2" ng-model="model.rls">\
                     <ui-select-match>[[ get_rls_name($select.selected) ]]</ui-select-match>\
-                    <ui-select-choices repeat="item in $refBook.objects | filter: $select.search | orderBy:\'trade_name\' | limitTo:10 track by item.id">\
+                    <ui-select-choices repeat="item in rls_list | filter: $select.search | orderBy:\'trade_name\'"\
+                                       refresh="get_rls($select.search)">\
                         <div ng-bind-html="get_rls_name(item) | highlight: $select.search"></div>\
                     </ui-select-choices>\
                 </ui-select>\
