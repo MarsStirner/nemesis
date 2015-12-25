@@ -2,6 +2,8 @@
 import datetime
 import requests
 from werkzeug.utils import cached_property
+
+from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.app import app
@@ -626,8 +628,7 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
             domain = ActionProperty.query.get(self.id).type.valueDomain
             self.table_name = domain.split(';')[0]
         try:
-            response = requests.get(u'{0}v1/{1}/code/{2}'.format(app.config['VESTA_URL'], self.table_name, self.value_))
-            result = response.json()['data']
+            result = Vesta.get_rb(self.table_name, self.value_)
         except Exception, e:
             import traceback
             traceback.print_exc()

@@ -2,6 +2,7 @@
 import requests
 from nemesis.app import app
 from nemesis.lib.utils import safe_dict
+from nemesis.lib.vesta import Vesta
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol, \
     rls, refbooks, risar, accounting
 from nemesis.lib.apiutils import api_method
@@ -47,10 +48,9 @@ def api_refbook_int(name, code=None):
             else:
                 return [safe_dict(rb) for rb in ref_book.query.order_by(_order).all()]
 
-    response = requests.get(u'{0}v1/{1}/'.format(app.config['VESTA_URL'], name))
     return [
         {'id': item['_id'], 'name': item['name'], 'code': item['code']}
-        for item in response.json()['data']
+        for item in Vesta.get_rb(name)
     ]
 
 
