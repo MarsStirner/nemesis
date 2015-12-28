@@ -200,7 +200,10 @@ class v_Nomen(db.Model):
             'filling': unicode(self.filling),
             'dosage': {
                 'value': self.dosageValue,
-                'unit': self.dosageUnitName,
+                'unit': {
+                    'name': self.dosageUnitName,
+                    'code': self.dosageUnitCode,
+                },
             },
             'reg_date': self.regDate,
             'ann_date': self.annDate,
