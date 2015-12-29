@@ -310,6 +310,8 @@ _.mixin({
     deepCopy: function (obj) {
         if (_.isArray(obj)) {
             return obj.map(_.deepCopy);
+        } else if (_.isDate(obj)) {
+            return new Date(obj);
         } else if (_.isObject(obj)) {
             return _.mapObject(obj, _.deepCopy);
         } else {

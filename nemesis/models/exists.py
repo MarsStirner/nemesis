@@ -723,51 +723,54 @@ class rbPrintTemplate(db.Model):
 
 class rbService(db.Model):
     __tablename__ = u'rbService'
-    __table_args__ = (
-        db.Index(u'infis', u'infis', u'eisLegacy'),
-    )
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(31), nullable=False, index=True)
     name = db.Column(db.String(255), nullable=False, index=True)
-    eisLegacy = db.Column(db.Integer, nullable=False)
+    eisLegacy = db.Column(db.Integer, nullable=False, default=0)
     nomenclatureLegacy = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    license = db.Column(db.Integer, nullable=False)
-    infis = db.Column(db.String(31), nullable=False)
+    license = db.Column(db.Integer, nullable=False, default="'0'")
+    infis = db.Column(db.String(31), nullable=False, default='')
     begDate = db.Column(db.Date, nullable=False)
     endDate = db.Column(db.Date, nullable=False)
-    medicalAidProfile_id = db.Column(db.ForeignKey('rbMedicalAidProfile.id'), index=True)
+    medicalAidProfile_id = db.Column(db.ForeignKey('rbMedicalAidProfile.id'), index=True, server_default=u"'NULL'")
     adultUetDoctor = db.Column(db.Float(asdecimal=True), server_default=u"'0'")
     adultUetAverageMedWorker = db.Column(db.Float(asdecimal=True), server_default=u"'0'")
     childUetDoctor = db.Column(db.Float(asdecimal=True), server_default=u"'0'")
     childUetAverageMedWorker = db.Column(db.Float(asdecimal=True), server_default=u"'0'")
-    rbMedicalKind_id = db.Column(db.ForeignKey('rbMedicalKind.id'), index=True)
+    rbMedicalKind_id = db.Column(db.ForeignKey('rbMedicalKind.id'), index=True, server_default=u"'NULL'")
     UET = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
-    departCode = db.Column(db.String(3))
+    departCode = db.Column(db.String(3), server_default=u"'NULL'")
+    isComplex = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     medicalAidProfile = db.relationship(u'rbMedicalAidProfile')
     rbMedicalKind = db.relationship(u'rbMedicalKind')
+    subservice_list = db.relationship(
+        'rbService',
+        secondary='rbServiceGroup',
+        primaryjoin='rbServiceGroupAssoc.group_id == rbService.id',
+        secondaryjoin='rbServiceGroupAssoc.service_id == rbService.id'
+    )
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'infis': self.infis,
             'begDate': self.begDate,
             'endDate': self.endDate,
-            'adult_uet_doctor': self.adultUetDoctor,
-            'adult_uet_average_medical_worker': self.adultUetAverageMedWorker,
-            'child_uet_doctor': self.childUetDoctor,
-            'child_uet_average_medical_worker': self.childUetAverageMedWorker,
-            'uet': self.UET,
-            'department_code': self.departCode,
-            'medical_aid_profile': self.medicalAidProfile,
-            'medical_kind': self.rbMedicalKind,
         }
 
     def __int__(self):
         return self.id
+
+
+class rbServiceGroupAssoc(db.Model):
+    __tablename__ = u'rbServiceGroup'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
+    required = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
 
 
 class rbRequestType(db.Model):
