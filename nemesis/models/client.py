@@ -350,14 +350,14 @@ class ClientAddress(db.Model):
 
     @classmethod
     def create_from_free_input(cls, addr_type, loc_type, free_input, client):
-        ca = cls(addr_type, loc_type, client)
+        ca = cls.create(addr_type, loc_type, client)
         ca.address = None
         ca.freeInput = free_input
         return ca
 
     @classmethod
     def create_from_copy(cls, addr_type, from_addr, client):
-        ca = cls(addr_type, from_addr.localityType, client)
+        ca = cls.create(addr_type, from_addr.localityType, client)
         ca.address = from_addr.address
         ca.freeInput = from_addr.freeInput
         ca.deleted = from_addr.deleted
