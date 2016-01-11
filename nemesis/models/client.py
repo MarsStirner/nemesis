@@ -341,7 +341,7 @@ class ClientAddress(db.Model):
     @classmethod
     def create_from_kladr(cls, addr_type, loc_type, loc_kladr_code, street_kladr_code, street_free,
                           house_number, corpus_number, flat_number, client):
-        ca = cls(addr_type, loc_type, client)
+        ca = cls.create(addr_type, loc_type, client)
         addr = Address.create_new(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number,
                                   flat_number)
         ca.address = addr
