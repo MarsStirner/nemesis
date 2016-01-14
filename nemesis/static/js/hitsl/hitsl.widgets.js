@@ -590,4 +590,199 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectOrg', [function () {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" ref-book="Organisation">[[ $select.selected.short_name ]]</ui-select-match>\
+<ui-select-choices repeat="org in $refBook.objects | filter: {short_name: $select.search} | limitTo:50">\
+    <div ng-bind-html="org.short_name | highlight: $select.search"></div>\
+</ui-select-choices>');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'организация';
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectClientSearch', ['$http', function ($http) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.full_name ]]</ui-select-match>\
+<ui-select-choices repeat="client in clients" refresh="get_clients($select.search)">\
+    <div>\
+        <small>[[ client.id ]]</small>\
+        <span ng-bind-html="client.full_name | highlight: $select.search"></span>\
+    </div>\
+    <div>\
+        <small>[[ client.birth_date | asDate ]], [[ client.sex.name ]]</small>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'ФИО пациента';
+                    scope.get_clients = function (query) {
+                        if (!query) return;
+                        return $http.get(url_client_search, {
+                            params: {
+                                q: query,
+                                short: true,
+                                limit: 20
+                            }
+                        })
+                        .then(function (res) {
+                            return scope.clients = res.data.result;
+                        });
+                    };
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectContragentSearch', ['AccountingService', function (AccountingService) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.short_descr ]]</ui-select-match>\
+<ui-select-choices repeat="ca in ca_list" refresh="get_contragents($select.search)">\
+    <div><span ng-bind-html="ca.full_descr | highlight: $select.search"></span></div>\
+</ui-select-choices>');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    iAttrs.$observe('caTypeCode', function (newVal, oldVal) {
+                        scope.ca_type_code = newVal;
+                        scope.placeholder = scope.ca_type_code === 'legal' ?
+                            'Поиск контрагента, юр. лицо' :
+                            'Поиск контрагента, физ. лицо';
+                    });
+                    scope.get_contragents = function (query) {
+                        if (!query) return;
+                        return AccountingService.search_contragent(query, scope.ca_type_code)
+                            .then(function (ca_list) {
+                                scope.ca_list = ca_list;
+                            });
+                    };
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectContractEvent', [function () {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]">[[$select.selected.description.short]]</ui-select-match>\
+<ui-select-choices repeat="contract in contract_list | filter: $select.search">\
+    <div>\
+        <span>№[[ contract.number ]]</span> <span>от [[ contract.date | asDate ]]</span>\
+    </div>\
+    <div>\
+        <small>[[ contract.resolution ]]</small>\
+    </div>\
+</ui-select-choices>');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.contract_list = [];
+                    scope.$watch(tAttrs.contractList, function (newVal, oldVal) {
+                        scope.contract_list = newVal;
+                    });
+                    scope.placeholder = 'Выберите подходящий договор или создайте новый';
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectPriceListSearch', ['AccountingService', function (AccountingService) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.description.short ]]</ui-select-match>\
+<ui-select-choices repeat="pl in pl_list">\
+    <div>\
+        <span>[[ pl.id ]]</span> <span>[[ pl.code ]] [[ pl.name ]] ([[ pl.finance.name ]])</span>\
+    </div>\
+    <div>\
+        <span>с [[ pl.beg_date | asDate ]] по [[ pl.end_date | asDate ]]</span>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите прайс-лист';
+                    var refresh_pricelists = function (finance_id) {
+                        return AccountingService.get_pricelists(finance_id)
+                            .then(function (pl_list) {
+                                scope.pl_list = pl_list;
+                            });
+                    };
+                    scope.$watch(tAttrs.finance, function (newVal, oldVal) {
+                        if (newVal) {
+                            refresh_pricelists(newVal.id);
+                        }
+                    });
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectServiceDiscount', ['AccountingService', function (AccountingService) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.description.short ]]</ui-select-match>\
+<ui-select-choices repeat="sd in sd_list" style="min-width: 200px; background-color: white">\
+    <div class="nowrap">\
+        <span style="font-size: larger">[[ sd.name ]]</span>\
+    </div>\
+    <div>\
+        <span class="text-muted">с [[ sd.beg_date | asDate ]] по [[ sd.end_date | asDate ]]</span>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите скидку';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    var refresh_discount_list = function () {
+                        return AccountingService.get_service_discounts()
+                            .then(function (sd_list) {
+                                scope.sd_list = sd_list;
+                            });
+                    };
+                    refresh_discount_list();
+                }
+            }
+        }
+    }
+}])
 ;

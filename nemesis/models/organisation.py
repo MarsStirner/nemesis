@@ -174,6 +174,13 @@ class OrganisationBirthCareLevel(db.Model):
     perinatal_risk_rate = db.relationship('rbPerinatalRiskRate')
     orgs = db.relationship('Organisation', secondary='Organisation_OrganisationBCL')
 
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
 
 class Organisation_OrganisationBCLAssoc(db.Model):
     __tablename__ = u'Organisation_OrganisationBCL'

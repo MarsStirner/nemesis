@@ -52,7 +52,13 @@ class EnumBase(object):
 
     @classmethod
     def getId(cls, code):
-        return getattr(cls, code)[0]
+        item = getattr(cls, code, None)
+        return item[0] if item else None
+
+    @classmethod
+    def getName(cls, code):
+        item = getattr(cls, code, None)
+        return item[1] if item else None
 
     @classmethod
     def rb(cls):

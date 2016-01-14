@@ -12,6 +12,10 @@ from nemesis.models.kladr_models import KladrLocality, KladrStreet
 logger = logging.getLogger('simple')
 
 
+class VestaException(Exception):
+    pass
+
+
 class Vesta(object):
     class Result(object):
         def __init__(self, success=True, msg=''):
@@ -116,6 +120,21 @@ class Vesta(object):
             return [_make_kladr_street(street_info) for street_info in data]
         else:
             return []
+
+    @classmethod
+    @cache.memoize(60)
+    def get_rb(cls, name, code=None):
+        if code is not None:
+            url = u'{0}/v1/{1}/code/{2}'.format(cls.get_url(), name, code)
+        else:
+            url = u'{0}/v1/{1}'.format(cls.get_url(), name)
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise VestaException(u'Error in Vesta server')
+        j = response.json()
+        if 'data' not in j:
+            raise VestaException(u'No result from Vesta')
+        return j['data']
 
 
 def _make_kladr_locality(loc_info):

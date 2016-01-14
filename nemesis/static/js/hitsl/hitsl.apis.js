@@ -5,7 +5,8 @@
 
 angular.module('hitsl.core')
 .service('ApiCalls', ['$q','$http', 'NotificationService', 'Deferred', function ($q, $http, NotificationService, Deferred) {
-    this.wrapper = function (method, url, params, data) {
+    this.wrapper = function (method, url, params, data, config) {
+        if (config === undefined) config = {};
         var defer = $q.defer();
         function process(response) {
             if (response.status != 200 || response.data.meta.code != 200) {
@@ -25,7 +26,8 @@ angular.module('hitsl.core')
             method: method,
             url: url,
             params: params,
-            data: data
+            data: data,
+            cache: safe_traverse(config, ['cache'], false)
         })
         .then(process, process);
         return defer.promise;

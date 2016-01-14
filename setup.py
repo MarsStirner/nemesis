@@ -1,10 +1,20 @@
 import os
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages, findall
 except ImportError:
     from distutils.core import setup
 
 from nemesis.nemesis_version import version
+
+
+def list_files(pre_path, *dirnames):
+    l = len(pre_path)
+    for dirname in dirnames:
+        for path, subdirs, files in os.walk(os.path.join(pre_path, dirname)):
+            post_path = path[l + 1:]
+            for filename in files:
+                full_path = os.path.join(post_path, filename)
+                yield full_path
 
 
 def read(fname):
@@ -18,7 +28,10 @@ setup(
     description='Base MIS module.',
     long_description=read('README.md'),
     include_package_data=True,
-    packages=['nemesis'],
+    packages=find_packages(),
+    package_data={
+        'nemesis': list(list_files('nemesis', 'static')),
+    },
     platforms='any',
     #test_suite='nemesis.tests',
     install_requires=[

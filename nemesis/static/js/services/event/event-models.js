@@ -37,13 +37,12 @@ angular.module('WebMis20.services.models').
                 this.client_id = client_id;
                 this.ticket_id = ticket_id;
                 this.info = null;
-                this.payment = null;
                 this.diagnoses = [];
                 this.services = [];
+                this.invoices = [];
                 this.allergies = [];
                 this.intolerances = [];
                 this.ro = false;
-                this.has_access_to_payment_info = false;
                 this.can_read_diagnoses = false;
                 this.can_edit_diagnoses = false;
                 this.can_create_actions = [false, false, false, false];
@@ -56,7 +55,6 @@ angular.module('WebMis20.services.models').
                 self.allergies = data.result.allergies;
                 self.intolerances = data.result.intolerances;
                 self.ro = data.result.ro;
-                self.has_access_to_payment_info = data.result.has_access_to_payment_info;
                 self.can_read_diagnoses = data.result.can_read_diagnoses;
                 self.can_edit_diagnoses = data.result.can_edit_diagnoses;
                 self.can_create_actions = data.result.can_create_actions;
@@ -66,19 +64,10 @@ angular.module('WebMis20.services.models').
                     client_data: client_info
                 }, 'for_event');
                 self.diagnoses = data.result.diagnoses || [];
-
-                var p = data.result.payment;
-                var paymentKind = p ? p.payment_kind : null;
-                self.payment = {
-                    local_contract: (p && p.local_contract) ? p.local_contract : null,
-                    payments: new WMEventPaymentList(p ? p.payments : [], paymentKind),
-                    paymentKind: paymentKind
-                };
-                self.services = data.result.services && data.result.services.map(function(service) {
-                    return new WMEventServiceGroup(service, self.payment.payments);
-                }) || [];
+                self.services = data.result.services;
+                self.invoices = data.result.invoices;
                 self.is_closed = self.closed();
-            }
+            };
 
             WMEvent.prototype.reload = function() {
                 var self = this;
@@ -103,8 +92,6 @@ angular.module('WebMis20.services.models').
                 $http.post(url_event_save, {
                     event: this.info,
                     diagnoses: this.diagnoses,
-//                    payment: this.payment,
-                    services: this.services,
                     ticket_id: this.ticket_id,
                     close_event: close_event,
                     request_type_kind: this.request_type_kind

@@ -147,3 +147,38 @@ class MedicationPrescriptionStatus(Enum):
     entered_in_error = 4, u'Ошибочное'
     stopped = 5, u'Остановлено'
     superseded = 6, u'Заменено'
+
+
+class ContragentType(Enum):
+    undefined = 0, u'не выбрано'
+    individual = 1, u'Физ. лицо'
+    legal = 2, u'Юр. лицо'
+
+
+class ContractContragentType(Enum):
+    payer = 0, u'Плательщик'
+    recipient = 1, u'Получатель'
+
+
+class ContractTypeContingent(Enum):
+    arbitrary_presence = 0, u'не требуется наличие пациента в списке контингента'
+    strict_presence = 1, u'требуется наличие пациента в списке контингента'
+
+
+class FinanceTransactionType(Enum):
+    payer_balance = 1, u'Движение средств на счёте плательщика'
+    invoice = 2, u'Движение средств по выставленным счетам'
+
+
+class FinanceOperationType(EnumLoadable):
+    payer_balance_in = 1, u'Поступление денежных средств'
+    payer_balance_out = 2, u'Возврат денежных средств'
+    invoice_pay = 3, u'Оплата по счёту'
+    invoice_cancel = 4, u'Отмена оплаты по счёту'
+
+
+class TTJStatus(Enum):
+    waiting = 0, u'Ожидание'
+    in_progress = 1, u'Выполнение'
+    sending_to_lab = 3, u'Отправка в лабораторию'
+    finished = 2, u'Закончено'
