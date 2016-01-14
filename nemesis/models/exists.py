@@ -1596,7 +1596,7 @@ class ClientQuoting(db.Model):
     prevTalon_event_id = db.Column(db.Integer)
     version = db.Column(db.Integer, nullable=False)
 
-    event = db.relationship('Event.id', backref=db.backref('VMP_quoting', uselist=False))
+    event = db.relationship('Event', backref=db.backref('VMP_quoting', uselist=False))
     master = db.relationship(u'Client', backref='VMP_quoting')
     MKB_object = db.relationship('MKB')
     vmpCoupon = db.relationship('VMPCoupon')
@@ -1627,10 +1627,10 @@ class VMPCoupon(db.Model):
     __tablename__ = 'VMPCoupon'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     number = db.Column(db.Integer, nullable=False)
@@ -1639,7 +1639,7 @@ class VMPCoupon(db.Model):
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id'), nullable=False)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
     clientQuoting_id = db.Column(db.ForeignKey('Client_Quoting.id'))
-    fileLink = db.Column(db.String)
+    fileLink = db.Column('file', db.String)
 
     MKB_object = db.relationship('MKB')
     quotaType = db.relationship('QuotaType')
@@ -1658,13 +1658,17 @@ class VMPCoupon(db.Model):
     def from_xlsx(cls, xlsx_file):
         from nemesis.models.client import Client
         from xlsx import Workbook
+        import base64
+        from cStringIO import StringIO
 
         def read_smashed_cells(rown, cells):
-            row = sheet_0[rown]
-            return u''.join(row[cell].value for cell in cells)
+            return u''.join([sheet_0[cell+str(rown)].value for cell in cells])
 
-        book = Workbook(xlsx_file)
-        sheet_0 = book[0]
+        xlsx_str = base64.b64decode(xlsx_file)
+        f = StringIO(xlsx_str)
+
+        book = Workbook(f)
+        sheet_0 = book[1]
 
         self = cls()
         self.number = read_smashed_cells(10, itertools.chain('QRSTUVWXYZ', ['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG']))
@@ -1709,11 +1713,12 @@ class VMPCoupon(db.Model):
                 raise Exception(u'Слишком много совпадений')
             elif count < 1:
                 raise Exception(u'Не найдено пациента')
-            client = client.first()
+            client = query.first()
         self.client = client
         return self
 
     def __json__(self):
+        from nemesis.lib.utils import safe_traverse_attrs
         return {
             'id': self.id,
             'number': self.number,
@@ -1721,7 +1726,9 @@ class VMPCoupon(db.Model):
             'code': self.quotaType.code,
             'date': self.date,
             'event': safe_traverse_attrs(self, 'clientQuoting', 'event', 'externalId'),
-            'name': safe_traverse_attrs(self, 'clientQuoting', 'event', 'client', 'nameText'),
+            'client': {'id': self.client.id,
+                       'name': safe_traverse_attrs(self, 'client', 'nameText')},
+            'file': self.fileLink
         }
 
 

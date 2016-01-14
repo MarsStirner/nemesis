@@ -538,6 +538,7 @@ class ClientVisualizer(object):
         works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
         invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
         nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
+        vmp_coupons = client.VMP_coupons
         return {
             'info': client,
             'id_document': client.id_document if client.id else None,
@@ -554,7 +555,8 @@ class ClientVisualizer(object):
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
-            'file_attaches': files
+            'file_attaches': files,
+            'vmp_coupons': vmp_coupons
             # 'identifications': identifications,
         }
 
@@ -1463,11 +1465,11 @@ class StationaryEventVisualizer(EventVisualizer):
         data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
         data['allergies'] = self.make_intolerances(event.client.allergies, 0)
         data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
-        data['vmp_quoting'] = self.make_vmp_quoting(event)
+        # data['vmp_quoting'] = self.make_vmp_quoting(event)
         return data
 
-    def make_vmp_quoting(self, event):
-        return safe_traverse_attrs(event, 'VMP_quoting')
+    # def make_vmp_quoting(self, event):
+    #     return safe_traverse_attrs(event, 'VMP_quoting')
 
     def make_blood_history(self, obj):
         return {

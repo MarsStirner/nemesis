@@ -89,7 +89,8 @@ angular.module('WebMis20.services.models').
                     });
                 }
                 function add_vmp_coupons() {
-                    self.vmp_coupons = data.client_data.vmp_coupons;
+                    var vmp_coupons = data.client_data.vmp_coupons;
+                    self.vmp_coupons = vmp_coupons !== null ? vmp_coupons : [];
                 }
 
                 self.info = data.client_data.info;
