@@ -83,6 +83,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
 
     action = Action()
     action.actionType = actionType
+    action.actionType_id = action_type_id
     action.event = event
     action.event_id = event.id  # need for now
     action.begDate = now  # todo
@@ -147,7 +148,9 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
         if recordAcceptableEx(event.client.sexCode, event.client.age_tuple(now_date), prop_type.sex, prop_type.age):
             prop = ActionProperty()
             prop.type = prop_type
+            prop.type_id = prop_type.id
             prop.action = action
+            prop.action_id = action.id
             prop.isAssigned = prop_type.id in assigned
             if src_props.get(prop_type.id):
                 prop.value = src_props[prop_type.id].value

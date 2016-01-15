@@ -2,10 +2,9 @@
 
 from decimal import Decimal
 
-from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType
-from nemesis.lib.utils import safe_decimal
+from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType, ServiceKind
+from nemesis.lib.utils import safe_decimal, safe_bool
 from nemesis.lib.const import PAID_EVENT_CODE
-from nemesis.lib.data_ctrl.model_provider import ApplicationModelProvider
 
 
 def get_contragent_type(contragent):
@@ -16,10 +15,6 @@ def get_contragent_type(contragent):
             else ContragentType.undefined[0]
         )
     )
-
-
-def check_contract_type_with_insurance_policy(contract):
-    pass
 
 
 def calc_item_sum(price, amount, discount=None):
@@ -87,3 +82,13 @@ def check_invoice_closed(invoice):
 
 def check_invoice_can_add_discounts(invoice):
     return invoice.contract.finance.code == PAID_EVENT_CODE
+
+
+def get_searched_service_kind(service_is_complex, at_is_lab):
+    return ServiceKind(
+        ServiceKind.lab_action[0] if safe_bool(at_is_lab)
+        else (
+            ServiceKind.group[0] if safe_bool(service_is_complex)
+            else ServiceKind.simple_action[0]
+        )
+    )

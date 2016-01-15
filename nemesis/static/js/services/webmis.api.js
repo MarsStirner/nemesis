@@ -82,13 +82,22 @@ WebMis20
     };
     this.service = {
         search_mis_action_services: function (args) {
-            return wrapper('POST', WMConfig.url.api_service_search, {}, args);
+            return wrapper('GET', WMConfig.url.api_service_search, args);
+        },
+        get: function (service_id, args) {
+            var url = WMConfig.url.api_service_get;
+            if (service_id) {
+                url += service_id;
+            } else {
+                url += '?new=true';
+            }
+            return wrapper('GET', url, args);
         },
         save_service_list: function (args) {
             return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
         },
-        get_list_grouped: function (event_id) {
-            return wrapper('GET', WMConfig.url.api_service_list_grouped + event_id);
+        get_list: function (event_id) {
+            return wrapper('GET', WMConfig.url.api_service_list + event_id);
         },
         calc_sum: function (args) {
             return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);

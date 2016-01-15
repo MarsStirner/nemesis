@@ -5,10 +5,12 @@ import datetime
 from sqlalchemy import exists
 from sqlalchemy.orm import join
 
-from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount
+from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount, rbServiceKind
 from nemesis.models.client import Client
 from nemesis.models.actions import Action
-from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse
+from nemesis.models.event import Event
+from nemesis.models.enums import ServiceKind
+from nemesis.lib.utils import safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
@@ -16,7 +18,7 @@ from nemesis.lib.data import int_get_atl_dict_all, create_action, update_action,
 from nemesis.lib.agesex import recordAcceptableEx
 from .contract import ContractController
 from .pricelist import PriceListItemController
-from .utils import calc_item_sum
+from .utils import calc_item_sum, get_searched_service_kind
 
 
 class ServiceController(BaseModelController):
@@ -35,27 +37,128 @@ class ServiceController(BaseModelController):
     def get_new_service(self, params=None):
         if params is None:
             params = {}
+        params = self._format_service_data(params)
         service = Service()
-        price_list_item_id = safe_int(params.get('price_list_item_id'))
-        service.priceListItem_id = price_list_item_id
-        if price_list_item_id:
-            service.price_list_item = self.session.query(PriceListItem).get(price_list_item_id)
-        amount = safe_double(params.get('amount', 1))
-        service.amount = amount
+        service.serviceKind_id = params['serviceKind_id']
+        service.service_kind = params['service_kind']
+        service.event_id = params['event_id']
+        service.event = params['event']
+        service.priceListItem_id = params.get('priceListItem_id')
+        service.price_list_item = params.get('price_list_item')
+        service.amount = safe_double(params.get('amount', 1))
         service.deleted = 0
+        service.parent_id = params.get('parent_id')
+        service.parent_service = params.get('parent_service')
+
+        self.set_new_service_serviced_entity(service, params.get('serviced_entity_id'))
+
+        service.recalc_sum()
+
+        service.subservice_list = []
+        ss_list_params = params['subservice_list']
+        if ss_list_params:
+            for subservice_params in ss_list_params:
+                service.subservice_list.append(self.get_new_service(subservice_params))
+        else:
+            service.subservice_list = self.get_new_subservices_from_pricelist(service)
         return service
+
+    def set_new_service_serviced_entity(self, service, serviced_entity_id):
+        if service.serviceKind_id == ServiceKind.simple_action[0]:
+            service.action = self.get_new_service_action(service, serviced_entity_id)
+        elif service.serviceKind_id == ServiceKind.group[0]:
+            pass
+        elif service.serviceKind_id == ServiceKind.lab_action[0]:
+            service.action = self.get_new_service_action(service, serviced_entity_id)
+        elif service.serviceKind_id == ServiceKind.lab_test[0]:
+            lab_action = service.parent_service.action
+            service.action_property = self.get_new_service_action_property(lab_action, serviced_entity_id)
+
+    def get_new_subservices_from_pricelist(self, service):
+        if service.serviceKind_id in (ServiceKind.simple_action[0], ServiceKind.lab_test[0]):
+            return []
+        elif service.serviceKind_id == ServiceKind.group[0]:
+            ss_list = []
+            for rbservice in service.price_list_item.service.subservice_list:
+                ss_list.append(self.get_new_subservice_action(rbservice, service))
+            return ss_list
+        elif service.serviceKind_id == ServiceKind.lab_action[0]:
+            ss_list = []
+            for rbservice in service.price_list_item.service.subservice_list:
+                ss_list.append(self.get_new_subservice_action_property(rbservice, service))
+            return ss_list
+        else:
+            return []
+
+    def get_new_subservice_action(self, rbservice, parent_service):
+        pli_ctrl = PriceListItemController()
+        pli_at_list = pli_ctrl.get_available_pli_at_from_rbservice(
+            rbservice.id, parent_service.price_list_item.priceList_id
+        )
+        if len(pli_at_list) == 0:
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги')
+        elif len(pli_at_list) > 1:
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги')
+        pli_id, at_id = pli_at_list[0]
+        service_kind = get_searched_service_kind(rbservice.isComplex, False)  # TODO
+        new_service = self.get_new_service({
+            'service_kind': safe_dict(service_kind),
+            'event_id': parent_service.event_id,
+            'price_list_item_id': pli_id,
+            'parent_service': parent_service,
+            'serviced_entity_id': at_id,
+        })
+        return new_service
+
+    def get_new_subservice_action_property(self, rbservice, parent_service):
+        pli_ctrl = PriceListItemController()
+        pli_apt_list = pli_ctrl.get_available_pli_apt_from_rbservice(
+            rbservice.id,
+            parent_service.price_list_item.priceList_id,
+            parent_service.event.client_id,
+            parent_service.action.actionType_id
+        )
+        if len(pli_apt_list) == 0:
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги')
+        elif len(pli_apt_list) > 1:
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги')
+        pli_id, apt_id = pli_apt_list[0]
+        service_kind = ServiceKind(ServiceKind.lab_test[0])
+        new_service = self.get_new_service({
+            'service_kind': safe_dict(service_kind),
+            'event_id': parent_service.event_id,
+            'price_list_item_id': pli_id,
+            'parent_service': parent_service,
+            'serviced_entity_id': apt_id
+        })
+        return new_service
 
     def get_service(self, service_id):
         return self.get_selecter().get_by_id(service_id)
 
     def update_service(self, service, json_data):
         json_data = self._format_service_data(json_data)
-        for attr in ('amount', 'priceListItem_id', 'price_list_item', 'discount_id', 'discount'):
+        for attr in ('serviceKind_id', 'service_kind', 'amount', 'priceListItem_id', 'price_list_item',
+                     'discount_id', 'discount'):
             if attr in json_data:
                 setattr(service, attr, json_data.get(attr))
         return service
 
     def _format_service_data(self, data):
+        service_kind_id = safe_int(
+            safe_traverse(data, 'service_kind', 'id') or data.get('service_kind_id')
+        )
+        if service_kind_id is None:
+            raise ApiException(422, u'`service_kind` required')
+        if not ServiceKind(service_kind_id).is_valid():
+            raise ApiException(422, u'Unknown `service_kind`: {0}'.format(service_kind_id))
+        data['serviceKind_id'] = service_kind_id
+        data['service_kind'] = self.session.query(rbServiceKind).get(service_kind_id)
+
+        if 'event_id' in data:
+            event_id = safe_int(data['event_id'])
+            data['event_id'] = event_id
+            data['event'] = self.session.query(Event).get(event_id)
         if 'amount' in data:
             data['amount'] = safe_double(data['amount'])
         if 'price_list_item_id' in data:
@@ -69,7 +172,32 @@ class ServiceController(BaseModelController):
                 discount_id = safe_int(safe_traverse(data, 'discount', 'id'))
             data['discount_id'] = discount_id
             data['discount'] = self.session.query(ServiceDiscount).get(discount_id) if discount_id else None
+        if 'parent_id' in data:
+            parent_id = safe_int(data['parent_id'])
+            data['parent_id'] = parent_id
+            data['parent_service'] = self.session.query(Service).get(parent_id)
+
+        if 'serviced_entity_id' in data:
+            data['serviced_entity_id'] = self._format_serviced_entity_data(service_kind_id, data['serviced_entity_id'])
+
+        data['subservice_list'] = [
+            self._format_service_data(subservice_data)
+            for subservice_data in data.get('subservice_list', [])
+        ]
         return data
+
+    def _format_serviced_entity_data(self, service_kind_id, data):
+        if service_kind_id == ServiceKind.simple_action[0]:
+            # should be valid ActionType.id
+            return safe_int(data)
+        elif service_kind_id == ServiceKind.group[0]:
+            return None
+        elif service_kind_id == ServiceKind.lab_action[0]:
+            # should be valid ActionType.id
+            return safe_int(data)
+        elif service_kind_id == ServiceKind.lab_test[0]:
+            # should be valid ActionPropertyType.id
+            return safe_int(data)
 
     def delete_service(self, service):
         if not self.check_can_delete_service(service):
@@ -92,13 +220,22 @@ class ServiceController(BaseModelController):
         service_sphinx.apply_filter(pricelist_id_list=pricelist_id_list, **args)
         search_result = service_sphinx.get_all()
         data = search_result['result']['items']
-        for item in data:
-            item['amount'] = 1
-            item['sum'] = safe_decimal(item['price']) * safe_decimal(item['amount'])
-        data = self._filter_mis_action_search_results(args, data)
+        data = self._process_search_results(data)
+        data = self._filter_mis_action_search_results(data, args)
         return data
 
-    def _filter_mis_action_search_results(self, args, data):
+    def _process_search_results(self, data):
+        for item in data:
+            item['service_kind'] = get_searched_service_kind(item['is_complex_service'], item['is_at_lab'])
+            item['amount'] = 1
+            is_acc_price = safe_bool(item['is_accumulative_price'])
+            if is_acc_price:
+                item['sum'] = None
+            else:
+                item['sum'] = safe_decimal(item['price']) * safe_decimal(item['amount'])
+        return data
+
+    def _filter_mis_action_search_results(self, data, args):
         client_id = safe_int(args.get('client_id'))
         if not client_id:
             return data
@@ -109,10 +246,20 @@ class ServiceController(BaseModelController):
         matched = []
         for item in data:
             at_id = item['action_type_id']
-            at_data = ats_apts.get(at_id)
-            if at_data and recordAcceptableEx(client.sexCode, client_age, at_data[6], at_data[5]):
+            if at_id == 0:  # not action_type service
                 matched.append(item)
+            else:
+                at_data = ats_apts.get(at_id)
+                if at_data and recordAcceptableEx(client.sexCode, client_age, at_data[6], at_data[5]):
+                    matched.append(item)
         return matched
+
+    def get_services_by_event(self, event_id):
+        args = {
+            'event_id': event_id
+        }
+        service_list = self.get_listed_data(args)
+        return service_list
 
     def get_grouped_services_by_event(self, event_id):
         args = {
@@ -148,10 +295,17 @@ class ServiceController(BaseModelController):
             'sg_map': sg_map
         }
 
-    def get_new_service_action(self, service_data, event_id):
-        action_type_id = safe_int(service_data['action']['action_type_id'])
+    def get_new_service_action(self, service, serviced_entity_id):
+        event_id = service.event_id
+        action_type_id = serviced_entity_id
         action = create_action(action_type_id, event_id)
         return action
+
+    def get_new_service_action_property(self, lab_action, serviced_entity_id):
+        apt_id = serviced_entity_id
+        for prop in lab_action.properties:
+            if prop.type_id == apt_id:
+                return prop
 
     def get_service_action(self, action_id):
         contract = self.session.query(Action).get(action_id)
@@ -261,6 +415,13 @@ class ServiceController(BaseModelController):
             discount = None
         return calc_item_sum(price, new_amount, discount)
 
+    def get_subservices(self, service):
+        if service.serviceKind_id in (ServiceKind.simple_action[0], ServiceKind.lab_test[0]):
+            return []
+        sel = self.get_selecter()
+        ss_list = sel.get_subservices(service.id)
+        return ss_list
+
 
 class ServiceSelecter(BaseSelecter):
 
@@ -269,11 +430,12 @@ class ServiceSelecter(BaseSelecter):
         super(ServiceSelecter, self).__init__(query)
 
     def apply_filter(self, **flt_args):
+        Service = self.model_provider.get('Service')
+
         if 'event_id' in flt_args:
             event_id = safe_int(flt_args['event_id'])
-            self.query = self.query.join(Action).filter(
-                Action.event_id == event_id,
-                Action.deleted == 0,
+            self.query = self.query.filter(
+                Service.event_id == event_id,
                 Service.deleted == 0
             )
         return self
@@ -285,6 +447,14 @@ class ServiceSelecter(BaseSelecter):
         self.query = self.query.join(Action).filter(
             Service.deleted == 0,
             Action.id == action_id,
+        )
+        return self.get_all()
+
+    def get_subservices(self, service_id):
+        Service = self.model_provider.get('Service')
+        self.query = self.query.filter(
+            Service.parent_id == service_id,
+            Service.deleted == 0
         )
         return self.get_all()
 

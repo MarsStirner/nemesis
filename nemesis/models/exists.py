@@ -122,6 +122,16 @@ class rbTest(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
 
+class rbTest_Service(db.Model):
+    __tablename__ = u'rbTest_Service'
+
+    id = db.Column(db.Integer, primary_key=True)
+    test_id = db.Column(db.Integer, db.ForeignKey('rbTest.id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
+    begDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date)
+
+
 class rbTestTubeType(db.Model):
     __tablename__ = u'rbTestTubeType'
 

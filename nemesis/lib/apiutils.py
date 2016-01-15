@@ -61,7 +61,7 @@ def jsonify_ok(obj):
             'result': obj
         }),
         200,
-        {'content-type': 'application/json'}
+        {'content-type': 'application/json; charset=utf-8'}
     )
 
 
@@ -76,7 +76,7 @@ def jsonify_api_exception(exc, tb):
     return (
         json_dumps({'meta': meta, 'result': None}),
         exc.code,
-        {'content-type': 'application/json'}
+        {'content-type': 'application/json; charset=utf-8'}
     )
 
 
@@ -90,7 +90,7 @@ def jsonify_exception(exc, tb):
     return (
         json_dumps({'meta': meta, 'result': None}),
         500,
-        {'content-type': 'application/json'}
+        {'content-type': 'application/json; charset=utf-8'}
     )
 
 

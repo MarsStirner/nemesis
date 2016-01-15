@@ -6,6 +6,7 @@ from sqlalchemy import orm
 
 from nemesis.systemwide import db
 from nemesis.models.utils import safe_current_user_id
+from nemesis.models.enums import ServiceKind
 
 
 class Contract(db.Model):
@@ -131,6 +132,7 @@ class PriceListItem(db.Model):
     begDate = db.Column(db.Date, nullable=False)
     endDate = db.Column(db.Date, nullable=False)
     price = db.Column(db.Numeric(15, 2), nullable=False)
+    isAccumulativePrice = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     service = db.relationship(u'rbService')
 
@@ -206,6 +208,25 @@ class rbContractType(db.Model):
         return self.id
 
 
+class rbServiceKind(db.Model):
+    __tablename__ = 'rbServiceKind'
+    _table_description = u'Вид экземпляра услуги'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
+
+
 class Service(db.Model):
     __tablename__ = u'Service'
 
@@ -215,13 +236,21 @@ class Service(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     priceListItem_id = db.Column(db.Integer, db.ForeignKey('PriceListItem.id'), nullable=False)
+    serviceKind_id = db.Column(db.Integer, db.ForeignKey('rbServiceKind.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('Service.id'))
+    event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), nullable=False)
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'))
+    actionProperty_id = db.Column(db.Integer, db.ForeignKey('ActionProperty.id'))
     amount = db.Column(db.Float, nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
     discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
 
     price_list_item = db.relationship('PriceListItem')
+    service_kind = db.relationship('rbServiceKind')
+    parent_service = db.relationship('Service', uselist=False)
+    event = db.relationship('Event')
     action = db.relationship('Action')
+    action_property = db.relationship('ActionProperty')
     discount = db.relationship('ServiceDiscount')
 
     def __init__(self):
@@ -229,6 +258,7 @@ class Service(db.Model):
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
+        self._subservice_list = None
 
     @orm.reconstructor
     def init_on_load(self):
@@ -236,6 +266,7 @@ class Service(db.Model):
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
+        self._subservice_list = None
 
     @property
     def in_invoice(self):
@@ -251,6 +282,34 @@ class Service(db.Model):
             self._invoice_loaded = True
         return self._invoice
 
+    @property
+    def subservice_list(self):
+        if self._subservice_list is None:
+            self.init_subservice_list()
+        return self._subservice_list
+
+    @subservice_list.setter
+    def subservice_list(self, value):
+        self._subservice_list = value
+
+    def recalc_sum(self):
+        self.sum_ = self._get_recalc_sum()
+
+    def init_subservice_list(self):
+        self._subservice_list = self._get_subservices()
+        for ss in self._subservice_list:
+            ss.init_subservice_list()
+
+    def get_serviced_entity(self):
+        if self.serviceKind_id == ServiceKind.simple_action[0]:
+            return self.action
+        elif self.serviceKind_id == ServiceKind.group[0]:
+            return None
+        elif self.serviceKind_id == ServiceKind.lab_action[0]:
+            return self.action
+        elif self.serviceKind_id == ServiceKind.lab_test[0]:
+            return self.action_property
+
     def _get_in_invoice(self):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         service_ctrl = ServiceController()
@@ -265,6 +324,12 @@ class Service(db.Model):
     def _get_recalc_sum(self):
         from nemesis.lib.data_ctrl.accounting.utils import calc_service_sum
         return calc_service_sum(self) if self.priceListItem_id is not None else 0
+
+    def _get_subservices(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        ss_list = service_ctrl.get_subservices(self)
+        return ss_list
 
 
 class ServiceDiscount(db.Model):
