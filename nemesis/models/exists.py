@@ -1534,7 +1534,7 @@ class VMPCoupon(db.Model):
 
     MKB_object = db.relationship('MKB')
     quotaType = db.relationship('QuotaType')
-    client = db.relationship('Client', backref='VMP_coupons')
+    client = db.relationship('Client')
 
     @property
     def MKB(self):
