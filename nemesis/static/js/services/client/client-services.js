@@ -523,7 +523,7 @@ angular.module('WebMis20.services').
                             coupon_file: result[1]
                         }
                     ).success(function(data){
-                        deferred.resolve(coupon);
+                        deferred.resolve(data.result);
                     });
                 });
                 return deferred.promise;
@@ -534,7 +534,7 @@ angular.module('WebMis20.services').
         $templateCache.put(
             '/nemesis/client/services/modal/edit_vmp_coupon.html',
             '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-                <button type="button" class="close" ng-click="cancel()">&times;</button>\
+                <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
                 <h4 class="modal-title" id="myModalLabel">Загрузка талона ВМП</h4>\
             </div>\
             <div class="modal-body">\
@@ -593,7 +593,7 @@ angular.module('WebMis20.services').
             </div>\
             <div class="modal-footer">\
                 <div class="pull-right">\
-                    <button type="button" class="btn btn-default" ng-click="cancel()">Отмена</button>\
+                    <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
                     <button class="btn btn-success" ng-click="$close([coupon, coupon_file])">Сохранить</button>\
                 </div>\
             </div>\

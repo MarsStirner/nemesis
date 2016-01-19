@@ -5,7 +5,6 @@ import itertools
 from sqlalchemy import Table
 from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
-from nemesis.lib.utils import safe_traverse_attrs
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
 from nemesis.models.utils import safe_current_user_id
@@ -1460,10 +1459,10 @@ class ClientQuoting(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     master_id = db.Column(db.ForeignKey('Client.id'), index=True)
     identifier = db.Column(db.Unicode(16))
@@ -1471,27 +1470,27 @@ class ClientQuoting(db.Model):
     quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'),
                                 nullable=False, index=True)
     stage = db.Column(db.Integer)
-    directionDate = db.Column(db.DateTime, nullable=False)
+    directionDate = db.Column(db.DateTime)
     freeInput = db.Column(db.Unicode(128))
     org_id = db.Column(db.Integer)
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     MKB_id = db.Column(db.ForeignKey('MKB.id'), nullable=False)
-    vmpCoupon_id = db.Column(db.ForeignKey('VPMCoupon.id'))
+    vmpCoupon_id = db.Column(db.ForeignKey('VMPCoupon.id'), nullable=False)
     status = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     request = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     statment = db.Column(db.Unicode(255))
-    dateRegistration = db.Column(db.DateTime, nullable=False)
-    dateEnd = db.Column(db.DateTime, nullable=False)
+    dateRegistration = db.Column(db.DateTime)
+    dateEnd = db.Column(db.DateTime)
     orgStructure_id = db.Column(db.Integer)
     regionCode = db.Column(db.String(13), index=True)
     event_id = db.Column(db.ForeignKey('Event.id'), index=True)
     prevTalon_event_id = db.Column(db.Integer)
-    version = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
-    event = db.relationship('Event', backref=db.backref('VMP_quoting', uselist=False))
+    event = db.relationship('Event')
     master = db.relationship(u'Client', backref='VMP_quoting')
     MKB_object = db.relationship('MKB')
-    vmpCoupon = db.relationship('VMPCoupon')
+    vmpCoupon = db.relationship('VMPCoupon', backref=db.backref('clientQuoting', uselist=False))
     quotaDetails = db.relationship('VMPQuotaDetails')
 
     @property
@@ -1508,10 +1507,10 @@ class ClientQuoting(db.Model):
     def __json__(self):
         return {
             'coupon': self.vmpCoupon,
-            'quota_type': self.quotaDetails.quotaType,
+            'quota_type': self.quotaDetails.quota_type,
             'patient_model': self.quotaDetails.pacient_model,
             'treatment': self.quotaDetails.treatment,
-            'mkb': self.quotaDetails.mkb,
+            'mkb': self.MKB_object,
         }
 
 
@@ -1530,13 +1529,12 @@ class VMPCoupon(db.Model):
     date = db.Column(db.Date)
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id'), nullable=False)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
-    clientQuoting_id = db.Column(db.ForeignKey('Client_Quoting.id'))
+    clientQuoting_id = db.Column(db.Integer)
     fileLink = db.Column('file', db.String)
 
     MKB_object = db.relationship('MKB')
     quotaType = db.relationship('QuotaType')
     client = db.relationship('Client', backref='VMP_coupons')
-    clientQuoting = db.relationship('ClientQuoting')
 
     @property
     def MKB(self):
@@ -1622,18 +1620,3 @@ class VMPCoupon(db.Model):
                        'name': safe_traverse_attrs(self, 'client', 'nameText')},
             'file': self.fileLink
         }
-
-
-class PriceList(db.Model):
-    __tablename__ = u'PriceList'
-
-    id = db.Column(db.Integer, primary_key=True)
-    deleted = db.Column(db.SmallInteger, nullable=False, default='0')
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), nullable=False, index=True)
-    name = db.Column(db.Unicode(100), nullable=False)
-
-    finance = db.relationship(u'rbFinance')

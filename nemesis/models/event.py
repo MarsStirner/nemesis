@@ -80,6 +80,11 @@ class Event(db.Model):
         u'Visit',
         primaryjoin="and_(Event.id == Visit.event_id, Visit.deleted == 0)"
     )
+    VMP_quoting = db.relationship(
+        u'ClientQuoting',
+        primaryjoin="and_(Event.id == ClientQuoting.event_id, ClientQuoting.deleted == 0)",
+        uselist=False
+    )
     uuid = db.relationship('UUID')
 
     @property

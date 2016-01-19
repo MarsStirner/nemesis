@@ -785,4 +785,39 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectVmpCoupon', ['$http', function ($http) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.number ]]</ui-select-match>\
+<ui-select-choices repeat="coupon in coupon_list" style="min-width: 200px; background-color: white">\
+    <div ng-bind-html="coupon.number | highlight: $select.search"></div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите талон';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.$watch(tAttrs.client, function (newVal, oldVal) {
+                        if (newVal) {
+                            scope.client_id = newVal;
+                            $http.get(url_client_get_vmpcoupons, {
+                                params: {
+                                    client_id: scope.client_id
+                                }
+                            })
+                            .then(function (res) {
+                                return scope.coupon_list = res.data.result;
+                            });
+                        }
+                    });
+                }
+            }
+        }
+    }
+}])
 ;

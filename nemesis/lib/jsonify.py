@@ -1479,11 +1479,11 @@ class StationaryEventVisualizer(EventVisualizer):
         data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
         data['allergies'] = self.make_intolerances(event.client.allergies, 0)
         data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
-        # data['vmp_quoting'] = self.make_vmp_quoting(event)
+        data['vmp_quoting'] = self.make_vmp_quoting(event)
         return data
 
-    # def make_vmp_quoting(self, event):
-    #     return safe_traverse_attrs(event, 'VMP_quoting')
+    def make_vmp_quoting(self, event):
+        return event.VMP_quoting
 
     def make_blood_history(self, obj):
         return {
