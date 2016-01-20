@@ -84,6 +84,7 @@ def fc_urls():
     config = app.config
     coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
+    pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
     return {
         'url': {
             'logout': url_for("logout"),
@@ -103,9 +104,18 @@ def fc_urls():
             'simargl': {
                 'EventSource': simargl_url + 'simargl-es',
                 'RPC': simargl_url + 'simargl-rpc',
+            },
+            'pharmexpert': {
+                'get_info_preparation': pharmexpert_url + 'api/getInfoPreparationStatus',
+                'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
+                'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
             }
         },
-        'cas_token_name': config['CASTIEL_AUTH_TOKEN']
+        'cas_token_name': config['CASTIEL_AUTH_TOKEN'],
+        'pharmexpert': {
+            'enabled': bool(config.get('PHARMEXPERT_URL', False)),
+            'security_key': config.get('PHARMEXPERT_SECURITY_KEY', ''),
+        },
     }
 
 

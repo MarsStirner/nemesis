@@ -984,3 +984,12 @@ input.jcrop-keymgr {
     word-wrap: break-word;
     word-break: break-word;
 }
+
+iframe[seamless]{
+    background-color: transparent;
+    border: 0 none transparent;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
