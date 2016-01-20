@@ -1378,7 +1378,7 @@ angular.module('WebMis20.directives')
                         <tr>\
                             <th>Дата начала</th>\
                             <th>Тип</th>\
-                            <th>Характер</th>\
+                            <th>Течение</th>\
                             <th>Код МКБ</th>\
                             <th>Врач</th>\
                             <th>Примечание</th>\
@@ -1579,7 +1579,7 @@ angular.module('WebMis20.directives')
                         </div>\
                     </div>\
                     <div class="col-md-3">\
-                        <label for="diagnosis_character" class="control-label">Характер</label>\
+                        <label for="diagnosis_character" class="control-label">Течение</label>\
                         <ui-select class="form-control" name="diagnosis_character" theme="select2"\
                             ng-model="model.character" ref-book="rbDiseaseCharacter">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
