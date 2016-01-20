@@ -325,5 +325,9 @@ _.mixin({
             }
         });
         return idx;
+    },
+    isDate: function (input) {
+        return Object.prototype.toString.call(input) === '[object Date]' ||
+            input instanceof Date;
     }
 });
