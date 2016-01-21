@@ -519,6 +519,7 @@ angular.module('WebMis20.services').
                 }).result.then(function (result) {
                     $http.post(
                         url_api_coupon_save, {
+                            client_id: client.client_id,
                             coupon: result[0],
                             coupon_file: result[1]
                         }
