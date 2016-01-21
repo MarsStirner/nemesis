@@ -511,8 +511,11 @@ angular.module('WebMis20.services').
                                     coupon: $scope.coupon_file
                                 }
                             ).success(function(data){
-                                $scope.coupon = data.result
-                                $scope.wrong_client = client.client_id != $scope.coupon.client.id
+                                $scope.coupon = data.result;
+                                $scope.wrong_client = client.client_id != $scope.coupon.client.id;
+                                $scope.nonunique = client.vmp_coupons.filter(function(coupon){
+                                    return coupon.number == $scope.coupon.number
+                                }).length > 0;
                             });
                         }
                     }
@@ -558,6 +561,11 @@ angular.module('WebMis20.services').
                         <b>Внимание! Убедитесь, что талон пренадлежит текущему пациенту!</b>\
                     </div>\
                 </div>\
+                <div class="row" ng-if="wrong_client">\
+                    <div class="col-md-12 text-danger">\
+                        <b>Внимание! Убедитесь, что талон пренадлежит текущему пациенту!</b>\
+                    </div>\
+                </div>\
                 <div class="row">\
                     <div class="col-md-12" ng-if="coupon.number">\
                         <table class="table table-condensed">\
@@ -595,7 +603,7 @@ angular.module('WebMis20.services').
             <div class="modal-footer">\
                 <div class="pull-right">\
                     <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-                    <button class="btn btn-success" ng-click="$close([coupon, coupon_file])">Сохранить</button>\
+                    <button ng-disabled="nonunique" class="btn btn-success" ng-click="$close([coupon, coupon_file])">Сохранить</button>\
                 </div>\
             </div>\
 ')
