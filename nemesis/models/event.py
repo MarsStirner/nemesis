@@ -571,9 +571,9 @@ class Visit(db.Model):
     __tablename__ = u'Visit'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)
