@@ -343,7 +343,8 @@ angular.module('WebMis20.directives')
                                         dosage_frequency: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name),
                                         // длительность
                                         dosage_duration: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
-                                    }
+                                    },
+                                    patient: 'hitsl.mis:{0}'.format(client.id)
                                 }
                             })
                             .makeObject(function (item, index, object) { return index })
