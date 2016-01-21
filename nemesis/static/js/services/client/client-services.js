@@ -561,11 +561,6 @@ angular.module('WebMis20.services').
                         <b>Внимание! Убедитесь, что талон пренадлежит текущему пациенту!</b>\
                     </div>\
                 </div>\
-                <div class="row" ng-if="wrong_client">\
-                    <div class="col-md-12 text-danger">\
-                        <b>Внимание! Убедитесь, что талон пренадлежит текущему пациенту!</b>\
-                    </div>\
-                </div>\
                 <div class="row">\
                     <div class="col-md-12" ng-if="coupon.number">\
                         <table class="table table-condensed">\
