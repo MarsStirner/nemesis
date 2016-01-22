@@ -579,7 +579,7 @@ angular.module('WebMis20.services').
                                 </tr>\
                                 <tr>\
                                     <th>Код ВМП</th>\
-                                    <td>[[coupon.code]]</td>\
+                                    <td>[[coupon.quota_type.code]]</td>\
                                 </tr>\
                                 <tr>\
                                     <th>дата планируемой госпитализации</th>\

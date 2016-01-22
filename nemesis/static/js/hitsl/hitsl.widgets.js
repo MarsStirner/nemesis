@@ -794,7 +794,7 @@ angular.module('WebMis20')
             tElement.append(
 '<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.number ]]</ui-select-match>\
 <ui-select-choices repeat="coupon in coupon_list" style="min-width: 200px; background-color: white">\
-    <div ng-bind-html="coupon.number | highlight: $select.search"></div>\
+    <div ng-bind-html="get_text(coupon) | highlight: $select.search"></div>\
 </ui-select-choices> ');
 
             return {
@@ -815,6 +815,10 @@ angular.module('WebMis20')
                             });
                         }
                     });
+                    scope.get_text = function(coupon){
+                        var coupon_date = moment(coupon.date).format('DD.MM.YYYY');
+                        return '{0} на {1}'.format(coupon.number, coupon_date)
+                    }
                 }
             }
         }

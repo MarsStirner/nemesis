@@ -1614,7 +1614,7 @@ class VMPCoupon(db.Model):
             'id': self.id,
             'number': self.number,
             'mkb': self.MKB_object,
-            'code': self.quotaType.code,
+            'quota_type': self.quotaType,
             'date': self.date,
             'event': safe_traverse_attrs(self, 'clientQuoting', 'event', 'externalId'),
             'client': {'id': self.client.id,
