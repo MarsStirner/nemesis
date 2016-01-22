@@ -179,7 +179,7 @@ angular.module('WebMis20.directives')
                 return '{0} ({1} {2}; {3}; {4})'.format(
                     rls.trade_name,
                     rls.dosage.value,
-                    rls.dosage.unit.code,
+                    rls.dosage.unit.short_name,
                     rls.form,
                     rls.packing
                 )
@@ -436,7 +436,14 @@ angular.module('WebMis20.directives')
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Доза</label></div>\
             <div class="col-md-4"><input class="form-control" ng-model="model.dose.value" valid-number></div>\
-            <div class="col-md-4"><rb-select ref-book="rbUnitsGroup/counted" ng-model="model.dose.unit"></rb-select></div>\
+            <div class="col-md-4">\
+                <ui-select theme="select2" ng-model="model.dose.unit">\
+                    <ui-select-match>[[ $select.selected.short_name ]]</ui-select-match>\
+                    <ui-select-choices repeat="item in model.rls.unit_variants | filter: $select.search | orderBy:\'trade_name\'">\
+                        <div ng-bind-html="item.short_name | highlight: $select.search"></div>\
+                    </ui-select-choices>\
+                </ui-select>\
+            </div>\
         </div>\
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Частота</label></div>\
