@@ -51,12 +51,12 @@ class PriceListItemController(BaseModelController):
         selecter = self.get_selecter()
         selecter.set_search_pli_by_at(action_type_id, contract_id)
         available_pli_list = selecter.get_all()
-        # TODO: filter by agesex
         return available_pli_list
 
     def get_available_pli_at_from_rbservice(self, rbservice_id, price_list_id):
         sel = self.get_selecter()
         result_list = sel.get_pli_at_by_rbservice(rbservice_id, price_list_id)
+        # TODO: filter by agesex
         return result_list
 
     def get_available_pli_apt_from_rbservice(self, rbservice_id, price_list_id, client_id, action_type_id):
@@ -70,6 +70,11 @@ class PriceListItemController(BaseModelController):
             if recordAcceptableEx(client.sexCode, client_age, item[3], item[2]):
                 filtered_result_list.append(item[:2])
         return filtered_result_list
+
+    def get_available_pli_for_groupservice_from_rbservice(self, rbservice_id, price_list_id):
+        sel = self.get_selecter()
+        result_list = sel.get_pli_for_groupservice_by_rbservice(rbservice_id, price_list_id)
+        return result_list
 
 
 class PriceListItemSelecter(BaseSelecter):
@@ -160,5 +165,19 @@ class PriceListItemSelecter(BaseSelecter):
             ActionPropertyType.id,
             ActionPropertyType.age,
             ActionPropertyType.sex
+        )
+        return self.get_all()
+
+    def get_pli_for_groupservice_by_rbservice(self, rbservice_id, price_list_id):
+        PriceListItem = self.model_provider.get('PriceListItem')
+        self.query = self.query.filter(
+            PriceListItem.service_id == rbservice_id,
+            PriceListItem.priceList_id == price_list_id,
+            PriceListItem.deleted == 0,
+            between(func.curdate(),
+                    PriceListItem.begDate,
+                    PriceListItem.endDate),
+        ).with_entities(
+            PriceListItem.id,
         )
         return self.get_all()

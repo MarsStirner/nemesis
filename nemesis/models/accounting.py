@@ -247,26 +247,39 @@ class Service(db.Model):
 
     price_list_item = db.relationship('PriceListItem')
     service_kind = db.relationship('rbServiceKind')
-    parent_service = db.relationship('Service', uselist=False)
+    parent_service = db.relationship('Service', remote_side=[id])
     event = db.relationship('Event')
     action = db.relationship('Action')
     action_property = db.relationship('ActionProperty')
     discount = db.relationship('ServiceDiscount')
 
     def __init__(self):
-        self.sum_ = self._get_recalc_sum()
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
         self._subservice_list = None
+        self._sum = None
+        self._sum_loaded = False
 
     @orm.reconstructor
     def init_on_load(self):
-        self.sum_ = self._get_recalc_sum()
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
         self._subservice_list = None
+        self._sum = None
+        self._sum_loaded = False
+
+    @property
+    def sum_(self):
+        if not self._sum_loaded:
+            self._sum = self._get_recalc_sum()
+            self._sum_loaded = True
+        return self._sum
+
+    def set_sum_(self, val):
+        self._sum = val
+        self._sum_loaded = True
 
     @property
     def in_invoice(self):
@@ -293,12 +306,16 @@ class Service(db.Model):
         self._subservice_list = value
 
     def recalc_sum(self):
-        self.sum_ = self._get_recalc_sum()
+        self._sum = self._get_recalc_sum()
 
     def init_subservice_list(self):
         self._subservice_list = self._get_subservices()
         for ss in self._subservice_list:
             ss.init_subservice_list()
+
+    @property
+    def serviced_entity(self):
+        return self.get_serviced_entity()
 
     def get_serviced_entity(self):
         if self.serviceKind_id == ServiceKind.simple_action[0]:
@@ -309,6 +326,19 @@ class Service(db.Model):
             return self.action
         elif self.serviceKind_id == ServiceKind.lab_test[0]:
             return self.action_property
+
+    def get_flatten_subservices(self):
+        flatten = []
+
+        def traverse(s):
+            for ss in s.subservice_list:
+                if ss.subservice_list:
+                    traverse(ss)
+                else:
+                    flatten.append(ss)
+
+        traverse(self)
+        return flatten
 
     def _get_in_invoice(self):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
@@ -322,8 +352,8 @@ class Service(db.Model):
         return invoice
 
     def _get_recalc_sum(self):
-        from nemesis.lib.data_ctrl.accounting.utils import calc_service_sum
-        return calc_service_sum(self) if self.priceListItem_id is not None else 0
+        from nemesis.lib.data_ctrl.accounting.utils import calc_service_total_sum
+        return calc_service_total_sum(self) if self.priceListItem_id is not None else 0
 
     def _get_subservices(self):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController

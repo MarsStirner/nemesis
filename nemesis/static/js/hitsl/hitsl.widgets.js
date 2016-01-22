@@ -785,4 +785,32 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectRbService', [function () {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" ref-book="rbService">\
+    <span>id[[ $select.selected.id ]], [[ $select.selected.name ]]</span>\
+</ui-select-match>\
+<ui-select-choices repeat="rbs in $refBook.objects | filter: $select.search | limitTo:50">\
+    <div class="nowrap">\
+        <span>[[ rbs.name ]]</span>\
+    </div>\
+    <div class="text-muted">\
+        <span>id[[ rbs.id ]]</span>, <span>[[ rbs.code ]]</span>\
+    </div>\
+</ui-select-choices> ');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите услугу';
+                }
+            }
+        }
+    }
+}])
 ;

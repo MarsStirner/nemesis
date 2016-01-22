@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from sqlalchemy import exists
-from sqlalchemy.orm import join
 
 from nemesis.models.actions import Action, ActionType, ActionType_Service
 from nemesis.systemwide import db
@@ -33,12 +32,20 @@ def action_is_lab(action):
     return action.actionType.isRequiredTissue or action.actionType.mnem == 'LAB'
 
 
+def at_is_lab(action_type_id):
+    return bool(db.session.query(
+        ActionType.isRequiredTissue
+    ).select_from(ActionType).filter(
+        ActionType.id == action_type_id
+    ).scalar())
+
+
 def action_is_prescriptions(action):
     return action.actionType.hasPrescriptions
 
 
 def action_needs_service(action):
-    action_type_id = action.actionType.id
+    action_type_id = action.actionType_id
     return db.session.query(
         exists().select_from(
             ActionType_Service

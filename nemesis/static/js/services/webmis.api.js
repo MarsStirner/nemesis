@@ -99,11 +99,14 @@ WebMis20
         get_list: function (event_id) {
             return wrapper('GET', WMConfig.url.api_service_list + event_id);
         },
+        del: function (service_id) {
+            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
+        },
         calc_sum: function (args) {
             return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
         },
-        del: function (service_id) {
-            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
+        refreshServiceSubservices: function (service) {
+            return wrapper('POST', WMConfig.url.api_service_refresh_subservices, {}, service);
         }
     };
     this.service_discount = {

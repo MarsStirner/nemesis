@@ -755,11 +755,9 @@ class rbService(db.Model):
 
     medicalAidProfile = db.relationship(u'rbMedicalAidProfile')
     rbMedicalKind = db.relationship(u'rbMedicalKind')
-    subservice_list = db.relationship(
-        'rbService',
-        secondary='rbServiceGroup',
-        primaryjoin='rbServiceGroupAssoc.group_id == rbService.id',
-        secondaryjoin='rbServiceGroupAssoc.service_id == rbService.id'
+    subservice_assoc = db.relationship(
+        'rbServiceGroupAssoc',
+        primaryjoin='rbService.id==rbServiceGroupAssoc.group_id'
     )
 
     def __json__(self):
@@ -781,6 +779,21 @@ class rbServiceGroupAssoc(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
     required = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
+    serviceKind_id = db.Column(db.Integer, db.ForeignKey('rbServiceKind.id'), nullable=False)
+
+    subservice = db.relationship('rbService', foreign_keys=[service_id])
+    service_kind = db.relationship('rbServiceKind')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'service_id': self.service_id,
+            'serviceKind_id': self.serviceKind_id
+        }
+
+    def __int__(self):
+        return self.id
 
 
 class rbRequestType(db.Model):
