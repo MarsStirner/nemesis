@@ -1506,6 +1506,7 @@ class ClientQuoting(db.Model):
 
     def __json__(self):
         return {
+            'id': self.id,
             'coupon': self.vmpCoupon,
             'quota_type': self.quotaDetails.quota_type,
             'patient_model': self.quotaDetails.pacient_model,
