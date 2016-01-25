@@ -792,7 +792,7 @@ angular.module('WebMis20')
         compile: function compile (tElement, tAttrs, transclude) {
             // Add the inner content to the element
             tElement.append(
-'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.number ]]</ui-select-match>\
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.number ]] на [[ $select.selected.date | asDate ]]</ui-select-match>\
 <ui-select-choices repeat="coupon in coupon_list" style="min-width: 200px; background-color: white">\
     <div ng-bind-html="get_text(coupon) | highlight: $select.search"></div>\
 </ui-select-choices> ');
