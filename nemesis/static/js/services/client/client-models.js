@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services.models').
-    factory('WMClient', ['$http', '$q', '$rootScope',
-        function($http, $q, $rootScope) {
+    factory('WMClient', ['ApiCalls',
+        function(ApiCalls) {
             function initialize(self, data, info_type) {
                 // В разных интерфейсах поля модели могут отличаться
                 function add_id_doc() {
@@ -123,28 +123,20 @@ angular.module('WebMis20.services.models').
 
             WMClient.prototype.reload = function(info_type) {
                 var self = this;
-                var deferred = $q.defer();
                 var url_args = { client_id: this.client_id };
-                if (info_type !== undefined) {
-                    url_args[info_type] = true;
-                } else {
+                if (_.isUndefined(info_type)) {
                     info_type = 'for_editing';
+                } else {
+                    url_args[info_type] = true;
                 }
 
-                $http.get(url_client_get, {
-                    params: url_args
-                }).success(function(data) {
-                    initialize(self, data.result, info_type);
-                    deferred.resolve();
-                }).error(function(data, status) {
-                    var message = status === 404 ? 'Пациент с id ' + self.client_id + ' не найден.' : data.result;
-                    deferred.reject(message);
+                return ApiCalls.wrapper('GET', url_client_get, url_args).then(function(result) {
+                    initialize(self, result, info_type);
                 });
-                return deferred.promise;
             };
 
             WMClient.prototype.init_from_obj = function (client_data, info_type) {
-                if (info_type === undefined) {
+                if (_.isUndefined(info_type)) {
                     info_type = 'for_editing';
                 }
                 initialize(this, client_data, info_type);
@@ -152,18 +144,7 @@ angular.module('WebMis20.services.models').
 
             WMClient.prototype.save = function() {
                 var data = this.get_changed_data();
-                var t = this;
-                var deferred = $q.defer();
-                $http.post(url_client_save, data).
-                    success(function(value, headers) {
-                        deferred.resolve(value['result']);
-                    }).
-                    error(function(response) {
-                        var rr = response.result;
-                        var message = rr.name + ': ' + (rr.data ? rr.data.err_msg : '');
-                        deferred.reject(message);
-                    });
-                return deferred.promise;
+                return ApiCalls.wrapper('POST', url_client_save, undefined, data);
             };
 
             WMClient.prototype.get_changed_data = function() {
