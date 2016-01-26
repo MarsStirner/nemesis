@@ -600,8 +600,8 @@ class Visit(db.Model):
         visit.date = event.setDate
         visit.event = event
         visit.person = event.execPerson
-        visit.scene = event.eventType.scene or rbScene.query.filter(rbScene.code == '1').first()
-        visit.visitType = rbVisitType.query.filter(rbVisitType.code == '').first()
+        visit.scene = event.eventType.scene or rbScene.query.filter(rbScene.code == u'1').first()
+        visit.visitType = rbVisitType.query.filter(rbVisitType.code == u'').first()
         if event.eventType.visitFinance:
             visit.finance = event.execPerson.finance
         else:
