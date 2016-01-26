@@ -33,8 +33,8 @@ class Event(db.Model):
     setPerson_id = db.Column(db.Integer, index=True)
     execDate = db.Column(db.DateTime, index=True)
     execPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True)
-    isPrimaryCode = db.Column("isPrimary", db.Integer, nullable=False)
-    order = db.Column(db.Integer, nullable=False)
+    isPrimaryCode = db.Column("isPrimary", db.Integer)
+    order = db.Column(db.Integer)
     result_id = db.Column(db.Integer, db.ForeignKey('rbResult.id'), index=True)
     nextEventDate = db.Column(db.DateTime)
     payStatus = db.Column(db.Integer, nullable=False)
@@ -360,7 +360,6 @@ class EventLocalContract(db.Model):
     documentType = db.relationship(u'rbDocumentType')
     # payments = db.relationship('EventPayment', backref=db.backref('local_contract'))
 
-    # Это что вообще?!
     @property
     def document(self):
         document = ClientDocument()
@@ -475,9 +474,9 @@ class Visit(db.Model):
     __tablename__ = u'Visit'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)

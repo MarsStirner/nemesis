@@ -333,8 +333,11 @@ class UserUtils(object):
             return True
         elif current_user.has_right('evtDelOwn') and not event.is_closed:
             if current_user.id_any_in(event.execPerson_id, event.createPerson_id):
-                if event.payments:
-                    out_msg['message'] = u'В обращении есть платежи по услугам'
+                from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+                invoice_ctrl = InvoiceController()
+                has_invoice = invoice_ctrl.check_event_has_invoice(event.id)
+                if has_invoice:
+                    out_msg['message'] = u'В обращении есть выставленные счета'
                     return False
                 for action in event.actions:
                     # Проверка, что все действия не были изменены после создания обращения
@@ -346,10 +349,6 @@ class UserUtils(object):
                     # не закрыто
                     if action.status == ActionStatus.finished[0]:
                         out_msg['message'] = u'В обращении есть закрытые документы'
-                        return False
-                    # не отмечено "Считать"
-                    if action.account == 1:
-                        out_msg['message'] = u'В обращении есть услуги, отмеченные для оплаты'
                         return False
                 return True
         out_msg['message'] = u'У пользователя нет прав на удаление обращения'
@@ -496,6 +495,7 @@ class UserProfileManager(object):
     doctor_anest = 'anestezDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
+    nurse = 'strNurse'  # Медсестра отделения
     cashier = 'kassir'  # Кассир
     obstetrician = 'obstetrician'  # Акушер-гинеколог
     overseer1 = 'overseer1'
@@ -504,9 +504,9 @@ class UserProfileManager(object):
     ambulance = 'ambulance'
 
     ui_groups = {
-        'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist],
+        'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist, doctor_otd],
         'diag_doctor': [admin, doctor_diag, nurse_assist],
-        'registrator': [admin, reg_clinic],
+        'registrator': [admin, reg_clinic, doctor_otd],
         'registrator_cut': [nurse_admission],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
@@ -514,6 +514,7 @@ class UserProfileManager(object):
         'overseers': [admin, overseer1, overseer2, overseer3],
         'overseers_low': [admin, overseer1, overseer2],
         'overseers_high': [admin, overseer3],
+        'nurse': [admin, nurse]
     }
 
     @classmethod
@@ -560,6 +561,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_assistant(cls):
         return cls._get_user_role() == cls.nurse_assist
+
+    @classmethod
+    def has_ui_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['nurse']
 
     @classmethod
     def has_ui_cashier(cls):

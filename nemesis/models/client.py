@@ -341,7 +341,7 @@ class ClientAddress(db.Model):
     @classmethod
     def create_from_kladr(cls, addr_type, loc_type, loc_kladr_code, street_kladr_code, street_free,
                           house_number, corpus_number, flat_number, client):
-        ca = cls(addr_type, loc_type, client)
+        ca = cls.create(addr_type, loc_type, client)
         addr = Address.create_new(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number,
                                   flat_number)
         ca.address = addr
@@ -350,23 +350,26 @@ class ClientAddress(db.Model):
 
     @classmethod
     def create_from_free_input(cls, addr_type, loc_type, free_input, client):
-        ca = cls(addr_type, loc_type, client)
+        ca = cls.create(addr_type, loc_type, client)
         ca.address = None
         ca.freeInput = free_input
         return ca
 
     @classmethod
     def create_from_copy(cls, addr_type, from_addr, client):
-        ca = cls(addr_type, from_addr.localityType, client)
+        ca = cls.create(addr_type, from_addr.localityType, client)
         ca.address = from_addr.address
         ca.freeInput = from_addr.freeInput
         ca.deleted = from_addr.deleted
         return ca
 
-    def __init__(self, addr_type, loc_type, client):
+    @classmethod
+    def create(cls, addr_type, loc_type, client):
+        self = cls()
         self.type = addr_type
         self.localityType = loc_type
         self.client = client
+        return self
 
     @property
     def KLADRCode(self):
@@ -395,6 +398,10 @@ class ClientAddress(db.Model):
     @property
     def corpus(self):
         return self.address.corpus if self.address else ''
+
+    @property
+    def flat(self):
+        return self.address.flat if self.address else ''
 
     @property
     def is_russian(self):
@@ -661,7 +668,9 @@ class ClientDocument(db.Model):
     documentType = db.relationship(u'rbDocumentType', lazy=False)
     file_attach = db.relationship('ClientFileAttach')
 
-    def __init__(self, doc_type, serial, number, beg_date, end_date, origin, client):
+    @classmethod
+    def create(cls, doc_type, serial, number, beg_date, end_date, origin, client):
+        self = cls()
         self.documentType_id = int(doc_type) if doc_type else None
         self.serial = serial
         self.number = number
@@ -669,6 +678,7 @@ class ClientDocument(db.Model):
         self.endDate = end_date
         self.origin = origin
         self.client = client
+        return self
 
     @property
     def documentTypeCode(self):
@@ -720,16 +730,16 @@ class ClientIdentification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     accountingSystem_id = db.Column(db.Integer, db.ForeignKey('rbAccountingSystem.id'), nullable=False)
     identifier = db.Column(db.String(16), nullable=False)
     checkDate = db.Column(db.Date)
-    version = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, nullable=False, default=0)
 
     accountingSystems = db.relationship(u'rbAccountingSystem', lazy=False)
 
@@ -871,24 +881,30 @@ class ClientWork(db.Model):
     __tablename__ = u'ClientWork'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     org_id = db.Column(db.ForeignKey('Organisation.id'), index=True)
     shortName = db.Column('freeInput', db.String(200), nullable=False)
     post = db.Column(db.String(200), nullable=False)
-    stage = db.Column(db.Integer, nullable=False)
-    OKVED = db.Column(db.String(10), nullable=False)
-    version = db.Column(db.Integer, nullable=False)
-    rank_id = db.Column(db.Integer, nullable=False)
-    arm_id = db.Column(db.Integer, nullable=False)
+    stage = db.Column(db.Integer)
+    OKVED = db.Column(db.String(10), nullable=False, server_default=u"''")
+    version = db.Column(db.Integer, nullable=False, default=0)
+    rank_id = db.Column(db.Integer)
+    arm_id = db.Column(db.Integer)
+    soc_status_id = db.Column(db.ForeignKey('ClientSocStatus.id'), nullable=False)
 
     client = db.relationship(u'Client')
     organisation = db.relationship(u'Organisation')
     # hurts = db.relationship(u'ClientworkHurt')
+
+    def __init__(self, organisation, post, client):
+        self.shortName = organisation
+        self.post = post
+        self.client = client
 
     def __unicode__(self):
         parts = []
@@ -899,6 +915,14 @@ class ClientWork(db.Model):
         if self.OKVED:
             parts.append(u'ОКВЭД: '+self._OKVED)
         return ', '.join(parts)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'deleted': self.deleted,
+            'organisation': self.shortName,
+            'post': self.post
+        }
 
 
 class ClientSocStatus(db.Model):
@@ -924,6 +948,8 @@ class ClientSocStatus(db.Model):
     socStatusType = db.relationship(u'rbSocStatusType', lazy=False)
     self_document = db.relationship(u'ClientDocument', lazy=False)
 
+    work = db.relationship(u'ClientWork', uselist=False, backref=db.backref('soc_status'))
+
     @property
     def classes(self):
         return self.socStatusType.classes
@@ -943,13 +969,14 @@ class ClientSocStatus(db.Model):
         else:
             return self.getClientDocument()
 
-    def __init__(self, soc_stat_class, soc_stat_type, beg_date, end_date, client, document):
+    def __init__(self, soc_stat_class, soc_stat_type, beg_date, end_date, client, document, note):
         self.socStatusClass_id = int(soc_stat_class) if soc_stat_class else None
         self.socStatusType_id = int(soc_stat_type) if soc_stat_type else None
         self.begDate = beg_date
         self.self_document = document
         self.endDate = end_date
         self.client = client
+        self.note = note
 
     def getClientDocument(self):
         documents = ClientDocument.query().filter(ClientDocument.clientId == self.client_id).\
@@ -972,7 +999,9 @@ class ClientSocStatus(db.Model):
             'deleted': self.deleted,
             'beg_date': self.begDate,
             'end_date': self.endDate,
-            'self_document': self.self_document
+            'self_document': self.self_document,
+            'work': self.work,
+            'note': self.note
         }
 
 
@@ -1005,7 +1034,9 @@ class ClientPolicy(db.Model):
     policyType = db.relationship(u'rbPolicyType', lazy=False)
     file_attach = db.relationship('ClientFileAttach')
 
-    def __init__(self, pol_type, serial, number, beg_date, end_date, insurer, client):
+    @classmethod
+    def create(cls, pol_type, serial, number, beg_date, end_date, insurer, client):
+        self = cls()
         self.policyType_id = int(pol_type) if pol_type else None
         self.serial = serial
         self.number = number
@@ -1014,6 +1045,7 @@ class ClientPolicy(db.Model):
         self.insurer_id = int(insurer['id']) if insurer['id'] else None
         self.name = insurer['full_name'] if not insurer['id'] else None
         self.client = client
+        return self
 
     def is_valid(self, moment=None):
         if moment is None:
@@ -1059,19 +1091,28 @@ class BloodHistory(db.Model):
     __tablename__ = u'BloodHistory'
 
     id = db.Column(db.Integer, primary_key=True)
-    bloodDate = db.Column(db.Date, nullable=False)
+    bloodDate = db.Column(db.Date)
     client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
     bloodType_id = db.Column(db.Integer, db.ForeignKey('rbBloodType.id'), nullable=False)
-    person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), nullable=False)
+    person_id = db.Column(db.Integer, db.ForeignKey('Person.id'))
+    bloodPhenotype_id = db.Column(db.Integer, db.ForeignKey('rbBloodPhenotype.id'))
+    bloodKell_id = db.Column(db.Integer, db.ForeignKey('rbBloodKell.id'))
 
     bloodType = db.relationship("rbBloodType")
     person = db.relationship('Person')
+    bloodPhenotype = db.relationship("rbBloodPhenotype")
+    bloodKell = db.relationship("rbBloodKell")
 
-    def __init__(self, blood_type, date, person, client):
+    @classmethod
+    def create(cls, blood_type, date, person, client, blood_phenotype=None, blood_kell=None):
+        self = cls()
         self.bloodType_id = int(blood_type) if blood_type else None
         self.bloodDate = date
         self.person_id = int(person) if person else None
         self.client = client
+        self.bloodPhenotype_id = int(blood_phenotype) if blood_phenotype else None
+        self.bloodKell_id = int(blood_kell) if blood_kell else None
+        return self
 
     def __int__(self):
         return self.id
@@ -1081,7 +1122,9 @@ class BloodHistory(db.Model):
             'id': self.id,
             'blood_type': self.bloodType,
             'date': self.bloodDate,
-            'person': self.person
+            'person': self.person,
+            'blood_phenotype': self.bloodPhenotype,
+            'blood_kell': self.bloodKell
         }
 
 
@@ -1109,7 +1152,7 @@ class Address(db.Model):
 
         loc_kladr_code, street_kladr_code = cls.compatible_kladr(loc_kladr_code, street_kladr_code)
 
-        addr_house = AddressHouse(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number)
+        addr_house = AddressHouse.create(loc_kladr_code, street_kladr_code, street_free, house_number, corpus_number)
         addr.house = addr_house
         return addr
 
@@ -1275,12 +1318,15 @@ class AddressHouse(db.Model):
     number = db.Column(db.String(8), nullable=False)
     corpus = db.Column(db.String(8), nullable=False)
 
-    def __init__(self, loc_code, street_code, street_free, house_number, corpus_number):
+    @classmethod
+    def create(cls, loc_code, street_code, street_free, house_number, corpus_number):
+        self = cls()
         self.KLADRCode = loc_code
         self.KLADRStreetCode = street_code
         self.streetFreeInput = street_free
         self.number = house_number
         self.corpus = corpus_number
+        return self
 
     def __json__(self):
         return {

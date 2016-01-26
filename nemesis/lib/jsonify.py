@@ -19,10 +19,11 @@ from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_pat
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
-from nemesis.lib.utils import safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name
+from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
+    format_money)
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
-from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender
+from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
 from nemesis.models.diagnosis import Diagnosis
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
@@ -536,6 +537,9 @@ class ClientVisualizer(object):
         else:
             files = []
         # identifications = [self.make_identification_info(identification) for identification in client.identifications]
+        works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
+        invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
+        nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
         return {
             'info': client,
             'id_document': client.id_document if client.id else None,
@@ -546,7 +550,9 @@ class ClientVisualizer(object):
             'blood_history': client.blood_history.all() if client.id else None,
             'allergies': client.allergies.all() if client.id else None,
             'intolerances': client.intolerances.all() if client.id else None,
-            'soc_statuses': client.soc_statuses,
+            'works': works,
+            'invalidities': invalidities,
+            'nationalities': nationalities,
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
@@ -632,7 +638,6 @@ class ClientVisualizer(object):
         """Данные пациента, используемые в интерфейсе обращения."""
         info = self.make_client_info_for_view_frame(client, with_expired_vpol=bool(event.id))
         info['relations'] = [self.make_relation_info(client.id, relation) for relation in client.client_relations]
-        info['work_org_id'] = client.works[0].org_id if client.works else None,  # FIXME: ...
         return info
 
     def make_search_client_info(self, client):
@@ -782,7 +787,7 @@ class ClientVisualizer(object):
             for row in load_all
         ]
 
-    def make_events(self, client, event_filter):
+    def make_events(self, client, event_filter=None):
         events = client.events
         if event_filter == 'stationary':
             events = events.join(EventType, rbRequestType).filter(rbRequestType.code.in_(STATIONARY_EVENT_CODES))
@@ -910,24 +915,14 @@ class EventVisualizer(object):
             'can_create_actions': (
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
-            )
+            ),
+            'services': self.make_event_grouped_services(event.id),
+            'invoices': self.make_event_invoices(event.id)
         }
-        if new:
-            data['payment'] = self.make_event_payment(None)
-        elif UserProfileManager.has_ui_admin():
+        if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
         elif UserProfileManager.has_ui_doctor():
             data['diagnoses'] = self.make_diagnoses(event)
-        elif UserProfileManager.has_ui_registrator():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
-        elif UserProfileManager.has_ui_cashier():
-            data['payment'] = self.make_event_payment(event)
-            data['services'] = self.make_event_services(event.id)
-        if event.is_stationary:
-            data['stationary_info'] = self.make_event_stationary_info(event)
         return data
 
     def make_short_event(self, event):
@@ -966,6 +961,8 @@ class EventVisualizer(object):
         @type event: Event
         """
         cvis = ClientVisualizer()
+        from blueprints.accounting.lib.represent import ContractRepr
+        cont_repr = ContractRepr()
         return {
             'id': event.id,
             'create_person_id': event.createPerson_id,
@@ -982,7 +979,7 @@ class EventVisualizer(object):
             'exec_person': event.execPerson,
             'result': event.result,
             'ache_result': event.rbAcheResult,
-            'contract': event.contract,
+            'contract': cont_repr.represent_contract_with_description(event.contract),
             'event_type': event.eventType,
             'organisation': event.organisation,
             'org_structure': event.orgStructure,
@@ -1082,6 +1079,7 @@ class EventVisualizer(object):
         """
         @type action: Action
         """
+        aviz = ActionVisualizer()
         return {
             'id': action.id,
             'name': action.actionType.name,
@@ -1096,6 +1094,7 @@ class EventVisualizer(object):
             'can_read': UserUtils.can_read_action(action),
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
+            'payment': aviz.make_action_payment_info(action)
         }
 
     def make_ultra_small_actions(self, event):
@@ -1112,7 +1111,8 @@ class EventVisualizer(object):
             Action.actionType
         ).filter(
             Action.event_id == event.id,
-            Action.deleted == 0
+            Action.deleted == 0,
+            ActionType.class_ != 3
         )
 
         def make_usa(action):
@@ -1238,6 +1238,24 @@ class EventVisualizer(object):
                 'event_info': make_event_small_info(event)
             })
         return result
+
+    def make_event_grouped_services(self, event_id):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        from blueprints.accounting.lib.represent import ServiceRepr
+        service_ctrl = ServiceController()
+        grouped = service_ctrl.get_grouped_services_by_event(event_id)
+        service_repr = ServiceRepr()
+        return service_repr.represent_grouped_event_services(grouped)
+
+    def make_event_invoices(self, event_id):
+        from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+        from blueprints.accounting.lib.represent import InvoiceRepr
+        invoice_ctrl = InvoiceController()
+        invoice_list = invoice_ctrl.get_listed_data({
+            'event_id': event_id
+        })
+        invoice_repr = InvoiceRepr()
+        return invoice_repr.represent_listed_invoices(invoice_list)
 
     def make_event_services(self, event_id):
 
@@ -1392,6 +1410,49 @@ class EventVisualizer(object):
             'event': self.make_short_event(payment.event)
         }
 
+
+class StationaryEventVisualizer(EventVisualizer):
+
+    def make_action_info(self, action):
+        avis = ActionVisualizer()
+        result = None
+        if action:
+            result = dict(
+                (code, avis.make_property(prop))
+                for (code, prop) in action.propsByCode.iteritems()
+            )
+            result['beg_date'] = action.begDate
+            result['end_date'] = action.endDate
+            result['person'] = action.person
+            result['flatCode'] = action.actionType.flatCode
+            result['event_id'] = action.event_id
+            result['id'] = action.id
+        return result
+
+    def make_received(self, event, new=False):
+        action = event.received if new else db.session.query(Action).join(
+            ActionType).filter(
+                Action.event_id == event.id,
+                Action.deleted == 0,
+                ActionType.flatCode == 'received'
+            ).first()
+
+        return self.make_action_info(action)
+
+    def make_moving_info(self, moving):
+        result = self.make_action_info(moving)
+        if moving.event.eventType.requestType.code == 'clinic':
+            result['hb_days'] = (moving.endDate - moving.begDate).days + 1 if moving.endDate else None
+        elif moving.event.eventType.requestType.code == 'hospital':
+            result['hb_days'] = (moving.endDate.date() - moving.begDate.date()).days if moving.endDate else None
+        return result
+
+    def make_movings(self, event):
+        movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
+                                                                   Action.deleted == 0,
+                                                                   ActionType.flatCode == 'moving').all() if event.id else []
+        return [self.make_moving_info(moving) for moving in movings]
+
     def make_event_stationary_info(self, event):
         pviz = PersonTreeVisualizer()
         hosp_length = get_hosp_length(event)
@@ -1406,6 +1467,49 @@ class EventVisualizer(object):
             'attending_doctor': pviz.make_person_ws(event.execPerson) if event.execPerson else None
         }
 
+    def make_event_info_for_current_role(self, event, new=False):
+        data = super(StationaryEventVisualizer, self).make_event_info_for_current_role(event, new)
+        data.update(self.make_event_stationary_info(event))
+        data['received'] = self.make_received(event, new)
+        data['movings'] = self.make_movings(event)
+        data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
+        data['allergies'] = self.make_intolerances(event.client.allergies, 0)
+        data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
+        return data
+
+    def make_blood_history(self, obj):
+        return {
+            'id': obj.id,
+            'blood_type': obj.bloodType,
+            'date': obj.bloodDate,
+            'person': obj.person,
+            'blood_phenotype': obj.bloodPhenotype,
+            'blood_kell': obj.bloodKell
+        }
+
+    def make_intolerances(self, lst, code):
+        return [self.make_intolerance(obj, code) for obj in lst]
+
+    def make_intolerance(self, obj, code):
+        return {
+            'type': IntoleranceType(code),
+            'id': obj.id,
+            'date': obj.createDate,
+            'name': obj.name,
+            'power': AllergyPower(obj.power),
+            'note': obj.notes,
+        }
+
+    def make_hosp_bed(self, hosp_bed):
+        return {
+            'id': hosp_bed.id,
+            'org_structure_id': hosp_bed.master_id,
+            'code': hosp_bed.code,
+            'name': hosp_bed.name,
+            'occupied': hosp_bed.occupied,
+            'chosen': hosp_bed.chosen,
+            'profile': hosp_bed.profile
+        }
 
 re_html_body = re.compile(ur'<body(\s*.*?)>(.*)</body>', re.I | re.U | re.S)
 re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.S)
@@ -1651,3 +1755,13 @@ class ActionVisualizer(object):
             'comments': comments
         }
         return result
+
+    def make_action_payment_info(self, action):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        service = service_ctrl.get_action_service(action)
+        if service is None:
+            return None
+        service_payment = service_ctrl.get_service_payment_info(service)
+        service_payment['sum'] = format_money(service_payment['sum'])
+        return service_payment

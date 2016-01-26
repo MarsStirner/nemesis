@@ -27,6 +27,12 @@ class ActionStatus(Enum):
     no_result = 4, u'Без результата'
 
 
+class RequestTypeKind(Enum):
+    stationary = 0, u'Стационар'  # rbRequestType.code - clinic, hospital
+    policlinic = 1, u'Поликлиника'  # rbRequestType.code - policlinic, diagnostic
+    dispensary = 2, u'Диспансер'  # rbRequestType.code - 5
+
+
 class Gender(Enum):
     male = 1, u'М'
     female = 2, u'Ж'
@@ -60,13 +66,6 @@ class IntoleranceType(Enum):
     medicine = 1, u'Медикаментозная непереносимость'
 
 
-class PrenatalRiskRate(Enum):
-    undefined = 0, u'не определен'
-    low = 1, u'низкий'
-    medium = 2, u'средний'
-    high = 3, u'высокий'
-
-
 class PerinatalRiskRate(EnumLoadable):
     __tablename__ = 'rbPerinatalRiskRate'
 
@@ -98,6 +97,17 @@ class PregnancyPathology(EnumLoadable):
 class MeasureStatus(EnumLoadable):
     __tablename__ = 'rbMeasureStatus'
 
+    created = 1, u'Создано'
+    assigned = 2, u'Назначенное'
+    waiting = 3, u'Ожидает результатов'
+    upon_med_indications = 4, u'По показанию'
+    overdue = 5, u'Просроченное'
+    performed = 6, u'Выполненное'
+    cancelled = 7, u'Отмененное'
+    cancelled_dupl = 8, u'Отмененное, как дубль'
+    cancelled_changed_data = 9, u'Отмененное, при изменении срока'
+    cancelled_invalid = 10, u'Отмененное, как недействительное'
+
 
 class MeasureScheduleType(EnumLoadable):
     __tablename__ = 'rbMeasureScheduleType'
@@ -120,6 +130,11 @@ class MeasureScheduleApplyType(EnumLoadable):
     # bounds = 3, u'Границы повторения'
 
 
+class EventMeasureActuality(Enum):
+    not_actual = 0, u'Неактуально'
+    actual = 1, u'Актуально'
+
+
 class ErrandStatus(EnumLoadable):
     __tablename__ = 'rbErrandStatus'
 
@@ -132,3 +147,38 @@ class MedicationPrescriptionStatus(Enum):
     entered_in_error = 4, u'Ошибочное'
     stopped = 5, u'Остановлено'
     superseded = 6, u'Заменено'
+
+
+class ContragentType(Enum):
+    undefined = 0, u'не выбрано'
+    individual = 1, u'Физ. лицо'
+    legal = 2, u'Юр. лицо'
+
+
+class ContractContragentType(Enum):
+    payer = 0, u'Плательщик'
+    recipient = 1, u'Получатель'
+
+
+class ContractTypeContingent(Enum):
+    arbitrary_presence = 0, u'не требуется наличие пациента в списке контингента'
+    strict_presence = 1, u'требуется наличие пациента в списке контингента'
+
+
+class FinanceTransactionType(Enum):
+    payer_balance = 1, u'Движение средств на счёте плательщика'
+    invoice = 2, u'Движение средств по выставленным счетам'
+
+
+class FinanceOperationType(EnumLoadable):
+    payer_balance_in = 1, u'Поступление денежных средств'
+    payer_balance_out = 2, u'Возврат денежных средств'
+    invoice_pay = 3, u'Оплата по счёту'
+    invoice_cancel = 4, u'Отмена оплаты по счёту'
+
+
+class TTJStatus(Enum):
+    waiting = 0, u'Ожидание'
+    in_progress = 1, u'Выполнение'
+    sending_to_lab = 3, u'Отправка в лабораторию'
+    finished = 2, u'Закончено'

@@ -9,17 +9,19 @@ from nemesis.models.prescriptions import MedicalPrescription
 from nemesis.models.utils import safe_current_user_id
 
 from nemesis.systemwide import db, cache
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
-    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
+    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
+from nemesis.lib.action.utils import action_needs_service
+from nemesis.lib.user import UserUtils
 
 
 logger = logging.getLogger('simple')
@@ -205,9 +207,15 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
         os_id = org_structure.id
-        for prop in action.properties:
-            if prop.type.typeName == 'JobTicket':
-                prop.value = create_JT(action, os_id)
+        create_TTJ_record(action)
+
+    # Service
+    if action_needs_service(action):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        new_service = service_ctrl.get_new_service_for_new_action(action)
+        new_service.action = action
+        db.session.add(new_service)
 
     return action
 
@@ -253,6 +261,74 @@ def update_action(action, **kwargs):
     update_action_prescriptions(action, kwargs.get('prescriptions'))
 
     return action
+
+
+def delete_action(action):
+    if not UserUtils.can_delete_action(action):
+        raise Exception(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
+    action.delete()
+
+
+def format_action_data(json_data):
+    set_person_id = safe_traverse(json_data, 'set_person', 'id')
+    person_id = safe_traverse(json_data, 'person', 'id')
+    data = {
+        'begDate': safe_datetime(json_data['beg_date']),
+        'endDate': safe_datetime(json_data['end_date']),
+        'plannedEndDate': safe_datetime(json_data['planned_end_date']),
+        'directionDate': safe_datetime(json_data['direction_date']),
+        'isUrgent': json_data['is_urgent'],
+        'status': json_data['status']['id'],
+        'setPerson_id': set_person_id,
+        'person_id':  person_id,
+        'setPerson': Person.query.get(set_person_id) if set_person_id else None,
+        'person':  Person.query.get(person_id) if person_id else None,
+        'note': json_data['note'],
+        'amount': json_data['amount'],
+        'account': json_data['account'] or 0,
+        'uet': json_data['uet'],
+        'payStatus': json_data['pay_status'] or 0,
+        'coordDate': safe_datetime(json_data['coord_date']),
+        'office': json_data['office'],
+        'properties': json_data['properties']
+    }
+    return data
+
+
+def create_TTJ_record(action):
+    planned_end_date = action.plannedEndDate
+    if not planned_end_date:
+        raise ActionException(u'Не заполнена плановая дата исследования')
+    client_id = action.event.client_id
+    at_tissue_type = action.actionType.tissue_type
+    if at_tissue_type is None:
+        raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
+
+    ttj = TakenTissueJournal.query.filter(
+        TakenTissueJournal.client_id == client_id,
+        TakenTissueJournal.tissueType_id == at_tissue_type.tissueType_id,
+        TakenTissueJournal.datetimeTaken == planned_end_date
+    ).first()
+    if not ttj:
+        ttj = TakenTissueJournal()
+        ttj.client_id = client_id
+        ttj.tissueType_id = at_tissue_type.tissueType_id
+        ttj.amount = at_tissue_type.amount
+        ttj.unit_id = at_tissue_type.unit_id
+        ttj.datetimeTaken = planned_end_date
+        ttj.externalId = action.event.externalId
+        ttj.testTubeType_id = at_tissue_type.testTubeType_id
+    else:
+        ttj.amount += at_tissue_type.amount
+    db.session.add(ttj)
+    db.session.commit()
+
+    action_ttj = Action_TakenTissueJournalAssoc()
+    action_ttj.action_id = action.id
+    action_ttj.takenTissueJournal_id = ttj.id
+    db.session.add(action_ttj)
+
+    action.takenTissueJournal = ttj
 
 
 def create_JT(action, orgstructure_id):

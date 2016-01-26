@@ -325,5 +325,16 @@ _.mixin({
             }
         });
         return idx;
+    },
+    isDate: function (input) {
+        return Object.prototype.toString.call(input) === '[object Date]' ||
+            input instanceof Date;
+    },
+    makeObject: function (array, keyMaker) {
+        var result = {};
+        _.forEach(array, function (item, index, object) {
+            result[keyMaker(item, index, object)] = item;
+        });
+        return result;
     }
 });

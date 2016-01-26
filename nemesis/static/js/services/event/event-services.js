@@ -100,33 +100,6 @@ angular.module('WebMis20.services').
                     event.services.splice(sg_idx, 1);
                 }
             },
-            remove_action: function (event, action, sg) {
-                if (action.action_id && !confirm('Вы действительно хотите удалить выбранную услугу?')) {
-                    return;
-                }
-                var sg_idx = event.services.indexOf(sg),
-                    action_idx = event.services[sg_idx].actions.indexOf(action),
-                    self = this;
-                if (action.action_id) {
-                    $http.post(
-                        url_for_event_api_service_delete_service, {
-                            action_id_list: [action.action_id]
-                        }
-                    ).success(function () {
-                        sg.actions.splice(action_idx, 1);
-                        if (!sg.actions.length) {
-                            self.remove_service(event, sg_idx)
-                        }
-                    }).error(function () {
-                        alert('error');
-                    });
-                } else {
-                    sg.actions.splice(action_idx, 1);
-                    if (!sg.actions.length) {
-                        self.remove_service(event, sg_idx)
-                    }
-                }
-            },
             coordinate: function (action, off) {
                 var user = off ? null : {id: CurrentUser.id},
                     date = off ? null : new Date();
@@ -134,18 +107,6 @@ angular.module('WebMis20.services').
                     action.coord_person = user;
                     action.coord_date = date;
                 }
-            },
-            update_payment: function (event, payment) {
-                var cur_lc = event.payment.local_contract;
-                if (cur_lc.date_contract && !payment.local_contract.date_contract) {
-                    payment.local_contract.date_contract = cur_lc.date_contract;
-                }
-                if ((cur_lc.number_contract !== null || cur_lc.number_contract !== undefined) &&
-                    !payment.local_contract.number_contract) {
-                    payment.local_contract.number_contract = cur_lc.number_contract;
-                }
-                event.payment.local_contract = payment.local_contract;
-                event.payment.payments.set_payments(payment.payments);
             },
             get_action_ped: function (action_type_id) {
                 var deferred = $q.defer();
@@ -159,39 +120,6 @@ angular.module('WebMis20.services').
                     deferred.reject();
                 });
                 return deferred.promise;
-            },
-            get_prev_events_contracts: function (client_id, finance_id, set_date) {
-                var deferred = $q.defer();
-                $http.get(url_api_prev_event_payment_info_get, {
-                    params: {
-                        client_id: client_id,
-                        finance_id: finance_id,
-                        set_date: set_date
-                    }
-                }).success(function (data) {
-                    deferred.resolve(data.result)
-                }).error(function() {
-                    deferred.reject('Произошла ошибка получения данных предыдущих обращений');
-                });
-                return deferred.promise;
-            },
-            clear_local_contract: function (event) {
-                var lc = event.payment && event.payment.local_contract;
-                if (lc) {
-                    lc.id = null;
-                    lc.first_name = null;
-                    lc.last_name = null;
-                    lc.patr_name = null;
-                    lc.birth_date = null;
-                    lc.doc_type = null;
-                    lc.serial_left = null;
-                    lc.serial_right = null;
-                    lc.number = null;
-                    lc.reg_address = null;
-                    lc.payer_org = null;
-                    lc.payer_org_id = null;
-                    lc.shared_in_events = null;
-                }
             },
             get_new_diagnosis: function (action_info) {
                 return {
@@ -277,6 +205,7 @@ angular.module('WebMis20.services').
         var rt = {},
             fin = {},
             is_new = null;
+        var stat_codes = ['clinic', 'hospital', 'stationary'];
         return {
             set_state: function (request_type, finance, is_new) {
                 rt = request_type || {};
@@ -287,6 +216,9 @@ angular.module('WebMis20.services').
             },
             is_policlinic: function () {
                 return rt.code === 'policlinic';
+            },
+            is_stationary: function () {
+                return stat_codes.has(rt.code);
             },
             is_diagnostic: function () {
                 return rt.code === '4' || rt.code === 'diagnosis' || rt.code === 'diagnostic';

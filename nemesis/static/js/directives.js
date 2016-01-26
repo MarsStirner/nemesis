@@ -172,14 +172,14 @@ angular.module('WebMis20.directives')
      </table>'
         };
     }])
-    .directive('medicationPrescriptions', ['$modal', 'CurrentUser', function ($modal, CurrentUser) {
+    .directive('medicationPrescriptions', ['$modal', 'CurrentUser', 'PharmExpertIntegration', function ($modal, CurrentUser, PharmExpertIntegration) {
         function get_rls_name (rls) {
             if (!rls) { return '-' }
             else if (rls.dosage.unit) {
                 return '{0} ({1} {2}; {3}; {4})'.format(
                     rls.trade_name,
                     rls.dosage.value,
-                    rls.dosage.unit.code,
+                    rls.dosage.unit.short_name,
                     rls.form,
                     rls.packing
                 )
@@ -191,9 +191,22 @@ angular.module('WebMis20.directives')
                 )
             }
         }
-        function controller ($scope, $modalInstance, model) {
+        function controller ($scope, $modalInstance, $http, model) {
             $scope.model = model;
             $scope.get_rls_name = get_rls_name;
+            $scope.get_rls = function (query){
+                if (!query) return;
+                return $http.get(url_rls_search, {
+                    params: {
+                        q: query,
+                        short: true,
+                        limit: 20
+                    }
+                })
+                .then(function (res) {
+                    return $scope.rls_list = res.data.result;
+                });
+            };
             $scope.model_incomplete = function () {
                 return !model.rls
                     || !model.dose || !model.dose.value || !model.dose.unit
@@ -238,21 +251,30 @@ angular.module('WebMis20.directives')
                 scope.edit = function (p) {
                     edit_dialog(_.deepCopy(p)).then(function (model) {
                         angular.extend(p, model);
+                        checkPE();
                     })
                 };
                 scope.remove = function (p) {
-                    cancel_dialog(_.deepCopy(p)).then(function (model) {
-                        angular.extend(p, model);
+                    if (!p.id) {
                         p.deleted = true;
-                    })
+                        checkPE();
+                    } else {
+                        cancel_dialog(_.deepCopy(p)).then(function (model) {
+                            angular.extend(p, model);
+                            p.deleted = true;
+                            checkPE();
+                        })
+                    }
                 };
                 scope.add = function () {
                     edit_dialog({}).then(function (model) {
-                        scope.model.push(model)
+                        scope.model.push(model);
+                        checkPE();
                     })
                 };
                 scope.restore = function (p) {
                     delete p.deleted;
+                    checkPE();
                 };
                 scope.get_rls_name = get_rls_name;
                 scope.canEdit = function (p) {
@@ -272,7 +294,69 @@ angular.module('WebMis20.directives')
                 };
                 scope.canAdd = function () {
                     return safe_traverse(scope, ['action', 'person', 'id']) == CurrentUser.id
-                }
+                };
+                scope.canCheck = function () {
+                    return PharmExpertIntegration.enabled() && pharmExpertResult.url;
+                };
+                scope.btnCheckClass = function () {
+                    if (pharmExpertResult.value_max > 1) return 'btn-danger';
+                    if (pharmExpertResult.value_max > 0) return 'btn-warning';
+                    return 'btn-default';
+                };
+                scope.check = function () {
+                    PharmExpertIntegration.modal(pharmExpertResult);
+                };
+                var pharmExpertResult = {};
+                var checkPE = function () {
+                    var data = prepareDataPharmExpert();
+                    PharmExpertIntegration.check(data).then(
+                        function (result) {
+                            _.extend(pharmExpertResult, {
+                                value_max: parseInt(result.value_max),
+                                url: result.url
+                            });
+                        }
+                    )
+                };
+                var prepareDataPharmExpert = function () {
+                    var client = scope.action.client;
+                    return {
+                        medicaments: _.chain(scope.model)
+                            .filter(function (record) { return ! record.deleted })
+                            .map(function makeMedicineFE(record) {
+                                return {
+                                    name: record.rls.trade_name,
+                                    data1: scope.action.beg_date, // MAY GOD HAVE MERCY ON THOSE POOR BUZZARDS
+                                    // data2: ,
+                                    dosage: {
+                                        // лекарственная форма
+                                        formulation: {
+                                            name: record.rls.form,
+                                            value: record.dose.value,
+                                            unit: record.dose.unit.code
+                                        },
+                                        // способ применения
+                                        dosing_formulation: {
+                                            name: record.method.name
+                                        },
+                                        // частота
+                                        dosage_frequency: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name),
+                                        // длительность
+                                        dosage_duration: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
+                                    },
+                                    patient: 'hitsl.mis:{0}'.format(client.id)
+                                }
+                            })
+                            .makeObject(function (item, index, object) { return index })
+                            .value()
+                        ,
+                        user_info: {
+                            age_days: String(client.age_tuple[0]),
+                            sex: (client.sex_raw == 2)?('f'):('m')
+                        }
+                    }
+                };
+                checkPE();
             },
             templateUrl: '/WebMis20/prescription-edit.html'
         }
@@ -317,11 +401,14 @@ angular.module('WebMis20.directives')
                         </td>\
                     </tr>\
                 </tbody>\
-                <tbody ng-if="canAdd()">\
+                <tbody ng-if="canAdd() || canCheck()">\
                     <tr>\
                         <td colspan="6">&nbsp;</td>\
-                        <td>\
-                            <button class="btn btn-success pull-right" ng-click="add()"><i class="fa fa-plus"></i></button>\
+                        <td class="text-right">\
+                            <button class="btn" \
+                                ng-class="btnCheckClass()" \
+                                ng-if="canCheck()" ng-click="check()"><i class="fa fa-check"></i></button>\
+                            <button class="btn btn-success" ng-if="canAdd()" ng-click="add()"><i class="fa fa-plus"></i></button>\
                         </td>\
                     </tr>\
                 </tbody>\
@@ -337,9 +424,10 @@ angular.module('WebMis20.directives')
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Наименование препарата</label></div>\
             <div class="col-md-8">\
-                <ui-select ref-book="rlsNomen" theme="select2" ng-model="model.rls">\
+                <ui-select theme="select2" ng-model="model.rls">\
                     <ui-select-match>[[ get_rls_name($select.selected) ]]</ui-select-match>\
-                    <ui-select-choices repeat="item in $refBook.objects | filter: $select.search | orderBy:\'trade_name\' | limitTo:10 track by item.id">\
+                    <ui-select-choices repeat="item in rls_list | filter: $select.search | orderBy:\'trade_name\'"\
+                                       refresh="get_rls($select.search)">\
                         <div ng-bind-html="get_rls_name(item) | highlight: $select.search"></div>\
                     </ui-select-choices>\
                 </ui-select>\
@@ -348,7 +436,14 @@ angular.module('WebMis20.directives')
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Доза</label></div>\
             <div class="col-md-4"><input class="form-control" ng-model="model.dose.value" valid-number></div>\
-            <div class="col-md-4"><rb-select ref-book="rbUnitsGroup/counted" ng-model="model.dose.unit"></rb-select></div>\
+            <div class="col-md-4">\
+                <ui-select theme="select2" ng-model="model.dose.unit">\
+                    <ui-select-match>[[ $select.selected.short_name ]]</ui-select-match>\
+                    <ui-select-choices repeat="item in model.rls.unit_variants | filter: $select.search | orderBy:\'trade_name\'">\
+                        <div ng-bind-html="item.short_name | highlight: $select.search"></div>\
+                    </ui-select-choices>\
+                </ui-select>\
+            </div>\
         </div>\
         <div class="row vmargin10">\
             <div class="col-md-4"><label>Частота</label></div>\
@@ -526,10 +621,12 @@ angular.module('WebMis20.directives')
 
             if (fast_print) {
                 $scope.select_all_templates();
-                if ($scope.instant_print()) {
+                var dont_need_meta = $scope.instant_print(),
+                    no_template_choice = $scope.selected_templates.length === 1;
+                if (dont_need_meta && no_template_choice) {
                     $scope.print_separated();
                 } else {
-                    $scope.page = 1;
+                    $scope.page = no_template_choice ? (dont_need_meta ? 0 : 1) : 0;
                 }
             }
         };
@@ -624,7 +721,8 @@ angular.module('WebMis20.directives')
             scope: {
                 $ps: '=ps',
                 beforePrint: '&?',
-                lazyLoadContext: '@?'
+                lazyLoadContext: '@?',
+                fastPrint: '=?'
             },
             link: function (scope, element, attrs) {
                 var resolver_call = attrs.resolve;
@@ -650,7 +748,8 @@ angular.module('WebMis20.directives')
                     if (!scope.$ps.is_loaded()) {
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
-                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
+                                    scope.fastPrint);
                             }, function () {
                                 MessageBox.error(
                                     'Печать недоступна',
@@ -658,7 +757,8 @@ angular.module('WebMis20.directives')
                                 );
                             });
                     } else {
-                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call));
+                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
+                                    scope.fastPrint);
                     }
                 };
             }
@@ -1359,7 +1459,7 @@ angular.module('WebMis20.directives')
                         <tr>\
                             <th>Дата начала</th>\
                             <th>Тип</th>\
-                            <th>Характер</th>\
+                            <th>Течение</th>\
                             <th>Код МКБ</th>\
                             <th>Врач</th>\
                             <th>Примечание</th>\
@@ -1560,7 +1660,7 @@ angular.module('WebMis20.directives')
                         </div>\
                     </div>\
                     <div class="col-md-3">\
-                        <label for="diagnosis_character" class="control-label">Характер</label>\
+                        <label for="diagnosis_character" class="control-label">Течение</label>\
                         <ui-select class="form-control" name="diagnosis_character" theme="select2"\
                             ng-model="model.character" ref-book="rbDiseaseCharacter">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\

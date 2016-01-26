@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from nemesis.models.refbooks import rbUnits
 from nemesis.systemwide import db
 
 __author__ = 'viruzzz-kun'
@@ -13,22 +14,25 @@ class rlsNomen(db.Model):
     form_id = db.Column(db.ForeignKey('rlsForm.id'), index=True)
     packing_id = db.Column(db.ForeignKey('rlsPacking.id'), index=True)
     filling_id = db.Column(db.ForeignKey('rlsFilling.id'), index=True)
-    unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    units_id = db.Column(db.ForeignKey('rbUnits.id'), index=True)
     dosageValue = db.Column(db.String(128))
-    dosageUnit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    dosageUnits_id = db.Column(db.ForeignKey('rbUnits.id'), index=True)
     drugLifetime = db.Column(db.Integer)
     regDate = db.Column(db.Date)
     annDate = db.Column(db.Date)
 
     actMatters = db.relationship(u'rlsActMatters', lazy=False)
-    dosageUnit = db.relationship(u'rbUnit', primaryjoin='rlsNomen.dosageUnit_id == rbUnit.id', lazy=False)
+    dosageUnit = db.relationship(u'rbUnits', primaryjoin='rlsNomen.dosageUnits_id == rbUnits.id', lazy=False)
     filling = db.relationship(u'rlsFilling', lazy=False)
     form = db.relationship(u'rlsForm', lazy=False)
     packing = db.relationship(u'rlsPacking', lazy=False)
     tradeName = db.relationship(u'rlsTradeName', lazy=False)
-    unit = db.relationship(u'rbUnit', primaryjoin='rlsNomen.unit_id == rbUnit.id', lazy=False)
+    unit = db.relationship(u'rbUnits', primaryjoin='rlsNomen.units_id == rbUnits.id', lazy=False)
 
     def __json__(self):
+        variants = [rbUnits.query.filter(rbUnits.code == u'mg').first()]
+        if self.unit:
+            variants.extend(self.unit.group.children)
         return {
             'id': self.id,
             'act_matters': unicode(self.actMatters),
@@ -44,6 +48,7 @@ class rlsNomen(db.Model):
             'ann_date': self.annDate,
             'drug_lifetime': self.drugLifetime,
             'unit': self.unit,
+            'unit_variants': variants,
         }
 
 
@@ -162,3 +167,51 @@ class rlsPacking(db.Model):
             'name': self.name,
         }
 
+
+class v_Nomen(db.Model):
+    __tablename__ = u'vNomen'
+
+    id = db.Column(u'id', db.Integer, primary_key=True)
+    tradeName = db.Column(u'tradeName', db.String(255))
+    tradeLocalName = db.Column(u'tradeLocalName', db.String(255))
+    tradeName_id = db.Column(u'tradeName_id', db.Integer)
+    actMattersName = db.Column(u'actMattersName', db.String(255))
+    actMattersLocalName = db.Column(u'actMattersLocalName', db.String(255))
+    actMatters_id = db.Column(u'actMatters_id', db.Integer)
+    form = db.Column(u'form', db.String(128))
+    packing = db.Column(u'packing', db.String(128))
+    filling = db.Column(u'filling', db.String(128))
+    unit_id = db.Column(u'unit_id', db.Integer)
+    unitCode = db.Column(u'unitCode', db.String(256))
+    unitName = db.Column(u'unitName', db.String(256))
+    dosageValue = db.Column(u'dosageValue', db.String(128))
+    dosageUnit_id = db.Column(u'dosageUnit_id', db.Integer)
+    dosageUnitCode = db.Column(u'dosageUnitCode', db.String(256))
+    dosageUnitName = db.Column(u'dosageUnitName', db.String(256))
+    regDate = db.Column(u'regDate', db.Date)
+    annDate = db.Column(u'annDate', db.Date)
+    drugLifetime = db.Column(u'drugLifetime', db.Integer)
+
+    def __unicode__(self):
+        return ', '.join(unicode(field) for field in (self.tradeName, self.form, self.dosageValue, self.filling))
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'act_matters': unicode(self.actMattersName),
+            'trade_name': unicode(self.tradeLocalName),
+            'form': unicode(self.form),
+            'packing': unicode(self.packing),
+            'filling': unicode(self.filling),
+            'dosage': {
+                'value': self.dosageValue,
+                'unit': {
+                    'name': self.dosageUnitName,
+                    'code': self.dosageUnitCode,
+                },
+            },
+            'reg_date': self.regDate,
+            'ann_date': self.annDate,
+            'drug_lifetime': self.drugLifetime,
+            'unit': self.unitName,
+        }
