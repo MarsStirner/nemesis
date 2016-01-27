@@ -397,14 +397,39 @@ class Invoice(db.Model):
     draft = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     contract = db.relationship('Contract')
-    item_list = db.relationship('InvoiceItem', backref='invoice')
+    item_list = db.relationship(
+        'InvoiceItem',
+        primaryjoin='and_(InvoiceItem.invoice_id==Invoice.id, InvoiceItem.parent_id == None)'
+    )
 
     def __init__(self):
-        self.total_sum = self._get_recalc_total_sum()
+        self._total_sum = None
+        self._total_sum_loaded = False
 
     @orm.reconstructor
     def init_on_load(self):
-        self.total_sum = self._get_recalc_total_sum()
+        self._total_sum = None
+        self._total_sum_loaded = False
+
+    @property
+    def total_sum(self):
+        if not self._total_sum_loaded:
+            self._total_sum = self._get_recalc_total_sum()
+            self._total_sum_loaded = True
+        return self._total_sum
+
+    @total_sum.setter
+    def total_sum(self, val):
+        self._total_sum = val
+        self._total_sum_loaded = True
+
+    def get_all_entities(self):
+        result = [self]
+        for item in self.item_list:
+            result.append(item)
+            result.extend(item.get_flatten_subitems())
+
+        return result
 
     def _get_recalc_total_sum(self):
         from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
@@ -422,9 +447,53 @@ class InvoiceItem(db.Model):
     amount = db.Column(db.Float, nullable=False)
     sum = db.Column(db.Numeric(15, 2), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    parent_id = db.Column(db.Integer, db.ForeignKey('InvoiceItem.id'))
 
-    service = db.relationship(u'Service')
+    invoice = db.relationship('Invoice')
+    service = db.relationship('Service')
     discount = db.relationship('ServiceDiscount')
+    parent_item = db.relationship('InvoiceItem', remote_side=[id])
+
+    def __init__(self):
+        self._subitem_list = None
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self._subitem_list = None
+
+    @property
+    def subitem_list(self):
+        if self._subitem_list is None:
+            self.init_subitem_list()
+        return self._subitem_list
+
+    @subitem_list.setter
+    def subitem_list(self, value):
+        self._subitem_list = value
+
+    def init_subitem_list(self):
+        self._subitem_list = self._get_subitems()
+        for ss in self._subitem_list:
+            ss.init_subitem_list()
+
+    def get_flatten_subitems(self):
+        flatten = []
+
+        def traverse(item):
+            for si in item.subitem_list:
+                if si.subitem_list:
+                    traverse(si)
+                else:
+                    flatten.append(si)
+
+        traverse(self)
+        return flatten
+
+    def _get_subitems(self):
+        from nemesis.lib.data_ctrl.accounting.invoice import InvoiceItemController
+        ii_ctrl = InvoiceItemController()
+        si_list = ii_ctrl.get_subitems(self)
+        return si_list
 
 
 class FinanceTransaction(db.Model):

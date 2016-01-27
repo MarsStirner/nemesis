@@ -24,9 +24,6 @@ from nemesis.lib.action.utils import at_is_lab
 
 
 class ServiceController(BaseModelController):
-    class DataKind(object):
-        abstract = 0
-        mis_action = 1
 
     def __init__(self):
         super(ServiceController, self).__init__()
@@ -55,8 +52,8 @@ class ServiceController(BaseModelController):
         self.set_new_service_serviced_entity(service, params.get('serviced_entity', {}))
 
         service.subservice_list = []
-        ss_list_params = params['subservice_list']
-        if ss_list_params:
+        ss_list_params = params.get('subservice_list')
+        if ss_list_params is not None:
             for subservice_params in ss_list_params:
                 subservice_params.update({
                     'parent_service': service
@@ -185,15 +182,15 @@ class ServiceController(BaseModelController):
 
     def _format_service_data(self, data):
         result = {}
-        service_kind_id = safe_int(
-            safe_traverse(data, 'service_kind', 'id') or data.get('service_kind_id')
-        )
-        if service_kind_id is None:
-            raise ApiException(422, u'`service_kind` required')
-        if not ServiceKind(service_kind_id).is_valid():
-            raise ApiException(422, u'Unknown `service_kind`: {0}'.format(service_kind_id))
-        result['serviceKind_id'] = service_kind_id
-        result['service_kind'] = self.session.query(rbServiceKind).get(service_kind_id)
+
+        if 'service_kind' in data or 'service_kind_id' in data:
+            service_kind_id = safe_int(
+                safe_traverse(data, 'service_kind', 'id') or data.get('service_kind_id')
+            )
+            if service_kind_id is not None and not ServiceKind(service_kind_id).is_valid():
+                raise ApiException(422, u'Unknown `service_kind`: {0}'.format(service_kind_id))
+            result['serviceKind_id'] = service_kind_id
+            result['service_kind'] = self.session.query(rbServiceKind).get(service_kind_id)
 
         if 'event_id' in data:
             event_id = safe_int(data['event_id'])
@@ -228,7 +225,7 @@ class ServiceController(BaseModelController):
                 data['serviced_entity']
             )
 
-        result['subservice_list'] = data.get('subservice_list', [])
+        result['subservice_list'] = data.get('subservice_list')
         return result
 
     def _format_serviced_entity_data(self, service_kind_id, data):
@@ -369,7 +366,8 @@ class ServiceController(BaseModelController):
                      'discount_id', 'discount'):
             if attr in json_data:
                 setattr(service, attr, json_data.get(attr))
-        self.update_service_serviced_entity(service, json_data['serviced_entity'])
+        if 'serviced_entity' in json_data:
+            self.update_service_serviced_entity(service, json_data['serviced_entity'])
         return service
 
     def update_service_serviced_entity(self, service, serviced_entity_data):
