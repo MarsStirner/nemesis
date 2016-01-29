@@ -193,7 +193,8 @@ def update_action_prescriptions(action, prescriptions):
             p_obj.status_id = safe_traverse(presc, 'status', 'id', default=MedicationPrescriptionStatus.stopped[0])
 
 
-def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None):
+def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None,
+                      service_data=None):
     """
     Создание действия для сохранения в бд.
 
@@ -210,16 +211,18 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
 
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
-        os_id = org_structure.id
         create_TTJ_record(action)
 
     # Service
     if action_needs_service(action):
+        if not service_data:
+            raise ActionException(u'Для action требуется услуга, но данные service_data отсутствуют')
+
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         service_ctrl = ServiceController()
-        new_service = service_ctrl.get_new_service_for_new_action(action)
-        new_service.action = action
+        new_service = service_ctrl.get_new_service_for_new_action(action, service_data)
         db.session.add(new_service)
+        db.session.add_all(new_service.get_flatten_subservices())
 
     return action
 
@@ -270,7 +273,7 @@ def update_action(action, **kwargs):
 
 def delete_action(action):
     if not UserUtils.can_delete_action(action):
-        raise Exception(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
+        raise ActionException(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
     action.delete()
     return action
 
@@ -327,11 +330,10 @@ def create_TTJ_record(action):
     else:
         ttj.amount += at_tissue_type.amount
     db.session.add(ttj)
-    db.session.commit()
 
     action_ttj = Action_TakenTissueJournalAssoc()
-    action_ttj.action_id = action.id
-    action_ttj.takenTissueJournal_id = ttj.id
+    action_ttj.action = action
+    action_ttj.taken_tissue_journal = ttj
     db.session.add(action_ttj)
 
     action.takenTissueJournal = ttj
@@ -481,7 +483,7 @@ def get_planned_end_datetime(action_type_id):
 
 
 @cache.memoize(86400)
-def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
+def int_get_atl_flat(at_class, event_type_id=None):
     """Получить плоское дерево типов действий.
 
     :returns {
@@ -537,37 +539,9 @@ def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
         ).outerjoin(
             EventType_Action, db.and_(EventType_Action.actionType_id == ActionType.id,
                                       EventType_Action.eventType_id == event_type_id)
+        ).filter(
+            db.or_(internal_nodes_q.c.id != None, EventType_Action.id != None)
         )
-        # 2) filter atl query by contract tariffs if necessary
-        need_price_list = EventType.query.get(event_type_id).createOnlyActionsWithinPriceList
-        if contract_id and need_price_list:
-            ats = ats.outerjoin(
-                ActionType_Service, db.and_(ActionType.id == ActionType_Service.master_id,
-                                            between(func.curdate(),
-                                                    ActionType_Service.begDate,
-                                                    func.coalesce(ActionType_Service.endDate, func.curdate())))
-            ).outerjoin(
-                ContractTariff, db.and_(ActionType_Service.service_id == ContractTariff.service_id,
-                                        ContractTariff.master_id == contract_id,
-                                        ContractTariff.eventType_id == event_type_id,
-                                        # временно убрана проверка на даты действия тарифа в прайсе.
-                                        # Вернуть с добавлением возможности работы с несколькими контрактами в обращении.
-                                        ContractTariff.deleted == 0)  # between(func.curdate(), ContractTariff.begDate, ContractTariff.endDate)
-            ).outerjoin(
-                Contract, db.and_(Contract.id == ContractTariff.master_id,
-                                  Contract.deleted == 0)
-            ).filter(
-                db.or_(db.and_(EventType_Action.id != None,
-                               ContractTariff.id != None,
-                               Contract.id != None,
-                               ActionType_Service.id != None),
-                       internal_nodes_q.c.id != None)
-            )
-        else:
-            # filter for 1)
-            ats = ats.filter(
-                db.or_(internal_nodes_q.c.id != None, EventType_Action.id != None)
-            )
 
         result = map(schwing, ats)
 

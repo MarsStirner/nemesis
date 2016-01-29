@@ -76,6 +76,11 @@ class PriceListItemController(BaseModelController):
         result_list = sel.get_pli_for_groupservice_by_rbservice(rbservice_id, price_list_id)
         return result_list
 
+    def get_apts_prices_by_pricelist(self, apt_id_list, pricelist_id_list):
+        sel = self.get_selecter()
+        result_list = sel.get_filtered_apt_price_by_pricelist(apt_id_list, pricelist_id_list)
+        return {apt_id: price for apt_id, price in result_list}
+
 
 class PriceListItemSelecter(BaseSelecter):
 
@@ -179,5 +184,34 @@ class PriceListItemSelecter(BaseSelecter):
                     PriceListItem.endDate),
         ).with_entities(
             PriceListItem.id,
+        )
+        return self.get_all()
+
+    def get_filtered_apt_price_by_pricelist(self, apt_id_list, pricelist_id_list):
+        PriceListItem = self.model_provider.get('PriceListItem')
+        rbTest_Service = self.model_provider.get('rbTest_Service')
+        rbTest = self.model_provider.get('rbTest')
+        ActionPropertyType = self.model_provider.get('ActionPropertyType')
+        self.query = self.query.join(
+            rbTest_Service, and_(PriceListItem.service_id == rbTest_Service.service_id,
+                                 between(func.curdate(),
+                                         rbTest_Service.begDate,
+                                         func.coalesce(rbTest_Service.endDate, func.curdate()))
+                                 )
+        ).join(
+            rbTest,
+            ActionPropertyType
+        ).filter(
+            PriceListItem.priceList_id.in_(pricelist_id_list),
+            PriceListItem.deleted == 0,
+            between(func.curdate(),
+                    PriceListItem.begDate,
+                    PriceListItem.endDate),
+            rbTest.deleted == 0,
+            ActionPropertyType.deleted == 0,
+            ActionPropertyType.id.in_(apt_id_list)
+        ).with_entities(
+            ActionPropertyType.id,
+            PriceListItem.price
         )
         return self.get_all()

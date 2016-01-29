@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import requests
-from werkzeug.utils import cached_property
+
+from sqlalchemy import orm
 
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
@@ -131,6 +132,10 @@ class ActionProperty(db.Model):
     type = db.relationship(u'ActionPropertyType', lazy=False, innerjoin=True)
     unit = db.relationship(u'rbUnit', lazy=False)
 
+    def __init__(self):
+        self._has_pricelist_service = None
+        self._pl_price = None
+
     def get_value_container_class(self):
         # Следующая магия вытаскивает класс, ассоциированный с backref-пропертей, созданной этим же классом у нашего
         # ActionProperty. Объекты этого класса мы будем создавать для значений
@@ -235,6 +240,27 @@ class ActionProperty(db.Model):
             else:
                 for val in value_container:
                     delete_value(val)
+
+    @orm.reconstructor
+    def init_on_load(self):
+        self._has_pricelist_service = None
+        self._pl_price = None
+
+    @property
+    def has_pricelist_service(self):
+        return self._has_pricelist_service
+
+    @has_pricelist_service.setter
+    def has_pricelist_service(self, value):
+        self._has_pricelist_service = value
+
+    @property
+    def pl_price(self):
+        return self._pl_price
+
+    @pl_price.setter
+    def pl_price(self, value):
+        self._pl_price = value
 
     def __json__(self):
         return {
@@ -1000,6 +1026,7 @@ class Action_TakenTissueJournalAssoc(db.Model):
     takenTissueJournal_id = db.Column(db.ForeignKey('TakenTissueJournal.id'), index=True)
 
     action = db.relationship(u'Action')
+    taken_tissue_journal = db.relationship(u'TakenTissueJournal')
 
 
 class TakenTissueJournal(db.Model):

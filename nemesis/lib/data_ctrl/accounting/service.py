@@ -10,7 +10,8 @@ from nemesis.models.client import Client
 from nemesis.models.actions import Action
 from nemesis.models.event import Event
 from nemesis.models.enums import ServiceKind
-from nemesis.lib.utils import (safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict)
+from nemesis.lib.utils import (safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict,
+    safe_traverse_attrs)
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
@@ -24,10 +25,6 @@ from nemesis.lib.action.utils import at_is_lab
 
 
 class ServiceController(BaseModelController):
-
-    def __init__(self):
-        super(ServiceController, self).__init__()
-        self.contract_ctrl = ContractController()
 
     @classmethod
     def get_selecter(cls):
@@ -49,7 +46,7 @@ class ServiceController(BaseModelController):
         service.parent_id = params.get('parent_id')
         service.parent_service = params.get('parent_service')
 
-        self.set_new_service_serviced_entity(service, params.get('serviced_entity', {}))
+        self._process_serviced_entity(service, params)
 
         service.subservice_list = []
         ss_list_params = params.get('subservice_list')
@@ -66,6 +63,28 @@ class ServiceController(BaseModelController):
         service.recalc_sum()
 
         return service
+
+    def _process_serviced_entity(self, service, params):
+        if 'serviced_entity_from_search' in params:
+            search_item = params['serviced_entity_from_search']
+            se_data = self.make_new_serviced_entity_data(
+                service.serviceKind_id,
+                code=search_item.get('at_code'),
+                name=search_item.get('at_name'),
+                at_id=search_item.get('action_type_id'),
+                client_id=safe_traverse_attrs(service, 'event', 'client_id'),
+                contract_id=safe_traverse_attrs(service, 'event', 'contract_id')
+            )
+            self.set_new_service_serviced_entity(service, se_data)
+        elif 'serviced_entity_from_action' in params:
+            action = params['serviced_entity_from_action']
+            service.action = action
+        elif 'serviced_entity' in params:
+            se_data = params['serviced_entity']
+            self.set_new_service_serviced_entity(service, se_data)
+        # else:
+        #     # случай показателя лабораторного исследования
+        #     self.set_new_service_serviced_entity(service, None)
 
     def set_new_service_serviced_entity(self, service, serviced_entity_data):
         if service.serviceKind_id == ServiceKind.simple_action[0]:
@@ -129,7 +148,12 @@ class ServiceController(BaseModelController):
             'event_id': parent_service.event_id,
             'price_list_item_id': pli_id,
             'parent_service': parent_service,
-            'serviced_entity': self.make_new_serviced_entity_data(service_kind.value, at_id=at_id, client_id=client_id),
+            'serviced_entity': self.make_new_serviced_entity_data(
+                service_kind.value,
+                at_id=at_id,
+                client_id=client_id,
+                contract_id=parent_service.event.contract_id
+            ),
         })
         return new_service
 
@@ -219,11 +243,19 @@ class ServiceController(BaseModelController):
             elif parent_service is not None:
                 result['parent_service'] = parent_service
 
-        if 'serviced_entity' in data:
-            result['serviced_entity'] = self._format_serviced_entity_data(
-                service_kind_id,
-                data['serviced_entity']
-            )
+        if 'serviced_entity_from_search' in data:
+            result['serviced_entity_from_search'] = data['serviced_entity_from_search']
+        elif 'serviced_entity_from_action' in data:
+            result['serviced_entity_from_action'] = data['serviced_entity_from_action']
+        elif 'serviced_entity' in data:
+            result['serviced_entity'] = data['serviced_entity']
+
+            # if 'service_kind' not in data and 'service_kind_id' not in data:
+            #     raise ApiException(422, u'`service_kind_id` required')
+            # result['serviced_entity'] = self._format_serviced_entity_data(
+            #     service_kind_id,
+            #     data['serviced_entity']
+            # )
 
         result['subservice_list'] = data.get('subservice_list')
         return result
@@ -249,9 +281,11 @@ class ServiceController(BaseModelController):
         contract_id = safe_int(args.get('contract_id'))
         if not contract_id:
             raise ApiException(422, u'`contract_id` required')
-        pricelist_id_list = self.contract_ctrl.get_contract_pricelist_id_list(contract_id)
+        contract_ctrl = ContractController()
+        pricelist_id_list = contract_ctrl.get_contract_pricelist_id_list(contract_id)
         service_sphinx = ServiceSphinxSearchSelecter()
         service_sphinx.apply_filter(pricelist_id_list=pricelist_id_list, **args)
+        service_sphinx.apply_limit(limit_max=safe_int(args.get('limit_max')))
         search_result = service_sphinx.get_all()
         data = search_result['result']['items']
         data = self._process_search_results(data)
@@ -306,6 +340,15 @@ class ServiceController(BaseModelController):
         else:
             assigned = data = None
         action = create_action(action_type_id, event_id, assigned=assigned, data=data)
+
+        if 'tests_data' in serviced_entity_data:
+            # на основе данных прайс-листа следующие apt имеют цены
+            apt_prices = {apt_data[0]: apt_data[2] for apt_data in serviced_entity_data['tests_data']['assignable']}
+            assignable_by_pricelist = apt_prices.keys()
+            for prop in action.properties:
+                if prop.type_id in assignable_by_pricelist:
+                    prop.has_pricelist_service = True
+                    prop.pl_price = apt_prices[prop.type_id]
         return action
 
     def get_new_service_action_property(self, lab_action, serviced_entity_data):
@@ -318,8 +361,8 @@ class ServiceController(BaseModelController):
         if service_kind_id == ServiceKind.simple_action[0]:
             return {
                 'id': None,
-                'code': kwargs.get('code'),
-                'name': kwargs.get('name'),
+                'code': kwargs.get('at_code'),
+                'name': kwargs.get('at_name'),
                 'at_id': kwargs.get('at_id')
             }
         elif service_kind_id == ServiceKind.group[0]:
@@ -329,11 +372,28 @@ class ServiceController(BaseModelController):
                 'name': ''
             }
         elif service_kind_id == ServiceKind.lab_action[0]:
-            at_id = kwargs.get('at_id')
+            at_id = kwargs['at_id']
             assignable = get_assignable_apts(at_id, kwargs.get('client_id'))
+
+            # фильтр доступных показателей по наличию услуги в прайс-листе
+            contract_id = kwargs.get('contract_id')
+            if contract_id:
+                contract_ctrl = ContractController()
+                pricelist_id_list = contract_ctrl.get_contract_pricelist_id_list(contract_id)
+                assignable_apt_ids = [apt_data[0] for apt_data in assignable]
+                pli_ctrl = PriceListItemController()
+                filtered_apt_prices = pli_ctrl.get_apts_prices_by_pricelist(assignable_apt_ids, pricelist_id_list)
+                flt_assignable = []
+                flt_apt_ids = filtered_apt_prices.keys()
+                for apt_data in assignable:
+                    if apt_data[0] in flt_apt_ids:
+                        apt_data = list(apt_data)[:2]
+                        apt_data.append(filtered_apt_prices[apt_data[0]])
+                        flt_assignable.append(apt_data)
+                assignable = flt_assignable
+
             assigned = [apt_data[0] for apt_data in assignable]  # apt.id list
             planned_end_date = get_planned_end_datetime(at_id)
-            # подумать про доступность выбираемых показателей и доступность изменения даты-времени
             ped_disabled = False
             return {
                 'id': None,
@@ -516,7 +576,7 @@ class ServiceController(BaseModelController):
 
         return service
 
-    def get_new_service_for_new_action(self, action):
+    def get_new_service_for_new_action(self, action, service_data):
         pli_ctrl = PriceListItemController()
         pli_list = pli_ctrl.get_available_pli_list_for_new_action(action)
         if len(pli_list) == 0:
@@ -524,11 +584,16 @@ class ServiceController(BaseModelController):
         elif len(pli_list) > 1:
             raise ApiException(409, u'Найдено более одной подходящей позиции прайса для создаваемого Action')
         pli = pli_list[0]
+        service_pli_id = service_data['price_list_item_id']
+        if pli.id != service_pli_id:
+            raise ApiException(422, u'Переданная позиция прайса для услуги и найденная в прайс-листе не совпадают.')
+
         amount = safe_double(action.amount)
-        new_service = self.get_new_service({
-            'price_list_item_id': pli.id,
-            'amount': amount
+        service_data.update({
+            'amount': amount,
+            'serviced_entity_from_action': action
         })
+        new_service = self.get_new_service(service_data)
         return new_service
 
     def get_action_service(self, action):
@@ -603,6 +668,15 @@ class ServiceController(BaseModelController):
         ss_list = sel.get_subservices(service.id)
         return ss_list
 
+    def get_service_data_for_at_tree(self, args):
+        service_data_list = self.search_mis_action_services(args)
+        result = {}
+        for service_data in service_data_list:
+            at_id = service_data['action_type_id']
+            if at_id:
+                result[at_id] = service_data
+        return result
+
 
 class ServiceSelecter(BaseSelecter):
 
@@ -659,5 +733,5 @@ class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):
         return self
 
     def apply_limit(self, **limit_args):
-        self.search = self.search.limit(0, 100)
+        self.search = self.search.limit(0, limit_args.get('limit_max') or 100)
         return self
