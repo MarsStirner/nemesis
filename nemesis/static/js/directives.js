@@ -326,7 +326,7 @@ angular.module('WebMis20.directives')
                             .map(function makeMedicineFE(record) {
                                 return {
                                     name: record.rls.trade_name,
-                                    data1: scope.action.beg_date, // MAY GOD HAVE MERCY ON THOSE POOR BUZZARDS
+                                    data1: scope.action.beg_date,
                                     // data2: ,
                                     dosage: {
                                         // лекарственная форма
@@ -356,7 +356,9 @@ angular.module('WebMis20.directives')
                         }
                     }
                 };
-                checkPE();
+                if (scope.action) {
+                    checkPE();
+                }
             },
             templateUrl: '/WebMis20/prescription-edit.html'
         }
