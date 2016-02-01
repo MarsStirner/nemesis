@@ -17,6 +17,7 @@ from nemesis.models.actions import (Action, ActionType, ActionPropertyType, Acti
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
 from nemesis.models.event import Event, EventType_Action, EventType
+from nemesis.models.client import Client
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
@@ -83,6 +84,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
 
     action = Action()
     action.actionType = actionType
+    action.actionType_id = action_type_id
     action.event = event
     action.event_id = event.id  # need for now
     action.begDate = now  # todo
@@ -147,7 +149,9 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
         if recordAcceptableEx(event.client.sexCode, event.client.age_tuple(now_date), prop_type.sex, prop_type.age):
             prop = ActionProperty()
             prop.type = prop_type
+            prop.type_id = prop_type.id
             prop.action = action
+            prop.action_id = action.id
             prop.isAssigned = prop_type.id in assigned
             if src_props.get(prop_type.id):
                 prop.value = src_props[prop_type.id].value
@@ -189,7 +193,8 @@ def update_action_prescriptions(action, prescriptions):
             p_obj.status_id = safe_traverse(presc, 'status', 'id', default=MedicationPrescriptionStatus.stopped[0])
 
 
-def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None):
+def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None,
+                      service_data=None):
     """
     Создание действия для сохранения в бд.
 
@@ -206,16 +211,18 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
 
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
-        os_id = org_structure.id
         create_TTJ_record(action)
 
     # Service
     if action_needs_service(action):
+        if not service_data:
+            raise ActionException(u'Для action требуется услуга, но данные service_data отсутствуют')
+
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         service_ctrl = ServiceController()
-        new_service = service_ctrl.get_new_service_for_new_action(action)
-        new_service.action = action
+        new_service = service_ctrl.get_new_service_for_new_action(action, service_data)
         db.session.add(new_service)
+        db.session.add_all(new_service.get_flatten_subservices())
 
     return action
 
@@ -244,9 +251,10 @@ def update_action(action, **kwargs):
             setattr(action, attr, kwargs.get(attr))
 
     # properties (only assigned data)
-    assigned = kwargs.get('properties_assigned', [])
-    for type_id in assigned:
-        action.propsByTypeId[type_id].isAssigned = True
+    assigned = kwargs.get('properties_assigned')
+    if assigned:
+        for ap in action.properties:
+            ap.isAssigned = ap.type_id in assigned
 
     # properties (full data)
     for prop_desc in kwargs.get('properties', []):
@@ -265,8 +273,9 @@ def update_action(action, **kwargs):
 
 def delete_action(action):
     if not UserUtils.can_delete_action(action):
-        raise Exception(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
+        raise ActionException(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
     action.delete()
+    return action
 
 
 def format_action_data(json_data):
@@ -321,11 +330,10 @@ def create_TTJ_record(action):
     else:
         ttj.amount += at_tissue_type.amount
     db.session.add(ttj)
-    db.session.commit()
 
     action_ttj = Action_TakenTissueJournalAssoc()
-    action_ttj.action_id = action.id
-    action_ttj.takenTissueJournal_id = ttj.id
+    action_ttj.action = action
+    action_ttj.taken_tissue_journal = ttj
     db.session.add(action_ttj)
 
     action.takenTissueJournal = ttj
@@ -475,12 +483,32 @@ def get_planned_end_datetime(action_type_id):
 
 
 @cache.memoize(86400)
-def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
+def int_get_atl_flat(at_class, event_type_id=None):
+    """Получить плоское дерево типов действий.
+
+    :returns {
+        'action_type_id': [
+            ActionType.id,
+            ActionType.name,
+            ActionType.code,
+            ActionType.flatCode,
+            ActionType.group_id,
+            [at age from parseAgeSelector],
+            ActionType.sex,
+            [OrgStructure.id, ],
+            ActionType.isRequiredTissue,
+            [
+                list of assignable apts data
+                (apt_id, apt_name, [apt age from parseAgeSelector], apt.sex),
+            ]
+        ]
+    }
+    """
     id_list = {}
 
     def schwing(t):
         t = list(t)
-        t[5] = list(parseAgeSelector(t[7]))
+        t[5] = list(parseAgeSelector(t[5]))
         t[7] = t[7].split() if t[7] else None
         t[8] = bool(t[8])
         t.append([])
@@ -511,37 +539,9 @@ def int_get_atl_flat(at_class, event_type_id=None, contract_id=None):
         ).outerjoin(
             EventType_Action, db.and_(EventType_Action.actionType_id == ActionType.id,
                                       EventType_Action.eventType_id == event_type_id)
+        ).filter(
+            db.or_(internal_nodes_q.c.id != None, EventType_Action.id != None)
         )
-        # 2) filter atl query by contract tariffs if necessary
-        need_price_list = EventType.query.get(event_type_id).createOnlyActionsWithinPriceList
-        if contract_id and need_price_list:
-            ats = ats.outerjoin(
-                ActionType_Service, db.and_(ActionType.id == ActionType_Service.master_id,
-                                            between(func.curdate(),
-                                                    ActionType_Service.begDate,
-                                                    func.coalesce(ActionType_Service.endDate, func.curdate())))
-            ).outerjoin(
-                ContractTariff, db.and_(ActionType_Service.service_id == ContractTariff.service_id,
-                                        ContractTariff.master_id == contract_id,
-                                        ContractTariff.eventType_id == event_type_id,
-                                        # временно убрана проверка на даты действия тарифа в прайсе.
-                                        # Вернуть с добавлением возможности работы с несколькими контрактами в обращении.
-                                        ContractTariff.deleted == 0)  # between(func.curdate(), ContractTariff.begDate, ContractTariff.endDate)
-            ).outerjoin(
-                Contract, db.and_(Contract.id == ContractTariff.master_id,
-                                  Contract.deleted == 0)
-            ).filter(
-                db.or_(db.and_(EventType_Action.id != None,
-                               ContractTariff.id != None,
-                               Contract.id != None,
-                               ActionType_Service.id != None),
-                       internal_nodes_q.c.id != None)
-            )
-        else:
-            # filter for 1)
-            ats = ats.filter(
-                db.or_(internal_nodes_q.c.id != None, EventType_Action.id != None)
-            )
 
         result = map(schwing, ats)
 
@@ -759,3 +759,22 @@ def _get_hosp_release_query(event):
         Action.status == ActionStatus.finished[0]
     ).order_by(Action.begDate.desc())
     return query
+
+
+def get_assignable_apts(at_id, client_id=None):
+    all_at_data = int_get_atl_dict_all()
+    at_data = all_at_data.get(at_id)
+    if at_data is not None:
+        apt_data_list = at_data[9]
+        if client_id:
+            client = db.session.query(Client).get(client_id)
+            client_age = client.age_tuple(date.today())
+            filtered_apts = []
+            for apt_data in apt_data_list:
+                if recordAcceptableEx(client.sexCode, client_age, apt_data[3], apt_data[2]):
+                    filtered_apts.append(apt_data)
+            apt_data_list = filtered_apts
+    else:
+        apt_data_list = []
+
+    return apt_data_list

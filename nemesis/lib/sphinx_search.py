@@ -50,20 +50,6 @@ class SearchEventService(object):
     def get_search(cls):
         return Search(indexes=['event_service'], config=SearchConfig)
 
-    @staticmethod
-    def search(query, eventType_id=None, contract_id=None, speciality_id=None):
-        search = Search(indexes=['event_service'], config=SearchConfig)
-        search = search.match(query)
-        if eventType_id:
-            search = search.filter(eventType_id__eq=int(eventType_id))
-        if contract_id:
-            search = search.filter(contract_id__eq=int(contract_id))
-        if speciality_id:
-            search = search.filter(speciality_id__in=[0, int(speciality_id)])
-        search = search.limit(0, 100)
-        result = search.ask()
-        return result
-
 
 class SearchEvent():
 

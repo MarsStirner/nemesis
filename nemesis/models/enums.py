@@ -177,6 +177,15 @@ class FinanceOperationType(EnumLoadable):
     invoice_cancel = 4, u'Отмена оплаты по счёту'
 
 
+class ServiceKind(EnumLoadable):
+    __tablename__ = 'rbServiceKind'
+
+    simple_action = 1, u'Простая услуга'
+    group = 2, u'Набор услуг'
+    lab_action = 3, u'Лабораторное исследование с показателями'
+    lab_test = 4, u'Показатель лабораторного исследования'
+
+
 class TTJStatus(Enum):
     waiting = 0, u'Ожидание'
     in_progress = 1, u'Выполнение'
