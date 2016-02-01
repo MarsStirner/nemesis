@@ -80,6 +80,11 @@ class Event(db.Model):
         u'Visit',
         primaryjoin="and_(Event.id == Visit.event_id, Visit.deleted == 0)"
     )
+    VMP_quoting = db.relationship(
+        u'ClientQuoting',
+        primaryjoin="and_(Event.id == ClientQuoting.event_id, ClientQuoting.deleted == 0)",
+        uselist=False
+    )
     uuid = db.relationship('UUID')
 
     @property
@@ -571,9 +576,9 @@ class Visit(db.Model):
     __tablename__ = u'Visit'
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)
@@ -600,8 +605,8 @@ class Visit(db.Model):
         visit.date = event.setDate
         visit.event = event
         visit.person = event.execPerson
-        visit.scene = event.eventType.scene or rbScene.query.filter(rbScene.code == '1').first()
-        visit.visitType = rbVisitType.query.filter(rbVisitType.code == '').first()
+        visit.scene = event.eventType.scene or rbScene.query.filter(rbScene.code == u'1').first()
+        visit.visitType = rbVisitType.query.filter(rbVisitType.code == u'').first()
         if event.eventType.visitFinance:
             visit.finance = event.execPerson.finance
         else:

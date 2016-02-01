@@ -395,8 +395,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             <div class="btn-group">\
                 <a class="btn" data-edit="insertunorderedlist" title="Bullet list"><i class="fa fa-list-ul"></i></a>\
                 <a class="btn" data-edit="insertorderedlist" title="Number list"><i class="fa fa-list-ol"></i></a>\
-                <a class="btn" data-edit="outdent" title="Reduce indent (Shift+Tab)"><i class="fa fa-indent"></i></a>\
-                <a class="btn" data-edit="indent" title="Indent (Tab)"><i class="fa fa-outdent"></i></a>\
+                <a class="btn" data-edit="indent" title="Indent (Tab)"><i class="fa fa-indent"></i></a>\
+                <a class="btn" data-edit="outdent" title="Reduce indent (Shift+Tab)"><i class="fa fa-outdent"></i></a>\
             </div>\
             <div class="btn-group">\
                 <a class="btn" data-edit="justifyleft" title="Align Left (Ctrl/Cmd+L)"><i class="fa fa-align-left"></i></a>\

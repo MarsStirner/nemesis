@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from nemesis.models.refbooks import rbUnits
 from nemesis.systemwide import db
 
 __author__ = 'viruzzz-kun'
@@ -13,22 +14,25 @@ class rlsNomen(db.Model):
     form_id = db.Column(db.ForeignKey('rlsForm.id'), index=True)
     packing_id = db.Column(db.ForeignKey('rlsPacking.id'), index=True)
     filling_id = db.Column(db.ForeignKey('rlsFilling.id'), index=True)
-    unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    units_id = db.Column(db.ForeignKey('rbUnits.id'), index=True)
     dosageValue = db.Column(db.String(128))
-    dosageUnit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
+    dosageUnits_id = db.Column(db.ForeignKey('rbUnits.id'), index=True)
     drugLifetime = db.Column(db.Integer)
     regDate = db.Column(db.Date)
     annDate = db.Column(db.Date)
 
     actMatters = db.relationship(u'rlsActMatters', lazy=False)
-    dosageUnit = db.relationship(u'rbUnit', primaryjoin='rlsNomen.dosageUnit_id == rbUnit.id', lazy=False)
+    dosageUnit = db.relationship(u'rbUnits', primaryjoin='rlsNomen.dosageUnits_id == rbUnits.id', lazy=False)
     filling = db.relationship(u'rlsFilling', lazy=False)
     form = db.relationship(u'rlsForm', lazy=False)
     packing = db.relationship(u'rlsPacking', lazy=False)
     tradeName = db.relationship(u'rlsTradeName', lazy=False)
-    unit = db.relationship(u'rbUnit', primaryjoin='rlsNomen.unit_id == rbUnit.id', lazy=False)
+    unit = db.relationship(u'rbUnits', primaryjoin='rlsNomen.units_id == rbUnits.id', lazy=False)
 
     def __json__(self):
+        variants = [rbUnits.query.filter(rbUnits.code == u'mg').first()]
+        if self.unit:
+            variants.extend(self.unit.group.children)
         return {
             'id': self.id,
             'act_matters': unicode(self.actMatters),
@@ -44,6 +48,7 @@ class rlsNomen(db.Model):
             'ann_date': self.annDate,
             'drug_lifetime': self.drugLifetime,
             'unit': self.unit,
+            'unit_variants': variants,
         }
 
 

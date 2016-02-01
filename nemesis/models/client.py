@@ -153,6 +153,13 @@ class Client(db.Model):
         order_by="desc(ClientAttach.id)",
         lazy='dynamic')
 
+    VMP_coupons = db.relationship(
+        u'VMPCoupon',
+        primaryjoin='and_('
+                    'VMPCoupon.client_id==Client.id, '
+                    'VMPCoupon.deleted==0)',
+        order_by="desc(VMPCoupon.id)")
+
     def __init__(self):
         self.init_on_load()
 

@@ -412,7 +412,7 @@ angular.module('WebMis20.directives').
     </div>\
     <div class="form-group col-md-3"\
          ng-class="{\'has-error\': (algForm.$dirty || modelAllerg.idy) && algForm.alg_power.$invalid}">\
-        <label for="alg_power[[idPostfix]]" class="control-label">Степень</label>\
+        <label for="alg_power[[idPostfix]]" class="control-label">Проявление</label>\
         <select class="form-control" id="alg_power[[idPostfix]]" name="alg_power"\
                 ng-model="modelAllergy.power"\
                 ng-options="pow as pow.name for pow in rbAllergyPower.objects track by pow.id"\
