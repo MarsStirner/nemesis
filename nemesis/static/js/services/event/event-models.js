@@ -148,6 +148,7 @@ angular.module('WebMis20.services.models').
                 self.received = data.result.received;
                 self.movings = data.result.movings;
                 self.blood_history = data.result.blood_history;
+                self.vmp_quoting = data.result.vmp_quoting;
             }
             WMStationaryEvent.prototype.save = function() {
                 var self = this;
@@ -158,7 +159,8 @@ angular.module('WebMis20.services.models').
                     payment: this.payment,
                     services: this.services,
                     ticket_id: this.ticket_id,
-                    request_type_kind: this.request_type_kind
+                    request_type_kind: this.request_type_kind,
+                    vmp_quoting: this.vmp_quoting
                 })
                 .success(function(response) {
                     var event_id = response.result.id,

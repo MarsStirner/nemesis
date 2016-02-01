@@ -38,7 +38,7 @@ angular.module('WebMis20.directives')
                 );
                 var uiSelectChoices = $(
                     '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} {2} | limitTo:{3} track by item.id">\
-                        <div ng-bind-html="getName(item) | highlight: $select.search"></div>\
+                        <div style="text-align: justify" ng-bind-html="getName(item) | highlight: $select.search"></div>\
                     </ui-select-choices>'
                     .format(
                         extraFilter ? (extraFilter + ' | '): '',

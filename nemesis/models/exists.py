@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*
 import datetime
 
+import itertools
 from sqlalchemy import Table
 from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
@@ -1458,10 +1459,10 @@ class ClientQuoting(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    createDatetime = db.Column(db.DateTime, nullable=False)
-    createPerson_id = db.Column(db.Integer, index=True)
-    modifyDatetime = db.Column(db.DateTime, nullable=False)
-    modifyPerson_id = db.Column(db.Integer, index=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     master_id = db.Column(db.ForeignKey('Client.id'), index=True)
     identifier = db.Column(db.Unicode(16))
@@ -1469,20 +1470,154 @@ class ClientQuoting(db.Model):
     quotaDetails_id = db.Column(db.ForeignKey('VMPQuotaDetails.id', ondelete='RESTRICT', onupdate='RESTRICT'),
                                 nullable=False, index=True)
     stage = db.Column(db.Integer)
-    directionDate = db.Column(db.DateTime, nullable=False)
+    directionDate = db.Column(db.DateTime)
     freeInput = db.Column(db.Unicode(128))
     org_id = db.Column(db.Integer)
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    MKB = db.Column(db.Unicode(8), nullable=False)
+    MKB_id = db.Column(db.ForeignKey('MKB.id'), nullable=False)
+    vmpCoupon_id = db.Column(db.ForeignKey('VMPCoupon.id'), nullable=False)
     status = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     request = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     statment = db.Column(db.Unicode(255))
-    dateRegistration = db.Column(db.DateTime, nullable=False)
-    dateEnd = db.Column(db.DateTime, nullable=False)
+    dateRegistration = db.Column(db.DateTime)
+    dateEnd = db.Column(db.DateTime)
     orgStructure_id = db.Column(db.Integer)
     regionCode = db.Column(db.String(13), index=True)
-    event_id = db.Column(db.Integer, index=True)
+    event_id = db.Column(db.ForeignKey('Event.id'), index=True)
     prevTalon_event_id = db.Column(db.Integer)
-    version = db.Column(db.Integer, nullable=False)
+    version = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
-    master = db.relationship(u'Client')
+    event = db.relationship('Event')
+    master = db.relationship(u'Client', backref='VMP_quoting')
+    MKB_object = db.relationship('MKB')
+    vmpCoupon = db.relationship('VMPCoupon', backref=db.backref('clientQuoting', uselist=False))
+    quotaDetails = db.relationship('VMPQuotaDetails')
+
+    @property
+    def MKB(self):
+        try:
+            return self.MKB_object.DiagID
+        except AttributeError:
+            return None
+
+    @MKB.setter
+    def MKB(self, value):
+        self.MKB_object = MKB.query.filter(MKB.DiagID == value).first()
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'coupon': self.vmpCoupon,
+            'quota_type': self.quotaDetails.quota_type,
+            'patient_model': self.quotaDetails.pacient_model,
+            'treatment': self.quotaDetails.treatment,
+            'mkb': self.MKB_object,
+        }
+
+
+class VMPCoupon(db.Model):
+    __tablename__ = 'VMPCoupon'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+
+    number = db.Column(db.Integer, nullable=False)
+    MKB_id = db.Column(db.ForeignKey('MKB.id'), nullable=False)
+    date = db.Column(db.Date)
+    quotaType_id = db.Column(db.ForeignKey('QuotaType.id'), nullable=False)
+    client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
+    clientQuoting_id = db.Column(db.Integer)
+    fileLink = db.Column('file', db.String)
+
+    MKB_object = db.relationship('MKB')
+    quotaType = db.relationship('QuotaType')
+    client = db.relationship('Client')
+
+    @property
+    def MKB(self):
+        return self.MKB_object.DiagID
+
+    @MKB.setter
+    def MKB(self, value):
+        self.MKB_object = MKB.query.filter(MKB.DiagID == value).first()
+
+    @classmethod
+    def from_xlsx(cls, xlsx_file):
+        from nemesis.models.client import Client
+        from xlsx import Workbook
+        import base64
+        from cStringIO import StringIO
+
+        def read_smashed_cells(rown, cells):
+            return u''.join([sheet_0[cell+str(rown)].value for cell in cells])
+
+        xlsx_str = base64.b64decode(xlsx_file)
+        f = StringIO(xlsx_str)
+
+        book = Workbook(f)
+        sheet_0 = book[1]
+
+        self = cls()
+        self.number = read_smashed_cells(10, itertools.chain('QRSTUVWXYZ', ['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG']))
+        self.MKB = read_smashed_cells(93, 'NOPQR')
+
+        quota_type_code = ''.join((
+            sheet_0['M135'].value, sheet_0['N135'].value, '.',
+            sheet_0['P135'].value, sheet_0['Q135'].value, '.',
+            sheet_0['U135'].value, sheet_0['V135'].value, sheet_0['W135'].value
+        ))
+
+        self.quotaType = QuotaType.query.filter(QuotaType.code == quota_type_code).first()
+        self.date = datetime.date(
+            int(''.join(('20', sheet_0['V137'].value, sheet_0['W137'].value))),
+            int(''.join((sheet_0['S137'].value, sheet_0['T137'].value))),
+            int(''.join((sheet_0['P137'].value, sheet_0['Q137'].value))),
+        )
+
+        last_name = sheet_0['H35'].value
+        first_name = sheet_0['W35'].value
+        patr_name = sheet_0['M37'].value
+        document_type = sheet_0['S45'].value
+        document_number = sheet_0['L47'].value
+        birthdate = datetime.date(
+            int(''.join((sheet_0['AC68'].value, sheet_0['AD68'].value, sheet_0['AE68'].value, sheet_0['AF68'].value))),
+            int(''.join((sheet_0['Z68'].value, sheet_0['AA68'].value))),
+            int(''.join((sheet_0['W68'].value, sheet_0['X68'].value))),
+        )
+
+        # Round one!
+        unformatted_snils = read_smashed_cells(39, itertools.chain('STUWXY', ['AA', 'AB', 'AC', 'AE', 'AF']))
+        client = Client.query.filter(Client.SNILS == unformatted_snils).first()
+        if not client:
+            # Round two!
+            query = Client.query.filter(
+                Client.firstName == first_name,
+                Client.lastName == last_name,
+                Client.birthDate == birthdate,
+            )
+            count = query.count()
+            if count > 1:
+                raise Exception(u'Слишком много совпадений')
+            elif count < 1:
+                raise Exception(u'Не найдено пациента')
+            client = query.first()
+        self.client = client
+        return self
+
+    def __json__(self):
+        from nemesis.lib.utils import safe_traverse_attrs
+        return {
+            'id': self.id,
+            'number': self.number,
+            'mkb': self.MKB_object,
+            'quota_type': self.quotaType,
+            'date': self.date,
+            'event': safe_traverse_attrs(self, 'clientQuoting', 'event', 'externalId'),
+            'client': {'id': self.client.id,
+                       'name': safe_traverse_attrs(self, 'client', 'nameText')},
+            'file': self.fileLink
+        }
