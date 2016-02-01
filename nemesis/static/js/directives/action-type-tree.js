@@ -267,7 +267,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                 var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
                                     '&event_id=' + $scope.event_id;
                                 if (service_available) {
-                                    url += '&price_list_item_id=' + service_data.price_list_item_id;
+                                    url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
+                                        url, service_data.price_list_item_id, service_data.service_kind.id
+                                    );
                                 }
                                 WMWindowSync.openTab(url, onCreateCallback);
                                 $scope.$close();
@@ -336,7 +338,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     return action.hasOwnProperty('service');
                 };
                 $scope.get_action_price = function (action) {
-                    return action.service.sum;
+                    return safe_traverse(action, 'service', 'sum');
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)

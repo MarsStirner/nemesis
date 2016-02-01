@@ -107,6 +107,25 @@ class Action(db.Model):
         for prop in self.properties:
             prop.delete()
 
+    def _load_ap_price_info(self):
+        """Инициализировать свойства данными из соответствующего прайс-листа"""
+        from nemesis.lib.data_ctrl.accounting.pricelist import PriceListItemController
+        from nemesis.lib.data import get_assignable_apts
+
+        assignable = get_assignable_apts(self.actionType_id)
+        assignable_apt_ids = [apt_data[0] for apt_data in assignable]
+        contract_id = self.event.contract_id
+        pli_ctrl = PriceListItemController()
+
+        filtered_apt_prices = pli_ctrl.get_apts_prices_by_pricelist(assignable_apt_ids, contract_id)
+        flt_apt_ids = filtered_apt_prices.keys()
+        for prop in self.properties:
+            if prop.type_id in flt_apt_ids:
+                prop.has_pricelist_service = True
+                prop.pl_price = filtered_apt_prices[prop.type_id]
+            else:
+                prop.has_pricelist_service = False
+
     def __getitem__(self, item):
         return self.propsByCode[item]
 
@@ -248,6 +267,8 @@ class ActionProperty(db.Model):
 
     @property
     def has_pricelist_service(self):
+        if self._has_pricelist_service is None:
+            self.action._load_ap_price_info()
         return self._has_pricelist_service
 
     @has_pricelist_service.setter
@@ -256,6 +277,8 @@ class ActionProperty(db.Model):
 
     @property
     def pl_price(self):
+        if self._pl_price is None:
+            self.action._load_ap_price_info()
         return self._pl_price
 
     @pl_price.setter

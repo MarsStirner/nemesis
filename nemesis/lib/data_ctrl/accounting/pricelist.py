@@ -22,6 +22,13 @@ class PriceListController(BaseModelController):
     def get_pricelist(self, pricelist_id):
         return self.get_selecter().get_by_id(pricelist_id)
 
+    def get_contract_pricelist_id_list(self, contract_id):
+        selecter = self.get_selecter()
+        selecter.get_contract_pl_id_list(contract_id)
+        data_list = selecter.get_all()
+        pl_id_list = [safe_int(item[0]) for item in data_list]
+        return pl_id_list
+
 
 class PriceListSelecter(BaseSelecter):
 
@@ -33,6 +40,13 @@ class PriceListSelecter(BaseSelecter):
         if 'finance_id' in flt_args:
             finance_id = safe_int(flt_args['finance_id'])
             self.query = self.query.filter(PriceList.finance_id == finance_id)
+        return self
+
+    def get_contract_pl_id_list(self, contract_id):
+        self.query = self.query.join(Contract.pricelist_list).filter(
+            Contract.id == contract_id,
+            PriceList.deleted == 0
+        ).with_entities(PriceList.id)
         return self
 
 
@@ -76,7 +90,9 @@ class PriceListItemController(BaseModelController):
         result_list = sel.get_pli_for_groupservice_by_rbservice(rbservice_id, price_list_id)
         return result_list
 
-    def get_apts_prices_by_pricelist(self, apt_id_list, pricelist_id_list):
+    def get_apts_prices_by_pricelist(self, apt_id_list, contract_id):
+        pl_ctrl = PriceListController()
+        pricelist_id_list = pl_ctrl.get_contract_pricelist_id_list(contract_id)
         sel = self.get_selecter()
         result_list = sel.get_filtered_apt_price_by_pricelist(apt_id_list, pricelist_id_list)
         return {apt_id: price for apt_id, price in result_list}

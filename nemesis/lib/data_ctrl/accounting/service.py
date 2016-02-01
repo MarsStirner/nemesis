@@ -18,8 +18,7 @@ from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignable_apts, get_planned_end_datetime,
     update_action, delete_action)
 from nemesis.lib.agesex import recordAcceptableEx
-from .contract import ContractController
-from .pricelist import PriceListItemController
+from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind
 from nemesis.lib.action.utils import at_is_lab
 
@@ -41,7 +40,7 @@ class ServiceController(BaseModelController):
         service.event = params['event']
         service.priceListItem_id = params.get('priceListItem_id')
         service.price_list_item = params.get('price_list_item')
-        service.amount = safe_double(params.get('amount', 1))
+        service.amount = safe_double(params.get('amount')) or 1
         service.deleted = 0
         service.parent_id = params.get('parent_id')
         service.parent_service = params.get('parent_service')
@@ -82,9 +81,6 @@ class ServiceController(BaseModelController):
         elif 'serviced_entity' in params:
             se_data = params['serviced_entity']
             self.set_new_service_serviced_entity(service, se_data)
-        # else:
-        #     # случай показателя лабораторного исследования
-        #     self.set_new_service_serviced_entity(service, None)
 
     def set_new_service_serviced_entity(self, service, serviced_entity_data):
         if service.serviceKind_id == ServiceKind.simple_action[0]:
@@ -250,13 +246,6 @@ class ServiceController(BaseModelController):
         elif 'serviced_entity' in data:
             result['serviced_entity'] = data['serviced_entity']
 
-            # if 'service_kind' not in data and 'service_kind_id' not in data:
-            #     raise ApiException(422, u'`service_kind_id` required')
-            # result['serviced_entity'] = self._format_serviced_entity_data(
-            #     service_kind_id,
-            #     data['serviced_entity']
-            # )
-
         result['subservice_list'] = data.get('subservice_list')
         return result
 
@@ -281,8 +270,8 @@ class ServiceController(BaseModelController):
         contract_id = safe_int(args.get('contract_id'))
         if not contract_id:
             raise ApiException(422, u'`contract_id` required')
-        contract_ctrl = ContractController()
-        pricelist_id_list = contract_ctrl.get_contract_pricelist_id_list(contract_id)
+        pl_ctrl = PriceListController()
+        pricelist_id_list = pl_ctrl.get_contract_pricelist_id_list(contract_id)
         service_sphinx = ServiceSphinxSearchSelecter()
         service_sphinx.apply_filter(pricelist_id_list=pricelist_id_list, **args)
         service_sphinx.apply_limit(limit_max=safe_int(args.get('limit_max')))
@@ -378,11 +367,9 @@ class ServiceController(BaseModelController):
             # фильтр доступных показателей по наличию услуги в прайс-листе
             contract_id = kwargs.get('contract_id')
             if contract_id:
-                contract_ctrl = ContractController()
-                pricelist_id_list = contract_ctrl.get_contract_pricelist_id_list(contract_id)
                 assignable_apt_ids = [apt_data[0] for apt_data in assignable]
                 pli_ctrl = PriceListItemController()
-                filtered_apt_prices = pli_ctrl.get_apts_prices_by_pricelist(assignable_apt_ids, pricelist_id_list)
+                filtered_apt_prices = pli_ctrl.get_apts_prices_by_pricelist(assignable_apt_ids, contract_id)
                 flt_assignable = []
                 flt_apt_ids = filtered_apt_prices.keys()
                 for apt_data in assignable:
