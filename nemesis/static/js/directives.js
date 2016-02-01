@@ -1070,7 +1070,7 @@ angular.module('WebMis20.directives')
                 nodesSelectable: '@'
             },
             template:
-                '<div class="ui-treeview">\
+                '<div class="ui-treeview treeview-scrollable">\
                     <ul ng-repeat="root in tree.children">\
                         <li sf-treepeat="node in children of root">\
                             <a ng-click="select(node)" ng-if="!node.is_node" class="leaf">\
