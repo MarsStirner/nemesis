@@ -101,6 +101,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         var clone = value.clone();
                         clone.assignable = clone.assignable.filter(function (item) {
                             return age_acceptable(client_info, item[2]) && sex_acceptable(client_info, item[3])
+                        }).map(function (item) {
+                            return [item[0], item[1]];
                         });
                         filtered[key] = clone;
                         for (var id = value.gid, value = self.lookup[id]; id; id = value.gid, value = self.lookup[id]) {
@@ -335,10 +337,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     return price;
                 };
                 $scope.action_has_price = function (action) {
-                    return action.hasOwnProperty('service');
+                    return Boolean(action.service);
                 };
                 $scope.get_action_price = function (action) {
-                    return safe_traverse(action, 'service', 'sum');
+                    return safe_traverse(action, ['service', 'sum']);
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)
