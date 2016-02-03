@@ -27,7 +27,10 @@ angular.module('hitsl.core')
             url: url,
             params: params,
             data: data,
-            cache: safe_traverse(config, ['cache'], false)
+            cache: safe_traverse(config, ['cache'], false),
+            headers: {
+                'X-Requested-With' :'XMLHttpRequest'
+            }
         })
         .then(process, process);
         return defer.promise;
