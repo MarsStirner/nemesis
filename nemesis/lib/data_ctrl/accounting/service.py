@@ -246,7 +246,9 @@ class ServiceController(BaseModelController):
         elif 'serviced_entity' in data:
             result['serviced_entity'] = data['serviced_entity']
 
-        result['subservice_list'] = data.get('subservice_list')
+        if 'subservice_list' in data:
+            # дефолтное должно быть None для корректного поведения в get_new_service
+            result['subservice_list'] = data.get('subservice_list')
         return result
 
     def _format_serviced_entity_data(self, service_kind_id, data):
@@ -413,6 +415,28 @@ class ServiceController(BaseModelController):
                      'discount_id', 'discount'):
             if attr in json_data:
                 setattr(service, attr, json_data.get(attr))
+
+        if 'subservice_list' in json_data:
+            # traverse subservices
+            existing_ss_map = dict(
+                (ss.id, ss)
+                for ss in service.subservice_list
+            )
+            for ss_data in json_data.get('subservice_list') or []:
+                ss_id = ss_data.get('id')
+                if ss_id:
+                    subservice = self.get_service(ss_id)
+                    self.update_service(subservice, ss_data)
+                    del existing_ss_map[ss_id]
+                else:
+                    ss_data.update({
+                        'parent_service': service
+                    })
+                    subservice = self.get_new_service(ss_data)
+                    service.subservice_list.append(subservice)
+            for subservice in existing_ss_map.values():
+                self._delete_service(subservice)
+
         if 'serviced_entity' in json_data:
             self.update_service_serviced_entity(service, json_data['serviced_entity'])
         return service
@@ -420,7 +444,7 @@ class ServiceController(BaseModelController):
     def update_service_serviced_entity(self, service, serviced_entity_data):
         if service.serviceKind_id == ServiceKind.simple_action[0]:
             # TODO: change amount?
-            # из данных экшена может менять только количество
+            # из данных экшена может меняться только количество, но сейчас кол-во услуги не меняется
             service.action = self.update_service_action(service.action, serviced_entity_data)
         elif service.serviceKind_id == ServiceKind.group[0]:
             pass
@@ -429,7 +453,7 @@ class ServiceController(BaseModelController):
             # т.е. ActionProperty.isAssigned
             service.action = self.update_service_lab_action(service.action, serviced_entity_data)
         elif service.serviceKind_id == ServiceKind.lab_test[0]:
-            # в случае показателей исследований и конкретного свойства экшена менять нечего?
+            # в случае показателей исследований и конкретного свойства экшена менять нечего.
             # ActionProperty.isAssigned меняется на уровне родительской лабораторной услуги
             pass
 
@@ -483,43 +507,14 @@ class ServiceController(BaseModelController):
 
     def save_service_list(self, service_list):
         result = []
-
-        def traverse_save(subservice_list_data, parent_service):
-            cur_level_services = parent_service.subservice_list
-            existing_service_map = dict(
-                (s.id, s)
-                for s in cur_level_services
-            )
-            for subservice_data in subservice_list_data:
-                subservice_id = subservice_data.get('id')
-                if subservice_id:
-                    subservice = existing_service_map[subservice_id]
-                    subservice = self.update_service(subservice, subservice_data)
-                    result.append(service)
-                    traverse_save(subservice_data['subservice_list'], subservice)
-                    del existing_service_map[subservice_id]
-                else:
-                    subservice_data.update({
-                        'parent_service': parent_service
-                    })
-                    subservice = self.get_new_service(subservice_data)
-                    result.append(subservice)
-
-            # TODO: deletion of services
-            for subservice in existing_service_map.values():
-                subservice = self._delete_service(subservice)
-
-                # result.append(subservice)
-                # traverse_save(subservice)
-
         for service_data in service_list:
             service_id = service_data.get('id')
             if service_id:
                 service = self.get_service(service_id)
-
                 service = self.update_service(service, service_data)
                 result.append(service)
-                traverse_save(service_data['subservice_list'], service)
+                # добавить в список изменений все подуслуги
+                result.extend(service.get_flatten_subservices())
             else:
                 service = self.get_new_service(service_data)
                 result.append(service)
@@ -532,19 +527,27 @@ class ServiceController(BaseModelController):
 
         В зависимости от вида услуги процесс будет отличаться. В данный момент
         поддерживается только переформирование списка подуслуг для лабораторной
-        услуги в зависимости от измененных показателей исследования (apt_id).
+        услуги в зависимости от измененных показателей исследования (apt_id),
+        а также обновление лабораторной услуги, являющейся частью набора услуг.
+        Изменение состава услуг в наборе услуг не поддерживается.
         """
         service_id = service_data.get('id')
         if service_id:
             service = self.get_service(service_id)
-            service = self.update_service(service, service_data)
+            # service = self.update_service(service, service_data)
         else:
             service = self.get_new_service(service_data)
 
         ref_ss_list = self.get_new_subservices_from_pricelist(service)
         upd_ss_list = []
         service_kind_id = safe_int(safe_traverse(service_data, 'service_kind', 'id'))
-        if service_kind_id == ServiceKind.lab_action[0]:
+
+        if service_kind_id == ServiceKind.group[0]:
+            for ssd in service_data['subservice_list']:
+                ss = self.refresh_service_subservices(ssd)
+                upd_ss_list.append(ss)
+            service.subservice_list = upd_ss_list
+        elif service_kind_id == ServiceKind.lab_action[0]:
             # apt_id: service
             ref_ss_map = dict(
                 (s.serviced_entity.type_id, s)

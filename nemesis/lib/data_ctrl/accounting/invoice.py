@@ -77,8 +77,10 @@ class InvoiceController(BaseModelController):
             if item_id:
                 item = self.item_ctrl.get_invoice_item(item_id)
                 item = self.item_ctrl.update_invoice_item(item, item_d, invoice)
+                self.item_ctrl.update_invoice_item_service(item, item_d)
             else:
                 item = self.item_ctrl.get_new_invoice_item(item_d, invoice=invoice)
+                self.item_ctrl.update_invoice_item_service(item, item_d)
             item_list.append(item)
         invoice.item_list = item_list
 
@@ -98,6 +100,8 @@ class InvoiceController(BaseModelController):
             data['deedNumber'] = safe_unicode(data['deed_number'])
         if 'note' in data:
             data['note'] = safe_unicode(data['note'])
+        if 'item_list' in data:
+            data['item_list'] = data['item_list']
         if 'service_list' in data:
             data['service_list'] = [
                 self.session.query(Service).get(service_data['id'])
@@ -169,7 +173,6 @@ class InvoiceSelecter(BaseSelecter):
     def apply_filter(self, **flt_args):
         Invoice = self.model_provider.get('Invoice')
         InvoiceItem = self.model_provider.get('InvoiceItem')
-        Action = self.model_provider.get('Action')
         Service = self.model_provider.get('Service')
         Contract = self.model_provider.get('Contract')
         Contract_Contragent = self.model_provider.get('Contract_Contragent')
@@ -178,9 +181,9 @@ class InvoiceSelecter(BaseSelecter):
 
         if 'event_id' in flt_args:
             event_id = safe_int(flt_args['event_id'])
-            self.query = self.query.join(InvoiceItem, Service, Action).filter(
-                Action.event_id == event_id,
-                Action.deleted == 0,
+            self.query = self.query.join(InvoiceItem, Service).filter(
+                Service.event_id == event_id,
+                Service.deleted == 0,
                 Invoice.deleted == 0
             )
 
@@ -261,7 +264,6 @@ class InvoiceItemController(BaseModelController):
             params = {}
         params = self._format_invoice_item_data(params)
         item = InvoiceItem()
-        # item.invoice_id = invoice.id if invoice is not None else params.get('invoice_id')
         item.invoice = invoice if invoice is not None else params.get('invoice')
         item.concreteService_id = params.get('concreteService_id')
         item.parent_id = params.get('parent_id')
@@ -313,24 +315,37 @@ class InvoiceItemController(BaseModelController):
                 setattr(item, attr, json_data.get(attr))
         item.invoice = invoice
 
-        # traverse subitems
-        existing_si_map = dict(
-            (si.id, si)
-            for si in item.subitem_list
-        )
-        for si_data in json_data.get('subitem_list', []):
-            si_id = si_data['id']
-            self.update_invoice_item(existing_si_map[si_id], si_data, invoice)
+        if 'subitem_list' in json_data:
+            # traverse subitems
+            existing_si_map = dict(
+                (si.id, si)
+                for si in item.subitem_list
+            )
+            for si_data in json_data.get('subitem_list'):
+                si_id = si_data['id']
+                self.update_invoice_item(existing_si_map[si_id], si_data, invoice)
 
         item.sum = self.calc_invoice_item_sum(item)
-        if item.service:
-            self.update_invoice_item_service(item, dict(discount_id=json_data.get('discount_id')))
         return item
 
-    def update_invoice_item_service(self, invoice_item, data):
-        service_ctrl = ServiceController()
-        service = service_ctrl.update_service(invoice_item.service, data)
-        invoice_item.service = service
+    def update_invoice_item_service(self, invoice_item, item_data):
+        if invoice_item.service:
+            service_ctrl = ServiceController()
+            service = service_ctrl.update_service(invoice_item.service, dict(
+                discount_id=item_data.get('discount_id')
+            ))
+            invoice_item.service = service
+
+        # service_id: invoice_item
+        existing_si_map = dict(
+            (si.concreteService_id, si)
+            for si in invoice_item.subitem_list
+        )
+        for subitem_data in item_data['subitem_list']:
+            item_service_id = subitem_data['service_id']
+            if item_service_id:
+                subitem = existing_si_map[item_service_id]
+                self.update_invoice_item_service(subitem, subitem_data)
 
     def _format_invoice_item_data(self, data):
         if 'from_service' in data:
