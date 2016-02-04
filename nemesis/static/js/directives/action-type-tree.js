@@ -303,7 +303,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         (onCreateCallback || angular.noop)();
                     }).error(function (data) {
                         var msg = 'Невозможно создать направление на лаб. исследование: {0}.'.format(data.meta.name);
-                        alert(msg);
+                        MessageBox.error(
+                            'Ошибка',
+                            msg
+                        );
                     });
                 };
                 $scope.validate_direction_date = function (model_val) {
