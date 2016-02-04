@@ -25,7 +25,7 @@ from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
-from nemesis.models.diagnosis import Diagnosis
+from nemesis.models.diagnosis import Diagnosis, Action_Diagnosis, rbDiagnosisKind
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
@@ -919,10 +919,10 @@ class EventVisualizer(object):
             'services': self.make_event_grouped_services(event.id),
             'invoices': self.make_event_invoices(event.id)
         }
-        if UserProfileManager.has_ui_admin():
-            data['diagnoses'] = self.make_diagnoses(event)
-        elif UserProfileManager.has_ui_doctor():
-            data['diagnoses'] = self.make_diagnoses(event)
+        # if UserProfileManager.has_ui_admin():
+        #     data['diagnoses'] = self.make_diagnoses(event)
+        # elif UserProfileManager.has_ui_doctor():
+        #     data['diagnoses'] = self.make_diagnoses(event)
         return data
 
     def make_short_event(self, event):
@@ -1550,6 +1550,7 @@ class ActionVisualizer(object):
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions,
+            'diagnoses': self.make_action_diagnoses_info(action)
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
@@ -1765,3 +1766,50 @@ class ActionVisualizer(object):
         service_payment = service_ctrl.get_service_payment_info(service)
         service_payment['sum'] = format_money(service_payment['sum'])
         return service_payment
+
+    def make_diagnosis_info(self, diagnosis, action):
+        pvis = PersonTreeVisualizer()
+        diagnostic = diagnosis._diagnostic
+        diagnosis_info = {
+            'id': diagnosis.id,
+            'set_date': diagnosis.setDate,
+            'end_date': diagnosis.endDate,
+            'client_id': diagnosis.client.id,
+            'deleted': diagnosis.deleted,
+            'person': pvis.make_person_ws(diagnosis.person) if diagnosis.person else None,
+            'diagnostic': {
+                'id': diagnostic.id,
+                'mkb': diagnostic.mkb,
+                'mkbex': diagnostic.mkb_ex,
+                'character': diagnostic.character,
+                'dispanser': diagnostic.dispanser,
+                'trauma_type': diagnostic.traumaType,
+                'phase': diagnostic.phase,
+                'stage': diagnostic.stage,
+                'health_group': diagnostic.healthGroup,
+                'diagnosis_description': diagnostic.diagnosis_description,
+                'notes': diagnostic.notes,
+            }
+        }
+        action_diagnoses = Action_Diagnosis.query.filter(Action_Diagnosis.action_id == action.id, Action_Diagnosis.diagnosis_id == diagnosis.id).all()
+        specific = {diag_type.code: rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first() for diag_type in action.actionType.diagnosis_types}
+        for action_diagnosis in action_diagnoses:
+            specific[action_diagnosis.diagnosisType.code] = action_diagnosis.diagnosisKind
+        diagnosis_info['diagnosis_types'] = specific
+        return diagnosis_info
+
+    def make_action_diagnoses_info(self, action):
+        from nemesis.models.diagnosis import Diagnosis
+        now = datetime.datetime.now()
+        client_id = safe_traverse_attrs(action, 'event', 'client', 'id', default=None)
+        if action.endDate is None:  # действие не закрыто
+            diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
+                                               db.or_(Diagnosis.endDate.is_(None),
+                                                      db.and_(Diagnosis.endDate >= action.begDate, Diagnosis.endDate <= now))).all()
+        else:  # действие закрыто
+            diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
+                                               Diagnosis.setDate <= action.endDate,
+                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate <= action.endDate)).all()
+        return [self.make_diagnosis_info(diagnosis, action) for diagnosis in diagnoses]
+
+

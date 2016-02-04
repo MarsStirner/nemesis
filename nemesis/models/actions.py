@@ -882,6 +882,7 @@ class ActionType(db.Model):
             'flat_code': self.flatCode,
             'title': self.title,
             'context_name': self.context,
+            'diagnosis_types': self.diagnosis_types
         }
 
 

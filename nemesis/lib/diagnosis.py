@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
-from nemesis.models.event import Diagnostic
 from nemesis.models.diagnosis import Diagnosis, Diagnostic
 from nemesis.systemwide import db
 

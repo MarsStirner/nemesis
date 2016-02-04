@@ -153,6 +153,13 @@ class Client(db.Model):
         order_by="desc(ClientAttach.id)",
         lazy='dynamic')
 
+    diagnoses = db.relationship(
+        u'Diagnosis',
+        primaryjoin='and_('
+                    'Diagnosis.client_id==Client.id, '
+                    'Diagnosis.deleted==0)',
+        lazy='dynamic')
+
     def __init__(self):
         self.init_on_load()
 

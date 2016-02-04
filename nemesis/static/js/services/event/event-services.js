@@ -126,25 +126,24 @@ angular.module('WebMis20.services').
                     'id': null,
                     'set_date': null,
                     'end_date': null,
-                    'diagnosis_type': null,
+                    'client_id': action_info.client.id,
                     'deleted': 0,
-                    'diagnosis': {
+                    'person': CurrentUser.get_main_user().info,
+                    'diagnostic': {
                         'id': null,
                         'mkb': null,
                         'mkbex': null,
-                        'client_id': null
+                        'character': null,
+                        'dispanser': null,
+                        'trauma': null,
+                        'phase': null,
+                        'stage': null,
+                        'health_group': null,
+                        'diagnosis_description': null,
+                        'notes': null
                     },
-                    'character': null,
-                    'person': CurrentUser.get_main_user().info,
-                    'notes': null,
-                    'action_id': null,
-                    'action': action_info ? action_info : null,
-                    'result': null,
-                    'ache_result': null,
-                    'health_group': null,
-                    'trauma_type': null,
-                    'phase': null
-                };
+                    'diagnosis_types': {}
+                }
             },
             add_diagnosis: function (event, diagnosis) {
                 event.diagnoses.push(diagnosis);
