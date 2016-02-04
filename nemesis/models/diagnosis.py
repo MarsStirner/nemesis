@@ -75,7 +75,8 @@ class Diagnosis(db.Model):
         from .actions import Action
         if date is None:
             date = datetime.date.today()
-        return Diagnostic.query.leftjoin(Action).filter(
+        return Diagnostic.query.outerjoin(Action).filter(
+            Diagnostic.deleted == 0,
             Diagnostic.diagnosis == self,
             Action.begDate < date,
         ).order_by(Action.begDate.desc()).first()
@@ -146,8 +147,8 @@ class Diagnostic(db.Model):
     person_id = db.Column(db.ForeignKey('Person.id'), index=True)
     dispanser_id = db.Column(db.ForeignKey('rbDispanser.id'), index=True)
     healthGroup_id = db.Column(db.ForeignKey('rbHealthGroup.id'), nullable=False)
-    sanatorium = db.Column(db.Integer, nullable=False)
-    hospital = db.Column(db.Integer, nullable=False)
+    sanatorium = db.Column(db.Integer, nullable=False, default=0)
+    hospital = db.Column(db.Integer, nullable=False, default=0)
     version = db.Column(db.Integer, nullable=False, default=0)
 
     action = db.relationship('Action', backref='diagnostics')
@@ -200,10 +201,11 @@ class Action_Diagnosis(db.Model):
     diagnosis_id = db.Column(db.ForeignKey('Diagnosis.id'), nullable=False)
     diagnosisType_id = db.Column(db.ForeignKey('rbDiagnosisTypeN.id'), nullable=False)
     diagnosisKind_id = db.Column(db.ForeignKey('rbDiagnosisKind.id'), nullable=False)
-    datetime = db.Column(db.DateTime)
+    datetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
 
     action = db.relationship('Action', lazy=True, backref="diagnoses")
-    disgnosis = db.relationship('Diagnosis')
+    diagnosis = db.relationship('Diagnosis')
     diagnosisType = db.relationship('rbDiagnosisTypeN', lazy=False)
     diagnosisKind = db.relationship('rbDiagnosisKind', lazy=False)
 
@@ -215,6 +217,16 @@ class rbDiagnosisTypeN(db.Model):
     code = db.Column(db.String(128), unique=True, nullable=False)
     name = db.Column(db.String(256), nullable=False)
 
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
 
 class rbDiagnosisKind(db.Model):
     __tablename__ = "rbDiagnosisKind"
@@ -223,16 +235,26 @@ class rbDiagnosisKind(db.Model):
     code = db.Column(db.String(128), unique=True, nullable=False)
     name = db.Column(db.String(256), nullable=False)
 
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
 
 EventType_rbDiagnosisType = Table(
-    "EventType_rbDiagnosisType", db.metadata,
+    "EventType_DiagnosisType", db.metadata,
     db.Column('eventType_id', db.ForeignKey('EventType.id')),
     db.Column('diagnosisType_id', db.ForeignKey('rbDiagnosisTypeN.id')),
 )
 
 
 ActionType_rbDiagnosisType = Table(
-    "ActionType_rbDiagnosisType", db.metadata,
+    "ActionType_DiagnosisType", db.metadata,
     db.Column('actionType_id', db.ForeignKey('ActionType.id')),
     db.Column('diagnosisType_id', db.ForeignKey('rbDiagnosisTypeN.id')),
 )
