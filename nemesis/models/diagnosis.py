@@ -79,7 +79,7 @@ class Diagnosis(db.Model):
             Diagnostic.deleted == 0,
             Diagnostic.diagnosis == self,
             Action.begDate < date,
-        ).order_by(Action.begDate.desc()).first()
+        ).order_by(Diagnostic.createDatetime.desc()).first()
 
     @lazy_property
     def _diagnostic(self):
@@ -185,7 +185,8 @@ class Event_Diagnosis(db.Model):
     diagnosis_id = db.Column(db.ForeignKey('Diagnosis.id'), nullable=False)
     diagnosisType_id = db.Column(db.ForeignKey('rbDiagnosisTypeN.id'), nullable=False)
     diagnosisKind_id = db.Column(db.ForeignKey('rbDiagnosisKind.id'), nullable=False)
-    datetime = db.Column(db.DateTime)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
 
     event = db.relationship('Event', lazy=True, backref="diagnoses")
     diagnosis = db.relationship('Diagnosis')
@@ -201,7 +202,7 @@ class Action_Diagnosis(db.Model):
     diagnosis_id = db.Column(db.ForeignKey('Diagnosis.id'), nullable=False)
     diagnosisType_id = db.Column(db.ForeignKey('rbDiagnosisTypeN.id'), nullable=False)
     diagnosisKind_id = db.Column(db.ForeignKey('rbDiagnosisKind.id'), nullable=False)
-    datetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
 
     action = db.relationship('Action', lazy=True, backref="diagnoses")
@@ -216,6 +217,7 @@ class rbDiagnosisTypeN(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(128), unique=True, nullable=False)
     name = db.Column(db.String(256), nullable=False)
+    requireResult = db.Column(db.Integer)
 
     def __unicode__(self):
         return self.name
@@ -224,7 +226,8 @@ class rbDiagnosisTypeN(db.Model):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name
+            'name': self.name,
+            'require_result': self.requireResult
         }
 
 

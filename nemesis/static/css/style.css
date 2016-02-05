@@ -993,3 +993,17 @@ iframe[seamless]{
     width: 100%;
     height: 100%;
 }
+
+.cuslom-tab-pills {
+    border-radius: 4px !important;
+    border-top: 0px;
+}
+
+li.active>a.cuslom-tab-pills {
+    border-top: 0px;
+}
+
+.centered-table, .centered-table th {
+    text-align: center;
+}
+

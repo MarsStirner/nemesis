@@ -283,7 +283,8 @@ class EventType(db.Model):
             'request_type': self.requestType,
             'sex': self.sex,
             'age': self.age,
-            'age_tuple': parseAgeSelector(self.age)
+            'age_tuple': parseAgeSelector(self.age),
+            'diagnosis_types': self.diagnosis_types
         }
 
     def __int__(self):

@@ -1268,13 +1268,14 @@ angular.module('WebMis20.directives')
                 model: '=',
                 action: '=?',
                 event: '=?',
-                params: '=?',
+                diagTypes: '=',
+//                params: '=?',
 //                listMode: '=',
                 canAddNew: '=',
-                canDelete: '=',
-                canEdit: '=',
-                clickable: '=',
-                disabled: '='
+//                canDelete: '=',
+                canEdit: '='
+//                clickable: '=',
+//                disabled: '='
             },
             controller: function ($scope) {
 //                $scope.set_defaults = function (diagnosis){
@@ -1287,10 +1288,10 @@ angular.module('WebMis20.directives')
                 $scope.add_new_diagnosis = function (diag_type) {
                     var new_diagnosis = WMEventServices.get_new_diagnosis($scope.action);
                     var associated = this.rbDiagnosisKind.get_by_code('associated');
-                    $scope.action.action_type.diagnosis_types.forEach(function(diagnosis_type){
+                    $scope.diagTypes.forEach(function(diagnosis_type){
                         new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
                     })
-                    new_diagnosis.diagnosis_type = diag_type;
+//                    new_diagnosis.diagnosis_type = diag_type;
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, $scope.action, $scope.params).then(function () {
                         $scope.model.push(new_diagnosis);
 //                        WMEventServices.add_diagnosis($scope.event, new_diagnosis);
@@ -1342,53 +1343,57 @@ angular.module('WebMis20.directives')
 .run(['$templateCache', function ($templateCache) {
     $templateCache.put('/WebMis20/wm-diagnosis-new.html',
         '<div>\
-                <div class="box-tools pull-left">\
-                    <ul class="nav nav-pills">\
-                        <li role="presentation" ng-repeat="diag_type in action.action_type.diagnosis_types" ng-class="{\'active\': $index == 0}">\
-                            <a href="#[[diag_type.code]]" aria-controls="home" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
-                        </li>\
-                    </ul>\
+            <ul class="nav nav-pills">\
+                <li role="presentation" ng-repeat="diag_type in diagTypes" ng-class="{\'active\': $index == 0}">\
+                    <a href="#[[diag_type.code]]" aria-controls="home" role="tab" data-toggle="tab" class="cuslom-tab-pills">[[diag_type.name]]</a>\
+                </li>\
+            </ul>\
+            <div class="tab-content">\
+                <div ng-repeat="diag_type in diagTypes" role="tabpanel" class="tab-pane" id="[[diag_type.code]]"  ng-class="{\'active\': $index == 0}">\
+                    <table class="table table-condensed centered-table">\
+                        <thead>\
+                            <tr>\
+                                <th class="col-md-2">Тип диазноза</th>\
+                                <th class="col-md-3">Заболевание</th>\
+                                <th class="col-md-2">Характер</th>\
+                                <th class="col-md-2">Стадия</th>\
+                                <th class="col-md-1">Установлен</th>\
+                                <th class="col-md-1">Изменен</th>\
+                                <th class="col-md-1" ng-if="canEdit"></th>\
+                            </tr>\
+                        </thead>\
+                        <tbody>\
+                            <tr ng-repeat="diag in model">\
+                                <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
+                                     id="diag_type" name="diag_type" ng-change="kind_change(diag)" ng-if="canEdit"></rb-select>\
+                                    <span ng-if="!canEdit" \
+                                          ng-class="{\'text-bold\': !diag.diagnosis_types.[[diag_type.code]].code == \'associated\'}"\
+                                          ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
+                                </td>\
+                                <td>[[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\
+                                <td>[[diag.diagnostic.character.name]]</td>\
+                                <td>[[diag.diagnostic.stage.name]]</td>\
+                                <td>[[diag.set_date | asDate ]]</td>\
+                                <td><span ng-if="diag.end_date">[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
+                                    <span ng-if="!diag.end_date">[[diag.diagnostic.createDatetime | asDate ]]</span>\
+                                </td>\
+                                <td ng-if="canEdit">\
+                                    <button type="button" class="btn btn-sm btn-primary" title="Редактировать"\
+                                            ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
+                                    </button>\
+                                </td>\
+                            </tr>\
+                            <tr ng-if="canAddNew">\
+                                <td colspan="6">\
+                                    <div class="pull-right">\
+                                        <button class="btn btn-primary" ng-click="add_new_diagnosis(diag_type)">Добавить новое заболевание</button>\
+                                    </div>\
+                                </td>\
+                            </tr>\
+                        </tbody>\
+                    </table>\
                 </div>\
-                <div class="tab-content">\
-                    <div ng-repeat="diag_type in action.action_type.diagnosis_types" role="tabpanel" class="tab-pane" id="[[diag_type.code]]"  ng-class="{\'active\': $index == 0}">\
-                        <table class="table table-condensed">\
-                            <thead>\
-                                <tr>\
-                                    <th class="col-md-2">Тип диазноза</th>\
-                                    <th class="col-md-3">Заболевание</th>\
-                                    <th class="col-md-2">Характер</th>\
-                                    <th class="col-md-2">Стадия</th>\
-                                    <th class="col-md-1">Установлен</th>\
-                                    <th class="col-md-1">Изменен</th>\
-                                    <th class="col-md-1"></th>\
-                                </tr>\
-                            </thead>\
-                            <tbody>\
-                                <tr ng-repeat="diag in action.diagnoses">\
-                                    <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
-                                         id="diag_type" name="diag_type" ng-change="kind_change(diag)"></rb-select></td>\
-                                    <td>[[diag.diagnostic.mkb.code]] [[diag.diagnostic.mkb.name]]</td>\
-                                    <td>[[diag.diagnostic.character.name]]</td>\
-                                    <td>[[diag.diagnostic.stage.name]]</td>\
-                                    <td>[[diag.set_date | asDate ]]</td>\
-                                    <td></td>\
-                                    <td>\
-                                        <button type="button" class="btn btn-sm btn-primary" title="Редактировать"\
-                                                ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
-                                        </button>\
-                                    </td>\
-                                </tr>\
-                                <tr>\
-                                    <td colspan="6">\
-                                        <div class="pull-right">\
-                                            <button class="btn btn-primary" ng-click="add_new_diagnosis(diag_type)">Добавить новое заболевание</button>\
-                                        </div>\
-                                    </td>\
-                                </tr>\
-                            </tbody>\
-                        </table>\
-                    </div>\
-                </div>\
+            </div>\
         </div>')
     }])
     .directive('wmDiagnosis', ['$timeout', 'DiagnosisModal', 'WMEventServices', 'WMEventCache', 'WMWindowSync',
@@ -1854,7 +1859,7 @@ angular.module('WebMis20.directives')
                     <div class="col-md-4">\
                         <label for="ache_result" class="control-label">Исход заболевания</label>\
                         <ui-select class="form-control" name="ache_result" theme="select2"\
-                            ng-model="model.ache_result" ref-book="rbAcheResult">\
+                            ng-model="model.diagnostic.ache_result" ref-book="rbAcheResult">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="ar in ($refBook.objects | filter: $select.search) track by ar.id">\
                                 <span ng-bind-html="ar.name | highlight: $select.search"></span>\

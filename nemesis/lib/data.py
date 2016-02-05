@@ -14,7 +14,7 @@ from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
-from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, rbDiagnosisTypeN
+from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure, MKB
 from nemesis.models.event import Event, EventType_Action, EventType
@@ -775,12 +775,14 @@ def create_diagnostic(diagnostic_data, action_id):
     diagnostic.phase_id = safe_traverse(diagnostic_data, 'phase', 'id')
     diagnostic.healthGroup_id = safe_traverse(diagnostic_data, 'healthGroup', 'id')
     diagnostic.action_id = action_id
+    diagnostic.rbAcheResult_id = safe_traverse(diagnostic_data, 'ache_result', 'id')
     # diagnostic.sanatorium = 0  # todo
     return diagnostic
 
 
 def create_or_update_diagnoses(action, diagnoses_data):
 
+    add_to_event = action.person == action.event.execPerson
     for diagnosis_data in diagnoses_data:
         diagnosis = None
         diagnosis_id = diagnosis_data.get('id')
@@ -791,6 +793,7 @@ def create_or_update_diagnoses(action, diagnoses_data):
         if diagnosis_id and diagnostic_changed:
             diagnosis = Diagnosis.query.get(diagnosis_id)
             diagnosis.setDate = diagnosis_data.get('set_date')
+            diagnosis.endDate = diagnosis_data.get('end_date')
             diagnostic = create_diagnostic(diagnostic_data, action.id)
             diagnostic.diagnosis = diagnosis
             db.session.add(diagnostic)
@@ -823,13 +826,27 @@ def create_or_update_diagnoses(action, diagnoses_data):
                     action_diagn.diagnosis = diagnosis
                     action_diagn.diagnosisKind_id = diagnosis_kind.get('id')
                     action_diagn.diagnosisType = rbDiagnosisTypeN.query.filter(rbDiagnosisTypeN.code == diagnosis_type).first()
-                    # action_diagn.datetime =   # todo
 
                 if action_diagn:
                     db.session.add(action_diagn)
-        db.session.commit()
 
-    if action.person == action.event.execPerson:  # лечащий врач
-        #add info to Event_Diagnosis
-        pass
+                if add_to_event:  # лечащий врач
+                    event_diagn = Event_Diagnosis.query.join(rbDiagnosisTypeN).filter(Event_Diagnosis.event_id == action.event.id,
+                                                                                      Event_Diagnosis.diagnosis_id == diagnosis_id,
+                                                                                      rbDiagnosisTypeN.code == diagnosis_type).first()
+                    if event_diagn:
+                        if diagnosis_kind['code'] != 'associated':
+                            event_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+                        else:
+                            event_diagn.deleted = 1
+                    elif diagnosis_kind['code'] != 'associated':
+                        event_diagn = Event_Diagnosis()
+                        event_diagn.event_id = action.event.id
+                        event_diagn.diagnosis = diagnosis
+                        event_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+                        event_diagn.diagnosisType = rbDiagnosisTypeN.query.filter(rbDiagnosisTypeN.code == diagnosis_type).first()
+
+                if event_diagn:
+                    db.session.add(event_diagn)
+        db.session.commit()
     return
