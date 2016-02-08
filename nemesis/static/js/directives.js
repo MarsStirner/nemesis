@@ -38,7 +38,7 @@ angular.module('WebMis20.directives')
                 );
                 var uiSelectChoices = $(
                     '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} {2} | limitTo:{3} track by item.id">\
-                        <div ng-bind-html="getName(item) | highlight: $select.search"></div>\
+                        <div style="text-align: justify" ng-bind-html="getName(item) | highlight: $select.search"></div>\
                     </ui-select-choices>'
                     .format(
                         extraFilter ? (extraFilter + ' | '): '',
@@ -326,7 +326,7 @@ angular.module('WebMis20.directives')
                             .map(function makeMedicineFE(record) {
                                 return {
                                     name: record.rls.trade_name,
-                                    data1: scope.action.beg_date, // MAY GOD HAVE MERCY ON THOSE POOR BUZZARDS
+                                    data1: scope.action.beg_date,
                                     // data2: ,
                                     dosage: {
                                         // лекарственная форма
@@ -356,7 +356,9 @@ angular.module('WebMis20.directives')
                         }
                     }
                 };
-                checkPE();
+                if (scope.action) {
+                    checkPE();
+                }
             },
             templateUrl: '/WebMis20/prescription-edit.html'
         }
@@ -1170,7 +1172,7 @@ angular.module('WebMis20.directives')
                 nodesSelectable: '@'
             },
             template:
-                '<div class="ui-treeview">\
+                '<div class="ui-treeview treeview-scrollable">\
                     <ul ng-repeat="root in tree.children">\
                         <li sf-treepeat="node in children of root">\
                             <a ng-click="select(node)" ng-if="!node.is_node" class="leaf">\

@@ -2,10 +2,9 @@
 
 from decimal import Decimal
 
-from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType
-from nemesis.lib.utils import safe_decimal
+from nemesis.models.enums import ContragentType, FinanceTransactionType, FinanceOperationType, ServiceKind
+from nemesis.lib.utils import safe_decimal, safe_bool
 from nemesis.lib.const import PAID_EVENT_CODE
-from nemesis.lib.data_ctrl.model_provider import ApplicationModelProvider
 
 
 def get_contragent_type(contragent):
@@ -16,10 +15,6 @@ def get_contragent_type(contragent):
             else ContragentType.undefined[0]
         )
     )
-
-
-def check_contract_type_with_insurance_policy(contract):
-    pass
 
 
 def calc_item_sum(price, amount, discount=None):
@@ -35,17 +30,67 @@ def calc_item_sum(price, amount, discount=None):
     return price * amount
 
 
-def calc_service_sum(service):
+def _nullify_subservices_sum(service):
+    service.set_sum_(0)
+    for ss in service.subservice_list:
+        _nullify_subservices_sum(ss)
+
+
+def calc_service_total_sum(service):
+    if not service.price_list_item:
+        return None
+    if service.price_list_item.service.isComplex:
+        if service.price_list_item.isAccumulativePrice:
+            # общая сумма вычисляется как сумма всех подуслуг
+            return sum(ss.sum_ for ss in service.subservice_list)
+        else:
+            # у услуги фиксированная стоимость; все подуслуги должны иметь пустую сумму
+            for ss in service.subservice_list:
+                _nullify_subservices_sum(ss)
+            return calc_single_service_sum(service)
+    else:
+        return calc_single_service_sum(service)
+
+
+def calc_single_service_sum(service):
     price = service.price_list_item.price
     amount = safe_decimal(service.amount)
     discount = service.discount
     return calc_item_sum(price, amount, discount)
 
 
-def calc_invoice_item_sum(invoice_item):
-    price = invoice_item.service.price_list_item.price
+def _nullify_subitems_sum(invoice_item):
+    invoice_item.sum = 0
+    for si in invoice_item.subitem_list:
+        _nullify_subitems_sum(si)
+
+
+def calc_invoice_item_total_sum(invoice_item, ignore_discount=False):
+    if not invoice_item.service or not invoice_item.service.price_list_item:
+        return None
+    if invoice_item.service.price_list_item.service.isComplex:
+        if invoice_item.service.price_list_item.isAccumulativePrice:
+            # общая сумма вычисляется как сумма всех дочерних позиций
+            if ignore_discount:
+                # необходимо пересчитать
+                return sum(
+                    calc_invoice_item_total_sum(si, ignore_discount) for si in invoice_item.subitem_list
+                )
+            else:
+                return sum(si.sum for si in invoice_item.subitem_list)
+        else:
+            # у услуги фиксированная стоимость; все дочерние позиции должны иметь пустую сумму
+            for si in invoice_item.subitem_list:
+                _nullify_subitems_sum(si)
+            return calc_single_invoice_item_sum(invoice_item, ignore_discount)
+    else:
+        return calc_single_invoice_item_sum(invoice_item, ignore_discount)
+
+
+def calc_single_invoice_item_sum(invoice_item, ignore_discount=False):
+    price = invoice_item.price
     amount = safe_decimal(invoice_item.amount)
-    discount = invoice_item.discount
+    discount = invoice_item.discount if not ignore_discount else None
     return calc_item_sum(price, amount, discount)
 
 
@@ -56,7 +101,7 @@ def calc_invoice_total_sum(invoice):
 
 def calc_invoice_sum_wo_discounts(invoice):
     total_sum = sum(
-        calc_item_sum(item.service.price_list_item.price, safe_decimal(item.amount))
+        calc_invoice_item_total_sum(item, ignore_discount=True)
         for item in invoice.item_list
     )
     return total_sum
@@ -87,3 +132,13 @@ def check_invoice_closed(invoice):
 
 def check_invoice_can_add_discounts(invoice):
     return invoice.contract.finance.code == PAID_EVENT_CODE
+
+
+def get_searched_service_kind(service_is_complex, at_is_lab):
+    return ServiceKind(
+        ServiceKind.lab_action[0] if safe_bool(at_is_lab)
+        else (
+            ServiceKind.group[0] if safe_bool(service_is_complex)
+            else ServiceKind.simple_action[0]
+        )
+    )

@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services.models').
-    factory('WMClient', ['$http', '$q', '$rootScope',
-        function($http, $q, $rootScope) {
+    factory('WMClient', ['ApiCalls',
+        function(ApiCalls) {
             function initialize(self, data, info_type) {
                 // В разных интерфейсах поля модели могут отличаться
                 function add_id_doc() {
@@ -88,6 +88,10 @@ angular.module('WebMis20.services.models').
                         }
                     });
                 }
+                function add_vmp_coupons() {
+                    var vmp_coupons = data.client_data.vmp_coupons;
+                    self.vmp_coupons = vmp_coupons !== null ? vmp_coupons : [];
+                }
 
                 self.info = data.client_data.info;
                 if (info_type === 'for_editing') {
@@ -99,6 +103,7 @@ angular.module('WebMis20.services.models').
                     add_relations();
                     add_contacts();
                     add_file_attaches();
+                    add_vmp_coupons();
                     self.document_history = data.client_data.document_history;
                     self.deleted_entities = {}; // deleted items to save
                 } else if (info_type === 'for_event') {
@@ -107,11 +112,13 @@ angular.module('WebMis20.services.models').
                     add_addresses();
                     add_relations();
                     add_contacts();
+                    // Do we need? add_vmp_coupons();
                 } else if (info_type === 'for_servicing') {
                     add_id_doc();
                     add_policies();
                     add_addresses();
                     add_contacts();
+                    // Do we need? add_vmp_coupons();
                     self.appointments = data.appointments;
                     self.events = data.events;
                 }
@@ -123,28 +130,20 @@ angular.module('WebMis20.services.models').
 
             WMClient.prototype.reload = function(info_type) {
                 var self = this;
-                var deferred = $q.defer();
                 var url_args = { client_id: this.client_id };
-                if (info_type !== undefined) {
-                    url_args[info_type] = true;
-                } else {
+                if (_.isUndefined(info_type)) {
                     info_type = 'for_editing';
+                } else {
+                    url_args[info_type] = true;
                 }
 
-                $http.get(url_client_get, {
-                    params: url_args
-                }).success(function(data) {
-                    initialize(self, data.result, info_type);
-                    deferred.resolve();
-                }).error(function(data, status) {
-                    var message = status === 404 ? 'Пациент с id ' + self.client_id + ' не найден.' : data.result;
-                    deferred.reject(message);
+                return ApiCalls.wrapper('GET', url_client_get, url_args).then(function(result) {
+                    initialize(self, result, info_type);
                 });
-                return deferred.promise;
             };
 
             WMClient.prototype.init_from_obj = function (client_data, info_type) {
-                if (info_type === undefined) {
+                if (_.isUndefined(info_type)) {
                     info_type = 'for_editing';
                 }
                 initialize(this, client_data, info_type);
@@ -152,18 +151,7 @@ angular.module('WebMis20.services.models').
 
             WMClient.prototype.save = function() {
                 var data = this.get_changed_data();
-                var t = this;
-                var deferred = $q.defer();
-                $http.post(url_client_save, data).
-                    success(function(value, headers) {
-                        deferred.resolve(value['result']);
-                    }).
-                    error(function(response) {
-                        var rr = response.result;
-                        var message = rr.name + ': ' + (rr.data ? rr.data.err_msg : '');
-                        deferred.reject(message);
-                    });
-                return deferred.promise;
+                return ApiCalls.wrapper('POST', url_client_save, undefined, data);
             };
 
             WMClient.prototype.get_changed_data = function() {
@@ -184,6 +172,7 @@ angular.module('WebMis20.services.models').
                 data.nationalities = this._get_entity_changes('nationalities');
                 data.relations = this._get_entity_changes('relations');
                 data.contacts = this._get_entity_changes('contacts');
+                data.vmp_coupons = this._get_entity_changes('vmp_coupons');
 
                 return data;
             };

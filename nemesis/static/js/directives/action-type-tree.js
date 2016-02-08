@@ -101,6 +101,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         var clone = value.clone();
                         clone.assignable = clone.assignable.filter(function (item) {
                             return age_acceptable(client_info, item[2]) && sex_acceptable(client_info, item[3])
+                        }).map(function (item) {
+                            return [item[0], item[1]];
                         });
                         filtered[key] = clone;
                         for (var id = value.gid, value = self.lookup[id]; id; id = value.gid, value = self.lookup[id]) {
@@ -138,8 +140,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             $http.get(url_for_schedule_api_atl_get_flat, {
                 params: {
                     at_class: at_class,
-                    event_type_id: filter_params.event_type_id,
-                    contract_id: filter_params.contract_id
+                    event_type_id: filter_params.event_type_id
                 }
             }).success(function (data) {
                 trees[at_class].set_data(data.result);
@@ -151,8 +152,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         return deferred.promise;
     }
 }])
-.service('ActionTypeTreeModal', ['$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices',
-        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices) {
+.service('ActionTypeTreeModal', [
+        '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService', 'MessageBox',
+        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService, MessageBox) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -198,6 +200,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.os_check_enabled = true;
                 $scope.personal_check_enabled = true;
                 $scope.tree = undefined;
+                $scope.at_service_data = {};
                 $scope.set_filter = function () {
                     if (typeof service === 'undefined') return;
                     $scope.tree = service.filter(
@@ -228,17 +231,58 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         type_name: node.name,
                         assigned: node.assignable.map(function (prop) {return prop[0]}),
                         assignable: node.assignable,
-                        planned_end_date: new Date()
+                        planned_end_date: new Date(),
+                        service: null
                     };
+                    if ($scope.at_service_data.hasOwnProperty(node.id)) {
+                        var service_data = $scope.at_service_data[node.id];
+                        AccountingService.get_service(undefined, {
+                            service_kind_id: safe_traverse(service_data, ['service_kind', 'id']),
+                            price_list_item_id: service_data.price_list_item_id,
+                            event_id: $scope.event_id,
+                            serviced_entity_from_search: service_data
+                        })
+                            .then(function (new_service) {
+                                newAction.service = new_service;
+                                newAction.assignable = _.deepCopy(new_service.serviced_entity.tests_data.assignable);
+                                newAction.assigned = _.deepCopy(new_service.serviced_entity.tests_data.assigned);
+                            });
+                    }
                     $scope.prepared2create.push(newAction);
                     WMEventServices.get_action_ped(node.id).then(function (ped) {
                         newAction.planned_end_date = ped;
                     });
                 };
-                $scope.create_action = function (node_id) {
-                    var url = url_for_schedule_html_action + '?action_type_id=' + node_id + '&event_id=' + $scope.event_id;
-                    WMWindowSync.openTab(url, onCreateCallback);
-                    $scope.$close();
+                $scope.create_action = function (node) {
+                    $http.get(url_api_check_action_service_requirement + node.id)
+                        .success(function (data) {
+                            var service_required = data.result,
+                                service_available = $scope.at_service_data.hasOwnProperty(node.id),
+                                service_data = $scope.at_service_data[node.id];
+                            if (service_required && !service_available) {
+                                MessageBox.error(
+                                    'Ошибка создания',
+                                    ('Невозможно создать "{0}", т.к. для данной услуги отсутствует позиция ' +
+                                     'в прайс-листе.').format(node.name)
+                                );
+                            } else {
+                                var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
+                                    '&event_id=' + $scope.event_id;
+                                if (service_available) {
+                                    url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
+                                        url, service_data.price_list_item_id, service_data.service_kind.id
+                                    );
+                                }
+                                WMWindowSync.openTab(url, onCreateCallback);
+                                $scope.$close();
+                            }
+                        })
+                        .error(function () {
+                            MessageBox.error(
+                                'Ошибка',
+                                'Невозможно проверить обязательность услуги для выбранного типа'
+                            );
+                        });
                 };
                 $scope.create_actions = function () {
                     $http.post(
@@ -249,7 +293,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                 return {
                                     type_id: action.type_id,
                                     assigned: action.assigned,
-                                    planned_end_date: action.planned_end_date
+                                    planned_end_date: action.planned_end_date,
+                                    service: action.service
                                 }
                             })
                         }
@@ -258,7 +303,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         (onCreateCallback || angular.noop)();
                     }).error(function (data) {
                         var msg = 'Невозможно создать направление на лаб. исследование: {0}.'.format(data.meta.name);
-                        alert(msg);
+                        MessageBox.error(
+                            'Ошибка',
+                            msg
+                        );
                     });
                 };
                 $scope.validate_direction_date = function (model_val) {
@@ -269,9 +317,39 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     return result;
                 };
                 $scope.open_assignments = function (action) {
-                    return self_service.openAppointmentModal(action, false);
+                    return self_service.openAppointmentModal(action, false)
+                        .then(function () {
+                            action.service.serviced_entity.tests_data.assigned = action.assigned;
+                            AccountingService.refreshServiceSubservices(action.service)
+                                .then(function (upd_service) {
+                                    angular.copy(upd_service, action.service);
+                                });
+                        });
+                };
+                $scope.get_at_item_price = function (at_id) {
+                    var price = '',
+                        sd;
+                    if ($scope.at_service_data.hasOwnProperty(at_id)) {
+                        sd = $scope.at_service_data[at_id];
+                        if (Boolean(sd.is_accumulative_price)) {
+                            price = 'Составная стоимость'
+                        } else {
+                            price = String(sd.price) + ' руб.';
+                        }
+                    }
+                    return price;
+                };
+                $scope.action_has_price = function (action) {
+                    return Boolean(action.service);
+                };
+                $scope.get_action_price = function (action) {
+                    return safe_traverse(action, ['service', 'sum']);
                 };
 
+                AccountingService.getServiceActionTypePrices(filter_params.contract_id)
+                    .then(function (at_service_data) {
+                        $scope.at_service_data = at_service_data;
+                    });
                 ActionTypeTreeService.get(filter_params).then(function (tree) {
                     service = tree;
                     var os_check = false,
@@ -326,6 +404,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         $scope.assigned[prop_id] = enabled;
                     });
                 };
+                $scope.price_available = function (prop) {
+                    return prop.length > 2;
+                };
+                $scope.get_price = function (prop) {
+                    return prop[2];
+                };
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
@@ -367,10 +451,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <div class="ui-treeview">\
                 <ul ng-repeat="root in tree.children">\
                     <li sf-treepeat="node in children of root">\
-                        <a ng-click="create_action(node.id)" \
+                        <a ng-click="create_action(node)" \
                            ng-if="!node.children.length" target="_blank">\
                             <div class="tree-label leaf">&nbsp;</div>\
-                            [ [[node.code]] ] [[ node.name ]]\
+                            [ [[node.code]] ] [[ node.name ]] <span class="text-danger" ng-bind="get_at_item_price(node.id)"></span>\
                         </a>\
                         <a ng-if="node.children.length" ng-click="toggle_vis(node.id)" class="node">\
                             <div class="tree-label"\
@@ -415,7 +499,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             <li sf-treepeat="node in children of root">\
                                 <a ng-click="add_prepared_action(node)" ng-if="!node.children.length" class="leaf">\
                                     <div class="tree-label leaf">&nbsp;</div>\
-                                    [ [[node.code]] ] [[ node.name ]]\
+                                    [ [[node.code]] ] [[ node.name ]] <span class="text-danger" ng-bind="get_at_item_price(node.id)"></span>\
                                 </a>\
                                 <a ng-if="node.children.length" ng-click="toggle_vis(node.id)" class="node">\
                                     <div class="tree-label"\
@@ -432,7 +516,29 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 </div>\
                 <ng-form name="labDirectionsForm">\
                 <div class="col-md-6">\
-                    <table class="table table-condensed">\
+                    <ul class="list-group">\
+                        <li ng-repeat="action in prepared2create" class="list-group-item">\
+                            <div class="row">\
+                            <div class="col-md-12">\
+                                <span ng-if="!action.assignable.length"><span ng-bind="action.type_name" class="rmargin10"></span></span>\
+                                <span ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name" class="rmargin10"></a></span>\
+                                <span ng-if="action_has_price(action)">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
+                            </div>\
+                            </div>\
+                            <div class="row">\
+                            <div class="col-md-8">\
+                                <div fs-datetime ng-model="action.planned_end_date" class="validatable"\
+                                     wm-validate="validate_direction_date"></div>\
+                            </div>\
+                            <div class="col-md-4">\
+                                <button class="btn btn-danger btn-sm pull-right" ng-click="prepared2create.splice($index, 1)">\
+                                    <i class="glyphicon glyphicon-trash"></i>\
+                                </button>\
+                            </div>\
+                            </div>\
+                        </li>\
+                    </ul>\
+                    <!-- <table class="table table-condensed">\
                     <thead>\
                         <tr>\
                             <th>Наименование</th>\
@@ -450,7 +556,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             <td><button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)"><i class="glyphicon glyphicon-trash"></i></button></td>\
                         </tr>\
                     </tbody>\
-                    </table>\
+                    </table> -->\
                     <div ng-if="labDirectionsForm.$invalid && labDirectionsForm.$error.directionDate"\
                         class="alert alert-danger">\
                         Планируемая дата и время выполнения не могут быть раньше текущей даты и времени\
@@ -482,7 +588,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             </div>\
             <hr class="novmargin"/>\
             <div class="checkbox" ng-repeat="prop in model.assignable">\
-                <label><input type="checkbox" ng-model="assigned[prop[0]]">[[ prop[1] ]]</label>\
+                <label><input type="checkbox" ng-model="assigned[prop[0]]">[[ prop[1] ]]\
+                    <span ng-if="price_available(prop)"><span class="text-danger lmargin20" ng-bind="get_price(prop)"></span> руб.</span></label>\
             </div>\
         </div>\
         <div class="modal-footer">\

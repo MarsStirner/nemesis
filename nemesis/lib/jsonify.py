@@ -540,6 +540,7 @@ class ClientVisualizer(object):
         works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
         invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
         nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
+        vmp_coupons = client.VMP_coupons
         return {
             'info': client,
             'id_document': client.id_document if client.id else None,
@@ -556,7 +557,8 @@ class ClientVisualizer(object):
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
-            'file_attaches': files
+            'file_attaches': files,
+            'vmp_coupons': vmp_coupons
             # 'identifications': identifications,
         }
 
@@ -1227,9 +1229,9 @@ class EventVisualizer(object):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         from blueprints.accounting.lib.represent import ServiceRepr
         service_ctrl = ServiceController()
-        grouped = service_ctrl.get_grouped_services_by_event(event_id)
+        service_list = service_ctrl.get_services_by_event(event_id)
         service_repr = ServiceRepr()
-        return service_repr.represent_grouped_event_services(grouped)
+        return service_repr.represent_listed_event_services(service_list)
 
     def make_event_invoices(self, event_id):
         from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
@@ -1459,7 +1461,11 @@ class StationaryEventVisualizer(EventVisualizer):
         data['intolerances'] = self.make_intolerances(event.client.intolerances, 1)
         data['allergies'] = self.make_intolerances(event.client.allergies, 0)
         data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
+        data['vmp_quoting'] = self.make_vmp_quoting(event)
         return data
+
+    def make_vmp_quoting(self, event):
+        return event.VMP_quoting
 
     def make_blood_history(self, obj):
         return {

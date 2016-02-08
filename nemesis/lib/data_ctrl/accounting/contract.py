@@ -160,13 +160,6 @@ class ContractController(BaseModelController):
         available_contracts = selecter.get_all()
         return available_contracts
 
-    def get_contract_pricelist_id_list(self, contract_id):
-        selecter = self.get_selecter()
-        selecter.set_available_pl_id_list(contract_id)
-        data_list = selecter.get_all()
-        pl_id_list = [safe_int(item[0]) for item in data_list]
-        return pl_id_list
-
     def get_last_contract_number(self):
         sel = self.get_selecter()
         sel.set_last_number()
@@ -439,13 +432,6 @@ class ContractSelecter(BaseSelecter):
             ).order_by(Contract.date)
         else:
             self.query = contingent_query.order_by(Contract.date)
-
-    def set_available_pl_id_list(self, contract_id):
-        self.query = self.query.join(Contract.pricelist_list).filter(
-            Contract.id == contract_id,
-            PriceList.deleted == 0
-        ).with_entities(PriceList.id)
-        return self
 
     def set_last_number(self):
         Contract = self.model_provider.get('Contract')

@@ -82,19 +82,35 @@ WebMis20
     };
     this.service = {
         search_mis_action_services: function (args) {
-            return wrapper('POST', WMConfig.url.api_service_search, {}, args);
+            return wrapper('GET', WMConfig.url.api_service_search, args);
+        },
+        get: function (service_id, args) {
+            var url = WMConfig.url.api_service_get;
+            if (service_id) {
+                url += service_id;
+                return wrapper('GET', url, args);
+            } else {
+                url += '?new=true';
+                return wrapper('POST', url, {}, args);
+            }
         },
         save_service_list: function (args) {
             return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
         },
-        get_list_grouped: function (event_id) {
-            return wrapper('GET', WMConfig.url.api_service_list_grouped + event_id);
+        get_list: function (event_id) {
+            return wrapper('GET', WMConfig.url.api_service_list + event_id);
+        },
+        del: function (service_id) {
+            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
         },
         calc_sum: function (args) {
             return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
         },
-        del: function (service_id) {
-            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
+        refreshServiceSubservices: function (service) {
+            return wrapper('POST', WMConfig.url.api_service_refresh_subservices, {}, service);
+        },
+        get_service_at_price: function (contract_id) {
+            return wrapper('GET', WMConfig.url.api_service_at_price_get + contract_id);
         }
     };
     this.service_discount = {

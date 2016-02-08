@@ -46,6 +46,7 @@ setup(
         'Flask-Beaker',
         'Flask-Login==0.2.11',
         'Flask-Principal',
+        'py-xlsx',
     ],
     classifiers=[
         'Environment :: Web Environment',

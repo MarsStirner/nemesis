@@ -79,7 +79,7 @@ class StationaryEventBuilder(EventBuilder):
         self.event.order = EventOrder.planned[0]
 
     def create_received(self):
-        action_type = ActionType.query.filter(ActionType.flatCode == 'received').first()
+        action_type = ActionType.query.filter(ActionType.flatCode == u'received').first()
         self.event.received = create_action(action_type.id, self.event)
 
 

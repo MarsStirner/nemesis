@@ -34,6 +34,9 @@ class EnumBase(object):
     def __init__(self, value):
         self.value = value
 
+    def is_valid(self):
+        return self.value in self.codes
+
     def __unicode__(self):
         return self.codes.get(self.value, None)
 

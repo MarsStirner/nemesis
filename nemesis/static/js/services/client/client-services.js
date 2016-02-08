@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser',
-            function ($timeout, MessageBox, RefBookService, CurrentUser) {
+    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal', '$http', '$q', 'NotificationService',
+            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal, $http, $q) {
         function get_actual_address (client, entity) {
             var addrs =  client[entity].filter(function (el) {
                 return el.deleted === 0;
@@ -459,6 +459,148 @@ angular.module('WebMis20.services').
                     var idx = idx !== undefined ? idx : client[entity].indexOf(record);
                     client[entity].splice(idx, 1);
                 }
+            },
+            addVmpCoupon: function (client) {
+                var coupon = {
+                    id: null,
+                    number: 0,
+                    mkb: null,
+                    code: '',
+                    date: null,
+                    event: null,
+                    name: '',
+                    deleted: 0
+                };
+                this.editVmpCoupon(client, coupon).then(function (coupon) {
+                    client.vmp_coupons.push(coupon);
+                });
+            },
+            removeVmpCoupon: function(client, coupon) {
+                var self = this;
+                MessageBox.question(
+                    'Удаление талона ВМП',
+                    'Вы действительно хотите удалить талон ВМП?'
+                ).then(function () {
+                    $http.post(
+                        url_api_coupon_delete, {
+                            coupon: coupon
+                        }
+                    ).success(function(){
+                        self.delete_record(client, 'vmp_coupons', coupon)
+                    });
+
+                })
+            },
+            editVmpCoupon: function(client, coupon) {
+                var self = this;
+                var deferred = $q.defer();
+                $modal.open({
+                    size: 'lg',
+                    templateUrl: '/nemesis/client/services/modal/edit_vmp_coupon.html',
+                    resolve: {
+                        coupon: function () {
+                            return coupon;
+                        }
+                    },
+                    controller: function ($scope, $modalInstance, coupon) {
+                        $scope.coupon_file = {};
+                        $scope.coupon = coupon;
+                        $scope.parse_xlsx = function() {
+                            $http.post(
+                                url_api_coupon_parse, {
+                                    coupon: $scope.coupon_file
+                                }
+                            ).success(function(data){
+                                $scope.coupon = data.result;
+                                $scope.wrong_client = client.client_id != $scope.coupon.client.id;
+                                $scope.nonunique = client.vmp_coupons.filter(function(coupon){
+                                    return coupon.number == $scope.coupon.number
+                                }).length > 0;
+                            });
+                        }
+                    }
+                }).result.then(function (result) {
+                    $http.post(
+                        url_api_coupon_save, {
+                            client_id: client.client_id,
+                            coupon: result[0],
+                            coupon_file: result[1]
+                        }
+                    ).success(function(data){
+                        deferred.resolve(data.result);
+                    });
+                });
+                return deferred.promise;
             }
         };
-    }]);
+    }])
+    .run(['$templateCache', function ($templateCache) {
+        $templateCache.put(
+            '/nemesis/client/services/modal/edit_vmp_coupon.html',
+            '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+                <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
+                <h4 class="modal-title" id="myModalLabel">Загрузка талона ВМП</h4>\
+            </div>\
+            <div class="modal-body">\
+                <div class="row marginal">\
+                    <div class="col-md-8">\
+                        <input type="file" wm-input-file file="coupon_file"\
+                               accept="image/*,.pdf,.txt,.odt,.doc,.docx,.ods,.xls,.xlsx">\
+                    </div>\
+                    <div class="col-md-4">\
+                        <button type="button" ng-disabled="!coupon_file.name" class="btn btn-default btn-sm" ng-click="parse_xlsx()">Загрузить</button>\
+                    </div>\
+                </div>\
+                <div class="row" ng-if="coupon.number">\
+                    <div class="col-md-12">\
+                        <b>После загрузки файла проверьте правильность данных:</b>\
+                    </div>\
+                </div>\
+                <div class="row" ng-if="wrong_client">\
+                    <div class="col-md-12 text-danger">\
+                        <b>Внимание! Убедитесь, что талон пренадлежит текущему пациенту!</b>\
+                    </div>\
+                </div>\
+                <div class="row">\
+                    <div class="col-md-12" ng-if="coupon.number">\
+                        <table class="table table-condensed">\
+                            <tbody>\
+                                <tr>\
+                                    <th>Пациент</th>\
+                                    <th>[[coupon.client.name]]</th>\
+                                </tr>\
+                                <tr>\
+                                    <th>№ талона</th>\
+                                    <td>[[coupon.number]]</td>\
+                                </tr>\
+                                <tr>\
+                                    <th>Диагноз</th>\
+                                    <td>[[coupon.mkb.code]] [[coupon.mkb.name]]</td>\
+                                </tr>\
+                                <tr>\
+                                    <th>Код ВМП</th>\
+                                    <td>[[coupon.quota_type.code]]</td>\
+                                </tr>\
+                                <tr>\
+                                    <th>дата планируемой госпитализации</th>\
+                                    <td>[[coupon.date | asDate]]</td>\
+                                </tr>\
+                            </tbody>\
+                        </table>\
+                    </div>\
+                </div>\
+                <div class="row" ng-if="coupon.number">\
+                    <div class="col-md-12">\
+                        <b>Если данные верные - сохраните талон</b>\
+                    </div>\
+                </div>\
+            </div>\
+            <div class="modal-footer">\
+                <div class="pull-right">\
+                    <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
+                    <button ng-disabled="nonunique" class="btn btn-success" ng-click="$close([coupon, coupon_file])">Сохранить</button>\
+                </div>\
+            </div>\
+')
+    }])
+;

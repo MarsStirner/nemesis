@@ -267,6 +267,45 @@ var WebMis20 = angular.module('WebMis20', [
         return /\.00$/.test(value) ? value.substring(0, value.length - 3) : value;
     }
 }])
+.filter('flattenNested', function () {
+    function traverse (item, subAttrName, out, level, idx, rootIdx) {
+        if (!item.hasOwnProperty('ui_attrs')) item.ui_attrs = {};
+
+        var is_expandable = Boolean(item[subAttrName].length);
+        angular.extend(
+            item.ui_attrs,
+            {
+                level: level,
+                is_expandable: is_expandable,
+                expanded: item.ui_attrs.expanded !== undefined ? item.ui_attrs.expanded : true,
+                visible: item.ui_attrs.visible !== undefined ? item.ui_attrs.visible : true,
+                idx: idx,
+                root_idx: rootIdx
+            }
+        );
+        out.push(item);
+        if (is_expandable) {
+            for (var i = 0; i < item[subAttrName].length; i++) {
+                traverse(item[subAttrName][i], subAttrName, out, level + 1, idx, idx);
+            }
+        }
+    }
+    return function (item_list, subAttrName) {
+        var flatten = [],
+            curLevel = 0,
+            idx = -1;
+
+        if (!item_list) return item_list;
+
+        for (var i = 0; i < item_list.length; i++) {
+            curLevel = 0;
+            idx += 1;
+            var item = item_list[i];
+            traverse(item, subAttrName, flatten, curLevel, idx, idx);
+        }
+        return flatten;
+    }
+})
 // Services
 .factory('RefBook', ['$http', '$rootScope', function ($http, $rootScope) {
     var RefBook = function (name) {
