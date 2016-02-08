@@ -1383,7 +1383,7 @@ angular.module('WebMis20.directives')
                                     </button>\
                                 </td>\
                             </tr>\
-                            <tr ng-if="canAddNew">\
+                            <tr ng-if="canAddNew && canEdit">\
                                 <td colspan="6">\
                                     <div class="pull-right">\
                                         <button class="btn btn-primary" ng-click="add_new_diagnosis(diag_type)">Добавить новое заболевание</button>\
@@ -1505,6 +1505,13 @@ angular.module('WebMis20.directives')
             var locModel = angular.copy(model);
             var Controller = function ($scope) {
                 $scope.model = locModel;
+                $scope.edit_mkb = {
+                    ui_mkb_disabled: $scope.model.id && $scope.model.diagnostic.mkb,
+                    mkb_changed: false};
+
+                if ($scope.model.id){
+                    $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
+                }
 
                 // https://github.com/angular-ui/bootstrap/issues/969
                 // http://stackoverflow.com/questions/19312936/angularjs-modal-dialog-form-object-is-undefined-in-controller
@@ -1515,28 +1522,28 @@ angular.module('WebMis20.directives')
                 $scope.event = null;
                 WMEventCache.get(action.event_id).then(function (event) {
                     $scope.event = event;
-                    $scope.can_set_final_diag = (
-                        // только лечащий врач
-                        (CurrentUser.id === event.info.exec_person.id ||
-                            CurrentUser.get_main_user().id === event.info.exec_person.id) &&
-                        // в текущем действии еще нет заключительных диагнозов
-                        action.properties.filter(function (prop) {
-                            return (prop.type.type_name === 'Diagnosis' && (
-                                prop.type.vector ? (
-                                    prop.value.length && prop.value.some(function (diag) {
-                                        return diag.diagnosis_type.code === '1' && diag.deleted === 0;
-                                    })
-                                ) : (prop.value && prop.value.diagnosis_type.code === '1' && diag.deleted === 0))
-                            )
-                        }).length === 0 &&
-                        // в других *закрытых* действиях нет заключительных диагнозов
-                        event.diagnoses.filter(function (diag) {
-                            return diag.diagnosis_type.code === '1' && diag.action.status.code === 'finished';
-                        }).length === 0
-                    );
-                    if ($scope.can_set_final_diag) {
-                        $scope.diag_type_codes.push('1');
-                    }
+//                    $scope.can_set_final_diag = (
+//                        // только лечащий врач
+//                        (CurrentUser.id === event.info.exec_person.id ||
+//                            CurrentUser.get_main_user().id === event.info.exec_person.id) &&
+//                        // в текущем действии еще нет заключительных диагнозов
+//                        action.properties.filter(function (prop) {
+//                            return (prop.type.type_name === 'Diagnosis' && (
+//                                prop.type.vector ? (
+//                                    prop.value.length && prop.value.some(function (diag) {
+//                                        return diag.diagnosis_type.code === '1' && diag.deleted === 0;
+//                                    })
+//                                ) : (prop.value && prop.value.diagnosis_type.code === '1' && diag.deleted === 0))
+//                            )
+//                        }).length === 0 &&
+//                        // в других *закрытых* действиях нет заключительных диагнозов
+//                        event.diagnoses.filter(function (diag) {
+//                            return diag.diagnosis_type.code === '1' && diag.action.status.code === 'finished';
+//                        }).length === 0
+//                    );
+//                    if ($scope.can_set_final_diag) {
+//                        $scope.diag_type_codes.push('1');
+//                    }
                 });
 
                 $scope.filter_type = function() {
@@ -1548,8 +1555,19 @@ angular.module('WebMis20.directives')
                     return safe_traverse($scope.model, ['diagnosis_type', 'code']) === '1';
                 };
 
+                $scope.reverse_mkb_change = function(){
+                    $scope.model.diagnostic.mkb = $scope.edit_mkb.old_mkb;
+                }
+
                 $scope.$watch('form.DiagnosisForm.$dirty', function(n, o) {
                     $scope.model.diagnostic_changed = n;
+                });
+                $scope.$watch('model.diagnostic.mkb', function(n, o) {
+                    if($scope.model.id && n!=$scope.edit_mkb.old_mkb){
+                        $scope.edit_mkb.mkb_changed = true;
+                    } else if (n==$scope.edit_mkb.old_mkb){
+                        $scope.edit_mkb.mkb_changed = false;
+                    }
                 });
             };
 
@@ -1770,10 +1788,31 @@ angular.module('WebMis20.directives')
             <ng-form name="form.DiagnosisForm">\
                 <div class="row marginal">\
                     <div class="col-md-8">\
+                        <label for="MKB" class="control-label">МКБ</label>\
+                    </div>\
+                </div>\
+                <div class="row">\
+                    <div class="col-md-8">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid}">\
-                            <label for="MKB" class="control-label">МКБ</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true"></ui-mkb>\
+                            <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
+                                    ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
                         </div>\
+                    </div>\
+                    <div class="col-md-4" ng-if="edit_mkb.ui_mkb_disabled">\
+                        <button type="button" class="btn btn-warning" ng-click="edit_mkb.ui_mkb_disabled=false">Изменить код МКБ</button>\
+                    </div>\
+                    <div class="col-md-4" ng-if="edit_mkb.mkb_changed">\
+                        <button type="button" class="btn btn-default" ng-click="reverse_mkb_change()">Отменить изменение</button>\
+                    </div>\
+                </div>\
+                <div class="row marginal" ng-if="edit_mkb.mkb_changed">\
+                    <div class="col-md-1" style="text-align: center; font-size:200%;">\
+                        <i class="fa fa-exclamation-triangle text-yellow"></i>\
+                    </div>\
+                    <div class="col-md-11">\
+                        <b>Вы меняете код МКБ существующего диагноза.</b> Изменение отразится в истории диагноза.</br>\
+                        Изменять код МКБ следует только для уточнения диагноза, или в случае если диагноз изменился со временем.\
+                        В остальных случаях следует закрыть имеющийся диагноз и создать новый.\
                     </div>\
                 </div>\
                 <div class="row marginal">\

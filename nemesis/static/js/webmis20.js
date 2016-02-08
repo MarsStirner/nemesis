@@ -569,7 +569,7 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'E',
         require: '?ngModel',
         template:
-            '<a style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
+            '<a ng-disabled="ngDisabled" style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
                 '<span class="mkb-button col-md-12">[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]</span>' +
                 '<span class="caret" ng-if="!$model.$modelValue"></span>' +
             '</a>' +
@@ -586,7 +586,8 @@ var WebMis20 = angular.module('WebMis20', [
                 '</table>' +
             '</div>',
         scope: {
-            ngRequired: '='
+            ngRequired: '=',
+            ngDisabled: '='
         },
         link: function (scope, element, attributes, ngModel) {
             scope.$model = ngModel;
