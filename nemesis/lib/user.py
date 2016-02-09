@@ -263,9 +263,6 @@ class UserUtils(object):
                 out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
                                      u'действующего полиса ОМС' % unicode(event_type)
                 return False
-            if client.is_adult:
-                out_msg['message'] = u'Нельзя создавать обращения %s для пациентов старше 18 лет' % unicode(event_type)
-                return False
             if not safe_traverse_attrs(client, 'reg_address', 'is_russian'):
                 out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без адреса ' \
                                      u'регистрации в РФ' % unicode(event_type)
