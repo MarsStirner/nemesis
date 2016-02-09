@@ -251,7 +251,11 @@ angular.module('hitsl.core', [])
         on_user_activity = _.throttle(postpone_everything, 10000),
         debounced_logout_warning = _.debounce(show_logout_warning, WMConfig.settings.user_idle_timeout * 1000),
         token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
-        var token = $window.document.cookie.replace(token_regex, "$1");
+    var get_token = function () {
+        return $window.document.cookie.replace(token_regex, "$1");
+    },
+        latest_token_deadline;
+
     function reload_page() {
         WindowCloseHandler.suppressUserhandlers = true;
         $window.location.reload(true);
@@ -260,13 +264,16 @@ angular.module('hitsl.core', [])
         return ApiCalls.coldstar(
             'POST',
             url,
-            { token: token },
+            { token: get_token() },
             undefined,
             { silent: true }
         )
     }
+    function update_latest_deadline(cas_result) {
+        latest_token_deadline = cas_result.deadline;
+    }
     function prolong_token() {
-        return cas(WMConfig.url.coldstar.cas_prolong_token).addReject(reload_page)
+        return cas(WMConfig.url.coldstar.cas_prolong_token).addReject(reload_page).addResolve(update_latest_deadline)
     }
     function check_token() {
         return cas(WMConfig.url.coldstar.cas_check_token).addReject(reload_page)
@@ -280,23 +287,32 @@ angular.module('hitsl.core', [])
     }
     function show_logout_warning() {
         _set_tracking(false);
-        check_token().addReject(reload_page).addResolve(function (cas_result) {
+        check_token().addError(reload_page).addResolve(function (cas_result) {
             var time_left = Math.min(cas_result.ttl, WMConfig.settings.logout_warning_timeout),
                 deadline = cas_result.ttl - time_left;
-            IdleUserModal.open(Math.floor(time_left)).then(
-                function () {
-                    prolong_token().addResolve(_set_tracking, true).addError(reload_page);
-                },
-                function () {
-                    check_token().addError(reload_page).addResolve(function (result) {
-                        if (result.ttl > deadline + 1) {
-                            _set_tracking(true);
-                            on_user_activity()
-                        } else {
-                            logout();
-                        }
-                    });
-                });
+            if (latest_token_deadline !== cas_result.deadline) {
+                update_latest_deadline(cas_result);
+            } else {
+                IdleUserModal.open(Math.floor(time_left)).then(
+                    function () {
+                        prolong_token().addResolve(_set_tracking, true).addError(reload_page);
+                    },
+                    function () {
+                        check_token().addError(reload_page).addResolve(function (cas_result) {
+                            if (latest_token_deadline !== cas_result.deadline) {
+                                update_latest_deadline(cas_result);
+                                _set_tracking(true);
+                                on_user_activity()
+                            } else if (cas_result.ttl > deadline + 1) {
+                                _set_tracking(true);
+                                on_user_activity()
+                            } else {
+                                logout();
+                            }
+                        });
+                    }
+                );
+            }
         })
     }
     function _set_tracking(on) {
