@@ -1293,23 +1293,13 @@ angular.module('WebMis20.directives')
                     $scope.diagTypes.forEach(function(diagnosis_type){
                         new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
                     })
-//                    new_diagnosis.diagnosis_type = diag_type;
+
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, $scope.action, $scope.params).then(function () {
                         $scope.model.push(new_diagnosis);
 //                        WMEventServices.add_diagnosis($scope.event, new_diagnosis);
                     });
                 };
-//                $scope.delete_diagnosis = function (diagnosis, deleted) {
-//                    if (arguments.length == 1) {
-//                        deleted = 1;
-//                    }
-//                    if ($scope.listMode) {
-//                        WMEventServices.delete_diagnosis($scope.model, diagnosis, deleted);
-//                    } else {
-//                        $scope.model = null;
-//                    }
-//                    WMEventServices.delete_diagnosis($scope.event.diagnoses, diagnosis, deleted);
-//                };
+
                 $scope.edit_diagnosis = function (diagnosis) {
                     DiagnosisModal.openDiagnosisModal(diagnosis, $scope.action, $scope.params);
                 };
@@ -1324,9 +1314,26 @@ angular.module('WebMis20.directives')
 //                        $scope.$root.$broadcast('event_loaded');
 //                    });
 //                };
-                $scope.kind_change = function (diag){
+                $scope.kind_change = function (diag, diag_type_code){
                     diag.kind_changed = true;
+                    if (diag.diagnosis_types[diag_type_code].code == 'main'){
+
+                        // предыдущий основной исправляем на осложнение
+                        $scope.model.forEach(function(diagnosis){
+                            if(diagnosis.diagnostic.mkb.code != diag.diagnostic.mkb.code &&
+                                diagnosis.diagnosis_types[diag_type_code].code == 'main') {
+                                diagnosis.diagnosis_types[diag_type_code] = $scope.rbDiagnosisKind.get_by_code('complication');
+                            }
+                        });
+                    }
                 };
+
+                $scope.sortByKind = function(type){
+                    var kind = {'main': 1, 'complication': 2, 'associated': 3};
+                    return function(diag){
+                        return kind[diag.diagnosis_types[type].code]
+                    }
+                }
             },
             templateUrl: function(el, attrs){
                 return '/WebMis20/wm-diagnosis-new.html'},
@@ -1365,9 +1372,9 @@ angular.module('WebMis20.directives')
                             </tr>\
                         </thead>\
                         <tbody>\
-                            <tr ng-repeat="diag in model">\
+                            <tr ng-repeat="diag in model | orderBy:sortByKind(diag_type.code)">\
                                 <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
-                                     id="diag_type" name="diag_type" ng-change="kind_change(diag)" ng-if="canEdit"></rb-select>\
+                                     id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)" ng-if="canEdit"></rb-select>\
                                     <span ng-if="!canEdit" \
                                           ng-class="{\'text-bold\': !diag.diagnosis_types.[[diag_type.code]].code == \'associated\'}"\
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
@@ -1509,7 +1516,8 @@ angular.module('WebMis20.directives')
                 $scope.model = locModel;
                 $scope.edit_mkb = {
                     ui_mkb_disabled: $scope.model.id && $scope.model.diagnostic.mkb,
-                    mkb_changed: false};
+                    mkb_changed: false,
+                    same_mkb: false};
 
                 if ($scope.model.id){
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
@@ -1565,10 +1573,19 @@ angular.module('WebMis20.directives')
                     $scope.model.diagnostic_changed = n;
                 });
                 $scope.$watch('model.diagnostic.mkb', function(n, o) {
-                    if($scope.model.id && n!=$scope.edit_mkb.old_mkb){
-                        $scope.edit_mkb.mkb_changed = true;
-                    } else if (n==$scope.edit_mkb.old_mkb){
-                        $scope.edit_mkb.mkb_changed = false;
+                    if (n!=o){
+                        var same_mkb = action.diagnoses.filter(function(diag){
+                            return (diag.id != $scope.model.id) && diag.diagnostic.mkb.code == n.code;
+                        })
+                        $scope.edit_mkb.same_mkb = same_mkb.length > 0;
+
+                        if (!$scope.edit_mkb.same_mkb && $scope.edit_mkb.old_mkb){
+                            if(n.code!=$scope.edit_mkb.old_mkb.code){
+                                $scope.edit_mkb.mkb_changed = true;
+                            } else {
+                                $scope.edit_mkb.mkb_changed = false;
+                            }
+                        }
                     }
                 });
             };
@@ -1795,7 +1812,7 @@ angular.module('WebMis20.directives')
                 </div>\
                 <div class="row">\
                     <div class="col-md-8">\
-                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid}">\
+                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid || edit_mkb.same_mkb}">\
                             <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
                                     ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
                         </div>\
@@ -1815,6 +1832,16 @@ angular.module('WebMis20.directives')
                         <b>Вы меняете код МКБ существующего диагноза.</b> Изменение отразится в истории диагноза.</br>\
                         Изменять код МКБ следует только для уточнения диагноза, или в случае если диагноз изменился со временем.\
                         В остальных случаях следует закрыть имеющийся диагноз и создать новый.\
+                    </div>\
+                </div>\
+                <div class="row marginal" ng-if="edit_mkb.same_mkb">\
+                    <div class="col-md-1" style="text-align: center; font-size:200%;">\
+                        <i class="fa fa-exclamation-triangle text-yellow"></i>\
+                    </div>\
+                    <div class="col-md-11">\
+                        <b>Упациента уже есть такой диагноз.</b></br>\
+                        При лечении ранее установленного заболевания, в том числе при обострении хронического, \
+                        нужно использовть имеющийся диагноз.\
                     </div>\
                 </div>\
                 <div class="row marginal">\
@@ -1929,7 +1956,7 @@ angular.module('WebMis20.directives')
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
             <button type="button" class="btn btn-success" ng-click="$close()"\
-            ng-disabled="form.DiagnosisForm.$invalid">Сохранить</button>\
+            ng-disabled="form.DiagnosisForm.$invalid || edit_mkb.same_mkb">Сохранить</button>\
         </div>')
     }])
 .run(['$templateCache', function ($templateCache) {
