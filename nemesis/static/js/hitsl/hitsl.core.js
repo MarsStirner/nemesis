@@ -290,8 +290,10 @@ angular.module('hitsl.core', [])
         check_token().addError(reload_page).addResolve(function (cas_result) {
             var time_left = Math.min(cas_result.ttl, WMConfig.settings.logout_warning_timeout),
                 deadline = cas_result.ttl - time_left;
-            if (latest_token_deadline !== cas_result.deadline) {
+            if (latest_token_deadline < cas_result.deadline) {
                 update_latest_deadline(cas_result);
+                _set_tracking(true);
+                debounced_logout_warning();
             } else {
                 IdleUserModal.open(Math.floor(time_left)).then(
                     function () {
@@ -299,13 +301,13 @@ angular.module('hitsl.core', [])
                     },
                     function () {
                         check_token().addError(reload_page).addResolve(function (cas_result) {
-                            if (latest_token_deadline !== cas_result.deadline) {
+                            if (latest_token_deadline < cas_result.deadline) {
                                 update_latest_deadline(cas_result);
                                 _set_tracking(true);
-                                on_user_activity()
+                                on_user_activity();
                             } else if (cas_result.ttl > deadline + 1) {
                                 _set_tracking(true);
-                                on_user_activity()
+                                on_user_activity();
                             } else {
                                 logout();
                             }
