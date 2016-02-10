@@ -998,3 +998,7 @@ iframe[seamless]{
     width: 100%;
     height: 100%;
 }
+
+.wysiwyg-panel blockquote {
+    font-size: 14px;
+}
