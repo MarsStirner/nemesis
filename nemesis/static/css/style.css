@@ -1012,3 +1012,8 @@ li.active>a.cuslom-tab-pills {
     text-align: center;
 }
 
+
+.wysiwyg-panel blockquote {
+    font-size: 14px;
+}
+
