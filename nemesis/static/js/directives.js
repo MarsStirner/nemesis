@@ -1323,6 +1323,7 @@ angular.module('WebMis20.directives')
                             if(diagnosis.diagnostic.mkb.code != diag.diagnostic.mkb.code &&
                                 diagnosis.diagnosis_types[diag_type_code].code == 'main') {
                                 diagnosis.diagnosis_types[diag_type_code] = $scope.rbDiagnosisKind.get_by_code('complication');
+                                diagnosis.kind_changed = true;
                             }
                         });
                     }
@@ -1376,7 +1377,7 @@ angular.module('WebMis20.directives')
                                 <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
                                      id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)" ng-if="canEdit"></rb-select>\
                                     <span ng-if="!canEdit" \
-                                          ng-class="{\'text-bold\': !diag.diagnosis_types.[[diag_type.code]].code == \'associated\'}"\
+                                          ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code != \'associated\'}"\
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
                                 </td>\
                                 <td>[[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\

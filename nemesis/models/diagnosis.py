@@ -74,11 +74,11 @@ class Diagnosis(db.Model):
     def get_diagnostic(self, date=None):
         from .actions import Action
         if date is None:
-            date = datetime.date.today()
+            date = datetime.datetime.now()
         return Diagnostic.query.outerjoin(Action).filter(
             Diagnostic.deleted == 0,
             Diagnostic.diagnosis == self,
-            Action.begDate < date,
+            Action.begDate <= date,
         ).order_by(Diagnostic.createDatetime.desc()).first()
 
     @lazy_property

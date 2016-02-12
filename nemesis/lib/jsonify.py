@@ -921,10 +921,13 @@ class EventVisualizer(object):
             'services': self.make_event_grouped_services(event.id),
             'invoices': self.make_event_invoices(event.id)
         }
+
         if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
+            data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         elif UserProfileManager.has_ui_doctor():
             data['diagnoses'] = self.make_diagnoses(event)
+            data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data
 
     def make_short_event(self, event):
@@ -995,17 +998,15 @@ class EventVisualizer(object):
         @type event: Event
         """
         from nemesis.models.diagnosis import Diagnosis
-        now = datetime.datetime.now()
         client_id = safe_traverse_attrs(event, 'client', 'id', default=None)
         if event.execDate is None:  # обращение не закрыто
             diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
-                                               db.or_(Diagnosis.endDate.is_(None),
-                                                      db.and_(Diagnosis.endDate >= event.setDate,
-                                                              Diagnosis.endDate <= now))).all()
+                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= event.setDate)).all()
         else:  # обращение закрыто
             diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
                                                Diagnosis.setDate <= event.execDate,
-                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate <= event.execDate)).all()
+                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= event.setDate)).all()
+
         return [self.make_diagnosis_record(diagnosis, event) for diagnosis in diagnoses]
 
     def make_diagnose_row(self, diagnostic, diagnosis):
@@ -1029,12 +1030,21 @@ class EventVisualizer(object):
             'notes': diagnostic.notes,
         }
 
+    def make_event_diagnosis_types_info(self, event):
+        res = event.eventType.diagnosis_types
+        event_diagnoses = Event_Diagnosis.query.filter(Event_Diagnosis.event_id == event.id).all()
+        for e_d in event_diagnoses:
+            if e_d.diagnosisType not in res:
+                res.append(e_d.diagnosisType)
+        return res
+
     def make_diagnosis_types_info(self, diagnosis, event):
+        event_diagnosis_types_info = self.make_event_diagnosis_types_info(event)
         event_diagnoses = Event_Diagnosis.query.filter(Event_Diagnosis.event_id == event.id,
                                                        Event_Diagnosis.diagnosis_id == diagnosis.id).all()
-        types_info = {diag_type.code: rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first() for diag_type in event.eventType.diagnosis_types}
-        for action_diagnosis in event_diagnoses:
-            types_info[action_diagnosis.diagnosisType.code] = action_diagnosis.diagnosisKind
+        types_info = {diag_type.code: rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first() for diag_type in event_diagnosis_types_info}
+        for event_diagnosis in event_diagnoses:
+            types_info[event_diagnosis.diagnosisType.code] = event_diagnosis.diagnosisKind
         return types_info
 
     def make_diagnosis_record(self, diagnosis, event):
@@ -1772,16 +1782,14 @@ class ActionVisualizer(object):
 
     def make_action_diagnoses_info(self, action):
         from nemesis.models.diagnosis import Diagnosis
-        now = datetime.datetime.now()
         client_id = safe_traverse_attrs(action, 'event', 'client', 'id', default=None)
         if action.endDate is None:  # действие не закрыто
             diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
-                                               db.or_(Diagnosis.endDate.is_(None),
-                                                      db.and_(Diagnosis.endDate >= action.begDate, Diagnosis.endDate <= now))).all()
+                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= action.begDate)).all()
         else:  # действие закрыто
             diagnoses = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
                                                Diagnosis.setDate <= action.endDate,
-                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate <= action.endDate)).all()
+                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= action.begDate)).all()
         return [self.make_diagnosis_info(diagnosis, action) for diagnosis in diagnoses]
 
 

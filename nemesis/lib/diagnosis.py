@@ -1,9 +1,120 @@
 # -*- coding: utf-8 -*-
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
-from nemesis.models.diagnosis import Diagnosis, Diagnostic
+from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN, \
+    rbDiagnosisKind
+from nemesis.models.exists import MKB
 from nemesis.systemwide import db
 
 __author__ = 'viruzzz-kun'
+
+
+def create_diagnostic(diagnostic_data, action_id):
+    mkb_id = safe_traverse(diagnostic_data, 'mkb', 'id')
+    mkbex_id = safe_traverse(diagnostic_data, 'mkbex', 'id')
+    diagnostic = Diagnostic()
+    diagnostic.mkb = MKB.query.get(mkb_id) if mkb_id else None
+    diagnostic.MKBEx = ''  # todo
+    diagnostic.traumaType_id = safe_traverse(diagnostic_data, 'trauma', 'id')
+    diagnostic.diagnosis_description = safe_traverse(diagnostic_data, 'diagnosis_description')
+    diagnostic.character_id = safe_traverse(diagnostic_data, 'character', 'id')
+    diagnostic.stage_id = safe_traverse(diagnostic_data, 'stage', 'id')
+    diagnostic.phase_id = safe_traverse(diagnostic_data, 'phase', 'id')
+    diagnostic.healthGroup_id = safe_traverse(diagnostic_data, 'healthGroup', 'id')
+    diagnostic.action_id = action_id
+    diagnostic.rbAcheResult_id = safe_traverse(diagnostic_data, 'ache_result', 'id')
+    # diagnostic.sanatorium = 0  # todo
+    diagnostic.notes = safe_traverse(diagnostic_data, 'notes')
+    return diagnostic
+
+
+def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
+
+    add_to_event = action.person == action.event.execPerson
+    diagnosis_id = diagnosis.id
+    for diagnosis_type, diagnosis_kind in diagnosis_types_info.iteritems():
+        action_diagn = Action_Diagnosis.query.join(rbDiagnosisTypeN).filter(Action_Diagnosis.action_id == action.id,
+                                                                            Action_Diagnosis.diagnosis_id == diagnosis_id,
+                                                                            rbDiagnosisTypeN.code == diagnosis_type).first() if diagnosis_id else None
+        if action_diagn:
+            if diagnosis_kind['code'] != 'associated':
+                action_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+            else:
+                action_diagn.deleted = 1
+        elif diagnosis_kind['code'] != 'associated':
+            action_diagn = Action_Diagnosis()
+            action_diagn.action_id = action.id
+            action_diagn.diagnosis = diagnosis
+            action_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+            action_diagn.diagnosisType = rbDiagnosisTypeN.query.filter(rbDiagnosisTypeN.code == diagnosis_type).first()
+
+        if action_diagn:
+            db.session.add(action_diagn)
+
+        if add_to_event:  # лечащий врач
+            event_diagn = Event_Diagnosis.query.join(rbDiagnosisTypeN).filter(Event_Diagnosis.event_id == action.event.id,
+                                                                              Event_Diagnosis.diagnosis_id == diagnosis_id,
+                                                                              rbDiagnosisTypeN.code == diagnosis_type).first() if diagnosis_id else None
+            if event_diagn:
+                if diagnosis_kind['code'] != 'associated':
+                    event_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+                else:
+                    event_diagn.deleted = 1
+            elif diagnosis_kind['code'] != 'associated':
+                event_diagn = Event_Diagnosis()
+                event_diagn.event_id = action.event.id
+                event_diagn.diagnosis = diagnosis
+                event_diagn.diagnosisKind_id = diagnosis_kind.get('id')
+                event_diagn.diagnosisType = rbDiagnosisTypeN.query.filter(rbDiagnosisTypeN.code == diagnosis_type).first()
+
+            if diagnosis_kind['code'] == 'main':
+                prev_main = Event_Diagnosis.query.join(rbDiagnosisTypeN, rbDiagnosisKind).filter(
+                    Event_Diagnosis.event_id == action.event.id,
+                    Event_Diagnosis.diagnosis_id != diagnosis_id,
+                    rbDiagnosisTypeN.code == diagnosis_type,
+                    rbDiagnosisKind.code == 'main').first()
+
+                if prev_main:
+                    prev_main.diagnosisKind = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'complication').first()
+                    db.session.add(prev_main)
+
+        if event_diagn:
+            db.session.add(event_diagn)
+
+
+def create_or_update_diagnoses(action, diagnoses_data):
+
+    for diagnosis_data in diagnoses_data:
+        diagnosis = None
+        diagnosis_id = diagnosis_data.get('id')
+        kind_changed = diagnosis_data.get('kind_changed')
+        diagnostic_changed = diagnosis_data.get('diagnostic_changed')
+        diagnostic_data = diagnosis_data.get('diagnostic')
+        diagnosis_types = diagnosis_data.get('diagnosis_types')
+        if diagnosis_id and diagnostic_changed:
+            diagnosis = Diagnosis.query.get(diagnosis_id)
+            diagnosis.setDate = safe_datetime(diagnosis_data.get('set_date'))
+            diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
+
+            diagnostic = create_diagnostic(diagnostic_data, action.id)
+            diagnostic.diagnosis = diagnosis
+
+            db.session.add(diagnostic)
+        elif not diagnosis_id:
+            diagnosis = Diagnosis()
+            diagnosis.setDate = safe_datetime(diagnosis_data.get('set_date'))
+            diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
+            diagnosis.client_id = diagnosis_data.get('client_id')
+            diagnosis.person_id = safe_traverse(diagnosis_data, 'person', 'id')
+
+            diagnostic = create_diagnostic(diagnostic_data, action.id)
+            diagnostic.diagnosis = diagnosis
+
+            db.session.add_all([diagnosis, diagnostic])
+
+        if kind_changed:
+            diagnosis = Diagnosis.query.get(diagnosis_id) if not diagnosis else diagnosis
+            update_diagnosis_kind_info(action, diagnosis, diagnosis_types)
+        db.session.commit()
 
 
 def create_or_update_diagnosis(event, json_data, action=None):
