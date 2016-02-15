@@ -130,6 +130,7 @@ class Diagnostic(db.Model):
 
     # Basic data
     MKB = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
+    MKB2 = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
     MKBEx = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
     notes = db.Column(db.Text, nullable=False, default='')
     diagnosis_description = db.Column(db.Text)
@@ -155,6 +156,7 @@ class Diagnostic(db.Model):
     diagnosis = db.relationship('Diagnosis', backref='diagnostics')
 
     mkb = db.relationship('MKB', foreign_keys=[MKB])
+    mkb2 = db.relationship('MKB', foreign_keys=[MKB2])
     mkb_ex = db.relationship('MKB', foreign_keys=[MKBEx])
 
     character = db.relationship('rbDiseaseCharacter', lazy=False)

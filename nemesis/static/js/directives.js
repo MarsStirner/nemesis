@@ -1285,7 +1285,7 @@ angular.module('WebMis20.directives')
                         'diagnostic': {
                             'id': null,
                             'mkb': null,
-                            'mkbex': null,
+                            'mkb2': null,
                             'character': null,
                             'dispanser': null,
                             'trauma': null,
@@ -1497,7 +1497,7 @@ angular.module('WebMis20.directives')
                     <div class="col-md-8">\
                         <div class="form-group">\
                             <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkbex" name="mkb" ng-disabled="true"></ui-mkb>\
+                            <ui-mkb ng-model="model.diagnostic.mkb2" name="mkb"></ui-mkb>\
                         </div>\
                     </div>\
                     <div class="col-md-3">\

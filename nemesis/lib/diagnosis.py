@@ -9,11 +9,15 @@ __author__ = 'viruzzz-kun'
 
 
 def create_diagnostic(diagnostic_data, action_id):
+    """
+    создание Diagnositc
+    """
+
     mkb_id = safe_traverse(diagnostic_data, 'mkb', 'id')
-    mkbex_id = safe_traverse(diagnostic_data, 'mkbex', 'id')
+    mkb2_id = safe_traverse(diagnostic_data, 'mkb2', 'id')
     diagnostic = Diagnostic()
     diagnostic.mkb = MKB.query.get(mkb_id) if mkb_id else None
-    diagnostic.MKBEx = ''  # todo
+    diagnostic.mkb_ex = MKB.query.get(mkb2_id) if mkb2_id else None
     diagnostic.traumaType_id = safe_traverse(diagnostic_data, 'trauma', 'id')
     diagnostic.diagnosis_description = safe_traverse(diagnostic_data, 'diagnosis_description')
     diagnostic.character_id = safe_traverse(diagnostic_data, 'character', 'id')
@@ -28,7 +32,9 @@ def create_diagnostic(diagnostic_data, action_id):
 
 
 def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
-
+    """
+    редактирование связи диагноза (Diagnosis) с Action и Event
+    """
     add_to_event = action.person == action.event.execPerson
     diagnosis_id = diagnosis.id
     for diagnosis_type, diagnosis_kind in diagnosis_types_info.iteritems():
@@ -50,7 +56,7 @@ def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
         if action_diagn:
             db.session.add(action_diagn)
 
-        if add_to_event:  # лечащий врач
+        if add_to_event:  # если лечащий врач, то создать связку и с event
             event_diagn = Event_Diagnosis.query.join(rbDiagnosisTypeN).filter(Event_Diagnosis.event_id == action.event.id,
                                                                               Event_Diagnosis.diagnosis_id == diagnosis_id,
                                                                               rbDiagnosisTypeN.code == diagnosis_type).first() if diagnosis_id else None
@@ -103,7 +109,7 @@ def create_or_update_diagnoses(action, diagnoses_data):
             diagnosis = Diagnosis()
             diagnosis.setDate = safe_datetime(diagnosis_data.get('set_date'))
             diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
-            diagnosis.client_id = diagnosis_data.get('client_id')
+            diagnosis.client_id = action.event.client_id
             diagnosis.person_id = safe_traverse(diagnosis_data, 'person', 'id')
 
             diagnostic = create_diagnostic(diagnostic_data, action.id)
@@ -111,12 +117,13 @@ def create_or_update_diagnoses(action, diagnoses_data):
 
             db.session.add_all([diagnosis, diagnostic])
 
-        if kind_changed:
+        if kind_changed:  # если был изменен вид диагноза (основной, осложнение, сопутствующий)
             diagnosis = Diagnosis.query.get(diagnosis_id) if not diagnosis else diagnosis
             update_diagnosis_kind_info(action, diagnosis, diagnosis_types)
         db.session.commit()
 
 
+# не используется
 def create_or_update_diagnosis(event, json_data, action=None):
     diagnostic_id = safe_traverse(json_data, 'id')
     deleted = json_data.get('deleted', 0)
@@ -212,6 +219,7 @@ def create_or_update_diagnosis(event, json_data, action=None):
     return diag
 
 
+# не используется
 def delete_diagnosis(diagnostic, diagnostic_id=None):
     """
     :type diagnostic: application.models.event.Diagnostic
