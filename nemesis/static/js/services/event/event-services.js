@@ -170,30 +170,6 @@ angular.module('WebMis20.services').
                 });
                 return deferred.promise;
             },
-            get_new_diagnosis: function (action_info) {
-                return {
-                    'id': null,
-                    'set_date': null,
-                    'end_date': null,
-                    'client_id': action_info.client.id,
-                    'deleted': 0,
-                    'person': CurrentUser.get_main_user().info,
-                    'diagnostic': {
-                        'id': null,
-                        'mkb': null,
-                        'mkbex': null,
-                        'character': null,
-                        'dispanser': null,
-                        'trauma': null,
-                        'phase': null,
-                        'stage': null,
-                        'health_group': null,
-                        'diagnosis_description': null,
-                        'notes': null
-                    },
-                    'diagnosis_types': {}
-                }
-            },
             add_diagnosis: function (event, diagnosis) {
                 event.diagnoses.push(diagnosis);
             },
