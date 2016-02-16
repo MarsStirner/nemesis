@@ -1017,3 +1017,6 @@ li.active>a.cuslom-tab-pills {
     font-size: 14px;
 }
 
+.bottom_dashed {
+    border-bottom: 1px dashed;
+}

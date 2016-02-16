@@ -1358,6 +1358,7 @@ angular.module('WebMis20.directives')
                             </tr>\
                         </thead>\
                         <tbody>\
+                            <tr ng-if="!view_model().length"><td colspan="6"><b>[[diag_type.name]] диагноз не задан.</b> Начните прием пациента и укажите его [[diag_type.name]] диагноз.</td></tr>\
                             <tr ng-repeat="diag in view_model() | orderBy:sortByKind(diag_type.code)">\
                                 <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
                                      id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)" ng-if="canEdit"></rb-select>\
@@ -1365,7 +1366,7 @@ angular.module('WebMis20.directives')
                                           ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code != \'associated\'}"\
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
                                 </td>\
-                                <td>[[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\
+                                <td><span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkb2.name]]">[[diag.diagnostic.mkb2.code]]</span> [[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\
                                 <td>[[diag.diagnostic.character.name]]</td>\
                                 <td>[[diag.diagnostic.stage.name]]</td>\
                                 <td>[[diag.set_date | asDate ]]</td>\
