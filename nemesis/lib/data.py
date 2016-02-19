@@ -15,11 +15,12 @@ from nemesis.models.actions import (Action, ActionType, ActionPropertyType, Acti
     TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
-from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
+from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure, Organisation
 from nemesis.models.event import Event, EventType_Action, EventType
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
+from nemesis.app import app
 
 
 logger = logging.getLogger('simple')
@@ -683,3 +684,9 @@ def _get_hosp_release_query(event):
         Action.status == ActionStatus.finished[0]
     ).order_by(Action.begDate.desc())
     return query
+
+
+def get_default_org():
+    return db.session.query(Organisation).filter_by(
+        infisCode=str(app.config['ORGANISATION_INFIS_CODE'])
+    ).first()

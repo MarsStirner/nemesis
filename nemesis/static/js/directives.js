@@ -1061,7 +1061,8 @@ angular.module('WebMis20.directives')
             }
         }
     }])
-    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', function (SelectAll, $compile, $http, FlatTree) {
+    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', 'WMConfig',
+            function (SelectAll, $compile, $http, FlatTree, WMConfig) {
         // depends on wmCustomDropdown
         return {
             restrict: 'E',
@@ -1138,7 +1139,7 @@ angular.module('WebMis20.directives')
                 }
                 $http.get(url_get_orgstructure, {
                     params: {
-                        org_id: 3479
+                        org_id: WMConfig.local_config.default_org_id
                     }
                 })
                 .success(function (data) {

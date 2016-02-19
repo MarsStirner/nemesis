@@ -117,8 +117,7 @@ def fc_urls():
                 'EventSource': simargl_url + 'simargl-es',
                 'RPC': simargl_url + 'simargl-rpc',
             }
-        },
-        'cas_token_name': config['CASTIEL_AUTH_TOKEN']
+        }
     }
 
 
@@ -129,12 +128,18 @@ def fc_settings():
     :return:
     """
     from nemesis.lib.settings import Settings
+    from nemesis.lib.data import get_default_org
 
     settings = Settings()
+    default_org = get_default_org()
     return {
         'settings': {
             'user_idle_timeout': settings.getInt('Auth.UserIdleTimeout', 15 * 60),
-            'logout_warning_timeout': settings.getInt('Auth.LogoutWarningTimeout', 200),
+            'logout_warning_timeout': settings.getInt('Auth.LogoutWarningTimeout', 200)
+        },
+        'local_config': {
+            'cas_token_name': app.config['CASTIEL_AUTH_TOKEN'],
+            'default_org_id': default_org.id if default_org else None
         }
     }
 
