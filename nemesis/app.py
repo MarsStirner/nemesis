@@ -111,12 +111,7 @@ def fc_urls():
                 'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
                 'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
             }
-        },
-        'cas_token_name': config['CASTIEL_AUTH_TOKEN'],
-        'pharmexpert': {
-            'enabled': bool(config.get('PHARMEXPERT_URL', False)),
-            'security_key': config.get('PHARMEXPERT_SECURITY_KEY', ''),
-        },
+        }
     }
 
 
@@ -127,12 +122,22 @@ def fc_settings():
     :return:
     """
     from nemesis.lib.settings import Settings
+    from nemesis.lib.data_ctrl.utils import get_default_org
 
     settings = Settings()
+    default_org = get_default_org()
     return {
         'settings': {
             'user_idle_timeout': settings.getInt('Auth.UserIdleTimeout', 15 * 60),
             'logout_warning_timeout': settings.getInt('Auth.LogoutWarningTimeout', 200),
+        },
+        'local_config': {
+            'cas_token_name': app.config['CASTIEL_AUTH_TOKEN'],
+            'default_org_id': default_org.id if default_org else None,
+            'pharmexpert': {
+                'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),
+                'security_key': app.config.get('PHARMEXPERT_SECURITY_KEY', ''),
+            },
         }
     }
 

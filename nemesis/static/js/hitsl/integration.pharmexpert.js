@@ -78,7 +78,7 @@ angular.module('hitsl.core')
             method: 'POST',
             url: '{0}?security_key={1}'.format(
                 WMConfig.url.pharmexpert.get_info_preparation,
-                WMConfig.pharmexpert.security_key
+                WMConfig.local_config.pharmexpert.security_key
             ),
             data: jQueryLikeParamSerializer(data),
             headers: {
@@ -99,7 +99,7 @@ angular.module('hitsl.core')
         });
     };
     this.enabled = function () {
-        return WMConfig.pharmexpert.enabled;
+        return WMConfig.local_config.pharmexpert.enabled;
     };
 }])
 .run(['$templateCache', function ($templateCache) {
