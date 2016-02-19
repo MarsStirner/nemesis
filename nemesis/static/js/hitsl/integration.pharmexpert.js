@@ -93,6 +93,7 @@ angular.module('hitsl.core')
         scope.url = $sce.trustAsResourceUrl(config.url);
         $modal.open({
             templateUrl: '/WebMis20/modal-pharmexpert.html',
+            backdrop : 'static',
             scope: scope,
             size: 'lg'
         });

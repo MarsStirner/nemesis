@@ -218,6 +218,7 @@ angular.module('WebMis20.directives')
         function edit_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-edit.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -231,6 +232,7 @@ angular.module('WebMis20.directives')
         function cancel_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-cancel.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -637,6 +639,7 @@ angular.module('WebMis20.directives')
             open: function (ps, context_extender, meta_values, fast_print) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
+                    backdrop : 'static',
                     controller: ModalPrintDialogController,
                     size: 'lg',
                     resolve: {
@@ -1411,6 +1414,7 @@ angular.module('WebMis20.directives')
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-edit-diagnosis.html',
+                backdrop : 'static',
                 size: 'lg',
                 controller: Controller
             });
@@ -1442,6 +1446,7 @@ angular.module('WebMis20.directives')
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-edit-diagnosis-risar.html',
+                backdrop : 'static',
                 size: 'lg',
                 controller: Controller
             });

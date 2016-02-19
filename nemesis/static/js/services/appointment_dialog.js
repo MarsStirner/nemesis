@@ -24,6 +24,7 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         <button type="button" class="btn btn-default" ng-click="cancel()">Не отменять запись</button>\
                         <button type="button" class="btn btn-danger" ng-click="accept()" ng-disabled="error">Отменить запись</button>\
                     </div>',
+                backdrop : 'static',
                 controller: function ($scope, $http, $modalInstance) {
                     $scope.ticket = ticket;
                     $scope.person = person;
@@ -93,6 +94,7 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         <button type="button" class="btn btn-primary" ng-click="next_page()" ng-show="chose_client_mode && page === 0" ng-disabled="!model.client.client_id">Далее</button>\
                         <button type="button" class="btn btn-success" ng-click="accept()" ng-show="page === 1">Записать</button>\
                     </div>',
+                backdrop : 'static',
                 controller: function ($scope, $http, $modalInstance) {
                     $scope.rbAppointmentType = new RefBookService.get('rbAppointmentType');
                     $scope.ticket = ticket;

@@ -12,6 +12,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-info.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -23,6 +24,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-error.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -34,6 +36,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-question.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -350,6 +353,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-IdleUser.html',
+                backdrop : 'static',
                 controller: IUController,
                 backdrop: 'static',
                 windowClass: 'idle-modal'

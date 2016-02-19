@@ -371,6 +371,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             };
             return $modal.open({
                 templateUrl: templateUrl,
+                backdrop : 'static',
                 size: 'lg',
                 controller: Controller,
                 windowClass: 'modal-scrollable'
@@ -413,6 +414,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
+                backdrop : 'static',
 //                size: 'sm',
                 controller: Controller
             });
