@@ -1827,10 +1827,12 @@ class DiagnosisVisualizer(object):
 
         } if diagnostic else None
 
-    def make_diagnosis_record(self, diagnosis):
+    def make_diagnosis_record(self, diagnosis, diagnostic=None):
         """
-        :type diagnosis: application.models.event.Diagnosis
+        :type diagnosis: nemesis.models.diagnosis.Diagnosis
+        :type diagnostic: nemesis.models.diagnosis.Diagnostic
         :param diagnosis:
+        :param diagnostic:
         :return:
         """
         pvis = PersonTreeVisualizer()
@@ -1841,5 +1843,5 @@ class DiagnosisVisualizer(object):
             'client_id': diagnosis.client.id,
             'deleted': diagnosis.deleted,
             'person': pvis.make_person_ws(diagnosis.person) if diagnosis.person else None,
-            'diagnostic': self.make_diagnostic_record(diagnosis._diagnostic)
+            'diagnostic': self.make_diagnostic_record(diagnostic or diagnosis._diagnostic)
         }
