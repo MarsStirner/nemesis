@@ -135,7 +135,7 @@ def check_valid_login():
 @app.route('/')
 def index():
     default_url = UserProfileManager.get_default_url()
-    if default_url != '/':
+    if default_url != url_for('index'):
         return redirect(default_url)
     return render_template(app.config['INDEX_HTML'])
 

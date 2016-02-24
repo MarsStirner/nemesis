@@ -391,8 +391,8 @@ var WebMis20 = angular.module('WebMis20', [
         return this.rb_dict[val] || default_val;
     };
 }])
-.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser',
-        function ($window, $http, $rootScope, $timeout, CurrentUser) {
+.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser', 'WMConfig',
+        function ($window, $http, $rootScope, $timeout, CurrentUser, WMConfig) {
     var PrintingService = function (context_type) {
         if (arguments.length >= 3) {
             this.target = arguments[2]
@@ -438,7 +438,7 @@ var WebMis20 = angular.module('WebMis20', [
                     context: angular.extend(
                         {}, item.context, {
                             'currentOrgStructure': "",
-                            'currentOrganisation': 3479,
+                            'currentOrganisation': WMConfig.local_config.default_org_id,
                             'currentPerson': CurrentUser.get_main_user().id
                         }
                     )

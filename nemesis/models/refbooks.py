@@ -1,7 +1,31 @@
 # -*- coding: utf-8 -*-
+from flask import g
 from nemesis.systemwide import db
 
 __author__ = 'viruzzz-kun'
+
+
+class RefBookCache(object):
+    def __init__(self, data):
+        self.__data = data
+
+    def dict(self, key):
+        return {getattr(item, key): item for item in self.__data}
+
+    def by_code(self):
+        return {item.code: item for item in self.__data}
+
+
+class RefBookMixin(object):
+    @classmethod
+    def cache(cls):
+        if not hasattr(g, 'rb_cache'):
+            g.rb_cache = {}
+        if cls.__name__ not in g.rb_cache:
+            result = g.rb_cache[cls.__name__] = RefBookCache(cls.query.all())
+        else:
+            result = g.rb_cache[cls.__name__]
+        return result
 
 
 class rbUnitsGroup(db.Model):

@@ -497,6 +497,7 @@ angular.module('WebMis20.services').
                 $modal.open({
                     size: 'lg',
                     templateUrl: '/nemesis/client/services/modal/edit_vmp_coupon.html',
+                    backdrop : 'static',
                     resolve: {
                         coupon: function () {
                             return coupon;

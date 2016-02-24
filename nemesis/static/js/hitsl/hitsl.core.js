@@ -12,6 +12,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-info.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -23,6 +24,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-error.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -34,6 +36,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-MessageBox-question.html',
+                backdrop : 'static',
                 controller: MBController
             });
             return instance.result;
@@ -250,7 +253,7 @@ angular.module('hitsl.core', [])
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
         on_user_activity = _.throttle(postpone_everything, 10000),
         debounced_logout_warning = _.debounce(show_logout_warning, WMConfig.settings.user_idle_timeout * 1000),
-        token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
+        token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.local_config.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
     var get_token = function () {
         return $window.document.cookie.replace(token_regex, "$1");
     },
@@ -350,6 +353,7 @@ angular.module('hitsl.core', [])
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-IdleUser.html',
+                backdrop : 'static',
                 controller: IUController,
                 backdrop: 'static',
                 windowClass: 'idle-modal'

@@ -218,6 +218,7 @@ angular.module('WebMis20.directives')
         function edit_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-edit.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -231,6 +232,7 @@ angular.module('WebMis20.directives')
         function cancel_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-cancel.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -637,6 +639,7 @@ angular.module('WebMis20.directives')
             open: function (ps, context_extender, meta_values, fast_print) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
+                    backdrop : 'static',
                     controller: ModalPrintDialogController,
                     size: 'lg',
                     resolve: {
@@ -1163,7 +1166,8 @@ angular.module('WebMis20.directives')
             }
         }
     }])
-    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', function (SelectAll, $compile, $http, FlatTree) {
+    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', 'WMConfig',
+            function (SelectAll, $compile, $http, FlatTree, WMConfig) {
         // depends on wmCustomDropdown
         return {
             restrict: 'E',
@@ -1240,7 +1244,7 @@ angular.module('WebMis20.directives')
                 }
                 $http.get(url_get_orgstructure, {
                     params: {
-                        org_id: 3479
+                        org_id: WMConfig.local_config.default_org_id
                     }
                 })
                 .success(function (data) {
@@ -1442,6 +1446,7 @@ angular.module('WebMis20.directives')
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-edit-diagnosis.html',
                 size: 'lg',
+                backdrop: 'static',
                 controller: Controller
             });
             return instance.result.then(function() {

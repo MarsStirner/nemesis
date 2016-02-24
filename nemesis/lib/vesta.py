@@ -125,9 +125,9 @@ class Vesta(object):
     @cache.memoize(60)
     def get_rb(cls, name, code=None):
         if code is not None:
-            url = u'{0}/v1/{1}/code/{2}'.format(cls.get_url(), name, code)
+            url = u'{0}/v1/{1}/code/{2}/'.format(cls.get_url(), name, code)
         else:
-            url = u'{0}/v1/{1}'.format(cls.get_url(), name)
+            url = u'{0}/v1/{1}/'.format(cls.get_url(), name)
         response = requests.get(url)
         if response.status_code != 200:
             raise VestaException(u'Error in Vesta server')
