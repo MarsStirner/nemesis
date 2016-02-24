@@ -15,7 +15,8 @@ from flask import json
 
 from nemesis.app import app
 from nemesis.systemwide import db
-from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
+from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
+    get_client_diagnostics
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
@@ -997,15 +998,15 @@ class EventVisualizer(object):
         """
         @type event: Event
         """
-        from nemesis.models.diagnosis import Diagnosis
-        client_id = safe_traverse_attrs(event, 'client', 'id', default=None)
-        base_query = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
-                                               db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= event.setDate))
-        if event.execDate:  # обращение закрыто
-            base_query = base_query.filter(Diagnosis.setDate <= event.execDate)
-
-        diagnoses = base_query.all()
-        return [self.make_diagnosis_record(diagnosis, event) for diagnosis in diagnoses]
+        dvis = DiagnosisVisualizer()
+        diagnostics = get_client_diagnostics(event.client, event.setDate, event.execDate)
+        return [
+            dict(
+                dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),
+                diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, event),
+            )
+            for diagnostic in diagnostics
+        ]
 
     def make_diagnose_row(self, diagnostic, diagnosis):
         """
@@ -1029,32 +1030,32 @@ class EventVisualizer(object):
         }
 
     def make_event_diagnosis_types_info(self, event):
-        res = event.eventType.diagnosis_types
-        event_diagnoses = Event_Diagnosis.query.filter(Event_Diagnosis.event_id == event.id).all()
-        for e_d in event_diagnoses:
-            if e_d.diagnosisType not in res:
-                res.append(e_d.diagnosisType)
-        return res
+        res = set(event.eventType.diagnosis_types)
+        res |= set(
+            e_d.diagnosisType
+            for e_d in Event_Diagnosis.query.filter(Event_Diagnosis.event == event)
+        )
+        return sorted(res, key=lambda dt: dt.rank)
 
     def make_diagnosis_types_info(self, diagnosis, event):
-        event_diagnosis_types_info = self.make_event_diagnosis_types_info(event)
-        event_diagnoses = Event_Diagnosis.query.filter(Event_Diagnosis.event_id == event.id,
-                                                       Event_Diagnosis.diagnosis_id == diagnosis.id).all()
-        types_info = {diag_type.code: rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first() for diag_type in event_diagnosis_types_info}
-        for event_diagnosis in event_diagnoses:
-            types_info[event_diagnosis.diagnosisType.code] = event_diagnosis.diagnosisKind
-        return types_info
+        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
 
-    def make_diagnosis_record(self, diagnosis, event):
-        """
-        :type diagnosis: application.models.event.Diagnosis
-        :param diagnosis:
-        :return:
-        """
-        dvis = DiagnosisVisualizer()
-        diagnosis_info = dvis.make_diagnosis_record(diagnosis)
-        diagnosis_info['diagnosis_types'] = self.make_diagnosis_types_info(diagnosis, event)
-        return diagnosis_info
+        event_diagnosis_types_info = self.make_event_diagnosis_types_info(event)
+
+        event_diagnoses = Event_Diagnosis.query.filter(
+            Event_Diagnosis.event == event,
+            Event_Diagnosis.diagnosis == diagnosis,
+            Event_Diagnosis.deleted == 0,
+        )
+        types_info = {
+            diag_type.code: associated
+            for diag_type in event_diagnosis_types_info
+        }
+        types_info.update({
+            event_diagnosis.diagnosisType.code: event_diagnosis.diagnosisKind
+            for event_diagnosis in event_diagnoses
+        })
+        return types_info
 
     def make_action_type(self, action_type):
         """
@@ -1766,10 +1767,22 @@ class ActionVisualizer(object):
         return service_payment
 
     def make_diagnosis_types_info(self, diagnosis, action):
-        action_diagnoses = Action_Diagnosis.query.filter(Action_Diagnosis.action_id == action.id, Action_Diagnosis.diagnosis_id == diagnosis.id).all()
-        types_info = {diag_type.code: rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first() for diag_type in action.actionType.diagnosis_types}
-        for action_diagnosis in action_diagnoses:
-            types_info[action_diagnosis.diagnosisType.code] = action_diagnosis.diagnosisKind
+        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
+
+        action_diagnoses = Action_Diagnosis.query.filter(
+            Action_Diagnosis.deleted == 0,
+            Action_Diagnosis.action == action,
+            Action_Diagnosis.diagnosis == diagnosis,
+        )
+
+        types_info = {
+            diag_type.code: associated
+            for diag_type in action.actionType.diagnosis_types
+        }
+        types_info.update({
+            action_diagnosis.diagnosisType.code: action_diagnosis.diagnosisKind
+            for action_diagnosis in action_diagnoses
+        })
         return types_info
 
     def make_diagnosis_info(self, diagnosis, action):
@@ -1779,15 +1792,15 @@ class ActionVisualizer(object):
         return diagnosis_info
 
     def make_action_diagnoses_info(self, action):
-        from nemesis.models.diagnosis import Diagnosis
-        client_id = safe_traverse_attrs(action, 'event', 'client', 'id', default=None)
-        base_query = Diagnosis.query.filter(Diagnosis.client_id == client_id, Diagnosis.deleted == 0,
-                                            db.or_(Diagnosis.endDate.is_(None), Diagnosis.endDate >= action.begDate))
-        if action.endDate:  # действие закрыто
-            base_query = base_query.filter(Diagnosis.setDate <= action.endDate)
-
-        diagnoses = base_query.all()
-        return [self.make_diagnosis_info(diagnosis, action) for diagnosis in diagnoses]
+        dvis = DiagnosisVisualizer()
+        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate)
+        return [
+            dict(
+                dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),
+                diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, action),
+            )
+            for diagnostic in diagnostics
+        ]
 
 
 class DiagnosisVisualizer(object):
