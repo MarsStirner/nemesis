@@ -1331,7 +1331,7 @@ angular.module('WebMis20.directives')
                 };
                 scope.view_model = function () {
                     return ngModelCrtl.$viewValue;
-                }
+                };
             }
         }
     }])
@@ -1360,8 +1360,11 @@ angular.module('WebMis20.directives')
                         <tbody>\
                             <tr ng-if="!view_model().length"><td colspan="6"><b>[[diag_type.name]] диагноз не задан.</b> Начните прием пациента и укажите его [[diag_type.name]] диагноз.</td></tr>\
                             <tr ng-repeat="diag in view_model() | orderBy:sortByKind(diag_type.code)">\
-                                <td><rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
-                                     id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)" ng-if="canEdit"></rb-select>\
+                                <td>\
+                                    <div ng-if="canEdit">\
+                                        <rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
+                                         id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)"></rb-select>\
+                                    </div>\
                                     <span ng-if="!canEdit" \
                                           ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code != \'associated\'}"\
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
