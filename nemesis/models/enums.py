@@ -69,11 +69,10 @@ class IntoleranceType(Enum):
 class PerinatalRiskRate(EnumLoadable):
     __tablename__ = 'rbPerinatalRiskRate'
 
-    # assumed values
-    # undefined = 1, u'не определен'
-    # low = 2, u'низкий'
-    # medium = 3, u'средний'
-    # high = 4, u'высокий'
+    undefined = 1, u'не определен'
+    low = 2, u'низкий'
+    medium = 3, u'средний'
+    high = 4, u'высокий'
 
 
 class PreeclampsiaRisk(Enum):
