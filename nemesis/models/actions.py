@@ -184,22 +184,24 @@ class ActionProperty(db.Model):
     @property
     def value_raw(self):
         value_container = self.value_container
-        if not value_container:
-            return None
         if self.type.isVector:
-            return [item.value_ for item in value_container]
+            if value_container:
+                return [item.value_ for item in value_container]
+            return []
         else:
-            return value_container[0].value_
+            if value_container:
+                return value_container[0].value_
 
     @property
     def value(self):
         value_container = self.value_container
-        if not value_container:
-            return None
         if self.type.isVector:
-            return [item.value for item in value_container]
+            if value_container:
+                return [item.value for item in value_container]
+            return []
         else:
-            return value_container[0].value
+            if value_container:
+                return value_container[0].value
 
     @value.setter
     def value(self, value):
