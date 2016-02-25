@@ -4,6 +4,7 @@ import requests
 
 from sqlalchemy import orm
 
+from nemesis.models.diagnosis import ActionType_rbDiagnosisType
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
@@ -913,6 +914,7 @@ class ActionType(db.Model):
         primaryjoin='and_(ActionType_TissueType.master_id == ActionType.id, ActionType_TissueType.idx == 0)',
         uselist=False
     )
+    diagnosis_types = db.relationship('rbDiagnosisTypeN', secondary=ActionType_rbDiagnosisType)
 
     def get_property_type_by_name(self, name):
         return self.property_types.filter(ActionPropertyType.name == name).first()
@@ -929,6 +931,7 @@ class ActionType(db.Model):
             'flat_code': self.flatCode,
             'title': self.title,
             'context_name': self.context,
+            'diagnosis_types': self.diagnosis_types
         }
 
 

@@ -2,28 +2,27 @@
 import logging
 from datetime import datetime, time, timedelta, date
 
+import sqlalchemy
 from flask.ext.login import current_user
 from sqlalchemy.orm.util import aliased
-from sqlalchemy.sql.expression import between, func
-from nemesis.models.prescriptions import MedicalPrescription
-from nemesis.models.utils import safe_current_user_id
 
-from nemesis.systemwide import db, cache
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
+from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
-from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
-    TakenTissueJournal, OrgStructure_ActionType, ActionType_Service, ActionProperty_OrgStructure,
-    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
-from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
-from nemesis.models.exists import Person, ContractTariff, Contract, OrgStructure
-from nemesis.models.event import Event, EventType_Action, EventType
-from nemesis.models.client import Client
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
-from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.user import UserUtils
-
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
+from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
+                                    TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
+                                    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
+from nemesis.models.client import Client
+from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
+from nemesis.models.event import Event, EventType_Action
+from nemesis.models.exists import Person, OrgStructure
+from nemesis.models.prescriptions import MedicalPrescription
+from nemesis.models.utils import safe_current_user_id
+from nemesis.systemwide import db, cache
 
 logger = logging.getLogger('simple')
 
@@ -778,3 +777,44 @@ def get_assignable_apts(at_id, client_id=None):
         apt_data_list = []
 
     return apt_data_list
+
+
+def get_client_diagnostics(client, beg_date, end_date=None, including_closed=False):
+    """
+    :type client: nemesis.models.client.Client
+    :type beg_date: datetime.date
+    :type end_date: datetime.date | NoneType
+    :type including_closed: bool
+    :param client:
+    :param beg_date:
+    :param end_date:
+    :param including_closed:
+    :return:
+    :rtype: sqlalchemy.orm.Query
+    """
+    from nemesis.models.diagnosis import Diagnosis, Diagnostic
+    query = db.session.query(Diagnostic).join(
+        Diagnosis
+    ).filter(
+        Diagnosis.client == client,
+        Diagnosis.deleted == 0,
+        Diagnostic.deleted == 0,
+        )
+    if end_date is not None:
+        query = query.filter(
+            Diagnostic.createDatetime <= end_date,
+            Diagnosis.setDate <= end_date,
+            )
+    if not including_closed:
+        query = query.filter(
+            db.or_(
+                Diagnosis.endDate.is_(None),
+                Diagnosis.endDate >= beg_date,
+                )
+        )
+    query = query.group_by(
+        Diagnostic.diagnosis_id
+    )
+    query = query.with_entities(sqlalchemy.func.max(Diagnostic.id).label('zid')).subquery()
+    query = db.session.query(Diagnostic).join(query, query.c.zid == Diagnostic.id)
+    return query

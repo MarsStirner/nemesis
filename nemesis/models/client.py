@@ -152,7 +152,12 @@ class Client(db.Model):
                     'ClientAttach.deleted==0)',
         order_by="desc(ClientAttach.id)",
         lazy='dynamic')
-
+    diagnoses = db.relationship(
+        u'Diagnosis',
+        primaryjoin='and_('
+                    'Diagnosis.client_id==Client.id, '
+                    'Diagnosis.deleted==0)',
+        lazy='dynamic')
     VMP_coupons = db.relationship(
         u'VMPCoupon',
         primaryjoin='and_('

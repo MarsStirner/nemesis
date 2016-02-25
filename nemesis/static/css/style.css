@@ -999,6 +999,24 @@ iframe[seamless]{
     height: 100%;
 }
 
+.cuslom-tab-pills {
+    border-radius: 4px !important;
+    border-top: 0px;
+}
+
+li.active>a.cuslom-tab-pills {
+    border-top: 0px;
+}
+
+.centered-table, .centered-table th {
+    text-align: center;
+}
+
+
 .wysiwyg-panel blockquote {
     font-size: 14px;
+}
+
+.bottom_dashed {
+    border-bottom: 1px dashed;
 }
