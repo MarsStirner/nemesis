@@ -17,13 +17,13 @@ class Counter(object):
     def check_number_used(self, number):
         return False
 
-    def get_next_value(self, value):
-        taken = self.check_number_used(value)
+    def get_next_value(self, next_value):
+        taken = self.check_number_used(next_value+1)
         if taken:
-            value += 1
-            self.get_next_value(value)
+            next_value += 1
+            return self.get_next_value(next_value)
         else:
-            return value
+            return next_value
 
     def get_next_number(self):
         separator = self.counter.separator if self.counter.separator else ''
@@ -73,16 +73,10 @@ class Counter(object):
 
 
 class ContractCounter(Counter):
-    """
-    счётчик договоров
-    """
     def check_number_used(self, number):
         return Contract.query.filter(Contract.number == number).count() > 0
 
 
 class InvoiceCounter(Counter):
-    """
-    счётчик счетов
-    """
     def check_number_used(self, number):
         return Invoice.query.filter(Invoice.number == number).count() > 0
