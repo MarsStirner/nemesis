@@ -582,7 +582,9 @@ angular.module('WebMis20')
 
             var used_codes = [];
             scope.$watch(function () { return ngModelCtrl.$modelValue; }, function (n, o) {
-                used_codes = n.map(function (mkb) { return mkb.code });
+                used_codes = (_.isArray(n))
+                    ?(_.map(n, function (mkb) { return mkb.code }))
+                    :([]);
             });
             scope.filterMkbChoices = function (mkb) {
                 return !used_codes.has(mkb.code);
