@@ -1617,6 +1617,27 @@ angular.module('WebMis20.directives')
             ng-disabled="form.DiagnosisForm.$invalid || edit_mkb.same_mkb">Сохранить</button>\
         </div>')
     }])
+.directive('simpleCollapsable', [function () {
+    return {
+        restrict: 'AEC',
+        scope: {},
+        transclude: true,
+        template:
+'<div ng-class="{\'simple-collapsed\': collapsed}" style="position: relative;">\
+    <div ng-transclude></div>\
+    <div style="height: 30px;"></div>\
+    <div style="height: 30px; position: absolute; bottom:0; width: 100%; background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));">\
+        <div style="position:relative; width: 100%; height: 100%;">\
+            <a style="position:absolute; bottom: 0; right: 0;" href="#" ng-click="collapsed=!collapsed" ng-show="collapsed">[ Развернуть ]</a>\
+            <a style="position:absolute; bottom: 0; right: 0;" href="#" ng-click="collapsed=!collapsed" ng-show="!collapsed">[ Свернуть ]</a>\
+        </div>\
+    </div>\
+</div>',
+        link: function (scope, element, attributes) {
+            scope.collapsed = true;
+        }
+    }
+}])
 ;
 angular.module('WebMis20.validators', [])
 .directive('enumValidator', function() {
