@@ -1420,8 +1420,10 @@ class StationaryEventVisualizer(EventVisualizer):
             result['end_date'] = action.endDate
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
+            result['action_type'] = action.actionType
             result['event_id'] = action.event_id
             result['id'] = action.id
+            result['diagnoses'] = avis.make_action_diagnoses_info(action)
         return result
 
     def make_received(self, event, new=False):

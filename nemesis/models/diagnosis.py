@@ -220,6 +220,7 @@ class rbDiagnosisTypeN(db.Model):
     code = db.Column(db.String(128), unique=True, nullable=False)
     name = db.Column(db.String(256), nullable=False)
     requireResult = db.Column(db.Integer)
+    rank = db.Column(db.Integer)
 
     def __unicode__(self):
         return self.name
@@ -229,7 +230,8 @@ class rbDiagnosisTypeN(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'require_result': self.requireResult
+            'require_result': self.requireResult,
+            'rank': self.rank
         }
 
 
