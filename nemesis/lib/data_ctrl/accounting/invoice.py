@@ -74,13 +74,13 @@ class InvoiceController(BaseModelController):
         return invoice
 
     def update_invoice_number(self, invoice, number):
-        contract_counter = InvoiceCounter("invoice")
-        self.check_number_used(number, contract_counter)
+        invoice_counter = InvoiceCounter("invoice")
+        self.check_number_used(number, invoice_counter)
         number = safe_int(number)
         setattr(invoice, 'number', number)
-        if number == contract_counter.counter.value + 1:
-            contract_counter.increment_value()
-            self.session.add(contract_counter.counter)
+        if number == invoice_counter.counter.value + 1:
+            invoice_counter.increment_value()
+            self.session.add(invoice_counter.counter)
 
     def update_invoice_items(self, invoice, item_list_data):
         item_list = []

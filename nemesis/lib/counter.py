@@ -2,6 +2,7 @@
 __author__ = 'plakrisenko'
 import datetime
 
+from nemesis.lib.utils import safe_int
 from nemesis.models.client import ClientIdentification
 from nemesis.models.exists import rbCounter, rbAccountingSystem
 from nemesis.models.accounting import Contract, Invoice
@@ -75,6 +76,9 @@ class Counter(object):
 class ContractCounter(Counter):
     def check_number_used(self, number):
         return Contract.query.filter(Contract.number == number).count() > 0
+
+    def get_next_number(self):
+        return safe_int(super(ContractCounter, self).get_next_number())
 
 
 class InvoiceCounter(Counter):
