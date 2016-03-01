@@ -15,6 +15,7 @@ from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_traverse
 from nemesis.lib.const import VOL_POLICY_CODES, DMS_EVENT_CODE
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.utils import get_default_org
+from nemesis.lib.counter import ContractCounter
 from .utils import calc_payer_balance
 from .pricelist import PriceListController
 
@@ -32,6 +33,10 @@ class ContractController(BaseModelController):
         contract = Contract()
         contract.date = now
         contract.begDate = now
+
+        contract_counter = ContractCounter('contract')
+        contract.number = contract_counter.get_next_number()
+
         finance_id = safe_int(params.get('finance_id'))
         if finance_id:
             contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
@@ -63,9 +68,11 @@ class ContractController(BaseModelController):
 
     def update_contract(self, contract, json_data):
         json_data = self._format_contract_data(json_data)
-        for attr in ('number', 'date', 'begDate', 'endDate', 'finance', 'contract_type', 'resolution', ):
+        for attr in ('date', 'begDate', 'endDate', 'finance', 'contract_type', 'resolution', ):
             if attr in json_data:
                 setattr(contract, attr, json_data.get(attr))
+
+        self.update_contract_number(contract, json_data['number'])
         self.update_contract_ca_payer(contract, json_data['payer'])
         self.update_contract_ca_recipient(contract, json_data['recipient'])
         self.update_contract_pricelist(contract, json_data['pricelist_list'])
@@ -75,6 +82,15 @@ class ContractController(BaseModelController):
     def delete_contract(self, contract):
         contract.deleted = 1
         return contract
+
+    def update_contract_number(self, contract, number):
+        contract_counter = ContractCounter("contract")
+        self.check_number_used(number, contract_counter)
+        number = safe_int(number)
+        setattr(contract, 'number', number)
+        if number == contract_counter.counter.value + 1:
+            contract_counter.increment_value()
+            self.session.add(contract_counter.counter)
 
     def update_contract_ca_payer(self, contract, ca_data):
         self.check_existing_ca(ca_data)
@@ -99,6 +115,11 @@ class ContractController(BaseModelController):
             ca_recipient = contragent_ctrl.update_contragent(contract.recipient, ca_data)
         contract.recipient = ca_recipient
         return ca_recipient
+
+    def check_number_used(self, number, counter):
+        same_number = counter.check_number_used(number)
+        if same_number:
+            raise ApiException(409, u'Невозможно сохранить контракт: контракт с таким номером уже существует')
 
     def check_existing_ca(self, ca_data):
         contragent_id = safe_int(ca_data.get('id'))
