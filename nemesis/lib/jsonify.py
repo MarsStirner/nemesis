@@ -1851,6 +1851,7 @@ class DiagnosisVisualizer(object):
         :return:
         """
         pvis = PersonTreeVisualizer()
+        diagnostic = diagnostic or diagnosis._diagnostic
         return {
             'id': diagnosis.id,
             'set_date': diagnosis.setDate,
@@ -1858,5 +1859,6 @@ class DiagnosisVisualizer(object):
             'client_id': diagnosis.client.id,
             'deleted': diagnosis.deleted,
             'person': pvis.make_person_ws(diagnosis.person) if diagnosis.person else None,
-            'diagnostic': self.make_diagnostic_record(diagnostic or diagnosis._diagnostic)
+            'modify_person': pvis.make_person_ws(diagnosis.modifyPerson if diagnosis.endDate else diagnostic.modifyPerson),
+            'diagnostic': self.make_diagnostic_record(diagnostic),
         }
