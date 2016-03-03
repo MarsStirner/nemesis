@@ -1013,7 +1013,8 @@ angular.module('WebMis20.directives')
             Person:  ui_select_template,
             Service: ui_select_template,
             MKB: '<ui-mkb ng-model="model"></ui-mkb>',
-            SpecialVariable: 'Special Variable'
+            SpecialVariable: 'Special Variable',
+            Area: '<ui-select ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
         };
         return {
             restrict: 'A',

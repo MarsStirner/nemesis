@@ -854,4 +854,35 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectArea', ['$http', 'RisarApi', function ($http, RisarApi) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.name ]]</ui-select-match>\
+<ui-select-choices group-by="group_areas" repeat="area in areas">\
+    <div ng-bind-html="area.name | highlight: $select.search"></div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите район';
+                    scope.group_areas = function (item){
+                        return scope.level1[item.parent_code];
+                    };
+                    scope.get_areas = function () {
+                        return $http.get(url_area_list)
+                        .then(function (res) {
+                            scope.level1 = res.data.result[0];
+                            scope.areas = res.data.result[1];
+                        });
+                    };
+                    scope.get_areas();
+                }
+            }
+        }
+    }
+}])
 ;
