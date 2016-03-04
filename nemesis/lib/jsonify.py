@@ -1068,6 +1068,7 @@ class EventVisualizer(object):
             'flat_code': action_type.flatCode,
             'class': action_type.class_,
             'is_required_tissue': action_type.isRequiredTissue,
+            'context': action_type.context
         }
 
     def make_action(self, action):
@@ -1851,7 +1852,6 @@ class DiagnosisVisualizer(object):
         :return:
         """
         pvis = PersonTreeVisualizer()
-        diagnostic = diagnostic or diagnosis._diagnostic
         return {
             'id': diagnosis.id,
             'set_date': diagnosis.setDate,
@@ -1859,6 +1859,5 @@ class DiagnosisVisualizer(object):
             'client_id': diagnosis.client.id,
             'deleted': diagnosis.deleted,
             'person': pvis.make_person_ws(diagnosis.person) if diagnosis.person else None,
-            'modify_person': pvis.make_person_ws(diagnosis.modifyPerson if diagnosis.endDate else diagnostic.modifyPerson),
-            'diagnostic': self.make_diagnostic_record(diagnostic),
+            'diagnostic': self.make_diagnostic_record(diagnostic or diagnosis._diagnostic)
         }
