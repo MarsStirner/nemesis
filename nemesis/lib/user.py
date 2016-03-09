@@ -291,7 +291,7 @@ class UserUtils(object):
                 current_user.has_right('evtEditClosed')
             ) or (
                 not event.is_closed and current_user.has_right('clientEventUpdate')
-            ) and not event.is_stationary)  # TODO: or check exec_person.id?
+            ))  # TODO: or check exec_person.id?
         )
 
     @staticmethod
