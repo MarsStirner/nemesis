@@ -3,7 +3,6 @@
 import pytz
 
 from flask import Flask, url_for
-from celery import Celery
 from werkzeug.contrib.profiler import ProfilerMiddleware
 
 from nemesis.lib.frontend import frontend_config
@@ -19,13 +18,14 @@ def bootstrap_app(templates_dir):
     if templates_dir:
         app.template_folder = templates_dir
 
-    celery.init_app(app)
     db.init_app(app)
     babel.init_app(app)
     login_manager.init_app(app)
     principal.init_app(app)
     beaker_session.init_app(app)
     cache.init_app(app)
+    if app.config['CELERY_ENABLED']:
+        celery.init_app(app)
 
     @babel.timezoneselector
     def get_timezone():
@@ -39,7 +39,7 @@ def bootstrap_app(templates_dir):
     import nemesis.context_processors
 
     init_logger()
-    create_databases()
+    create_databases(app)
     _init_enums(app)
 
 
@@ -77,18 +77,19 @@ def init_logger():
     logger.debug('SimpleLogs Handler initialized')
 
 
-def create_databases():
+def create_databases(app):
     from systemwide import db
-    with app.app_context():
-        try:
-            db.create_all(bind='celery_tasks')
-        except Exception, e:
-            from celery_config import CAT_DB_NAME
-            raise Exception(
-                u'Database with name `{0}` should exist. Additional info: {1}'.format(
-                    CAT_DB_NAME, unicode(e.message)
+    if app.config['CELERY_ENABLED']:
+        with app.app_context():
+            try:
+                db.create_all(bind='celery_tasks')
+            except Exception, e:
+                from celery_config import CAT_DB_NAME
+                raise Exception(
+                    u'Database with name `{0}` should exist. Additional info: {1}'.format(
+                        CAT_DB_NAME, unicode(e.message)
+                    )
                 )
-            )
 
 
 def _init_enums(app):
