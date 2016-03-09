@@ -1,18 +1,25 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, url_for
+
 import pytz
+
+from flask import Flask, url_for
+from celery import Celery
 from werkzeug.contrib.profiler import ProfilerMiddleware
+
 from nemesis.lib.frontend import frontend_config
+
 
 app = Flask(__name__)
 
 
 # noinspection PyUnresolvedReferences
 def bootstrap_app(templates_dir):
-    from systemwide import db, cache, babel, principal, login_manager, beaker_session
+    from systemwide import db, cache, babel, principal, login_manager, beaker_session, celery
 
-    app.template_folder = templates_dir
+    if templates_dir:
+        app.template_folder = templates_dir
 
+    celery.init_app(app)
     db.init_app(app)
     babel.init_app(app)
     login_manager.init_app(app)
@@ -32,6 +39,7 @@ def bootstrap_app(templates_dir):
     import nemesis.context_processors
 
     init_logger()
+    create_databases()
     _init_enums(app)
 
 
@@ -67,6 +75,20 @@ def init_logger():
     logger.addHandler(logging.StreamHandler())
 
     logger.debug('SimpleLogs Handler initialized')
+
+
+def create_databases():
+    from systemwide import db
+    with app.app_context():
+        try:
+            db.create_all(bind='celery_tasks')
+        except Exception, e:
+            from celery_config import CAT_DB_NAME
+            raise Exception(
+                u'Database with name `{0}` should exist. Additional info: {1}'.format(
+                    CAT_DB_NAME, unicode(e.message)
+                )
+            )
 
 
 def _init_enums(app):
