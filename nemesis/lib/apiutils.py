@@ -37,8 +37,12 @@ class ApiException(Exception):
             )
 
 
-def json_dumps(result):
-    return json.dumps(result, cls=WebMisJsonEncoder, encoding='utf-8', ensure_ascii=False)
+def json_dumps(result, pretty=False):
+    more_args = {}
+    if pretty:
+        more_args.update(dict(sort_keys=True, indent=4, separators=(',', ': ')))
+    return json.dumps(result, cls=WebMisJsonEncoder, encoding='utf-8', ensure_ascii=False, **more_args)
+
 
 
 def encode_tb(part):

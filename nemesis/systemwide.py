@@ -5,6 +5,8 @@ from flask.ext.login import LoginManager
 from flask.ext.principal import Principal
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.cache import Cache
+from flask.ext.celery import Celery
+
 
 db = SQLAlchemy()
 
@@ -17,3 +19,5 @@ principal = Principal()
 login_manager = LoginManager()
 
 beaker_session = BeakerSession()
+
+celery = Celery()
