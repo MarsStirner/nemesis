@@ -177,14 +177,12 @@ class ContractController(BaseModelController):
 
     def get_avalable_contracts(self, client_id, finance_id, set_date):
         selecter = self.get_selecter()
-        selecter.set_available_contracts(client_id, finance_id, set_date)
-        available_contracts = selecter.get_all()
+        available_contracts = selecter.get_available_contracts(client_id, finance_id, set_date)
         return available_contracts
 
     def get_last_contract_number(self):
         sel = self.get_selecter()
-        sel.set_last_number()
-        return sel.get_first()
+        return sel.get_last_number()
 
 
 class ContragentController(BaseModelController):
@@ -379,7 +377,7 @@ class ContractSelecter(BaseSelecter):
 
         return self
 
-    def set_available_contracts(self, client_id, finance_id, set_date):
+    def get_available_contracts(self, client_id, finance_id, set_date):
         rbFinance = self.model_provider.get('rbFinance')
         Contract = self.model_provider.get('Contract')
         rbContractType = self.model_provider.get('rbContractType')
@@ -450,18 +448,20 @@ class ContractSelecter(BaseSelecter):
             )
             self.query = self.model_provider.get_query('Contract').select_entity_from(
                 union(contingent_query, through_policy_query)
-            ).order_by(Contract.date)
+            ).order_by(Contract.date.desc())
         else:
-            self.query = contingent_query.order_by(Contract.date)
+            self.query = contingent_query.order_by(Contract.date.desc())
 
-    def set_last_number(self):
+        return self.get_all()
+
+    def get_last_number(self):
         Contract = self.model_provider.get('Contract')
         self.query = self.query.filter(
             Contract.deleted == 0
         ).order_by(
             Contract.id.desc()
         ).with_entities(Contract.number)
-        return self
+        return self.get_first()
 
 
 class ContragentSelecter(BaseSelecter):
