@@ -84,13 +84,14 @@ class ContractController(BaseModelController):
         return contract
 
     def update_contract_number(self, contract, number):
-        contract_counter = ContractCounter("contract")
-        self.check_number_used(number, contract_counter)
         number = safe_int(number)
-        setattr(contract, 'number', number)
-        if number == contract_counter.counter.value + 1:
-            contract_counter.increment_value()
-            self.session.add(contract_counter.counter)
+        if not contract.id or contract.number != number:
+            contract_counter = ContractCounter("contract")
+            self.check_number_used(number, contract_counter)
+            setattr(contract, 'number', number)
+            if number == contract_counter.counter.value + 1:
+                contract_counter.increment_value()
+                self.session.add(contract_counter.counter)
 
     def update_contract_ca_payer(self, contract, ca_data):
         self.check_existing_ca(ca_data)
