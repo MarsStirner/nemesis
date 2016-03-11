@@ -212,6 +212,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     );
                 };
                 $scope.hidden_nodes = [];
+                $scope.all_nodes_expanded = {value: false};
                 $scope.toggle_vis = function (node_id) {
                     if ($scope.hidden_nodes.has(node_id)) {
                         $scope.hidden_nodes.splice($scope.hidden_nodes.indexOf(node_id), 1);
@@ -363,11 +364,27 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         if (service.personally_acceptable(at_item.id) && service.tissue_acceptable(at_item, tissue)) {
                             personal_check = true;
                         }
+                        if (at_item.children.length) {
+                            $scope.hidden_nodes.push(at_item.id) // по умолчанию все узлы свернуты
+                        }
                     });
                     $scope.conditions.os_check = $scope.os_check_enabled = os_check;
                     $scope.conditions.person_check = $scope.personal_check_enabled = personal_check;
                     $scope.set_filter();
                 });
+                $scope.$watch('all_nodes_expanded.value', function(n, o){
+                    if (n!=o){
+                        if (n){
+                            $scope.hidden_nodes = [];
+                        } else {
+                            angular.forEach($scope.tree.children, function (at_item) {
+                                if (at_item.children.length) {
+                                    $scope.hidden_nodes.push(at_item.id)
+                                }
+                            });
+                        }
+                    }
+                })
             };
             return $modal.open({
                 templateUrl: templateUrl,
@@ -450,6 +467,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     Только разрешённые в моём отделении\
                 </label>\
             </div>\
+            <button type="button" class="btn btn-default" ng-click="all_nodes_expanded.value=!all_nodes_expanded.value">\
+            [[all_nodes_expanded.value ? \'Свернуть все узлы\' : \'Развернуть все узлы\']]</button>\
             <div class="ui-treeview">\
                 <ul ng-repeat="root in tree.children">\
                     <li sf-treepeat="node in children of root">\
