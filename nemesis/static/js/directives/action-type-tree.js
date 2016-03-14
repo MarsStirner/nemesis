@@ -255,35 +255,28 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     });
                 };
                 $scope.create_action = function (node) {
-                    $http.get(url_api_check_action_service_requirement + node.id)
-                        .success(function (data) {
-                            var service_required = data.result,
-                                service_available = $scope.at_service_data.hasOwnProperty(node.id),
-                                service_data = $scope.at_service_data[node.id];
-                            if (service_required && !service_available) {
-                                MessageBox.error(
-                                    'Ошибка создания',
-                                    ('Невозможно создать "{0}", т.к. для данной услуги отсутствует позиция ' +
-                                     'в прайс-листе.').format(node.name)
-                                );
-                            } else {
-                                var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
-                                    '&event_id=' + $scope.event_id;
-                                if (service_available) {
-                                    url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
-                                        url, service_data.price_list_item_id, service_data.service_kind.id
-                                    );
-                                }
-                                WMWindowSync.openTab(url, onCreateCallback);
-                                $scope.$close();
-                            }
-                        })
-                        .error(function () {
-                            MessageBox.error(
-                                'Ошибка',
-                                'Невозможно проверить обязательность услуги для выбранного типа'
+                    // или сохранить сразу или открыть вкладку с редактированием нового экшена
+                    if (filter_params.instant_create) {
+                        var data = {
+                            action_type_id: node.id,
+                            event_id: $scope.event_id,
+                            service: angular.extend($scope.at_service_data[node.id], {event_id: $scope.event_id})
+                        };
+                        $http.post('/actions/api/action/', data)
+                            .then($scope.$close).then(onCreateCallback);
+                    } else {
+                        var service_available = $scope.at_service_data.hasOwnProperty(node.id),
+                            service_data = $scope.at_service_data[node.id];
+                        var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
+                            '&event_id=' + $scope.event_id;
+                        if (service_available) {
+                            url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
+                                url, service_data.price_list_item_id, service_data.service_kind.id
                             );
-                        });
+                        }
+                        WMWindowSync.openTab(url, onCreateCallback);
+                        $scope.$close();
+                    }
                 };
                 $scope.create_actions = function () {
                     $http.post(
