@@ -78,9 +78,16 @@ class ContractCounter(Counter):
         return Contract.query.filter(Contract.number == number).count() > 0
 
     def get_next_number(self):
-        return safe_int(super(ContractCounter, self).get_next_number())
+        """В текущей реализации номер может состоять только из цифр"""
+        n = super(ContractCounter, self).get_next_number()
+        return n if n.isdigit() else None
 
 
 class InvoiceCounter(Counter):
     def check_number_used(self, number):
         return Invoice.query.filter(Invoice.number == number).count() > 0
+
+    def get_next_number(self):
+        """В текущей реализации номер может состоять только из цифр"""
+        n = super(InvoiceCounter, self).get_next_number()
+        return n if n.isdigit() else None

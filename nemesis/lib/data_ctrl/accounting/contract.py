@@ -11,7 +11,7 @@ from nemesis.models.refbooks import rbFinance
 from nemesis.models.client import Client
 from nemesis.models.organisation import Organisation
 from nemesis.models.enums import ContragentType, ContractTypeContingent, ContractContragentType
-from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_traverse
+from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_traverse, safe_bool
 from nemesis.lib.const import VOL_POLICY_CODES, DMS_EVENT_CODE
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.utils import get_default_org
@@ -34,8 +34,9 @@ class ContractController(BaseModelController):
         contract.date = now
         contract.begDate = now
 
-        contract_counter = ContractCounter('contract')
-        contract.number = contract_counter.get_next_number()
+        if safe_bool(params.get('generate_number', False)):
+            contract_counter = ContractCounter('contract')
+            contract.number = contract_counter.get_next_number()
 
         finance_id = safe_int(params.get('finance_id'))
         if finance_id:
@@ -84,12 +85,11 @@ class ContractController(BaseModelController):
         return contract
 
     def update_contract_number(self, contract, number):
-        number = safe_int(number)
         if not contract.id or contract.number != number:
             contract_counter = ContractCounter("contract")
             self.check_number_used(number, contract_counter)
             setattr(contract, 'number', number)
-            if number == contract_counter.counter.value + 1:
+            if number.isdigit() and int(number) == contract_counter.counter.value + 1:
                 contract_counter.increment_value()
                 self.session.add(contract_counter.counter)
 
@@ -126,6 +126,8 @@ class ContractController(BaseModelController):
         contragent_id = safe_int(ca_data.get('id'))
         client_id = safe_traverse(ca_data, 'client', 'id')
         org_id = safe_traverse(ca_data, 'org', 'id')
+        if client_id is None and org_id is None:
+            raise ApiException(422, u'Невозможно сохранить договор: не выбраны стороны договора')
         contragent_ctrl = ContragentController()
         ca = contragent_ctrl.get_existing_contragent(client_id, org_id, contragent_id)
         if ca is not None:
@@ -345,9 +347,10 @@ class ContractSelecter(BaseSelecter):
             ).outerjoin(Organisation, Client)
             query_str = u'%{0}%'.format(safe_unicode(flt_args['payer_query']))
             self.query = self.query.filter(or_(
-                or_(Client.firstName.like(query_str),
-                    Client.lastName.like(query_str),
-                    Client.patrName.like(query_str)),
+                func.concat_ws(' ',
+                               Client.lastName,
+                               Client.firstName,
+                               Client.patrName).like(query_str),
                 or_(Organisation.shortName.like(query_str),
                     Organisation.fullName.like(query_str))
             ))
@@ -357,9 +360,10 @@ class ContractSelecter(BaseSelecter):
             ).outerjoin(Organisation, Client)
             query_str = u'%{0}%'.format(safe_unicode(flt_args['recipient_query']))
             self.query = self.query.filter(or_(
-                or_(Client.firstName.like(query_str),
-                    Client.lastName.like(query_str),
-                    Client.patrName.like(query_str)),
+                func.concat_ws(' ',
+                               Client.lastName,
+                               Client.firstName,
+                               Client.patrName).like(query_str),
                 or_(Organisation.shortName.like(query_str),
                     Organisation.fullName.like(query_str))
             ))
