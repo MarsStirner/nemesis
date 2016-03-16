@@ -11,6 +11,7 @@ angular.module('WebMis20.directives')
             link: function (scope, element, attrs, ctrl) {
                 var _id = attrs.id,
                     name = attrs.name,
+                    class_ = attrs.class,
                     theme = attrs.theme || "select2",
                     ngDisabled = attrs.ngDisabled,
                     ngRequired = attrs.ngRequired,
@@ -49,6 +50,7 @@ angular.module('WebMis20.directives')
                 );
                 if (_id) uiSelect.attr('id', _id);
                 if (name) uiSelect.attr('name', name);
+                if (class_) uiSelect.attr('class', class_);
                 if (theme) uiSelect.attr('theme', theme);
                 if (ngDisabled) uiSelect.attr('ng-disabled', ngDisabled);
                 if (ngRequired) uiSelect.attr('ng-required', ngRequired);
