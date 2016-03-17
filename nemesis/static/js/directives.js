@@ -1345,9 +1345,9 @@ angular.module('WebMis20.directives')
 .run(['$templateCache', function ($templateCache) {
     $templateCache.put('/WebMis20/wm-diagnosis-new.html',
         '<div>\
-            <ul class="nav nav-pills">\
+            <ul class="nav nav-tabs">\
                 <li role="presentation" ng-repeat="diag_type in diagTypes" ng-class="{\'active\': $index == 0}">\
-                    <a href="#[[diag_type.code]]" aria-controls="home" role="tab" data-toggle="tab" class="cuslom-tab-pills">[[diag_type.name]]</a>\
+                    <a href="#[[diag_type.code]]" aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
                 </li>\
             </ul>\
             <div class="tab-content">\
