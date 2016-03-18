@@ -312,6 +312,7 @@ angular.module('WebMis20.directives')
                 };
                 var pharmExpertResult = {};
                 var checkPE = function () {
+                    if (!PharmExpertIntegration.enabled()) return;
                     var data = prepareDataPharmExpert();
                     PharmExpertIntegration.check(data).then(
                         function (result) {
