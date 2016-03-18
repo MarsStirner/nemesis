@@ -135,7 +135,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         return loader.promise;
     };
     var cleanHtml = function (html) {
-        return html && html.replace(/(<br>|\s|<div><br><\/div>|&nbsp;)*$/, '');
+        return html && html.replace(new RegExp('(<br>|\s|<div><br><\/div>|&nbsp;)', 'g'), '');
     };
     var defaults = {
         toolbarSelector: '[data-role=editor-toolbar]',
