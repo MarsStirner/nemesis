@@ -257,13 +257,26 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.create_action = function (node) {
                     // или сохранить сразу или открыть вкладку с редактированием нового экшена
                     if (filter_params.instant_create) {
+                        var service;
+                        if ($scope.at_service_data.hasOwnProperty(node.id)) {
+                            service = angular.extend($scope.at_service_data[node.id], {event_id: $scope.event_id});
+                        }
                         var data = {
                             action_type_id: node.id,
                             event_id: $scope.event_id,
-                            service: angular.extend($scope.at_service_data[node.id], {event_id: $scope.event_id})
+                            service: service
                         };
                         $http.post('/actions/api/action/', data)
-                            .then($scope.$close).then(onCreateCallback);
+                            .then(
+                                $scope.$close,
+                                function (response) {
+                                    return MessageBox.error(
+                                        'Ошибка сохранения',
+                                        response.data.meta.name
+                                    );
+                                }
+                            )
+                            .then(onCreateCallback);
                     } else {
                         var service_available = $scope.at_service_data.hasOwnProperty(node.id),
                             service_data = $scope.at_service_data[node.id];

@@ -56,6 +56,9 @@ DP_CURRENT_USER = 4
 class ActionException(Exception): pass
 
 
+class ActionServiceException(Exception): pass
+
+
 def create_action(action_type_id, event, src_action=None, assigned=None, properties=None, data=None):
     """
     Базовое создание действия, например для отправки клиентской стороне.
@@ -215,7 +218,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     # Service
     if action_needs_service(action):
         if not service_data:
-            raise ActionException(u'Для action требуется услуга, но данные service_data отсутствуют')
+            raise ActionServiceException(u'Для action требуется услуга, но данные service_data отсутствуют')
 
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         service_ctrl = ServiceController()
