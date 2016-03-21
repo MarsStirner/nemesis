@@ -16,6 +16,7 @@ from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
     urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventPoliclinicPaidClose,
     urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose, urEventDiagnosticBudgetClose)
+from nemesis.lib.settings import Settings
 
 
 class User(UserMixin):
@@ -238,7 +239,7 @@ modeRights = (
 class UserUtils(object):
 
     @staticmethod
-    def can_create_event(event, out_msg=None):
+    def can_create_event(event, out_msg=None, force_create=False):
         if out_msg is None:
             out_msg = {'message': u'ok'}
 
@@ -249,6 +250,7 @@ class UserUtils(object):
             return False
         if current_user.has_right('adm'):
             return True
+
         # есть ли ограничения на создание обращений определенных EventType
         if event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidCreate):
@@ -279,6 +281,18 @@ class UserUtils(object):
             if not current_user.has_right(urEventDiagnosticBudgetCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
+
+        # нет ли открытых ИБ
+        if Settings.getBool('Event.Create.CheckExistingOpen', False):
+            from blueprints.event.lib.utils import check_existing_open_events
+            exist = check_existing_open_events(event.client_id, 'stationary')
+            if exist and not force_create:
+                out_msg['message'] = u'Невозможно создать обращение, т.к. уже имеется открытая ИБ'
+                out_msg['obj'] = {
+                    'err_code': 'err_existing_open_event'
+                }
+                return False
+
         # все остальные можно
         return True
 

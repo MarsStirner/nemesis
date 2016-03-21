@@ -97,7 +97,8 @@ angular.module('WebMis20.services.models').
                     payment: this.payment,
                     services: this.services,
                     ticket_id: this.ticket_id,
-                    close_event: close_event
+                    close_event: close_event,
+                    force_create: this.force_create
                 })
                 .success(function(response) {
                     var event_id = response.result.id,
@@ -108,7 +109,7 @@ angular.module('WebMis20.services.models').
                     });
                 })
                 .error(function(response) {
-                    deferred.reject(response.meta.name);
+                    deferred.reject(response);
                 });
                 return deferred.promise;
             };

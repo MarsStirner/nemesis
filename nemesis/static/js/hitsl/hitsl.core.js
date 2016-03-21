@@ -408,7 +408,7 @@ angular.module('hitsl.core', [])
         </div>\
         <div class="modal-footer">\
             <button type="button" class="btn btn-danger" ng-click="$close(true)">Да</button>\
-            <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
+            <button type="button" class="btn btn-default" ng-click="$dismiss()" autofocus>Нет</button>\
         </div>'
     );
 }])
