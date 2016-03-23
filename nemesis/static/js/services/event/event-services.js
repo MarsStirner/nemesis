@@ -2,8 +2,9 @@
 
 angular.module('WebMis20.services').
     service('WMEventServices', [
-            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind',
-            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind) {
+            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind', 'RefBookService',
+            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind, RefBookService) {
+        var rbDiagnosisType = RefBookService.get('rbDiagnosisTypeN');
         function contains_sg (event, at_id, service_id) {
             return event.services.some(function (sg) {
                 return sg.at_id === at_id && (sg.service_id !== undefined ? sg.service_id === service_id : true);
@@ -42,6 +43,54 @@ angular.module('WebMis20.services').
             deferred.resolve();
             return deferred.promise;
         }
+
+        function check_event_diagnoses_results(event){
+            var deferred = $q.defer();
+            var diags_without_result = event.diagnoses.filter(function(diag){
+                for (var diag_type_code in diag.diagnosis_types){
+                    var diag_type = rbDiagnosisType.get_by_code(diag_type_code);
+                    if (diag.diagnosis_types[diag_type_code].code != 'associated' && diag_type.require_result && !diag.diagnostic.ache_result){
+                        return true
+                    }
+                }
+                return false
+            })
+
+            if(diags_without_result.length) {
+                var msg = ('Необходимо указать результат для диагнозов:{0} <br><br>').format(
+                    diags_without_result.reduce(function(a, b){return a + '<br>' + b.diagnostic.mkb.code}, ""));
+                return MessageBox.error('Невозможно закрыть обращение', msg);
+            }
+
+            deferred.resolve();
+            return deferred.promise;
+        }
+
+        function check_event_main_diagnoses(event){
+            var deferred = $q.defer();
+            var types_with_main = [];
+            event.diagnoses.forEach(function(diag){
+                for (var diag_type_code in diag.diagnosis_types){
+                    if(diag.diagnosis_types[diag_type_code].code == 'main'){
+                        types_with_main.push(diag_type_code);
+                    }
+                }
+            })
+
+            var types_without_main = event.info.diagnosis_types.filter(function(type){
+                return types_with_main.indexOf(type.code) == -1
+            })
+
+            if(types_without_main.length){
+                var msg = ('Необходимо указать основной диагноз на вкладках:<br> * {0}<br><br>').format(
+                    types_without_main.reduce(function(a, b){ return (a.name || a ) + '<br> * ' + b.name})
+                );
+                return MessageBox.error('Невозможно закрыть обращение', msg);
+            }
+            deferred.resolve();
+            return deferred.promise;
+        }
+
         function check_event_unclosed_actions(event) {
             var deferred = $q.defer();
             var unclosed_actions = event.info.actions.filter(function (action) {
@@ -121,31 +170,6 @@ angular.module('WebMis20.services').
                 });
                 return deferred.promise;
             },
-            get_new_diagnosis: function (action_info) {
-                return {
-                    'id': null,
-                    'set_date': null,
-                    'end_date': null,
-                    'diagnosis_type': null,
-                    'deleted': 0,
-                    'diagnosis': {
-                        'id': null,
-                        'mkb': null,
-                        'mkbex': null,
-                        'client_id': null
-                    },
-                    'character': null,
-                    'person': CurrentUser.get_main_user().info,
-                    'notes': null,
-                    'action_id': null,
-                    'action': action_info ? action_info : null,
-                    'result': null,
-                    'ache_result': null,
-                    'health_group': null,
-                    'trauma_type': null,
-                    'phase': null
-                };
-            },
             add_diagnosis: function (event, diagnosis) {
                 event.diagnoses.push(diagnosis);
             },
@@ -179,9 +203,11 @@ angular.module('WebMis20.services').
             check_can_close_event: function (event) {
                 var deferred = $q.defer();
                 check_event_results(event).then(function () {
-                    check_event_final_diagnosis(event).then(function () {
-                        check_event_unclosed_actions(event).then(function () {
-                            deferred.resolve();
+                    check_event_diagnoses_results(event).then(function () {
+                        check_event_main_diagnoses(event).then(function () {
+                            check_event_unclosed_actions(event).then(function () {
+                                deferred.resolve();
+                            });
                         });
                     });
                 });

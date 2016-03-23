@@ -50,13 +50,15 @@ angular.module('WebMis20.services', []).
                         interval = undefined;
                     };
                 var w = $window.open(url);
-                interval = $interval(function () {
-                    if (w.closed) {
-                        (onCloseCallback || angular.noop)();
-                        clearInterval();
-                        w = undefined;
-                    }
-                }, 500);
+                if (w !== undefined) {
+                    interval = $interval(function () {
+                        if (w.closed) {
+                            (onCloseCallback || angular.noop)();
+                            clearInterval();
+                            w = undefined;
+                        }
+                    }, 500);
+                }
             }
         }
     }]);

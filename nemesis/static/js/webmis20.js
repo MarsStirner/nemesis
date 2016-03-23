@@ -306,6 +306,24 @@ var WebMis20 = angular.module('WebMis20', [
         return flatten;
     }
 })
+.filter('collapse_diagnoses', [function () {
+    return function (diag_list, kind) {
+        var types = arguments[2];
+        if (_.isUndefined(types)) {
+            return _.filter(diag_list, function (diagnosis) {
+                return _.any(diagnosis.diagnosis_types, function (value, key) {
+                    return value.code == kind;
+                });
+            })
+        } else {
+            return _.filter(diag_list, function (diagnosis) {
+                return _.any(diagnosis.diagnosis_types, function (value, key) {
+                    return value.code == kind && [].has.apply(types, [key]);
+                });
+            })
+        }
+    }
+}])
 // Services
 .factory('RefBook', ['$http', '$rootScope', function ($http, $rootScope) {
     var RefBook = function (name) {
@@ -391,8 +409,8 @@ var WebMis20 = angular.module('WebMis20', [
         return this.rb_dict[val] || default_val;
     };
 }])
-.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser',
-        function ($window, $http, $rootScope, $timeout, CurrentUser) {
+.factory('PrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser', 'WMConfig',
+        function ($window, $http, $rootScope, $timeout, CurrentUser, WMConfig) {
     var PrintingService = function (context_type) {
         if (arguments.length >= 3) {
             this.target = arguments[2]
@@ -438,7 +456,7 @@ var WebMis20 = angular.module('WebMis20', [
                     context: angular.extend(
                         {}, item.context, {
                             'currentOrgStructure': "",
-                            'currentOrganisation': 3479,
+                            'currentOrganisation': WMConfig.local_config.default_org_id,
                             'currentPerson': CurrentUser.get_main_user().id
                         }
                     )
@@ -608,7 +626,7 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'E',
         require: '?ngModel',
         template:
-            '<a style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
+            '<a ng-disabled="ngDisabled" style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
                 '<span class="mkb-button col-md-12">[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]</span>' +
                 '<span class="caret" ng-if="!$model.$modelValue"></span>' +
             '</a>' +
@@ -625,7 +643,8 @@ var WebMis20 = angular.module('WebMis20', [
                 '</table>' +
             '</div>',
         scope: {
-            ngRequired: '='
+            ngRequired: '=',
+            ngDisabled: '='
         },
         link: function (scope, element, attributes, ngModel) {
             scope.$model = ngModel;

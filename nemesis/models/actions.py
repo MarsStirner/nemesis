@@ -4,6 +4,7 @@ import requests
 
 from sqlalchemy import orm
 
+from nemesis.models.diagnosis import ActionType_rbDiagnosisType
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
@@ -183,22 +184,24 @@ class ActionProperty(db.Model):
     @property
     def value_raw(self):
         value_container = self.value_container
-        if not value_container:
-            return None
         if self.type.isVector:
-            return [item.value_ for item in value_container]
+            if value_container:
+                return [item.value_ for item in value_container]
+            return []
         else:
-            return value_container[0].value_
+            if value_container:
+                return value_container[0].value_
 
     @property
     def value(self):
         value_container = self.value_container
-        if not value_container:
-            return None
         if self.type.isVector:
-            return [item.value for item in value_container]
+            if value_container:
+                return [item.value for item in value_container]
+            return []
         else:
-            return value_container[0].value
+            if value_container:
+                return value_container[0].value
 
     @value.setter
     def value(self, value):
@@ -913,6 +916,7 @@ class ActionType(db.Model):
         primaryjoin='and_(ActionType_TissueType.master_id == ActionType.id, ActionType_TissueType.idx == 0)',
         uselist=False
     )
+    diagnosis_types = db.relationship('rbDiagnosisTypeN', secondary=ActionType_rbDiagnosisType)
 
     def get_property_type_by_name(self, name):
         return self.property_types.filter(ActionPropertyType.name == name).first()
@@ -929,6 +933,7 @@ class ActionType(db.Model):
             'flat_code': self.flatCode,
             'title': self.title,
             'context_name': self.context,
+            'diagnosis_types': self.diagnosis_types
         }
 
 

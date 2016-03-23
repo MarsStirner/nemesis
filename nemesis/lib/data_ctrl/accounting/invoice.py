@@ -9,7 +9,8 @@ from sqlalchemy.sql.expression import union, exists, join
 from nemesis.models.accounting import Invoice, InvoiceItem, Service, Contract, ServiceDiscount
 from nemesis.models.actions import Action
 from nemesis.models.enums import FinanceOperationType, ServiceKind
-from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_decimal, safe_double, safe_traverse
+from nemesis.lib.counter import InvoiceCounter
+from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_bool, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 from .service import ServiceController
@@ -59,9 +60,11 @@ class InvoiceController(BaseModelController):
 
     def update_invoice(self, invoice, json_data):
         json_data = self._format_invoice_data(json_data)
-        for attr in ('contract_id', 'contract', 'setDate', 'settleDate', 'number', 'deedNumber', 'note', ):
+        for attr in ('contract_id', 'contract', 'setDate', 'settleDate', 'deedNumber', 'note', ):
             if attr in json_data:
                 setattr(invoice, attr, json_data.get(attr))
+
+        self.update_invoice_number(invoice, json_data['number'])
         self.update_invoice_items(invoice, json_data['item_list'])
         invoice.total_sum = self.calc_invoice_total_sum(invoice)
         return invoice
@@ -69,6 +72,15 @@ class InvoiceController(BaseModelController):
     def delete_invoice(self, invoice):
         invoice.deleted = 1
         return invoice
+
+    def update_invoice_number(self, invoice, number):
+        if not invoice.id or invoice.number != number:
+            invoice_counter = InvoiceCounter("invoice")
+            self.check_number_used(number, invoice_counter)
+            setattr(invoice, 'number', number)
+            if number.isdigit() and int(number) == invoice_counter.counter.value + 1:
+                invoice_counter.increment_value()
+                self.session.add(invoice_counter.counter)
 
     def update_invoice_items(self, invoice, item_list_data):
         item_list = []
@@ -107,6 +119,11 @@ class InvoiceController(BaseModelController):
                 self.session.query(Service).get(service_data['id'])
                 for service_data in data['service_list']
             ]
+        if safe_bool(data.get('generate_number', False)):
+            inv_counter = InvoiceCounter('invoice')
+            data['number'] = inv_counter.get_next_number()
+        elif 'number' in data:
+            data['number'] = safe_unicode(data['number'])
         return data
 
     def calc_invoice_total_sum(self, invoice):
@@ -161,6 +178,11 @@ class InvoiceController(BaseModelController):
             ).where(Invoice.deleted == 0).where(Service.deleted == 0).
                 where(Action.event_id == event_id).where(Action.deleted == 0)
         ).scalar()
+
+    def check_number_used(self, number, counter):
+        same_number = counter.check_number_used(number)
+        if same_number:
+            raise ApiException(409, u'Невозможно сохранить счет: счет с таким номером уже существует')
 
 
 class InvoiceSelecter(BaseSelecter):

@@ -11,6 +11,7 @@ angular.module('WebMis20.directives')
             link: function (scope, element, attrs, ctrl) {
                 var _id = attrs.id,
                     name = attrs.name,
+                    class_ = attrs.class,
                     theme = attrs.theme || "select2",
                     ngDisabled = attrs.ngDisabled,
                     ngRequired = attrs.ngRequired,
@@ -49,6 +50,7 @@ angular.module('WebMis20.directives')
                 );
                 if (_id) uiSelect.attr('id', _id);
                 if (name) uiSelect.attr('name', name);
+                if (class_) uiSelect.attr('class', class_);
                 if (theme) uiSelect.attr('theme', theme);
                 if (ngDisabled) uiSelect.attr('ng-disabled', ngDisabled);
                 if (ngRequired) uiSelect.attr('ng-required', ngRequired);
@@ -218,6 +220,7 @@ angular.module('WebMis20.directives')
         function edit_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-edit.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -231,6 +234,7 @@ angular.module('WebMis20.directives')
         function cancel_dialog (model) {
             var deferred = $modal.open({
                 templateUrl: '/WebMis20/modal-prescription-cancel.html',
+                backdrop : 'static',
                 controller: controller,
                 size: 'lg',
                 resolve: {
@@ -308,6 +312,7 @@ angular.module('WebMis20.directives')
                 };
                 var pharmExpertResult = {};
                 var checkPE = function () {
+                    if (!PharmExpertIntegration.enabled()) return;
                     var data = prepareDataPharmExpert();
                     PharmExpertIntegration.check(data).then(
                         function (result) {
@@ -637,6 +642,7 @@ angular.module('WebMis20.directives')
             open: function (ps, context_extender, meta_values, fast_print) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
+                    backdrop : 'static',
                     controller: ModalPrintDialogController,
                     size: 'lg',
                     resolve: {
@@ -1010,7 +1016,8 @@ angular.module('WebMis20.directives')
             Person:  ui_select_template,
             Service: ui_select_template,
             MKB: '<ui-mkb ng-model="model"></ui-mkb>',
-            SpecialVariable: 'Special Variable'
+            SpecialVariable: 'Special Variable',
+            Area: '<ui-select ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
         };
         return {
             restrict: 'A',
@@ -1163,7 +1170,8 @@ angular.module('WebMis20.directives')
             }
         }
     }])
-    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', function (SelectAll, $compile, $http, FlatTree) {
+    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', 'WMConfig',
+            function (SelectAll, $compile, $http, FlatTree, WMConfig) {
         // depends on wmCustomDropdown
         return {
             restrict: 'E',
@@ -1240,7 +1248,7 @@ angular.module('WebMis20.directives')
                 }
                 $http.get(url_get_orgstructure, {
                     params: {
-                        org_id: 3479
+                        org_id: WMConfig.local_config.default_org_id
                     }
                 })
                 .success(function (data) {
@@ -1261,361 +1269,196 @@ angular.module('WebMis20.directives')
             }
         }
     }])
-    .directive('wmDiagnosis', ['$timeout', 'DiagnosisModal', 'WMEventServices', 'WMEventCache', 'WMWindowSync',
-            function($timeout, DiagnosisModal, WMEventServices, WMEventCache, WMWindowSync) {
-        return{
+    .directive('wmDiagnosisNew', ['DiagnosisModal', 'RefBookService', 'CurrentUser',
+            function(DiagnosisModal, RefBookService, CurrentUser) {
+        return {
             restrict: 'E',
             replace: true,
+            require: '^ngModel',
             scope: {
-                model: '=',
-                action: '=?',
-                event: '=?',
-                params: '=?',
-                listMode: '=',
+                diagTypes: '=',
                 canAddNew: '=',
-                canDelete: '=',
-                canEdit: '=',
-                clickable: '=',
-                risar: '=',
-                disabled: '='
+                canEdit: '='
             },
-            controller: function ($scope) {
-                $scope.set_defaults = function (diagnosis){
-                    var defaults = $scope.params['defaults'];
-                    for (var key in defaults) {
-                        diagnosis[key] = defaults[key];
-                    }
+            templateUrl: '/WebMis20/wm-diagnosis-new.html',
+            link: function (scope, elm, attrs, ngModelCrtl) {
+                scope.rbDiagnosisKind = RefBookService.get('rbDiagnosisKind');
+                scope.add_new_diagnosis = function () {
+                    var new_diagnosis = {
+                        'id': null,
+                        'set_date': null,
+                        'end_date': null,
+                        'deleted': 0,
+                        'person': CurrentUser.get_main_user().info,
+                        'diagnostic': {
+                            'id': null,
+                            'mkb': null,
+                            'mkb2': null,
+                            'character': null,
+                            'dispanser': null,
+                            'trauma': null,
+                            'phase': null,
+                            'stage': null,
+                            'health_group': null,
+                            'diagnosis_description': null,
+                            'notes': null
+                        },
+                        'diagnosis_types': {}
+                    };
+                    var associated = this.rbDiagnosisKind.get_by_code('associated');
+                    scope.diagTypes.forEach(function(diagnosis_type){
+                        new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
+                    });
+
+                    DiagnosisModal.openDiagnosisModal(new_diagnosis, ngModelCrtl.$viewValue).then(function () {
+                        ngModelCrtl.$viewValue.push(new_diagnosis);
+                    });
                 };
-                $scope.add_new_diagnosis = function () {
-                    var new_diagnosis = WMEventServices.get_new_diagnosis($scope.action);
-                    if ($scope.params && $scope.params['defaults']){
-                        $scope.set_defaults(new_diagnosis)
-                    }
-                    if ($scope.risar) {
-                        var sequence = $scope.action && $scope.listMode;
-                        DiagnosisModal.openDiagnosisModalRisar(new_diagnosis, $scope.event, $scope.action, $scope.params, sequence).
-                            then(function (rslt) {
-                                var result = rslt[0], restart = rslt[1];
-                                if ($scope.listMode) {
-                                    $scope.model.push(new_diagnosis);
-                                }
-                                else {
-                                    $scope.model = new_diagnosis;
-                                }
-                                if (sequence && restart) {
-                                    $timeout($scope.add_new_diagnosis)
-                                }
-                            });
-                    }
-                    else {
-                        DiagnosisModal.openDiagnosisModal(new_diagnosis, $scope.action, $scope.params).then(function () {
-                            if ($scope.listMode) {
-                                $scope.model.push(new_diagnosis);
+                scope.edit_diagnosis = function (diagnosis) {
+                    DiagnosisModal.openDiagnosisModal(diagnosis, ngModelCrtl.$viewValue);
+                };
+                scope.kind_change = function (diag, diag_type_code){
+                    diag.kind_changed = true;
+                    if (diag.diagnosis_types[diag_type_code].code == 'main'){
+
+                        // предыдущий основной исправляем на осложнение
+                        ngModelCrtl.$viewValue.forEach(function(diagnosis){
+                            if(diagnosis.diagnostic.mkb.code != diag.diagnostic.mkb.code &&
+                                diagnosis.diagnosis_types[diag_type_code].code == 'main') {
+                                diagnosis.diagnosis_types[diag_type_code] = scope.rbDiagnosisKind.get_by_code('complication');
+                                diagnosis.kind_changed = true;
                             }
-                            else {
-                                $scope.model = new_diagnosis;
-                            }
-                            WMEventServices.add_diagnosis($scope.event, new_diagnosis);
                         });
                     }
-
                 };
-                $scope.delete_diagnosis = function (diagnosis, deleted) {
-                    if (arguments.length == 1) {
-                        deleted = 1;
-                    }
-                    if ($scope.listMode) {
-                        WMEventServices.delete_diagnosis($scope.model, diagnosis, deleted);
-                    } else {
-                        $scope.model = null;
-                    }
-                    WMEventServices.delete_diagnosis($scope.event.diagnoses, diagnosis, deleted);
-                };
-                $scope.edit_diagnosis = function (diagnosis) {
-                    if ($scope.risar) {
-                        DiagnosisModal.openDiagnosisModalRisar(diagnosis, $scope.event, $scope.action, $scope.params);
-                    } else {
-                        DiagnosisModal.openDiagnosisModal(diagnosis, $scope.action, $scope.params);
+                scope.sortByKind = function(type){
+                    var kind = {'main': 1, 'complication': 2, 'associated': 3};
+                    return function(diag){
+                        return kind[diag.diagnosis_types[type].code]
                     }
                 };
-                $scope.open_action = function (action_id) {
-                    if(action_id && $scope.clickable) {
-                        var url = url_for_schedule_html_action + '?action_id=' + action_id;
-                        WMWindowSync.openTab(url, $scope.update_event);
-                    }
+                scope.view_model = function () {
+                    return ngModelCrtl.$viewValue;
                 };
-                $scope.update_event = function () {
-                    $scope.event.reload().then(function () {
-                        $scope.$root.$broadcast('event_loaded');
-                    });
-                };
-            },
-            templateUrl: function(el, attrs){
-                return attrs.risar ? '/WebMis20/wm-diagnosis-risar.html': '/WebMis20/wm-diagnosis.html'},
-            link: function(scope, elm, attrs) {
-                scope.add_new_btn_visible = function () {
-                    return scope.canAddNew && (scope.listMode ? true : !scope.model)
-                };
-                if (scope.action && ! scope.risar) {
-                    WMEventCache.get(scope.action.event_id).then(function (event) {
-                        scope.event = event;
-                    });
-                }
             }
         }
     }])
-.service('DiagnosisModal', ['$modal', 'WMEventCache', 'CurrentUser', function ($modal, WMEventCache, CurrentUser) {
+.run(['$templateCache', function ($templateCache) {
+    $templateCache.put('/WebMis20/wm-diagnosis-new.html',
+        '<div>\
+            <ul class="nav nav-tabs">\
+                <li role="presentation" ng-repeat="diag_type in diagTypes" ng-class="{\'active\': $index == 0}">\
+                    <a href="#[[diag_type.code]]" aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
+                </li>\
+            </ul>\
+            <div class="tab-content">\
+                <div ng-repeat="diag_type in diagTypes" role="tabpanel" class="tab-pane" id="[[diag_type.code]]"  ng-class="{\'active\': $index == 0}">\
+                    <table class="table table-condensed centered-table">\
+                        <thead>\
+                            <tr>\
+                                <th class="col-md-2">Тип диагноза</th>\
+                                <th class="col-md-3">Заболевание</th>\
+                                <th class="col-md-2">Характер</th>\
+                                <th class="col-md-2">Стадия</th>\
+                                <th class="col-md-1">Установлен</th>\
+                                <th class="col-md-1">Изменен</th>\
+                                <th class="col-md-1" ng-if="canEdit"></th>\
+                            </tr>\
+                        </thead>\
+                        <tbody>\
+                            <tr ng-if="!view_model().length"><td colspan="6"><b>[[diag_type.name]] диагноз не задан.</b> Начните прием пациента и укажите его [[diag_type.name]] диагноз.</td></tr>\
+                            <tr ng-repeat="diag in view_model() | orderBy:sortByKind(diag_type.code)">\
+                                <td>\
+                                    <div ng-if="canEdit">\
+                                        <rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
+                                         id="diag_type" name="diag_type" ng-change="kind_change(diag, diag_type.code)"></rb-select>\
+                                    </div>\
+                                    <span ng-if="!canEdit" \
+                                          ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code != \'associated\'}"\
+                                          ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
+                                </td>\
+                                <td><span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkb2.name]]">[[diag.diagnostic.mkb2.code]]</span> [[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\
+                                <td>[[diag.diagnostic.character.name]]</td>\
+                                <td>[[diag.diagnostic.stage.name]]</td>\
+                                <td>[[diag.set_date | asDate ]]</td>\
+                                <td><span ng-if="diag.end_date">[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
+                                    <span ng-if="!diag.end_date">[[diag.diagnostic.createDatetime | asDate ]]</span>\
+                                </td>\
+                                <td ng-if="canEdit">\
+                                    <button type="button" class="btn btn-sm btn-primary" title="Редактировать"\
+                                            ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
+                                    </button>\
+                                </td>\
+                            </tr>\
+                            <tr ng-if="canAddNew && canEdit">\
+                                <td colspan="6">\
+                                    <div class="pull-right">\
+                                        <button class="btn btn-primary" ng-click="add_new_diagnosis(diag_type)">Добавить новое заболевание</button>\
+                                    </div>\
+                                </td>\
+                            </tr>\
+                        </tbody>\
+                    </table>\
+                </div>\
+            </div>\
+        </div>')
+    }])
+.service('DiagnosisModal', ['$modal', function ($modal) {
     return {
-        openDiagnosisModal: function (model, action, params) {
+        openDiagnosisModal: function (model, diagnoses) {
             var locModel = angular.copy(model);
             var Controller = function ($scope) {
                 $scope.model = locModel;
-                $scope.diag_type_codes = ['2', '3', '7', '9', '11'];
-                $scope.params = params;
+                $scope.edit_mkb = {
+                    ui_mkb_disabled: $scope.model.id && $scope.model.diagnostic.mkb,
+                    mkb_changed: false,
+                    same_mkb: false};
 
-                $scope.event = null;
-                WMEventCache.get(action.event_id).then(function (event) {
-                    $scope.event = event;
-                    $scope.can_set_final_diag = (
-                        // только лечащий врач
-                        (CurrentUser.id === event.info.exec_person.id ||
-                            CurrentUser.get_main_user().id === event.info.exec_person.id) &&
-                        // в текущем действии еще нет заключительных диагнозов
-                        action.properties.filter(function (prop) {
-                            return (prop.type.type_name === 'Diagnosis' && (
-                                prop.type.vector ? (
-                                    prop.value.length && prop.value.some(function (diag) {
-                                        return diag.diagnosis_type.code === '1' && diag.deleted === 0;
-                                    })
-                                ) : (prop.value && prop.value.diagnosis_type.code === '1' && diag.deleted === 0))
-                            )
-                        }).length === 0 &&
-                        // в других *закрытых* действиях нет заключительных диагнозов
-                        event.diagnoses.filter(function (diag) {
-                            return diag.diagnosis_type.code === '1' && diag.action.status.code === 'finished';
-                        }).length === 0
-                    );
-                    if ($scope.can_set_final_diag) {
-                        $scope.diag_type_codes.push('1');
+                if ($scope.model.id){
+                    $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
+                }
+
+                // https://github.com/angular-ui/bootstrap/issues/969
+                // http://stackoverflow.com/questions/19312936/angularjs-modal-dialog-form-object-is-undefined-in-controller
+                $scope.form = {};
+
+                $scope.reverse_mkb_change = function(){
+                    $scope.model.diagnostic.mkb = $scope.edit_mkb.old_mkb;
+                };
+
+                $scope.$watch('form.DiagnosisForm.$dirty', function(n, o) {
+                    $scope.model.diagnostic_changed = n;
+                });
+                $scope.$watch('model.diagnostic.mkb', function(n, o) {
+                    if (n!=o) {
+                        var same_mkb = diagnoses.filter(function(diag){
+                            return (diag.id != $scope.model.id) && diag.diagnostic.mkb.code == n.code;
+                        });
+                        $scope.edit_mkb.same_mkb = same_mkb.length > 0;
+
+                        if (!$scope.edit_mkb.same_mkb && $scope.edit_mkb.old_mkb) {
+                            if (n.code!=$scope.edit_mkb.old_mkb.code) {
+                                $scope.edit_mkb.mkb_changed = true;
+                            } else {
+                                $scope.edit_mkb.mkb_changed = false;
+                            }
+                        }
                     }
                 });
-
-                $scope.filter_type = function() {
-                    return function(elem) {
-                        return $scope.diag_type_codes.has(elem.code);
-                    };
-                };
-                $scope.result_required = function () {
-                    return safe_traverse($scope.model, ['diagnosis_type', 'code']) === '1';
-                };
             };
+
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-edit-diagnosis.html',
                 size: 'lg',
+                backdrop: 'static',
                 controller: Controller
             });
             return instance.result.then(function() {
                 angular.extend(model, locModel);
             });
-        },
-        openDiagnosisModalRisar: function (model, event, action, params, sequence) {
-            var locModel = angular.copy(model);
-            var Controller = function ($scope) {
-                $scope.model = locModel;
-                $scope.action = action ? action : model.action;
-                $scope.sequence = sequence;
-                $scope.diag_type_codes = ['2', '3', '7', '9', '11'];
-                $scope.params = params;
-
-                $scope.can_set_final_diag = true;
-                if ($scope.can_set_final_diag) {
-                    $scope.diag_type_codes.push('1');
-                }
-                $scope.filter_type = function() {
-                    return function(elem) {
-                        return $scope.diag_type_codes.has(elem.code);
-                    };
-                };
-                $scope.result_required = function () {
-                    return safe_traverse($scope.model, ['diagnosis_type', 'code']) === '1';
-                };
-            };
-            var instance = $modal.open({
-                templateUrl: '/WebMis20/modal-edit-diagnosis-risar.html',
-                size: 'lg',
-                controller: Controller
-            });
-            return instance.result.then(function(rslt) {
-                angular.extend(model, locModel);
-                return rslt
-            });
         }
     }
 }])
-.run(['$templateCache', function ($templateCache) {
-    $templateCache.put('/WebMis20/wm-diagnosis.html',
-        '<div class="row">\
-            <div class="col-md-12">\
-                <table class="table table-condensed">\
-                    <thead>\
-                        <tr>\
-                            <th>Дата начала</th>\
-                            <th>Тип</th>\
-                            <th>Течение</th>\
-                            <th>Код МКБ</th>\
-                            <th>Врач</th>\
-                            <th>Примечание</th>\
-                            <th></th>\
-                            <th></th>\
-                        </tr>\
-                    </thead>\
-                    <tbody>\
-                        <tr ng-if="!listMode && model" class="[[clickable && model.action_id ? \'row-clickable\' : \'\']]">\
-                            <td ng-click="open_action(model.action_id)">[[model.set_date | asDate]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.diagnosis_type.name]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.character.name]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.diagnosis.mkb.code]] [[model.diagnosis.mkb.name]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.person.name]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.notes]]</td>\
-                            <td>\
-                                <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(model)"><span class="glyphicon glyphicon-pencil"></span>\
-                                </button>\
-                            </td>\
-                            <td>\
-                                <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(model)"><span class="glyphicon glyphicon-trash"></span>\
-                                </button>\
-                            </td>\
-                        </tr>\
-                        <tr ng-if="listMode" class="[[clickable && diag.action_id ? \'row-clickable\' : \'\']]" ng-repeat="diag in model | flt_not_deleted">\
-                            <td ng-click="open_action(diag.action_id)">[[diag.set_date | asDate]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.diagnosis_type.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.character.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.diagnosis.mkb.code]] [[diag.diagnosis.mkb.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.person.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.notes]]</td>\
-                            <td>\
-                                <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
-                                </button>\
-                            </td>\
-                            <td>\
-                                <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(diag)"><span class="glyphicon glyphicon-trash"></span>\
-                                </button>\
-                            </td>\
-                        </tr>\
-                        <tr ng-show="add_new_btn_visible()">\
-                            <td colspan="6">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Добавить"\
-                                        ng-click="add_new_diagnosis()">Добавить\
-                                </button>\
-                            </td>\
-                        </tr>\
-                    </tbody>\
-                </table>\
-            </div>\
-        </div>')
-    }])
-.run(['$templateCache', function ($templateCache) {
-    $templateCache.put('/WebMis20/wm-diagnosis-risar.html',
-        '<div class="row">\
-            <div class="col-md-12">\
-                <table class="table table-condensed" ng-if="action">\
-                    <thead>\
-                        <tr>\
-                            <th class="col-md-2">Дата начала</th>\
-                            <th class="col-md-2">Дата окончания</th>\
-                            <th class="col-md-2">Тип</th>\
-                            <th class="col-md-2">Код МКБ</th>\
-                            <th class="col-md-2">Врач</th>\
-                            <th class="col-md-1">Описание</th>\
-                            <th class="col-md-1"></th>\
-                        </tr>\
-                    </thead>\
-                    <tbody>\
-                        <tr ng-if="!listMode && model" class="[[clickable && model.action_id ? \'row-clickable\' : \'\']]">\
-                            <td ng-click="open_action(model.action_id)">[[model.set_date | asDate]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.end_date | asDate]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.diagnosis_type.name]]</td>\
-                            <td ng-click="open_action(model.action_id)"><span class="bottom_dotted" tooltip="[[ model.diagnosis.mkb.name ]]">[[model.diagnosis.mkb.code]]</span></td>\
-                            <td ng-click="open_action(model.action_id)">[[model.person.name]]</td>\
-                            <td ng-click="open_action(model.action_id)">[[model.diagnosis_description ? \'есть\': \'нет\']]</td>\
-                            <td style="white-space:nowrap;">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
-                                </button>\
-                                <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(model)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
-                                </button>\
-                            </td>\
-                        </tr>\
-                        <tr ng-if="listMode" class="[[clickable && diag.action_id ? \'row-clickable\' : \'\']]" ng-repeat="diag in model | flt_not_deleted">\
-                            <td ng-click="open_action(diag.action_id)">[[diag.set_date | asDate]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.end_date | asDate]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.diagnosis_type.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)"><span class="bottom_dotted" tooltip="[[diag.diagnosis.mkb.name]]">[[diag.diagnosis.mkb.code]]</span></td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.person.name]]</td>\
-                            <td ng-click="open_action(diag.action_id)">[[diag.diagnosis_description ? \'есть\': \'нет\']]</td>\
-                            <td style="white-space:nowrap;">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-pencil"></span>\
-                                </button>\
-                                <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(diag)" ng-disabled="disabled"><span class="glyphicon glyphicon-trash"></span>\
-                                </button>\
-                            </td>\
-                        </tr>\
-                        <tr ng-show="add_new_btn_visible()">\
-                            <td colspan="6">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Добавить"\
-                                        ng-click="add_new_diagnosis()" ng-disabled="disabled">Добавить\
-                                </button>\
-                            </td>\
-                        </tr>\
-                    </tbody>\
-                </table>\
-                <table class="table table-condensed" ng-if="listMode && !action">\
-                    <thead>\
-                        <tr>\
-                            <th class="col-md-1">Диагноз</th>\
-                            <th class="col-md-2">Тип</th>\
-                            <th class="col-md-1">Начало</th>\
-                            <th class="col-md-1">Окончание</th>\
-                            <th ng-if="!action" class="col-md-3">Контекст</th>\
-                            <th class="col-md-1"></th>\
-                        </tr>\
-                    </thead>\
-                    <tbody>\
-                        <tr ng-if="listMode" class="[[clickable && diag.action_id ? \'row-clickable\' : \'\']]" ng-repeat="diag in model">\
-                            <td ng-if="diag.deleted" colspan="6" style="text-align:center;">Диагноз [[diag.diagnosis.mkb.code]] был удален. <a ng-click="delete_diagnosis(diag, 0)" style="cursor: pointer">Восстановить</a>?</td>\
-                            <td ng-if="diag.deleted == 0" ng-click="open_action(diag.action_id)" style="text-align:center;"><span class="bottom_dotted" tooltip="[[diag.diagnosis.mkb.name]]">[[diag.diagnosis.mkb.code]]</span></td>\
-                            <td ng-if="diag.deleted == 0" ng-click="open_action(diag.action_id)">[[diag.diagnosis_type.name]]</td>\
-                            <td ng-if="diag.deleted == 0" ng-click="open_action(diag.action_id)">[[diag.set_date | asDate]] </br> [[diag.person.name]]</td>\
-                            <td ng-if="diag.deleted == 0" ng-click="open_action(diag.action_id)">[[diag.end_date | asDate]] </br> [[diag.end_date ? diag.modify_person.name : ""]]</td>\
-                            <td ng-if="diag.deleted == 0" ng-click="open_action(diag.action_id)">[[diag.action.action_type.name]] - [[diag.action_property_name]]</td>\
-                            <td ng-if="diag.deleted == 0" style="white-space:nowrap;">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Редактировать" ng-if="canEdit"\
-                                        ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
-                                </button>\
-                                <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDelete"\
-                                        ng-click="delete_diagnosis(diag)"><span class="glyphicon glyphicon-trash"></span>\
-                                </button>\
-                            </td>\
-                        </tr>\
-                        <tr ng-show="add_new_btn_visible()">\
-                            <td colspan="6">\
-                                <button type="button" class="btn btn-sm btn-primary" title="Добавить"\
-                                        ng-click="add_new_diagnosis()">Добавить\
-                                </button>\
-                            </td>\
-                        </tr>\
-                    </tbody>\
-                </table>\
-            </div>\
-        </div>')
-    }])
 .run(['$templateCache', function ($templateCache) {
     $templateCache.put('/WebMis20/modal-edit-diagnosis.html',
         '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
@@ -1623,51 +1466,98 @@ angular.module('WebMis20.directives')
             <h4 class="modal-title">Диагноз</h4>\
         </div>\
         <div class="modal-body">\
-            <ng-form name="DiagnosisForm">\
+            <ng-form name="form.DiagnosisForm">\
                 <div class="row marginal">\
-                    <div class="col-md-4">\
-                        <div class="form-group"\
-                             ng-class="{\'has-error\': DiagnosisForm.diagnosis_type.$invalid}">\
-                            <label for="diagnosis_type" class="control-label">Тип</label>\
-                            <ui-select class="form-control" name="diagnosis_type" theme="select2"\
-                                ng-model="model.diagnosis_type" ref-book="rbDiagnosisType"\
-                                ng-required="true">\
-                                <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                                <ui-select-choices repeat="dt in ($refBook.objects | filter: $select.search | filter: filter_type()) track by dt.id">\
-                                    <span ng-bind-html="dt.name | highlight: $select.search"></span>\
-                                </ui-select-choices>\
-                            </ui-select>\
+                    <div class="col-md-8">\
+                        <label for="MKB" class="control-label">МКБ</label>\
+                    </div>\
+                </div>\
+                <div class="row">\
+                    <div class="col-md-8">\
+                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid || edit_mkb.same_mkb}">\
+                            <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
+                                    ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
                         </div>\
                     </div>\
-                    <div class="col-md-offset-1 col-md-3">\
-                        <div class="form-group" ng-class="{\'has-error\': DiagnosisForm.set_date.$invalid}">\
-                            <label for="diagnosis_date" class="control-label">Дата начала</label>\
-                            <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
-                            </wm-date>\
-                        </div>\
+                    <div class="col-md-4" ng-if="edit_mkb.ui_mkb_disabled">\
+                        <button type="button" class="btn btn-warning" ng-click="edit_mkb.ui_mkb_disabled=false">Изменить код МКБ</button>\
                     </div>\
-                    <div class="col-md-3">\
-                        <div class="form-group" ng-class="{\'has-error\': DiagnosisForm.end_date.$invalid}">\
-                            <label for="diagnosis_date" class="control-label">Дата окончания</label>\
-                            <wm-date name="end_date" ng-model="model.end_date">\
-                            </wm-date>\
-                        </div>\
+                    <div class="col-md-4" ng-if="edit_mkb.mkb_changed">\
+                        <button type="button" class="btn btn-default" ng-click="reverse_mkb_change()">Отменить изменение</button>\
+                    </div>\
+                </div>\
+                <div class="row marginal" ng-if="edit_mkb.mkb_changed">\
+                    <div class="col-md-1" style="text-align: center; font-size:200%;">\
+                        <i class="fa fa-exclamation-triangle text-yellow"></i>\
+                    </div>\
+                    <div class="col-md-11">\
+                        <b>Вы меняете код МКБ существующего диагноза.</b> Изменение отразится в истории диагноза.</br>\
+                        Изменять код МКБ следует только для уточнения диагноза, или в случае если диагноз изменился со временем.\
+                        В остальных случаях следует закрыть имеющийся диагноз и создать новый.\
+                    </div>\
+                </div>\
+                <div class="row marginal" ng-if="edit_mkb.same_mkb">\
+                    <div class="col-md-1" style="text-align: center; font-size:200%;">\
+                        <i class="fa fa-exclamation-triangle text-yellow"></i>\
+                    </div>\
+                    <div class="col-md-11">\
+                        <b>Упациента уже есть такой диагноз.</b></br>\
+                        При лечении ранее установленного заболевания, в том числе при обострении хронического, \
+                        нужно использовть имеющийся диагноз.\
                     </div>\
                 </div>\
                 <div class="row marginal">\
                     <div class="col-md-8">\
-                        <div class="form-group" ng-class="{\'has-error\': DiagnosisForm.mkb.$invalid}">\
-                            <label for="MKB" class="control-label">МКБ</label>\
-                            <ui-mkb ng-model="model.diagnosis.mkb" name="mkb" ng-required="true"></ui-mkb>\
+                        <div class="form-group">\
+                            <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
+                            <ui-mkb ng-model="model.diagnostic.mkb2" name="mkb"></ui-mkb>\
                         </div>\
                     </div>\
                     <div class="col-md-3">\
-                        <label for="diagnosis_character" class="control-label">Течение</label>\
+                        <label for="trauma" class="control-label">Травма</label>\
+                        <ui-select class="form-control" name="trauma" theme="select2"\
+                            ng-model="model.diagnostic.trauma" ref-book="rbTraumaType">\
+                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                            <ui-select-choices repeat="tt in ($refBook.objects | filter: $select.search) track by tt.id">\
+                                <span ng-bind-html="tt.name | highlight: $select.search"></span>\
+                            </ui-select-choices>\
+                        </ui-select>\
+                    </div>\
+                </div>\
+                <div class="row marginal">\
+                    <div class="col-md-11">\
+                        <label for="diagnosis_description" class="control-label">Описание диагноза</label>\
+                        <wysiwyg ng-model="model.diagnostic.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
+                    </div>\
+                </div>\
+                <div class="row tmargin20 marginal">\
+                    <div class="col-md-3">\
+                        <label for="trauma" class="control-label">Характер</label>\
                         <ui-select class="form-control" name="diagnosis_character" theme="select2"\
-                            ng-model="model.character" ref-book="rbDiseaseCharacter">\
+                            ng-model="model.diagnostic.character" ref-book="rbDiseaseCharacter">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="ct in ($refBook.objects | filter: $select.search) track by ct.id">\
                                 <span ng-bind-html="ct.name | highlight: $select.search"></span>\
+                            </ui-select-choices>\
+                        </ui-select>\
+                    </div>\
+                    <div class="col-md-3">\
+                        <label for="phase" class="control-label">Фаза</label>\
+                        <ui-select class="form-control" name="phase" theme="select2"\
+                            ng-model="model.diagnostic.phase" ref-book="rbDiseasePhases">\
+                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                            <ui-select-choices repeat="dp in ($refBook.objects | filter: $select.search) track by dp.id">\
+                                <span ng-bind-html="dp.name | highlight: $select.search"></span>\
+                            </ui-select-choices>\
+                        </ui-select>\
+                    </div>\
+                    <div class="col-md-3">\
+                        <label for="stage" class="control-label">Стадия</label>\
+                        <ui-select class="form-control" name="stage" theme="select2"\
+                            ng-model="model.diagnostic.stage" ref-book="rbDiseaseStage">\
+                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
+                            <ui-select-choices repeat="ds in ($refBook.objects | filter: $select.search) track by ds.id">\
+                                <span ng-bind-html="ds.name | highlight: $select.search"></span>\
                             </ui-select-choices>\
                         </ui-select>\
                     </div>\
@@ -1680,102 +1570,47 @@ angular.module('WebMis20.directives')
                             <wm-person-select ng-model="model.person" name="diagnosis_person" ng-required="true"></wm-person-select>\
                         </div>\
                     </div>\
+                    <div class="col-md-3">\
+                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.set_date.$invalid}">\
+                            <label for="diagnosis_date" class="control-label">Дата начала</label>\
+                            <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
+                            </wm-date>\
+                        </div>\
+                    </div>\
+                    <div class="col-md-3">\
+                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.end_date.$invalid}">\
+                            <label for="diagnosis_date" class="control-label">Дата окончания</label>\
+                            <wm-date name="end_date" ng-model="model.end_date">\
+                            </wm-date>\
+                        </div>\
+                    </div>\
                 </div>\
                 <div class="row marginal">\
-                    <div class="col-md-4"\
-                        ng-class="{\'has-error\': DiagnosisForm.result.$invalid}">\
-                        <label for="result" class="control-label">Результат</label>\
-                        <ui-select class="form-control" name="result" theme="select2"\
-                            ng-model="model.result" ref-book="rbResult"\
-                            ng-required="result_required()">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="r in ($refBook.objects | filter: $select.search | rb_result_filter: 2) track by r.id">\
-                                <span ng-bind-html="r.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
                     <div class="col-md-4">\
-                        <label for="ache_result" class="control-label">Исход</label>\
+                        <label for="ache_result" class="control-label">Исход заболевания</label>\
                         <ui-select class="form-control" name="ache_result" theme="select2"\
-                            ng-model="model.ache_result" ref-book="rbAcheResult">\
+                            ng-model="model.diagnostic.ache_result" ref-book="rbAcheResult">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="ar in ($refBook.objects | filter: $select.search) track by ar.id">\
                                 <span ng-bind-html="ar.name | highlight: $select.search"></span>\
                             </ui-select-choices>\
                         </ui-select>\
                     </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-11">\
-                        <label for="diagnosis_description" class="control-label">Описание диагноза</label>\
-                        <wysiwyg ng-model="model.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
-                    </div>\
-                </div>\
-                <div class="row">\
-                    <div class="col-md-12">\
-                        <button class="btn btn-default btn-sm" ng-click="expanded=!expanded">\
-                            <span class="glyphicon glyphicon-chevron-[[expanded ? \'down\' : \'right\']]"></span>\
-                        </button>\
-                    </div>\
-                </div>\
-                <div class="row tmargin20 marginal" ng-if="expanded">\
-                    <div class="col-md-3">\
-                        <label for="phase" class="control-label">Фаза</label>\
-                        <ui-select class="form-control" name="phase" theme="select2"\
-                            ng-model="model.phase" ref-book="rbDiseasePhases">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="dp in ($refBook.objects | filter: $select.search) track by dp.id">\
-                                <span ng-bind-html="dp.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
-                    <div class="col-md-3">\
-                        <label for="stage" class="control-label">Стадия</label>\
-                        <ui-select class="form-control" name="stage" theme="select2"\
-                            ng-model="model.stage" ref-book="rbDiseaseStage">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="ds in ($refBook.objects | filter: $select.search) track by ds.id">\
-                                <span ng-bind-html="ds.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
-                </div>\
-                <div class="row marginal" ng-if="expanded">\
-                    <div class="col-md-3">\
-                        <label for="trauma" class="control-label">Травма</label>\
-                        <ui-select class="form-control" name="trauma" theme="select2"\
-                            ng-model="model.trauma_type" ref-book="rbTraumaType">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="tt in ($refBook.objects | filter: $select.search) track by tt.id">\
-                                <span ng-bind-html="tt.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
                     <div class="col-md-3">\
                         <label for="health_group" class="control-label">Группа здоровья</label>\
                         <ui-select class="form-control" name="health_group" theme="select2"\
-                            ng-model="model.health_group" ref-book="rbHealthGroup">\
+                            ng-model="model.diagnostic.health_group" ref-book="rbHealthGroup">\
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="hg in ($refBook.objects | filter: $select.search) track by hg.id">\
                                 <span ng-bind-html="hg.name | highlight: $select.search"></span>\
                             </ui-select-choices>\
                         </ui-select>\
                     </div>\
-                    <div class="col-md-3">\
-                        <label for="dispanser" class="control-label">Диспансерное наблюдение</label>\
-                        <ui-select class="form-control" name="dispanser" theme="select2"\
-                            ng-model="model.dispanser" ref-book="rbDispanser">\
-                            <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                            <ui-select-choices repeat="d in ($refBook.objects | filter: $select.search) track by d.id">\
-                                <span ng-bind-html="d.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
                 </div>\
-                <div class="row" ng-if="expanded">\
+                <div class="row">\
                     <div class="col-md-11">\
                     <label for="notes" class="control-label">Примечание</label>\
-                    <textarea class="form-control" id="notes" name="notes" rows="2" autocomplete="off" ng-model="model.notes"></textarea>\
+                    <textarea class="form-control" id="notes" name="notes" rows="2" autocomplete="off" ng-model="model.diagnostic.notes"></textarea>\
                     </div>\
                 </div>\
             </ng-form>\
@@ -1783,125 +1618,30 @@ angular.module('WebMis20.directives')
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
             <button type="button" class="btn btn-success" ng-click="$close()"\
-            ng-disabled="DiagnosisForm.$invalid">Сохранить</button>\
+            ng-disabled="form.DiagnosisForm.$invalid || edit_mkb.same_mkb">Сохранить</button>\
         </div>')
     }])
-.run(['$templateCache', function ($templateCache) {
-    $templateCache.put('/WebMis20/modal-edit-diagnosis-risar.html',
-        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
-            <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
-            <h4 class="modal-title">Диагноз</h4>\
+.directive('simpleCollapsable', [function () {
+    return {
+        restrict: 'AEC',
+        scope: {},
+        transclude: true,
+        template:
+'<div ng-class="{\'simple-collapsed\': collapsed}" style="position: relative;">\
+    <div ng-transclude></div>\
+    <div style="height: 30px;"></div>\
+    <div style="height: 30px; position: absolute; bottom:0; width: 100%; background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));">\
+        <div style="position:relative; width: 100%; height: 100%;">\
+            <a style="position:absolute; bottom: 0; right: 0;" href="#" ng-click="collapsed=!collapsed" ng-show="collapsed">[ Развернуть ]</a>\
+            <a style="position:absolute; bottom: 0; right: 0;" href="#" ng-click="collapsed=!collapsed" ng-show="!collapsed">[ Свернуть ]</a>\
         </div>\
-        <div class="modal-body">\
-            <ng-form name="DiagnosisForm">\
-                <table class="table table-condensed">\
-                    <thead>\
-                    <tr>\
-                        <th class="col-md-3"></th>\
-                        <th class="col-md-9"></th>\
-                    </tr>\
-                    </thead>\
-                    <tbody>\
-                        <tr>\
-                            <th class="text-right">Тип <span class="text-danger">*</span></th>\
-                            <td>\
-                                <div class="form-group col-sm-5 col-md-4 col-lg-4"\
-                                     ng-class="{\'has-error\': DiagnosisForm.diagnosis_type.$invalid}">\
-                                    <ui-select class="form-control" name="diagnosis_type" theme="select2"\
-                                        ng-model="model.diagnosis_type" ref-book="rbDiagnosisType"\
-                                        ng-required="true" ng-disabled="[[params.disabled.diagnosis_type]]">\
-                                        <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                                        <ui-select-choices repeat="dt in ($refBook.objects | filter: $select.search | filter: filter_type()) track by dt.id">\
-                                            <span ng-bind-html="dt.name | highlight: $select.search"></span>\
-                                        </ui-select-choices>\
-                                    </ui-select>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Характер <span>&nbsp;</span></th>\
-                            <td>\
-                                <div class="col-sm-5 col-md-4 col-lg-4">\
-                                <ui-select class="form-control" name="diagnosis_character" theme="select2"\
-                                    ng-model="model.character" ref-book="rbDiseaseCharacter">\
-                                    <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                                    <ui-select-choices repeat="ct in ($refBook.objects | filter: $select.search) track by ct.id">\
-                                        <span ng-bind-html="ct.name | highlight: $select.search"></span>\
-                                    </ui-select-choices>\
-                                </ui-select>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Дата начала <span class="text-danger">*</span></th>\
-                            <td>\
-                                <div class="form-group col-sm-5 col-md-4 col-lg-4" ng-class="{\'has-error\': DiagnosisForm.set_date.$invalid}">\
-                                    <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
-                                    </wm-date>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">МКБ <span class="text-danger">*</span></th>\
-                            <td>\
-                                <div class="form-group col-sm-11 col-md-11 col-lg-11"\
-                                ng-class="{\'has-error\': DiagnosisForm.mkb.$invalid}">\
-                                    <ui-mkb ng-model="model.diagnosis.mkb" name="mkb" ng-required="true"></ui-mkb>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Врач <span>&nbsp;</span></th>\
-                            <td>\
-                                <div class="form-group col-sm-6 col-md-5 col-lg-5"\
-                                ng-class="{\'has-error\': model.person == null}">\
-                                    <wm-person-select ng-model="model.person" name="diagnosis_person" ng-required="true"></wm-person-select>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Дата окончания <span>&nbsp;</span></th>\
-                            <td>\
-                                <div class="form-group col-sm-5 col-md-4 col-lg-4" ng-class="{\'has-error\': DiagnosisForm.end_date.$invalid}">\
-                                    <wm-date name="end_date" ng-model="model.end_date" ng-required="[[params.required.end_date]]">\
-                                    </wm-date>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Результат <span>&nbsp;</span></th>\
-                            <td>\
-                                <div class="col-sm-5 col-md-4 col-lg-4" ng-class="{\'has-error\': DiagnosisForm.result.$invalid}">\
-                                    <ui-select class="form-control" name="result" theme="select2"\
-                                        ng-model="model.result" ref-book="rbResult"\
-                                        ng-required="result_required()">\
-                                        <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
-                                        <ui-select-choices repeat="r in ($refBook.objects | filter: $select.search | rb_result_filter: 2) track by r.id">\
-                                            <span ng-bind-html="r.name | highlight: $select.search"></span>\
-                                        </ui-select-choices>\
-                                    </ui-select>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                        <tr>\
-                            <th class="text-right">Описание <span>&nbsp;</span></th>\
-                            <td>\
-                                <div class="col-sm-11 col-md-11 col-lg-11">\
-                                <wysiwyg ng-model="model.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
-                                </div>\
-                            </td>\
-                        </tr>\
-                    </tbody>\
-                </table>\
-            </ng-form>\
-        </div>\
-        <div class="modal-footer">\
-            <label ng-hide="!sequence"><input type="checkbox" class="checkbox checkbox-inline" ng-model="restart">Создать ещё</label>\
-            <button type="button" class="btn btn-success" ng-click="$close([model, restart])"\
-            ng-disabled="DiagnosisForm.$invalid">Сохранить</button>\
-            <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-        </div>')
-    }])
+    </div>\
+</div>',
+        link: function (scope, element, attributes) {
+            scope.collapsed = true;
+        }
+    }
+}])
 ;
 angular.module('WebMis20.validators', [])
 .directive('enumValidator', function() {

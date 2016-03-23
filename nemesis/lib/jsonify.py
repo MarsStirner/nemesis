@@ -15,7 +15,8 @@ from flask import json
 
 from nemesis.app import app
 from nemesis.systemwide import db
-from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length
+from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
+    get_client_diagnostics
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
@@ -24,7 +25,8 @@ from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, for
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
-from nemesis.models.event import Event, EventType, Diagnosis
+from nemesis.models.event import Event, EventType
+from nemesis.models.diagnosis import Diagnosis, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
@@ -920,10 +922,13 @@ class EventVisualizer(object):
             'services': self.make_event_grouped_services(event.id),
             'invoices': self.make_event_invoices(event.id)
         }
+
         if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event)
+            data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         elif UserProfileManager.has_ui_doctor():
             data['diagnoses'] = self.make_diagnoses(event)
+            data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data
 
     def make_short_event(self, event):
@@ -993,10 +998,15 @@ class EventVisualizer(object):
         """
         @type event: Event
         """
-        result = []
-        for diagnostic in event.diagnostics:
-            result.append(self.make_diagnostic_record(diagnostic))
-        return result
+        dvis = DiagnosisVisualizer()
+        diagnostics = get_client_diagnostics(event.client, event.setDate, event.execDate)
+        return [
+            dict(
+                dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),
+                diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, event),
+            )
+            for diagnostic in diagnostics
+        ]
 
     def make_diagnose_row(self, diagnostic, diagnosis):
         """
@@ -1019,52 +1029,33 @@ class EventVisualizer(object):
             'notes': diagnostic.notes,
         }
 
-    def make_diagnostic_record(self, diagnostic):
-        """
-        :type diagnostic: application.models.event.Diagnostic
-        :param diagnostic:
-        :return:
-        """
-        pvis = PersonTreeVisualizer()
-        aviz = ActionVisualizer()
-        return {
-            'id': diagnostic.id,
-            'set_date': diagnostic.setDate,
-            'end_date': diagnostic.endDate,
-            'diagnosis_type': diagnostic.diagnosisType,
-            'deleted': diagnostic.deleted,
-            'diagnosis': self.make_diagnosis_record(diagnostic.diagnosis),
-            'character': diagnostic.character,
-            'person': pvis.make_person_ws(diagnostic.person) if diagnostic.person else None,
-            'notes': diagnostic.notes,
-            'action_id': diagnostic.action_id,
-            'action': aviz.make_small_action_info(diagnostic.action) if diagnostic.action else None,
-            'result': diagnostic.result,
-            'ache_result': diagnostic.rbAcheResult,
-            'event_id': diagnostic.event_id,
-            'health_group': diagnostic.healthGroup,
-            'trauma_type': diagnostic.traumaType,
-            'phase': diagnostic.phase,
-            'stage': diagnostic.stage,
-            'dispanser': diagnostic.dispanser,
-            'sanatorium': diagnostic.sanatorium,
-            'hospital': diagnostic.hospital,
-            'diagnosis_description': diagnostic.diagnosis_description,
-            'modify_person': pvis.make_person_ws(diagnostic.modifyPerson) if diagnostic.modifyPerson else None
-        } if diagnostic else None
+    def make_event_diagnosis_types_info(self, event):
+        res = set(event.eventType.diagnosis_types)
+        res |= set(
+            e_d.diagnosisType
+            for e_d in Event_Diagnosis.query.filter(Event_Diagnosis.event == event)
+        )
+        return sorted(res, key=lambda dt: dt.rank)
 
-    def make_diagnosis_record(self, diagnosis):
-        """
-        :type diagnosis: application.models.event.Diagnosis
-        :param diagnosis:
-        :return:
-        """
-        return {
-            'id': diagnosis.id,
-            'mkb': diagnosis.mkb,
-            'mkbex': diagnosis.mkb_ex,
-            'client_id': diagnosis.client_id,
+    def make_diagnosis_types_info(self, diagnosis, event):
+        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
+
+        event_diagnosis_types_info = self.make_event_diagnosis_types_info(event)
+
+        event_diagnoses = Event_Diagnosis.query.filter(
+            Event_Diagnosis.event == event,
+            Event_Diagnosis.diagnosis == diagnosis,
+            Event_Diagnosis.deleted == 0,
+        )
+        types_info = {
+            diag_type.code: associated
+            for diag_type in event_diagnosis_types_info
         }
+        types_info.update({
+            event_diagnosis.diagnosisType.code: event_diagnosis.diagnosisKind
+            for event_diagnosis in event_diagnoses
+        })
+        return types_info
 
     def make_action_type(self, action_type):
         """
@@ -1077,6 +1068,7 @@ class EventVisualizer(object):
             'flat_code': action_type.flatCode,
             'class': action_type.class_,
             'is_required_tissue': action_type.isRequiredTissue,
+            'context': action_type.context
         }
 
     def make_action(self, action):
@@ -1429,8 +1421,10 @@ class StationaryEventVisualizer(EventVisualizer):
             result['end_date'] = action.endDate
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
+            result['action_type'] = action.actionType
             result['event_id'] = action.event_id
             result['id'] = action.id
+            result['diagnoses'] = avis.make_action_diagnoses_info(action)
         return result
 
     def make_received(self, event, new=False):
@@ -1558,6 +1552,7 @@ class ActionVisualizer(object):
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions,
+            'diagnoses': self.make_action_diagnoses_info(action)
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
@@ -1773,3 +1768,96 @@ class ActionVisualizer(object):
         service_payment = service_ctrl.get_service_payment_info(service)
         service_payment['sum'] = format_money(service_payment['sum'])
         return service_payment
+
+    def make_diagnosis_types_info(self, diagnosis, action):
+        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
+
+        action_diagnoses = Action_Diagnosis.query.filter(
+            Action_Diagnosis.deleted == 0,
+            Action_Diagnosis.action == action,
+            Action_Diagnosis.diagnosis == diagnosis,
+        )
+
+        types_info = {
+            diag_type.code: associated
+            for diag_type in action.actionType.diagnosis_types
+        }
+        types_info.update({
+            action_diagnosis.diagnosisType.code: action_diagnosis.diagnosisKind
+            for action_diagnosis in action_diagnoses
+        })
+        return types_info
+
+    def make_diagnosis_info(self, diagnosis, action):
+        dvis = DiagnosisVisualizer()
+        diagnosis_info = dvis.make_diagnosis_record(diagnosis)
+        diagnosis_info['diagnosis_types'] = self.make_diagnosis_types_info(diagnosis, action)
+        return diagnosis_info
+
+    def make_action_diagnoses_info(self, action):
+        dvis = DiagnosisVisualizer()
+        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate)
+        return [
+            dict(
+                dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),
+                diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, action),
+            )
+            for diagnostic in diagnostics
+        ]
+
+
+class DiagnosisVisualizer(object):
+
+    def make_diagnostic_record(self, diagnostic):
+        """
+        :type diagnostic: application.models.event.Diagnostic
+        :param diagnostic:
+        :return:
+        """
+        pvis = PersonTreeVisualizer()
+        aviz = ActionVisualizer()
+        return {
+            'id': diagnostic.id,
+            'set_date': diagnostic.setDate,
+            'end_date': diagnostic.endDate,
+            'createDatetime': diagnostic.createDatetime,
+            'mkb': diagnostic.mkb,
+            'mkbex': diagnostic.mkb_ex,
+            'deleted': diagnostic.deleted,
+            'character': diagnostic.character,
+            'dispanser': diagnostic.dispanser,
+            'trauma_type': diagnostic.traumaType,
+            'phase': diagnostic.phase,
+            'stage': diagnostic.stage,
+            'health_group': diagnostic.healthGroup,
+            'diagnosis_description': diagnostic.diagnosis_description,
+            'action_id': diagnostic.action_id,
+            'action': aviz.make_small_action_info(diagnostic.action) if diagnostic.action else None,
+            'notes': diagnostic.notes,
+            'ache_result': diagnostic.rbAcheResult,
+            # 'person': pvis.make_person_ws(diagnostic.person) if diagnostic.person else None,
+            # 'result': diagnostic.result,
+
+            # 'event_id': diagnostic.event_id,
+            'modify_person': pvis.make_person_ws(diagnostic.modifyPerson) if diagnostic.modifyPerson else None
+
+        } if diagnostic else None
+
+    def make_diagnosis_record(self, diagnosis, diagnostic=None):
+        """
+        :type diagnosis: nemesis.models.diagnosis.Diagnosis
+        :type diagnostic: nemesis.models.diagnosis.Diagnostic
+        :param diagnosis:
+        :param diagnostic:
+        :return:
+        """
+        pvis = PersonTreeVisualizer()
+        return {
+            'id': diagnosis.id,
+            'set_date': diagnosis.setDate,
+            'end_date': diagnosis.endDate,
+            'client_id': diagnosis.client.id,
+            'deleted': diagnosis.deleted,
+            'person': pvis.make_person_ws(diagnosis.person) if diagnosis.person else None,
+            'diagnostic': self.make_diagnostic_record(diagnostic or diagnosis._diagnostic)
+        }

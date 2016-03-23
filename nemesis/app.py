@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, url_for
+
 import pytz
+
+from flask import Flask, url_for
 from werkzeug.contrib.profiler import ProfilerMiddleware
+
 from nemesis.lib.frontend import frontend_config
+
 
 app = Flask(__name__)
 
 
 # noinspection PyUnresolvedReferences
 def bootstrap_app(templates_dir):
-    from systemwide import db, cache, babel, principal, login_manager, beaker_session
+    from systemwide import db, cache, babel, principal, login_manager, beaker_session, celery
 
-    app.template_folder = templates_dir
+    if templates_dir:
+        app.template_folder = templates_dir
 
     db.init_app(app)
     babel.init_app(app)
@@ -19,6 +24,8 @@ def bootstrap_app(templates_dir):
     principal.init_app(app)
     beaker_session.init_app(app)
     cache.init_app(app)
+    if app.config['CELERY_ENABLED']:
+        celery.init_app(app)
 
     @babel.timezoneselector
     def get_timezone():
@@ -32,6 +39,7 @@ def bootstrap_app(templates_dir):
     import nemesis.context_processors
 
     init_logger()
+    create_databases(app)
     _init_enums(app)
 
 
@@ -67,6 +75,21 @@ def init_logger():
     logger.addHandler(logging.StreamHandler())
 
     logger.debug('SimpleLogs Handler initialized')
+
+
+def create_databases(app):
+    from systemwide import db
+    if app.config['CELERY_ENABLED']:
+        with app.app_context():
+            try:
+                db.create_all(bind='celery_tasks')
+            except Exception, e:
+                from celery_config import CAT_DB_NAME
+                raise Exception(
+                    u'Database with name `{0}` should exist. Additional info: {1}'.format(
+                        CAT_DB_NAME, unicode(e.message)
+                    )
+                )
 
 
 def _init_enums(app):
@@ -111,12 +134,7 @@ def fc_urls():
                 'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
                 'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
             }
-        },
-        'cas_token_name': config['CASTIEL_AUTH_TOKEN'],
-        'pharmexpert': {
-            'enabled': bool(config.get('PHARMEXPERT_URL', False)),
-            'security_key': config.get('PHARMEXPERT_SECURITY_KEY', ''),
-        },
+        }
     }
 
 
@@ -127,12 +145,22 @@ def fc_settings():
     :return:
     """
     from nemesis.lib.settings import Settings
+    from nemesis.lib.data_ctrl.utils import get_default_org
 
     settings = Settings()
+    default_org = get_default_org()
     return {
         'settings': {
             'user_idle_timeout': settings.getInt('Auth.UserIdleTimeout', 15 * 60),
             'logout_warning_timeout': settings.getInt('Auth.LogoutWarningTimeout', 200),
+        },
+        'local_config': {
+            'cas_token_name': app.config['CASTIEL_AUTH_TOKEN'],
+            'default_org_id': default_org.id if default_org else None,
+            'pharmexpert': {
+                'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),
+                'security_key': app.config.get('PHARMEXPERT_SECURITY_KEY', ''),
+            },
         }
     }
 

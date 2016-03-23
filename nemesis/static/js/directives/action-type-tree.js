@@ -212,6 +212,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     );
                 };
                 $scope.hidden_nodes = [];
+                $scope.all_nodes_expanded = {value: false};
                 $scope.toggle_vis = function (node_id) {
                     if ($scope.hidden_nodes.has(node_id)) {
                         $scope.hidden_nodes.splice($scope.hidden_nodes.indexOf(node_id), 1);
@@ -254,35 +255,41 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     });
                 };
                 $scope.create_action = function (node) {
-                    $http.get(url_api_check_action_service_requirement + node.id)
-                        .success(function (data) {
-                            var service_required = data.result,
-                                service_available = $scope.at_service_data.hasOwnProperty(node.id),
-                                service_data = $scope.at_service_data[node.id];
-                            if (service_required && !service_available) {
-                                MessageBox.error(
-                                    'Ошибка создания',
-                                    ('Невозможно создать "{0}", т.к. для данной услуги отсутствует позиция ' +
-                                     'в прайс-листе.').format(node.name)
-                                );
-                            } else {
-                                var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
-                                    '&event_id=' + $scope.event_id;
-                                if (service_available) {
-                                    url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
-                                        url, service_data.price_list_item_id, service_data.service_kind.id
+                    // или сохранить сразу или открыть вкладку с редактированием нового экшена
+                    if (filter_params.instant_create) {
+                        var service;
+                        if ($scope.at_service_data.hasOwnProperty(node.id)) {
+                            service = angular.extend($scope.at_service_data[node.id], {event_id: $scope.event_id});
+                        }
+                        var data = {
+                            action_type_id: node.id,
+                            event_id: $scope.event_id,
+                            service: service
+                        };
+                        $http.post('/actions/api/action/', data)
+                            .then(
+                                $scope.$close,
+                                function (response) {
+                                    return MessageBox.error(
+                                        'Ошибка сохранения',
+                                        response.data.meta.name
                                     );
                                 }
-                                WMWindowSync.openTab(url, onCreateCallback);
-                                $scope.$close();
-                            }
-                        })
-                        .error(function () {
-                            MessageBox.error(
-                                'Ошибка',
-                                'Невозможно проверить обязательность услуги для выбранного типа'
+                            )
+                            .then(onCreateCallback);
+                    } else {
+                        var service_available = $scope.at_service_data.hasOwnProperty(node.id),
+                            service_data = $scope.at_service_data[node.id];
+                        var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
+                            '&event_id=' + $scope.event_id;
+                        if (service_available) {
+                            url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
+                                url, service_data.price_list_item_id, service_data.service_kind.id
                             );
-                        });
+                        }
+                        WMWindowSync.openTab(url, onCreateCallback);
+                        $scope.$close();
+                    }
                 };
                 $scope.create_actions = function () {
                     $http.post(
@@ -363,14 +370,31 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         if (service.personally_acceptable(at_item.id) && service.tissue_acceptable(at_item, tissue)) {
                             personal_check = true;
                         }
+                        if (at_item.children.length) {
+                            $scope.hidden_nodes.push(at_item.id) // по умолчанию все узлы свернуты
+                        }
                     });
                     $scope.conditions.os_check = $scope.os_check_enabled = os_check;
                     $scope.conditions.person_check = $scope.personal_check_enabled = personal_check;
                     $scope.set_filter();
                 });
+                $scope.$watch('all_nodes_expanded.value', function(n, o){
+                    if (n!=o){
+                        if (n){
+                            $scope.hidden_nodes = [];
+                        } else {
+                            angular.forEach($scope.tree.children, function (at_item) {
+                                if (at_item.children.length) {
+                                    $scope.hidden_nodes.push(at_item.id)
+                                }
+                            });
+                        }
+                    }
+                })
             };
             return $modal.open({
                 templateUrl: templateUrl,
+                backdrop : 'static',
                 size: 'lg',
                 controller: Controller,
                 windowClass: 'modal-scrollable'
@@ -413,6 +437,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
+                backdrop : 'static',
 //                size: 'sm',
                 controller: Controller
             });
@@ -448,6 +473,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     Только разрешённые в моём отделении\
                 </label>\
             </div>\
+            <button type="button" class="btn btn-default" ng-click="all_nodes_expanded.value=!all_nodes_expanded.value">\
+            [[all_nodes_expanded.value ? \'Свернуть все узлы\' : \'Развернуть все узлы\']]</button>\
             <div class="ui-treeview">\
                 <ul ng-repeat="root in tree.children">\
                     <li sf-treepeat="node in children of root">\

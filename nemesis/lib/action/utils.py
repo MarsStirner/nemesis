@@ -2,10 +2,11 @@
 
 import datetime
 
-from sqlalchemy import exists
+from sqlalchemy import exists, join
 from sqlalchemy.sql.expression import func, between
 
 from nemesis.models.actions import Action, ActionType, ActionType_Service
+from nemesis.models.accounting import PriceListItem
 from nemesis.systemwide import db
 
 
@@ -66,3 +67,42 @@ def check_at_service_requirement(action_type_id, when=None):
                     func.coalesce(ActionType_Service.endDate, func.curdate()))
         )
     ).scalar()
+
+
+def check_at_service_pli_match(action_type_id, price_list_item_id):
+    return db.session.query(
+        exists().select_from(
+            join(
+                ActionType_Service, PriceListItem,
+                PriceListItem.service_id == ActionType_Service.service_id
+            )
+        ).where(
+            ActionType_Service.master_id == action_type_id
+        ).where(
+            between(func.curdate(),
+                    ActionType_Service.begDate,
+                    func.coalesce(ActionType_Service.endDate, func.curdate()))
+        ).where(
+            PriceListItem.id == price_list_item_id
+        )
+    ).scalar()
+
+
+def check_action_service_requirements(action_type_id, price_list_item_id=None):
+    result = {
+        'result': True,
+        'message': ''
+    }
+    required = check_at_service_requirement(action_type_id)
+    result['result'] = not required
+
+    if required:
+        if not price_list_item_id:
+            result['message'] = u'Отсутствует атрибут `price_list_item_id`'
+        else:
+            pli_matched = check_at_service_pli_match(action_type_id, price_list_item_id)
+            if not pli_matched:
+                result['message'] = u'Отсутствует позиция в прайс-листе для данного документа'
+            else:
+                result['result'] = True
+    return result

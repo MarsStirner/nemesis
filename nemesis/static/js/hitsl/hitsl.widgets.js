@@ -582,7 +582,9 @@ angular.module('WebMis20')
 
             var used_codes = [];
             scope.$watch(function () { return ngModelCtrl.$modelValue; }, function (n, o) {
-                used_codes = n.map(function (mkb) { return mkb.code });
+                used_codes = (_.isArray(n))
+                    ?(_.map(n, function (mkb) { return mkb.code }))
+                    :([]);
             });
             scope.filterMkbChoices = function (mkb) {
                 return !used_codes.has(mkb.code);
@@ -847,6 +849,37 @@ angular.module('WebMis20')
                         var coupon_date = moment(coupon.date).format('DD.MM.YYYY');
                         return '{0} на {1}'.format(coupon.number, coupon_date)
                     }
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectArea', ['$http', 'RisarApi', function ($http, RisarApi) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // Add the inner content to the element
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.name ]]</ui-select-match>\
+<ui-select-choices group-by="group_areas" repeat="area in areas">\
+    <div ng-bind-html="area.name | highlight: $select.search"></div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите район';
+                    scope.group_areas = function (item){
+                        return scope.level1[item.parent_code];
+                    };
+                    scope.get_areas = function () {
+                        return $http.get(url_area_list)
+                        .then(function (res) {
+                            scope.level1 = res.data.result[0];
+                            scope.areas = res.data.result[1];
+                        });
+                    };
+                    scope.get_areas();
                 }
             }
         }
