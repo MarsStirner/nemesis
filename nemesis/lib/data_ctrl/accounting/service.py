@@ -125,15 +125,15 @@ class ServiceController(BaseModelController):
             rbservice.id, parent_service.price_list_item.priceList_id
         )
         if len(pli_at_list) == 0:
-            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги {0}'.format(
-                rbservice.name
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги {0} ({1})'.format(
+                rbservice.name, rbservice.id
             ))
         # TODO: одной услуге может соответствовать несколько возможных AT;
         # добавить обработку таких случаев и выбор подходящего ТД клиентом + использовать состояние валидности
         # группы услуг
         elif len(pli_at_list) > 1 and False:
-            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги {0}'.format(
-                rbservice.name
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги {0} ({1})'.format(
+                rbservice.name, rbservice.id
             ))
         pli_id, at_id = pli_at_list[0]
         is_lab = at_is_lab(at_id)
@@ -162,9 +162,13 @@ class ServiceController(BaseModelController):
             parent_service.action.actionType_id
         )
         if len(pli_apt_list) == 0:
-            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги')
+            raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги {0} ({1})'.format(
+                rbservice.name, rbservice.id
+            ))
         elif len(pli_apt_list) > 1:
-            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги')
+            raise ApiException(409, u'Найдено более одной подходящей позиции прайса для подуслуги {0} ({1})'.format(
+                rbservice.name, rbservice.id
+            ))
         pli_id, apt_id = pli_apt_list[0]
         service_kind = ServiceKind(ServiceKind.lab_test[0])
         new_service = self.get_new_service({
@@ -379,6 +383,11 @@ class ServiceController(BaseModelController):
                         apt_data = list(apt_data)[:2]
                         apt_data.append(filtered_apt_prices[apt_data[0]])
                         flt_assignable.append(apt_data)
+                    else:
+                        # без услуги и цены
+                        apt_data = list(apt_data)[:2]
+                        apt_data.append(None)
+                        flt_assignable.append(apt_data)
                 assignable = flt_assignable
 
             assigned = [apt_data[0] for apt_data in assignable]  # apt.id list
@@ -563,6 +572,7 @@ class ServiceController(BaseModelController):
                         existing_ss_map[apt_id] if apt_id in existing_ss_map else ref_ss_map[apt_id]
                     )
             service.subservice_list = upd_ss_list
+            self.update_service_serviced_entity(service, service_data['serviced_entity'])
 
         return service
 

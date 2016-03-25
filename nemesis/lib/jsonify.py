@@ -1679,7 +1679,8 @@ class ActionVisualizer(object):
             'is_assigned': prop.isAssigned,
             'value': value,
             'unit': prop.unit,
-            'norm': prop.norm
+            'norm': prop.norm,
+            'has_pricelist_service': prop.has_pricelist_service
         }
 
     # Здесь будут кастомные мейкеры экшон пропертей.

@@ -429,7 +429,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     });
                 };
                 $scope.price_available = function (prop) {
-                    return prop.length > 2;
+                    return prop.length > 2 && _.isNumber(prop[2]) && !_.isNaN(prop[2]);
                 };
                 $scope.get_price = function (prop) {
                     return prop[2];
@@ -521,6 +521,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             Только разрешённые в моём отделении\
                         </label>\
                     </div>\
+                    <button type="button" class="btn btn-default" ng-click="all_nodes_expanded.value=!all_nodes_expanded.value">\
+                    [[all_nodes_expanded.value ? \'Свернуть все узлы\' : \'Развернуть все узлы\']]</button>\
                     <div class="ui-treeview">\
                         <ul ng-repeat="root in tree.children">\
                             <li sf-treepeat="node in children of root">\
