@@ -1545,7 +1545,7 @@ class ActionVisualizer(object):
             'is_urgent': action.isUrgent,
             'coord_date': action.coordDate,
             'properties': [
-                self.make_property(prop)
+                self.make_property(prop, for_template)
                 for prop in action.properties
             ],
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
@@ -1659,7 +1659,7 @@ class ActionVisualizer(object):
 
         return layout
 
-    def make_property(self, prop):
+    def make_property(self, prop, for_template=False):
         """
         @type prop: ActionProperty
         """
@@ -1679,7 +1679,7 @@ class ActionVisualizer(object):
             'value': value,
             'unit': prop.unit,
             'norm': prop.norm,
-            'has_pricelist_service': prop.has_pricelist_service
+            'has_pricelist_service': prop.has_pricelist_service if not for_template else None
         }
 
     # Здесь будут кастомные мейкеры экшон пропертей.
