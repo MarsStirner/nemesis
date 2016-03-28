@@ -1520,7 +1520,7 @@ re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.
 class ActionVisualizer(object):
     ro = True
 
-    def make_action(self, action):
+    def make_action(self, action, for_template=False):
         """
         @type action: Action
         """
@@ -1545,14 +1545,13 @@ class ActionVisualizer(object):
             'is_urgent': action.isUrgent,
             'coord_date': action.coordDate,
             'properties': [
-                self.make_property(prop)
+                self.make_property(prop, for_template)
                 for prop in action.properties
             ],
-            #FIXME: Мелочь, конечно, но использование двойного отрицания не особо красиво. Зачем здесь делать "not", чтобы потом в интефейсе проверять "!ro".
             'ro': not UserUtils.can_edit_action(action) if action.id else False,
             'layout': self.make_action_layout(action),
-            'prescriptions': action.medication_prescriptions,
-            'diagnoses': self.make_action_diagnoses_info(action)
+            'prescriptions': action.medication_prescriptions if not for_template else [],
+            'diagnoses': self.make_action_diagnoses_info(action) if not for_template else []
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
@@ -1572,7 +1571,7 @@ class ActionVisualizer(object):
         }
 
     def make_action_wo_sensitive_props(self, action):
-        action = self.make_action(action)
+        action = self.make_action(action, for_template=True)
         for prop in action['properties']:
             if prop['type'].typeName in NOT_COPYABLE_VALUE_TYPES:
                 prop['value'] = [] if prop['type'].isVector else None
@@ -1660,7 +1659,7 @@ class ActionVisualizer(object):
 
         return layout
 
-    def make_property(self, prop):
+    def make_property(self, prop, for_template=False):
         """
         @type prop: ActionProperty
         """
@@ -1679,7 +1678,8 @@ class ActionVisualizer(object):
             'is_assigned': prop.isAssigned,
             'value': value,
             'unit': prop.unit,
-            'norm': prop.norm
+            'norm': prop.norm,
+            'has_pricelist_service': prop.has_pricelist_service if not for_template else None
         }
 
     # Здесь будут кастомные мейкеры экшон пропертей.

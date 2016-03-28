@@ -170,6 +170,16 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     return action
 
 
+def create_action_property(action, prop_type):
+    prop = ActionProperty()
+    prop.type = prop_type
+    prop.type_id = prop_type.id
+    prop.action = action
+    prop.action_id = action.id
+    action.properties.append(prop)
+    return prop
+
+
 def update_action_prescriptions(action, prescriptions):
     if not prescriptions:
         return
