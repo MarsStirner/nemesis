@@ -131,6 +131,8 @@ def api_method(func=None, hook=None):
     :type: callable
     """
     def decorator(func):
+        func.is_api = True
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
