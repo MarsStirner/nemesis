@@ -27,14 +27,17 @@ angular.module('WebMis20.directives')
                     ngChange = attrs.ngChange,
                     allowClear = Boolean(attrs.allowClear),
                     autofocus = attrs.autofocus,
-                    limitTo = attrs.limitTo || 10;
+                    limitTo = attrs.limitTo || 10,
+                    multiple = attrs.multiple,
+                    closeOnSelect = attrs.closeOnSelect !== undefined ? attrs.closeOnSelect : false;
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
                 var uiSelect = $('<ui-select></ui-select>');
                 var uiSelectMatch = $(
-                    '<ui-select-match allow-clear="{0}">[[getName($select.selected)]]</ui-select-match>'.format(
-                        allowClear
+                    '<ui-select-match allow-clear="{0}">[[getName({1})]]</ui-select-match>'.format(
+                        allowClear,
+                        multiple ? '$item' : '$select.selected'
                     )
                 );
                 var uiSelectChoices = $(
@@ -59,6 +62,10 @@ angular.module('WebMis20.directives')
                 if (refBook) uiSelect.attr('ref-book', refBook);
                 if (ngChange) uiSelect.attr('ng-change', ngChange);
                 if (autofocus) uiSelect.attr('autofocus', '');
+                if (multiple) {
+                    uiSelect.attr('multiple', '');
+                    uiSelect.attr('close-on-select', closeOnSelect);
+                }
                 uiSelect.append(uiSelectMatch);
                 uiSelect.append(uiSelectChoices);
                 $(element).replaceWith(uiSelect);
