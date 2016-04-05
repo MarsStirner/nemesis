@@ -364,20 +364,22 @@ class ActionPropertyType(db.Model):
     template = db.relationship('ActionPropertyTemplate')
     test = db.relationship('rbTest')
 
-    @classmethod
-    def parse_value_domain(cls, value_domain, type_name):
-        if type_name == 'Diagnosis':
+    def parse_value_domain(self):
+        if self.typeName == 'Diagnosis':
             from nemesis.lib.utils import parse_json
-            return parse_json(value_domain)
+            return parse_json(self.valueDomain)
+        elif self.typeName == 'String':
+            return [choice.strip('\' ') for choice in self.valueDomain.split(',')]
         return None
 
     def __json__(self):
+        value_domain = self.parse_value_domain()
         result = {
             'id': self.id,
             'name': self.name,
             'code': self.code,
             'domain': self.valueDomain,
-            'domain_obj': ActionPropertyType.parse_value_domain(self.valueDomain, self.typeName),
+            'domain_obj': value_domain,
             'is_assignable': self.isAssignable,
             'ro': self.readOnly,
             'mandatory': self.mandatory,
@@ -386,9 +388,12 @@ class ActionPropertyType(db.Model):
             'norm': self.norm,
             'vector': bool(self.isVector),
         }
-        if self.typeName == 'String':
-            if self.valueDomain:
-                result['values'] = [choice.strip('\' *') for choice in self.valueDomain.split(',')]
+        if self.typeName == 'String' and value_domain:
+            if '*' in value_domain:
+                result['type_name'] = 'String/Free'
+                result['domain_obj'] = filter(lambda x: x != '*', value_domain)
+            else:
+                result['type_name'] = 'String/Select'
         return result
 
 
