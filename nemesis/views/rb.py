@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import requests
+
 from nemesis.app import app
 from nemesis.lib.utils import safe_dict
-from nemesis.lib.vesta import Vesta
+from nemesis.lib.vesta import Vesta, VestaNotFoundException
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol, \
     rls, refbooks, risar, accounting, diagnosis
 from nemesis.lib.apiutils import api_method
@@ -52,6 +52,30 @@ def api_refbook_int(name, code=None):
         {'id': item['_id'], 'name': item['name'], 'code': item['code']}
         for item in Vesta.get_rb(name)
     ]
+
+
+def check_rb_value_exists(rb_name, value_code):
+    for mod in (enums,):
+        if hasattr(mod, rb_name):
+            ref_book = getattr(mod, rb_name)
+            return value_code in ref_book.codes.values()
+
+    for mod in (exists, schedule, actions, client, event, person, organisation, expert_protocol, rls, refbooks, risar,
+                accounting, diagnosis):
+        if hasattr(mod, rb_name):
+            ref_book = getattr(mod, rb_name)
+
+            if 'deleted' in ref_book.__dict__:
+                return ref_book.query.filter_by(deleted=0, code=value_code).first() is not None
+            else:
+                return ref_book.query.filter_by(code=value_code).first() is not None
+
+    try:
+        rb_val = Vesta.get_rb(rb_name, value_code)
+    except VestaNotFoundException:
+        return False
+    else:
+        return rb_val and rb_val['_id'] not in (None, 'None')
 
 
 @app.route('/api/rb/')

@@ -16,6 +16,10 @@ class VestaException(Exception):
     pass
 
 
+class VestaNotFoundException(Exception):
+    pass
+
+
 class Vesta(object):
     class Result(object):
         def __init__(self, success=True, msg=''):
@@ -133,7 +137,7 @@ class Vesta(object):
             raise VestaException(u'Error in Vesta server')
         j = response.json()
         if 'data' not in j:
-            raise VestaException(u'No result from Vesta')
+            raise VestaNotFoundException(u'No result from Vesta')
         return j['data']
 
 
