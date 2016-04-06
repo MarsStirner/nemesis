@@ -525,10 +525,6 @@ class Diagnostic(db.Model):
     result = db.relationship(u'rbResult', innerjoin=True)
     person = db.relationship('Person', foreign_keys=[person_id])
     event = db.relationship('Event', innerjoin=True)
-    diagnoses = db.relationship(
-        'Diagnosis', innerjoin=True, lazy=False, uselist=True,
-        primaryjoin='and_(Diagnostic.diagnosis_id == Diagnosis.id, Diagnosis.deleted == 0)'
-    )
     diagnosis = db.relationship('Diagnosis')
     diagnosisType = db.relationship('rbDiagnosisType', lazy=False, innerjoin=True)
     character = db.relationship('rbDiseaseCharacter')

@@ -51,11 +51,9 @@ def create_or_update_diagnosis(event, json_data, action=None):
         diag.dispanser_id = dispanser_id
         diag.diagnosis_description = diagnosis_description
 
-        diagnosis = filter(lambda ds: ds.id == diagnosis_id, diag.diagnoses)
-        if not diagnosis:
+        diagnosis = diag.diagnosis
+        if not diagnosis or diagnosis.deleted:
             raise Exception('Diagnosis record can\'t be found')
-        else:
-            diagnosis = diagnosis[0]
         diagnosis.MKB = mkb
         diagnosis.MKBEx = mkbex or ''
     else:
@@ -96,7 +94,7 @@ def create_or_update_diagnosis(event, json_data, action=None):
         diagnosis.dispanser_id = None
         diagnosis.mod_id = None
 
-        diag.diagnoses.append(diagnosis)
+        diag.diagnosis = diagnosis
 
     return diag
 
@@ -110,6 +108,6 @@ def delete_diagnosis(diagnostic, diagnostic_id=None):
     if diagnostic is None and diagnostic_id:
         diagnostic = Diagnostic.query.get(diagnostic_id)
     diagnostic.deleted = 1
-    for ds in diagnostic.diagnoses:
-        ds.deleted = 1
+    if diagnostic.diagnosis and not diagnostic.diagnosis.deleted:
+        diagnostic.diagnosis.deleted = 1
     db.session.add(diagnostic)

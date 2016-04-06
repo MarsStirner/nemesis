@@ -1028,7 +1028,7 @@ class EventVisualizer(object):
 
     def make_diagnostic_record(self, diagnostic):
         """
-        :type diagnostic: application.models.event.Diagnostic
+        :type diagnostic: nemesis.models.event.Diagnostic
         :param diagnostic:
         :return:
         """
