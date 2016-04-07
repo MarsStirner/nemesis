@@ -916,11 +916,7 @@ class ActionType(db.Model):
     property_types = db.relationship(u'ActionPropertyType', lazy='dynamic')
     group = db.relationship(u'ActionType', remote_side=[id])
     jobType = db.relationship(u'rbJobType')
-    tissue_type = db.relationship(
-        'ActionType_TissueType',
-        primaryjoin='and_(ActionType_TissueType.master_id == ActionType.id, ActionType_TissueType.idx == 0)',
-        uselist=False
-    )
+    tissue_types = db.relationship('ActionType_TissueType')
     diagnosis_types = db.relationship('rbDiagnosisTypeN', secondary=ActionType_rbDiagnosisType)
 
     def get_property_type_by_name(self, name):
@@ -991,6 +987,7 @@ class ActionType_TissueType(db.Model):
 
     master = db.relationship(u'ActionType')
     tissueType = db.relationship(u'rbTissueType')
+    testTubeType = db.relationship(u'rbTestTubeType')
     unit = db.relationship(u'rbUnit')
 
 
@@ -1087,7 +1084,7 @@ class TakenTissueJournal(db.Model):
     tissueType = db.relationship(u'rbTissueType')
     testTubeType = db.relationship(u'rbTestTubeType')
     unit = db.relationship(u'rbUnit')
-    actions = db.relationship(u'Action', secondary='Action_TakenTissueJournal', lazy='joined')
+    actions = db.relationship(u'Action', secondary='Action_TakenTissueJournal', backref='tissues')
 
     @property
     def barcode_s(self):
@@ -1107,7 +1104,7 @@ class TakenTissueJournal(db.Model):
             'testTubeType': self.testTubeType,
             'amount': self.amount,
             'status': self.status,
-            'isUrgent': True if filter(lambda a: a.isUrgent, self.actions) else False
+            'isUrgent': any(a.isUrgent for a in self.actions),
         }
 
 

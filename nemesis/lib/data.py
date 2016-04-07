@@ -317,95 +317,40 @@ def format_action_data(json_data):
 
 
 def create_TTJ_record(action):
-    planned_end_date = action.plannedEndDate
-    if not planned_end_date:
-        raise ActionException(u'Не заполнена плановая дата исследования')
-    client_id = action.event.client_id
-    at_tissue_type = action.actionType.tissue_type
-    if at_tissue_type is None:
-        raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
-
-    ttj = TakenTissueJournal.query.filter(
-        TakenTissueJournal.client_id == client_id,
-        TakenTissueJournal.tissueType_id == at_tissue_type.tissueType_id,
-        TakenTissueJournal.datetimeTaken == planned_end_date
-    ).first()
-    if not ttj:
-        ttj = TakenTissueJournal()
-        ttj.client_id = client_id
-        ttj.tissueType_id = at_tissue_type.tissueType_id
-        ttj.amount = at_tissue_type.amount
-        ttj.unit_id = at_tissue_type.unit_id
-        ttj.datetimeTaken = planned_end_date
-        ttj.externalId = action.event.externalId
-        ttj.testTubeType_id = at_tissue_type.testTubeType_id
-    else:
-        ttj.amount += at_tissue_type.amount
-    db.session.add(ttj)
-
-    action_ttj = Action_TakenTissueJournalAssoc()
-    action_ttj.action = action
-    action_ttj.taken_tissue_journal = ttj
-    db.session.add(action_ttj)
-
-    action.takenTissueJournal = ttj
-
-
-def create_JT(action, orgstructure_id):
     """
-    Создание JobTicket для лабораторного исследования
-
-    :param action: Action
-    :param orgstructure_id:
-    :return: JobTicket
+    @type action: nemesis.models.actions.Action
+    @param action:
+    @return:
     """
     planned_end_date = action.plannedEndDate
     if not planned_end_date:
         raise ActionException(u'Не заполнена плановая дата исследования')
-    job_type_id = action.actionType.jobType_id
-    jt_date = planned_end_date.date()
-    jt_time = planned_end_date.time()
-    client_id = action.event.client_id
-    at_tissue_type = action.actionType.tissue_type
-    if at_tissue_type is None:
+    at_tissue_types = action.actionType.tissue_types
+    if not at_tissue_types:
         raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
 
-    job = Job.query.filter(
-        Job.jobType_id == job_type_id,
-        Job.date == jt_date,
-        Job.orgStructure_id == orgstructure_id,
-        Job.begTime <= jt_time,
-        Job.endTime >= jt_time
-    ).first()
-    if not job:
-        job = Job()
-        job.date = jt_date
-        job.begTime = '00:00:00'
-        job.endTime = '23:59:59'
-        job.jobType_id = job_type_id
-        job.orgStructure_id = orgstructure_id
-        job.quantity = 100
-        db.session.add(job)
-    ttj = TakenTissueJournal.query.filter(
-        TakenTissueJournal.client_id == client_id,
-        TakenTissueJournal.tissueType_id == at_tissue_type.tissueType_id,
-        TakenTissueJournal.datetimeTaken == planned_end_date
-    ).first()
-    if not ttj:
-        ttj = TakenTissueJournal()
-        ttj.client_id = client_id
-        ttj.tissueType_id = at_tissue_type.tissueType_id
-        ttj.amount = at_tissue_type.amount
-        ttj.unit_id = at_tissue_type.unit_id
-        ttj.datetimeTaken = planned_end_date
-        ttj.externalId = action.event.externalId
+    client = action.event.client
+    for attt in at_tissue_types:
+        ttj = TakenTissueJournal.query.filter(
+            TakenTissueJournal.client == client,
+            TakenTissueJournal.tissueType == attt.tissueType,
+            TakenTissueJournal.testTubeType == attt.testTubeType,
+            TakenTissueJournal.datetimeTaken == planned_end_date,
+        ).first()
+        if not ttj:
+            ttj = TakenTissueJournal()
+            ttj.client = client
+            ttj.tissueType = attt.tissueType
+            ttj.amount = attt.amount
+            ttj.unit = attt.unit
+            ttj.datetimeTaken = planned_end_date
+            ttj.externalId = action.event.externalId
+            ttj.testTubeType = attt.testTubeType
+        else:
+            ttj.amount += attt.amount
+        # ttj.actions.append(action)
+        action.tissues.append(ttj)
         db.session.add(ttj)
-    action.takenTissueJournal = ttj
-    jt = JobTicket()
-    jt.job = job
-    jt.datetime = planned_end_date
-    db.session.add(jt)
-    return jt
 
 
 def isRedDay(date):
