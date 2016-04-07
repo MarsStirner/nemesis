@@ -1070,7 +1070,7 @@ class EventVisualizer(object):
             'id': diagnosis.id,
             'mkb': diagnosis.mkb,
             'mkbex': diagnosis.mkb_ex,
-            'client_id': diagnosis.client_id,
+            'client_id': diagnosis.client.id,
         }
 
     def make_action_type(self, action_type):

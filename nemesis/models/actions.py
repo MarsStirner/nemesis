@@ -200,7 +200,6 @@ class ActionProperty(db.Model):
             else:
                 value_container.set_value(value)
             value_container.index = index
-            value_container.property_object = self
             db.session.add(value_container)
             return value_container
 
