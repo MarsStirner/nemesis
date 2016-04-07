@@ -27,7 +27,7 @@ class User(UserMixin):
         self.deleted = 0
         self.__dict__.update(dict((key, value)
                                   for key, value in person.__dict__.iteritems()
-                                  if not callable(value) and not key.startswith('__')))
+                                  if not callable(value) and not key.startswith('_')))
         self.roles = list()
         self._current_role = None
         self._current_role_name = None
@@ -37,7 +37,7 @@ class User(UserMixin):
         if person.post_id:
             self.post.update(dict((key, value)
                              for key, value in person.post.__dict__.iteritems()
-                             if not callable(value) and not key.startswith('__')))
+                             if not callable(value) and not key.startswith('_')))
         self.org_structure = person.org_structure if person.orgStructure_id else None
         self.set_roles_rights(person)
 
