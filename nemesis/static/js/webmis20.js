@@ -211,16 +211,12 @@ var WebMis20 = angular.module('WebMis20', [
 })
 .filter('flt_not_deleted', function() {
     return function(items) {
-        var out = [];
-        if (items && items instanceof Array) {
-            items.forEach(function(item){
-                if (!item.hasOwnProperty('deleted') ||
-                    (item.hasOwnProperty('deleted') && item.deleted === 0)) {
-                    out.push(item);
-                }
-            });
+        if (_.isArray(items)) {
+            return _.filter(items, function (item) {
+                return !_.has(item, 'deleted') || !item.deleted
+            })
         }
-        return out;
+        return [];
     };
 })
 .filter('rb_result_filter', function() {
