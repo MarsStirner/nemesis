@@ -13,18 +13,17 @@ class Counter(object):
         self.counter = rbCounter.query.filter(rbCounter.code == code).first()
 
     def increment_value(self):
-        self.counter.value = self.get_next_value(self.counter.value + 1)
+        self.counter.value = self.get_next_value(self.counter.value)
 
     def check_number_used(self, number):
         return False
 
-    def get_next_value(self, next_value):
-        taken = self.check_number_used(next_value+1)
-        if taken:
-            next_value += 1
-            return self.get_next_value(next_value)
-        else:
-            return next_value
+    def get_next_value(self, current_value):
+        # FIXME: Limit maximum iterations
+        while 1:
+            next_value = current_value + 1
+            if not self.check_number_used(next_value):
+                return next_value
 
     def get_next_number(self):
         separator = self.counter.separator if self.counter.separator else ''

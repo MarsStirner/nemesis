@@ -34,6 +34,14 @@ class ContractController(BaseModelController):
         contract.date = now
         contract.begDate = now
 
+        if safe_bool(params.get('draft', False)):
+            contract.number = u'Новый договор'
+            contract.draft = True
+            contract.pricelist_list = PriceListController().get_listed_data({
+                'finance_id': safe_int(params.get('finance_id'))
+            })
+            contract.contract_type = self.session.query(rbContractType).filter(rbContractType.code == u'01').first()
+
         if safe_bool(params.get('generate_number', False)):
             contract_counter = ContractCounter('contract')
             contract.number = contract_counter.get_next_number()
@@ -69,7 +77,7 @@ class ContractController(BaseModelController):
 
     def update_contract(self, contract, json_data):
         json_data = self._format_contract_data(json_data)
-        for attr in ('date', 'begDate', 'endDate', 'finance', 'contract_type', 'resolution', ):
+        for attr in ('date', 'begDate', 'endDate', 'finance', 'contract_type', 'resolution', 'draft'):
             if attr in json_data:
                 setattr(contract, attr, json_data.get(attr))
 
@@ -88,7 +96,7 @@ class ContractController(BaseModelController):
         if not contract.id or contract.number != number:
             contract_counter = ContractCounter("contract")
             self.check_number_used(number, contract_counter)
-            setattr(contract, 'number', number)
+            contract.number = number
             if number.isdigit() and int(number) == contract_counter.counter.value + 1:
                 contract_counter.increment_value()
                 self.session.add(contract_counter.counter)
