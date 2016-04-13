@@ -369,7 +369,22 @@ class ActionPropertyType(db.Model):
             from nemesis.lib.utils import parse_json
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
-            return [choice.strip('\' ') for choice in self.valueDomain.split(',')]
+            values = [choice.strip('\' ') for choice in self.valueDomain.split(',')]
+            if not values:
+                return {
+                    'subtype': None,
+                    'values': [],
+                }
+            elif '*' in values:
+                return {
+                    'subtype': 'Free',
+                    'values': filter(lambda x: x != '*', values),
+                }
+            else:
+                return {
+                    'subtype': 'Select',
+                    'values': values,
+                }
         return None
 
     def __json__(self):
@@ -388,12 +403,8 @@ class ActionPropertyType(db.Model):
             'norm': self.norm,
             'vector': bool(self.isVector),
         }
-        if self.typeName == 'String' and value_domain:
-            if '*' in value_domain:
-                result['type_name'] = 'String/Free'
-                result['domain_obj'] = filter(lambda x: x != '*', value_domain)
-            else:
-                result['type_name'] = 'String/Select'
+        if self.typeName == 'String' and value_domain['subtype']:
+            result['type_name'] = 'String/{0}'.format(value_domain['subtype'])
         return result
 
 
