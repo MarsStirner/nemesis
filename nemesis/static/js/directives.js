@@ -798,7 +798,7 @@ angular.module('WebMis20.directives')
             restrict: "A",
             scope: {
               disabled: '=ngDisabled',
-              required: '=',
+              required: '=ngRequired',
               errors: '=',
               inline: '='
             },
@@ -831,7 +831,19 @@ angular.module('WebMis20.directives')
             },
             link: function(scope, element, attrs, ngModelCtrl, transcludeFn) {
               var setViewValue;
-              if (ngModelCtrl) {
+              if(ngModelCtrl) {
+                if(scope.required) {
+                  ngModelCtrl.$setValidity('refbookCheckbox', false);
+                  ngModelCtrl.$parsers.unshift(function(viewValue) {
+                    if (viewValue) {
+                      ngModelCtrl.$setValidity('refbookCheckbox', true);
+                      return viewValue;
+                    } else {
+                      ngModelCtrl.$setValidity('refbookCheckbox', false);
+                      return undefined;
+                    }
+                  });
+                }
                 setViewValue = function(newValue, oldValue) {
                   if (!angular.equals(newValue, oldValue)) {
                     var new_value = scope.selectedItems.length ? scope.selectedItems : undefined;
