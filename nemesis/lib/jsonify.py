@@ -21,7 +21,7 @@ from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
-    format_money)
+                               format_money, safe_bool)
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
@@ -817,6 +817,9 @@ class ClientVisualizer(object):
             'requestType': event.eventType.requestType,
             'event_type': event.eventType,
             'result': event.result,
+            'contract': {
+                'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft')),
+            },
         }
 
     def make_payer_for_lc(self, client):
@@ -952,7 +955,10 @@ class EventVisualizer(object):
                 event.externalId,
                 format_date(event.setDate),
                 et_name
-            )
+            ),
+            'contract': {
+                'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft'))
+            },
         }
 
     def make_short_event_type(self, event_type):
