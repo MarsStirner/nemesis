@@ -95,7 +95,8 @@ class ContractController(BaseModelController):
     def update_contract_number(self, contract, number):
         if not contract.id or contract.number != number:
             contract_counter = ContractCounter("contract")
-            self.check_number_used(number, contract_counter)
+            if not contract.draft:
+                self.check_number_used(number, contract_counter)
             contract.number = number
             if number.isdigit() and int(number) == contract_counter.counter.value + 1:
                 contract_counter.increment_value()
