@@ -8,7 +8,7 @@ from sqlalchemy.sql import and_
 from nemesis.models.accounting import PriceList, PriceListItem, Contract_PriceListAssoc, Contract
 from nemesis.models.exists import rbService
 from nemesis.models.actions import ActionType, ActionType_Service
-from nemesis.lib.utils import safe_int
+from nemesis.lib.utils import safe_int, safe_date
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 from nemesis.lib.agesex import recordAcceptableEx
 
@@ -40,6 +40,12 @@ class PriceListSelecter(BaseSelecter):
         if 'finance_id' in flt_args:
             finance_id = safe_int(flt_args['finance_id'])
             self.query = self.query.filter(PriceList.finance_id == finance_id)
+        if 'for_date' in flt_args:
+            date = safe_date(flt_args['for_date'])
+            self.query = self.query.filter(
+                PriceList.begDate <= date,
+                PriceList.endDate >= date,
+            )
         return self
 
     def get_contract_pl_id_list(self, contract_id):
