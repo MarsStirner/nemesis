@@ -36,7 +36,7 @@ class ContractController(BaseModelController):
 
         if safe_bool(params.get('draft', False)):
             contract.number = u'Новый договор'
-            contract.draft = True
+            contract.draft = 1
             contract.pricelist_list = PriceListController().get_listed_data({
                 'finance_id': safe_int(params.get('finance_id'))
             })
@@ -72,8 +72,15 @@ class ContractController(BaseModelController):
             }))
         return contract
 
-    def get_contract(self, contract_id):
-        return self.get_selecter().get_by_id(contract_id)
+    def get_contract(self, contract_id, params=None):
+        if params is None:
+            params = {}
+        contract = self.get_selecter().get_by_id(contract_id)
+        if safe_bool(params.get('undraft', False)):
+            contract_counter = ContractCounter('contract')
+            contract.number = contract_counter.get_next_number()
+            contract.draft = 0
+        return contract
 
     def update_contract(self, contract, json_data):
         json_data = self._format_contract_data(json_data)
