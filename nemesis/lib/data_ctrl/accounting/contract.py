@@ -33,6 +33,7 @@ class ContractController(BaseModelController):
         contract = Contract()
         contract.date = now
         contract.begDate = now
+        contract_type_default = self.session.query(rbContractType).filter(rbContractType.code == u'01').first()
 
         if safe_bool(params.get('draft', False)):
             contract.number = u'Новый договор'
@@ -41,7 +42,7 @@ class ContractController(BaseModelController):
                 'finance_id': params.get('finance_id'),
                 'for_date': now.date(),
             })
-            contract.contract_type = self.session.query(rbContractType).filter(rbContractType.code == u'01').first()
+            contract.contract_type = contract_type_default
 
         if safe_bool(params.get('generate_number', False)):
             contract_counter = ContractCounter('contract')
@@ -49,7 +50,11 @@ class ContractController(BaseModelController):
 
         finance_id = safe_int(params.get('finance_id'))
         if finance_id:
-            contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
+            finance = contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
+            if finance.code == u'4':  # Платные услуги
+                contract.contract_type = contract_type_default
+                contract.endDate = now.replace(month=12, day=31)
+
         contract.deleted = 0
 
         contragent_ctrl = ContragentController()
