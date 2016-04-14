@@ -116,7 +116,7 @@ class rbMeasureType(db.Model):
 
 class rbMeasureScheduleApplyType(db.Model):
     __tablename__ = u'rbMeasureScheduleApplyType'
-    _table_description = u'Типы мероприятий'
+    _table_description = u'Тип применения интервала'
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True, nullable=False)
