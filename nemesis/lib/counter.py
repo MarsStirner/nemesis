@@ -13,22 +13,25 @@ class Counter(object):
         self.counter = rbCounter.query.filter(rbCounter.code == code).first()
 
     def increment_value(self):
-        self.counter.value = self.get_next_value(self.counter.value)
+        self.counter.value = self.get_next_value()
 
     def check_number_used(self, number):
         return False
 
-    def get_next_value(self, current_value):
-        # FIXME: Limit maximum iterations
+    def get_next_value(self, current_value=None):
+        if current_value is None:
+            current_value = self.counter.value
         while 1:
             next_value = current_value + 1
             if not self.check_number_used(next_value):
                 return next_value
+            current_value = next_value
 
     def get_next_number(self):
+        next_value = self.get_next_value()
         separator = self.counter.separator if self.counter.separator else ''
         prefix = self.get_prefix(self.counter.prefix, separator)
-        return self.counter.separator.join([prefix, '%d' % (self.counter.value + 1)])
+        return separator.join([prefix, '%d' % (next_value,)])
 
     def get_date_prefix(self, val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')

@@ -38,7 +38,8 @@ class ContractController(BaseModelController):
             contract.number = u'Новый договор'
             contract.draft = 1
             contract.pricelist_list = PriceListController().get_listed_data({
-                'finance_id': safe_int(params.get('finance_id'))
+                'finance_id': params.get('finance_id'),
+                'for_date': now.date(),
             })
             contract.contract_type = self.session.query(rbContractType).filter(rbContractType.code == u'01').first()
 
@@ -102,11 +103,13 @@ class ContractController(BaseModelController):
     def update_contract_number(self, contract, number):
         if not contract.id or contract.number != number:
             contract_counter = ContractCounter("contract")
+            next_value = contract_counter.get_next_value()
             if not contract.draft:
                 self.check_number_used(number, contract_counter)
             contract.number = number
-            if number.isdigit() and int(number) == contract_counter.counter.value + 1:
-                contract_counter.increment_value()
+            if not number or number.isdigit() and int(number) == next_value:
+                contract_counter.counter.value = next_value
+                contract.number = str(next_value)
                 self.session.add(contract_counter.counter)
 
     def update_contract_ca_payer(self, contract, ca_data):
