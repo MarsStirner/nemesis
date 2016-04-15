@@ -370,7 +370,7 @@ class ActionPropertyType(db.Model):
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
             values = [choice.strip('\' ') for choice in self.valueDomain.split(',')]
-            if not values:
+            if not self.valueDomain.strip():
                 return {
                     'subtype': None,
                     'values': [],
