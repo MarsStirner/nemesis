@@ -77,7 +77,11 @@ class Counter(object):
 
 class ContractCounter(Counter):
     def check_number_used(self, number):
-        return Contract.query.filter(Contract.number == str(number)).count() > 0
+        if isinstance(number, str):
+            number = number.decode('utf-8')
+        elif not isinstance(number, unicode):
+            number = unicode(number)
+        return Contract.query.filter(Contract.number == number).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
