@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN, \
     rbDiagnosisKind
@@ -53,7 +54,7 @@ def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
     dk_by_code = {dk.code: dk for dk in diagnosis_kinds}
     dt_by_code = {dt.code: dt for dt in diagnosis_types}
 
-    for diagnosis_type, diagnosis_kind in diagnosis_types_info.iteritems():
+    for diagnosis_type, diagnosis_kind in six.iteritems(diagnosis_types_info):
         dk_code = diagnosis_kind['code']
         dk = dk_by_code[dk_code]
         dt = dt_by_code[diagnosis_type]
@@ -114,7 +115,7 @@ def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
                 ).first()
 
                 if prev_main:
-                    prev_main.diagnosisKind = dk_code['complication']
+                    prev_main.diagnosisKind = dk_by_code['complication']
                     db.session.add(prev_main)
 
             if event_diagn:
