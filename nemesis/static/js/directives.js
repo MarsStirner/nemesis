@@ -835,7 +835,7 @@ angular.module('WebMis20.directives')
                 if(scope.required) {
                   ngModelCtrl.$setValidity('refbookCheckbox', false);
                   ngModelCtrl.$parsers.unshift(function(viewValue) {
-                    if (viewValue) {
+                    if (viewValue.length) {
                       ngModelCtrl.$setValidity('refbookCheckbox', true);
                       return viewValue;
                     } else {
@@ -846,8 +846,7 @@ angular.module('WebMis20.directives')
                 }
                 setViewValue = function(newValue, oldValue) {
                   if (!angular.equals(newValue, oldValue)) {
-                    var new_value = scope.selectedItems.length ? scope.selectedItems : undefined;
-                    return ngModelCtrl.$setViewValue(new_value);
+                    return ngModelCtrl.$setViewValue(scope.selectedItems);
                   }
                 };
                 scope.$watch('selectedItems', setViewValue, true);
