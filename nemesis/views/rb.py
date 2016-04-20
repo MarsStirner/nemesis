@@ -54,7 +54,7 @@ def api_refbook_int(name, code=None):
     ]
 
 
-def check_rb_value_exists(rb_name, value_code):
+def check_rb_value_exists(rb_name, value_code, field_name=None):
     for mod in (enums,):
         if hasattr(mod, rb_name):
             ref_book = getattr(mod, rb_name)
@@ -65,10 +65,12 @@ def check_rb_value_exists(rb_name, value_code):
         if hasattr(mod, rb_name):
             ref_book = getattr(mod, rb_name)
 
+            args = {
+                field_name or 'code': value_code
+            }
             if 'deleted' in ref_book.__dict__:
-                return ref_book.query.filter_by(deleted=0, code=value_code).first() is not None
-            else:
-                return ref_book.query.filter_by(code=value_code).first() is not None
+                args['deleted'] = 0
+            return ref_book.query.filter_by(**args).first() is not None
 
     try:
         rb_val = Vesta.get_rb(rb_name, value_code)
