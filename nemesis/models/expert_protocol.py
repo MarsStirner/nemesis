@@ -210,9 +210,21 @@ class EventMeasure(db.Model):
     is_actual = db.Column(db.Integer, server_default="'1'")
 
     event = db.relationship('Event')
-    scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
+    _scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
     result_action = db.relationship('Action', foreign_keys=[resultAction_id])
     appointment_action = db.relationship('Action', foreign_keys=[appointmentAction_id])
     create_person = db.relationship('Person', foreign_keys=[createPerson_id])
     modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
+
+    @property
+    def scheme_measure(self):
+        return self._scheme_measure if self.schemeMeasure_id is not None else None
+
+    @scheme_measure.setter
+    def scheme_measure(self, value):
+        self._scheme_measure = value
+
+    @property
+    def measure(self):
+        return self.scheme_measure.measure if self.scheme_measure is not None else Measure()  # TODO: ручные мероприятия
