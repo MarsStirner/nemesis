@@ -62,6 +62,9 @@ WebMis20
         },
         get_payer: function (payer_id) {
             return wrapper('GET', WMConfig.url.api_contragent_payer_get + payer_id);
+        },
+        get_client: function (client_id) {
+            return wrapper('GET', WMConfig.url.api_contragent_client_get + client_id);
         }
     };
     this.contingent = {
