@@ -11,6 +11,7 @@ class rbPerinatalRiskRate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
 
     prr_mkbs = db.relationship('rbPerinatalRiskRateMkbAssoc', backref='rbPerinatalRiskRate', cascade_backrefs=False)
     mkbs = db.relationship('MKB', secondary='rbPerinatalRiskRateMkb')
@@ -19,7 +20,8 @@ class rbPerinatalRiskRate(db.Model):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name
+            'name': self.name,
+            'value': self.value,
         }
 
 
