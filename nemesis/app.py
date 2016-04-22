@@ -45,9 +45,10 @@ def bootstrap_app(templates_dir):
 
 def init_logger():
     try:
-        from nemesis.version import version
+        from nemesis.nemesis_version import version as nemesis_version
     except ImportError:
-        version = 'Unversioned Nemesis'
+        nemesis_version = 'Unversioned Nemesis'
+    app_version = app.config.get('APP_VERSION', 'Unversioned App')
     import logging
     from pysimplelogs2 import SimplelogHandler
 
@@ -64,7 +65,7 @@ def init_logger():
     handler.set_url(url)
     handler.owner = {
         'name': app.config['PROJECT_NAME'],
-        'version': version
+        'version': u'%s (%s)' % (app_version, nemesis_version)
     }
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
