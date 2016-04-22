@@ -3,6 +3,7 @@
 import datetime
 
 from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import between, union, func
 
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
@@ -504,7 +505,10 @@ class ContragentSelecter(BaseSelecter):
         Client = self.model_provider.get('Client')
         Contract = self.model_provider.get('Contract')
 
-        self.query = self.query.filter(Contract_Contragent.deleted == 0)
+        self.query = self.query.filter(Contract_Contragent.deleted == 0).options(
+            joinedload(Contract_Contragent.client),
+            joinedload(Contract_Contragent.payer_contract_list),
+        )
 
         if 'ca_type_code' in flt_args:
             ca_type_id = ContragentType.getId(flt_args['ca_type_code'])
