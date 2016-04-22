@@ -257,6 +257,9 @@ angular.module('WebMis20.services').
             },
             is_dms: function (client, type) {
                 return fin.code === '3';
+            },
+            has_commitment_letter: function () {
+                return ['3', '5'].has(fin.code);
             }
         };
     }]);
