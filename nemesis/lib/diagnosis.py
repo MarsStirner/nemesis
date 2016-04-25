@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+from blueprints.risar.risar_config import checkup_flat_codes
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
+from nemesis.models.actions import Action, ActionType
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN, \
     rbDiagnosisKind
 from nemesis.models.exists import MKB
@@ -256,6 +258,16 @@ def create_or_update_diagnosis(event, json_data, action=None):
         diag.diagnoses.append(diagnosis)
 
     return diag
+
+
+def diagnosis_using_by_next_checkups(action):
+    q = Action.query.join(ActionType).filter(
+        Action.begDate > action.begDate,
+        ActionType.flatCode.in_(checkup_flat_codes),
+        Action.event == action.event,
+        Action.deleted == 0,
+    )
+    return db.session.query(q.exists()).scalar()
 
 
 # не используется
