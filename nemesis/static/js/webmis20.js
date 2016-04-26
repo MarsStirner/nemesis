@@ -302,6 +302,24 @@ var WebMis20 = angular.module('WebMis20', [
         return flatten;
     }
 })
+.filter('sum', function () {
+    return function (list) {
+        var attr = arguments[1];
+        var sum = 0;
+        var get_value;
+        if (_.isUndefined(attr)) {
+            get_value = function (item) { return item }
+        } else if (_.isFunction(attr)) {
+            get_value = attr
+        } else {
+            get_value = function (item) {
+                return item[attr];
+            }
+        }
+        _.each(list, function (item) { sum += parseFloat(get_value(item)) });
+        return sum;
+    }
+})
 .filter('collapse_diagnoses', [function () {
     return function (diag_list, kind) {
         var types = arguments[2];
@@ -547,6 +565,18 @@ var WebMis20 = angular.module('WebMis20', [
             return this._selected.has(item);
         }
     };
+    SelectAll.prototype.unselected = function () {
+        var item = arguments[0],
+            self = this,
+            predicate = function (_item) {
+                return !self._selected.has(_item)
+            };
+        if (item === undefined) {
+            return _.filter(this._source, predicate);
+        } else {
+            return !this._selected.has(item);
+        }
+    };
     SelectAll.prototype.selectAll = function () {
         this._selected = this._source.clone();
     };
@@ -580,6 +610,9 @@ var WebMis20 = angular.module('WebMis20', [
     };
     SelectAll.prototype.all = function () {
         return this._source.length == this._selected.length;
+    };
+    SelectAll.prototype.any = function () {
+        return !!this._selected.length;
     };
     return SelectAll
 })
