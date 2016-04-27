@@ -428,6 +428,12 @@ def safe_bool(val):
     return bool(val)
 
 
+def safe_bool_none(val):
+    if val is None:
+        return None
+    return safe_bool(val)
+
+
 def safe_double(val):
     if val is None:
         return None
