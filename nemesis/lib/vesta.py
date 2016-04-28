@@ -129,6 +129,8 @@ class Vesta(object):
     @cache.memoize(60)
     def get_rb(cls, name, code=None):
         if code is not None:
+            if code == '':
+                raise VestaNotFoundException(u'`code` cannot be an empty string')
             url = u'{0}/v1/{1}/code/{2}/'.format(cls.get_url(), name, code)
         else:
             url = u'{0}/v1/{1}/'.format(cls.get_url(), name)
