@@ -80,12 +80,12 @@ class RawApiResult(object):
             self.indent = indent
 
 
-def jsonify_ok(obj):
+def jsonify_ok(obj, custom_meta_code=None, custom_meta_name=None):
     return (
         json_dumps({
             'meta': {
-                'code': 200,
-                'name': 'OK',
+                'code': custom_meta_code or 200,
+                'name': custom_meta_name or 'OK',
             },
             'result': obj
         }),
@@ -148,7 +148,10 @@ def api_method(func=None, hook=None):
                 if hook:
                     hook(code, j, e)
             else:
-                j, code, headers = jsonify_ok(result)
+                if isinstance(result, RawApiResult):
+                    j, code, headers = jsonify_ok(result.obj, result.result_code, result.result_name)
+                else:
+                    j, code, headers = jsonify_ok(result)
                 if hook:
                     hook(code, j)
             return flask.make_response(j, code, headers)
