@@ -228,13 +228,13 @@ class EventMeasure(db.Model):
         self._scheme_measure = value
 
     @property
-    def hand_measure(self):
+    def manual_measure(self):
         return self._measure if self.measure_id is not None else None
 
-    @hand_measure.setter
-    def hand_measure(self, value):
+    @manual_measure.setter
+    def manual_measure(self, value):
         self._measure = value
 
     @property
     def measure(self):
-        return self.scheme_measure.measure if self.schemeMeasure_id is not None else self.hand_measure
+        return self.scheme_measure.measure if self.schemeMeasure_id is not None else self.manual_measure
