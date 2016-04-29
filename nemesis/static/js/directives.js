@@ -1279,7 +1279,7 @@ angular.module('WebMis20.directives')
                 diagTypes: '=',
                 canAddNew: '=',
                 canEdit: '=',
-                defaultSetDate: '?='
+                defaultSetDate: '=?'
             },
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
@@ -1368,7 +1368,8 @@ angular.module('WebMis20.directives')
                         </thead>\
                         <tbody>\
                             <tr ng-if="!view_model().length"><td colspan="6"><b>[[diag_type.name]] диагноз не задан.</b> Начните прием пациента и укажите его [[diag_type.name]] диагноз.</td></tr>\
-                            <tr ng-repeat="diag in view_model() | orderBy:sortByKind(diag_type.code)">\
+                            <tr ng-repeat="diag in view_model() | orderBy:sortByKind(diag_type.code)"\
+                                ng-class="{\'bg-primary\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
                                 <td>\
                                     <div ng-if="canEdit">\
                                         <rb-select ng-model="diag.diagnosis_types.[[diag_type.code]]" ref-book="rbDiagnosisKind"\
@@ -1378,11 +1379,21 @@ angular.module('WebMis20.directives')
                                           ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code != \'associated\'}"\
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
                                 </td>\
-                                <td><span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkb2.name]]">[[diag.diagnostic.mkb2.code]]</span> [[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em></td>\
-                                <td>[[diag.diagnostic.character.name]]</td>\
-                                <td>[[diag.diagnostic.stage.name]]</td>\
-                                <td>[[diag.set_date | asDate ]]</td>\
-                                <td><span ng-if="diag.end_date">[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    <span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkb2.name]]">[[diag.diagnostic.mkb2.code]]</span>\
+                                    [[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em>\
+                                </td>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    [[diag.diagnostic.character.name]]\
+                                </td>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    [[diag.diagnostic.stage.name]]\
+                                </td>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    [[diag.set_date | asDate ]]\
+                                </td>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    <span ng-if="diag.end_date">[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
                                     <span ng-if="!diag.end_date">[[diag.diagnostic.createDatetime | asDate ]]</span>\
                                 </td>\
                                 <td ng-if="canEdit">\
