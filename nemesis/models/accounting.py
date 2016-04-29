@@ -399,7 +399,7 @@ class Invoice(db.Model):
     contract = db.relationship('Contract')
     item_list = db.relationship(
         'InvoiceItem',
-        primaryjoin='and_(InvoiceItem.invoice_id==Invoice.id, InvoiceItem.parent_id == None)'
+        primaryjoin='and_(InvoiceItem.invoice_id==Invoice.id, InvoiceItem.parent_id == None, InvoiceItem.deleted == 0)'
     )
 
     def __init__(self):

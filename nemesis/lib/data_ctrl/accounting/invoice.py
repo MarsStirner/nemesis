@@ -336,6 +336,7 @@ class InvoiceItemController(BaseModelController):
             if attr in json_data:
                 setattr(item, attr, json_data.get(attr))
         item.invoice = invoice
+        item.deleted = json_data.get('deleted', 0) and 1 or 0
 
         if 'subitem_list' in json_data:
             # traverse subitems
