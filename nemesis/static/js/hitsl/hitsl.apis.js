@@ -5,7 +5,7 @@
 
 angular.module('hitsl.core')
 .service('ApiCalls', ['$q','$http', 'NotificationService', 'Deferred', function ($q, $http, NotificationService, Deferred) {
-    this.wrapper = function (method, url, params, data) {
+    this.wrapper = function (method, url, params, data, options) {
         var defer = $q.defer();
         function process(response) {
             if (response.status != 200 || response.data.meta.code != 200) {
@@ -21,12 +21,12 @@ angular.module('hitsl.core')
             }
             return response;
         }
-        $http({
+        $http(angular.extend({}, options, {
             method: method,
             url: url,
             params: params,
             data: data
-        })
+        }))
         .then(process, process);
         return defer.promise;
     };
