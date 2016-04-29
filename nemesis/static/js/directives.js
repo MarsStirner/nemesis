@@ -1362,7 +1362,7 @@ angular.module('WebMis20.directives')
                                 <th class="col-md-2">Характер</th>\
                                 <th class="col-md-2">Стадия</th>\
                                 <th class="col-md-1">Установлен</th>\
-                                <th class="col-md-1">Изменен</th>\
+                                <th class="col-md-1">Изменен/Закрыт</th>\
                                 <th class="col-md-1" ng-if="canEdit"></th>\
                             </tr>\
                         </thead>\
