@@ -1278,7 +1278,8 @@ angular.module('WebMis20.directives')
             scope: {
                 diagTypes: '=',
                 canAddNew: '=',
-                canEdit: '='
+                canEdit: '=',
+                defaultSetDate: '?='
             },
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
@@ -1286,7 +1287,7 @@ angular.module('WebMis20.directives')
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
-                        'set_date': null,
+                        'set_date': scope.defaultSetDate || null, // TMIS-1078.1
                         'end_date': null,
                         'deleted': 0,
                         'person': CurrentUser.get_main_user().info,
@@ -1572,7 +1573,7 @@ angular.module('WebMis20.directives')
                     </div>\
                     <div class="col-md-3">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.set_date.$invalid}">\
-                            <label for="diagnosis_date" class="control-label">Дата начала</label>\
+                            <label for="diagnosis_date" class="control-label">Диагноз установлен</label>\
                             <wm-date name="set_date" ng-model="model.set_date" ng-required="true">\
                             </wm-date>\
                         </div>\
