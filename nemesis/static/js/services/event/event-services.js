@@ -67,26 +67,42 @@ angular.module('WebMis20.services').
         }
 
         function check_event_main_diagnoses(event){
-            var deferred = $q.defer();
             var types_with_main = [];
-            event.diagnoses.forEach(function(diag){
-                for (var diag_type_code in diag.diagnosis_types){
-                    if(diag.diagnosis_types[diag_type_code].code == 'main'){
-                        types_with_main.push(diag_type_code);
+            _.each(event.diagnoses, function(diagnosis) {
+                _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
+                    if (diagnosis_kind.code == 'main') {
+                        types_with_main.push(diagnosis_type_code)
                     }
-                }
-            })
+                });
+            });
 
-            var types_without_main = event.info.diagnosis_types.filter(function(type){
-                return types_with_main.indexOf(type.code) == -1
-            })
+            var types_without_main = _.filter(event.info.diagnosis_types, function(diagnosis_type) {
+                return types_with_main.has(diagnosis_type.code)
+            });
 
-            if(types_without_main.length){
+            if (types_without_main.length) {
                 var msg = ('Необходимо указать основной диагноз на вкладках:<br> * {0}<br><br>').format(
                     types_without_main.reduce(function(a, b){ return (a.name || a ) + '<br> * ' + b.name})
                 );
                 return MessageBox.error('Невозможно закрыть обращение', msg);
             }
+            var deferred = $q.defer();
+            deferred.resolve();
+            return deferred.promise;
+        }
+
+        function check_event_oparin_diagnoses (event) {
+            // Сделано для удовлетворения тикета TMIS-1085.
+            var may_close = false;
+            _.each(event.diagnoses, function(diagnosis) {
+                _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
+                    may_close = may_close || diagnosis_type_code == 'final' || diagnosis_kind.code == 'main';
+                });
+            });
+            if (!may_close) {
+                return MessageBox.error('Невозможно закрыть обращение', 'Необходимо указать основной или заключительный диагноз')
+            }
+            var deferred = $q.defer();
             deferred.resolve();
             return deferred.promise;
         }
@@ -204,7 +220,11 @@ angular.module('WebMis20.services').
                 var deferred = $q.defer();
                 check_event_results(event).then(function () {
                     check_event_diagnoses_results(event).then(function () {
-                        check_event_main_diagnoses(event).then(function () {
+                        // Сделано для удовлетворения тикета TMIS-1085.
+                        var dfrd = (event.event_type.request_type.code == 'policlinic' && event.event_type.finance.code == '2')
+                            ? check_event_oparin_diagnoses(event)
+                            : check_event_main_diagnoses(event);
+                        dfrd.then(function () {
                             check_event_unclosed_actions(event).then(function () {
                                 deferred.resolve();
                             });
