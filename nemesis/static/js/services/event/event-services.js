@@ -77,14 +77,16 @@ angular.module('WebMis20.services').
             });
 
             var types_without_main = _.filter(event.info.diagnosis_types, function(diagnosis_type) {
-                return types_with_main.has(diagnosis_type.code)
+                return !types_with_main.has(diagnosis_type.code)
             });
 
             if (types_without_main.length) {
-                var msg = ('Необходимо указать основной диагноз на вкладках:<br> * {0}<br><br>').format(
-                    types_without_main.reduce(function(a, b){ return (a.name || a ) + '<br> * ' + b.name})
+                return MessageBox.error(
+                    'Невозможно закрыть обращение',
+                    'Необходимо указать основной диагноз на вкладках:<br> * {0}<br><br>'.format(
+                        '<br/> * '.join(_.pluck(types_without_main, 'name'))
+                    )
                 );
-                return MessageBox.error('Невозможно закрыть обращение', msg);
             }
             var deferred = $q.defer();
             deferred.resolve();
