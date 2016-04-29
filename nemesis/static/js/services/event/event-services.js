@@ -221,7 +221,7 @@ angular.module('WebMis20.services').
                 check_event_results(event).then(function () {
                     check_event_diagnoses_results(event).then(function () {
                         // Сделано для удовлетворения тикета TMIS-1085.
-                        var dfrd = (event.event_type.request_type.code == 'policlinic' && event.event_type.finance.code == '2')
+                        var dfrd = (event.info.event_type.request_type.code == 'policlinic' && event.info.event_type.finance.code == '2')
                             ? check_event_oparin_diagnoses(event)
                             : check_event_main_diagnoses(event);
                         dfrd.then(function () {
