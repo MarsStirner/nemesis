@@ -116,7 +116,7 @@ def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
                 ).first()
 
                 if prev_main:
-                    prev_main.diagnosisKind = dk_code['complication']
+                    prev_main.diagnosisKind = dk_by_code['complication']
                     db.session.add(prev_main)
 
             if event_diagn:
