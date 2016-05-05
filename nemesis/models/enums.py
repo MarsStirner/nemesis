@@ -74,6 +74,12 @@ class PerinatalRiskRate(EnumLoadable):
     medium = 3, u'средний'
     high = 4, u'высокий'
 
+    @property
+    def order(self):
+        # like value field in db table, but now it uses
+        return self.value
+
+
 
 class PreeclampsiaRisk(Enum):
     # впоследствии будет больше значений
