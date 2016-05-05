@@ -1420,7 +1420,7 @@ re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.
 
 
 class ActionVisualizer(object):
-    ro = True
+    ignore_status = False
 
     def make_action(self, action):
         """
@@ -1450,8 +1450,7 @@ class ActionVisualizer(object):
                 self.make_property(prop)
                 for prop in action.properties
             ],
-            #FIXME: Мелочь, конечно, но использование двойного отрицания не особо красиво. Зачем здесь делать "not", чтобы потом в интефейсе проверять "!ro".
-            'ro': not UserUtils.can_edit_action(action) if action.id else False,
+            'ro': not UserUtils.can_edit_action(action, self.ignore_status),
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions,
         }

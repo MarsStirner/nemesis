@@ -433,15 +433,17 @@ class UserUtils(object):
                 not event.is_closed and current_user.has_right(createRight)))
 
     @staticmethod
-    def can_edit_action(action):
+    def can_edit_action(action, ignore_status=False):
         updateRight = u'client%sUpdate' % modeRights[action.actionType.class_]
         return action and (
+            # ещё не сохранённое действие можно редактировать, в том и суть
+            not action.id or
             # админу можно всё
             current_user.has_right('adm') or (
                 # действие является шаблоном действия
                 not action.event) or (
-                # действие не закрыто
-                action.status < 2 and
+                # действие не закрыто, но если это автосейв, то пофигу
+                (ignore_status or action.status < 2) and
                 # остальным - только если обращение не закрыто
                 not action.event.is_closed and (
                     # либо есть право редактировать любые действия
