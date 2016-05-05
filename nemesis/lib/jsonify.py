@@ -1524,7 +1524,7 @@ re_html_style = re.compile(ur'<style>.*?</style>|style=".*?"', re.I | re.U | re.
 
 
 class ActionVisualizer(object):
-    ro = True
+    ignore_status = False
 
     def make_action(self, action, for_template=False):
         """
@@ -1554,7 +1554,7 @@ class ActionVisualizer(object):
                 self.make_property(prop, for_template)
                 for prop in action.properties
             ],
-            'ro': not UserUtils.can_edit_action(action) if action.id else False,
+            'ro': not UserUtils.can_edit_action(action, self.ignore_status),
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions if not for_template else [],
             'diagnoses': self.make_action_diagnoses_info(action) if not for_template else []
