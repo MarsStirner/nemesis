@@ -297,6 +297,7 @@ class OrgStructure(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'show': self.show,
         }
 
 
