@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-import requests
+import re
 
 from sqlalchemy import orm
 
@@ -8,11 +8,13 @@ from nemesis.models.diagnosis import ActionType_rbDiagnosisType
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
-from nemesis.app import app
 from nemesis.models.enums import TTJStatus
 from nemesis.models.utils import safe_current_user_id, get_model_by_name
 
 __author__ = 'mmalkov'
+
+
+apt_valueDomain_String_re = re.compile(ur"'(.*?)'")
 
 
 class Action(db.Model):
@@ -369,7 +371,7 @@ class ActionPropertyType(db.Model):
             from nemesis.lib.utils import parse_json
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
-            values = [choice.strip('\' ') for choice in self.valueDomain.split(',')]
+            values = [match.strip() for match in apt_valueDomain_String_re.findall(self.valueDomain)]
             if not self.valueDomain.strip():
                 return {
                     'subtype': None,
