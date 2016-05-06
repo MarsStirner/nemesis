@@ -15,6 +15,18 @@ var WebMis20 = angular.module('WebMis20', [
     'WebMis20.controllers',
     'WebMis20.validators'
 ])
+.filter('count', function () {
+    return function (data) {
+        if (!data) return 0;
+        if (_.isArray(data)) {
+            return data.length;
+        } else if (_.isObject(data)) {
+            return _.keys(data).length;
+        } else {
+            return 0;
+        }
+    }
+})
 .filter('asDateTime', function ($filter) {
     return function (data) {
         if (!data) return data;
