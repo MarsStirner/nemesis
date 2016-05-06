@@ -1425,6 +1425,7 @@ class StationaryEventVisualizer(EventVisualizer):
             )
             result['beg_date'] = action.begDate
             result['end_date'] = action.endDate
+            result['status'] = action.status
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
             result['action_type'] = action.actionType
