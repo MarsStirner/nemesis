@@ -927,10 +927,10 @@ class EventVisualizer(object):
         }
 
         if UserProfileManager.has_ui_admin():
-            data['diagnoses'] = self.make_diagnoses(event)
+            data['diagnoses'] = self.make_diagnoses(event, True)
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         elif UserProfileManager.has_ui_doctor():
-            data['diagnoses'] = self.make_diagnoses(event)
+            data['diagnoses'] = self.make_diagnoses(event, True)
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data
 
@@ -1000,12 +1000,12 @@ class EventVisualizer(object):
             'prescriptions': event.prescriptions,
         }
 
-    def make_diagnoses(self, event):
+    def make_diagnoses(self, event, including_closed=False):
         """
         @type event: Event
         """
         dvis = DiagnosisVisualizer()
-        diagnostics = get_client_diagnostics(event.client, event.setDate, event.execDate)
+        diagnostics = get_client_diagnostics(event.client, event.setDate, event.execDate, including_closed)
         return [
             dict(
                 dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),

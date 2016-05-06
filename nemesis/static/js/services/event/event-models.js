@@ -38,6 +38,7 @@ angular.module('WebMis20.services.models').
                 this.ticket_id = ticket_id;
                 this.info = null;
                 this.diagnoses = [];
+                this.diagnoses_all = [];
                 this.services = [];
                 this.invoices = [];
                 this.allergies = [];
@@ -63,7 +64,8 @@ angular.module('WebMis20.services.models').
                 self.info.client.init_from_obj({
                     client_data: client_info
                 }, 'for_event');
-                self.diagnoses = data.result.diagnoses || [];
+                self.diagnoses_all = data.result.diagnoses || [];
+                self.diagnoses = _.filter(data.result.diagnoses || [], function (diag) {return ! diag.end_date});
                 self.services = data.result.services;
                 self.invoices = data.result.invoices;
                 self.is_closed = self.closed();
@@ -91,7 +93,7 @@ angular.module('WebMis20.services.models').
                 var deferred = $q.defer();
                 $http.post(url_event_save, {
                     event: this.info,
-                    diagnoses: this.diagnoses,
+                    diagnoses: this.diagnoses,  // TODO: Отдаются только актуальные диагнозы. Надо закрытые?
                     ticket_id: this.ticket_id,
                     close_event: close_event,
                     request_type_kind: this.request_type_kind
