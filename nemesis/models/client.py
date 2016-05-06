@@ -465,10 +465,10 @@ class ClientAllergy(db.Model):
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
-    name = db.Column("nameSubstance", db.Unicode(128), nullable=False)
+    name = db.Column("nameSubstance", db.Text, nullable=False)
     power = db.Column(db.Integer, nullable=False)
     createDate = db.Column(db.Date)
-    notes = db.Column(db.String, nullable=False, default='')
+    notes = db.Column(db.Text, nullable=False, default='')
     version = db.Column(db.Integer, nullable=False, default=0)
 
     def __init__(self, name=None, power=None, date=None, notes=None, client=None):
@@ -585,10 +585,10 @@ class ClientIntoleranceMedicament(db.Model):
     modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
-    name = db.Column("nameMedicament", db.Unicode(128), nullable=False)
+    name = db.Column("nameMedicament", db.Text, nullable=False)
     power = db.Column(db.Integer, nullable=False)
     createDate = db.Column(db.Date)
-    notes = db.Column(db.String, nullable=False, default='')
+    notes = db.Column(db.Text, nullable=False, default='')
     version = db.Column(db.Integer, nullable=False, default=0)
 
     def __init__(self, name=None, power=None, date=None, notes=None, client=None):
