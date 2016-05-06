@@ -626,8 +626,8 @@ class ClientContact(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     contactType_id = db.Column(db.Integer, db.ForeignKey('rbContactType.id'), nullable=False, index=True)
-    contact = db.Column(db.String(32), nullable=False)
-    notes = db.Column(db.Unicode(64), nullable=False, default=u'')
+    contact = db.Column(db.Text, nullable=False)
+    notes = db.Column(db.Text, nullable=False, default=u'')
     version = db.Column(db.Integer, nullable=False, default=0)
 
     contactType = db.relationship(u'rbContactType', lazy=False)
