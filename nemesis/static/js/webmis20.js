@@ -667,22 +667,27 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'E',
         require: '?ngModel',
         template:
-            '<a ng-disabled="ngDisabled" style="overflow:hidden;" class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" ng-click="to_show()">' +
-                '<span class="mkb-button col-md-12">[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]</span>' +
-                '<span class="caret" ng-if="!$model.$modelValue"></span>' +
-            '</a>' +
-            '<div class="well well-sm popupable" ng-show="shown" ng-mouseleave="to_hide_delay()" ng-mouseenter="to_hide_cancel()">' +
-                '<input type="text" ng-model="query" class="form-control" />' +
-                '<table class="table table-condensed table-clickable">' +
-                    '<thead><tr><th>Код</th><th>Наименование</th></tr></thead>' +
-                    '<tbody>' +
-                        '<tr ng-repeat="row in $RefBook.objects | filter:query | limitTo:100" ng-click="onClick(row)"' +
-                            'ng-class="{\'bg-primary\': is_selected(row.code)}">' +
-                            '<td ng-bind="row.code"></td><td ng-bind="row.name"></td>' +
-                        '</tr>' +
-                    '</tbody>' +
-                '</table>' +
-            '</div>',
+            '<div class="well well-sm popupable" ng-show="shown" ng-mouseleave="to_hide_delay()" ng-mouseenter="to_hide_cancel()">\
+                <input type="text" ng-model="query" class="form-control" id="query" style="margin-bottom: 9px;"/>\
+                <div class="mkb-table">\
+                    <table class="table table-condensed table-clickable">\
+                        <thead><tr><th>Код</th><th>Наименование</th></tr></thead>\
+                        <tbody>\
+                            <tr ng-repeat="row in $RefBook.objects | filter:query | limitTo:100" ng-click="onClick(row)"\
+                                ng-class="{\'bg-primary\': is_selected(row.code)}">\
+                                <td ng-bind="row.code"></td><td ng-bind="row.name"></td>\
+                            </tr>\
+                        </tbody>\
+                    </table>\
+                </div>\
+            </div>\
+            <a ng-disabled="ngDisabled" style="overflow:hidden;" \
+                class="btn btn-default btn-block [[ngRequired && !$model.$modelValue ? \'error-border\' : \'\']]" \
+                ng-click="to_show()">\
+                <span class="mkb-button col-md-12">[[ $model.$modelValue.code ]] [[$model.$modelValue.name]]</span>\
+                <span class="caret" ng-if="!$model.$modelValue"></span>\
+            </a>\
+            ',
         scope: {
             ngRequired: '=',
             ngDisabled: '='
@@ -690,9 +695,10 @@ var WebMis20 = angular.module('WebMis20', [
         link: function (scope, element, attributes, ngModel) {
             scope.$model = ngModel;
             scope.$RefBook = RefBookService.get('MKB');
-            var div_elem = $(element[0].childNodes[1]);
-            var btn_elem = $(element[0].childNodes[0]);
-            var timeout = null;
+            var div_elem = $(element[0].children[0]),
+                btn_elem = $(element[0].children[1]),
+                inp_elem = $(element[0].children[0].children[0]),
+                timeout = null;
             scope.shown = false;
             scope.query='';
             scope.to_show = function () {
@@ -704,6 +710,7 @@ var WebMis20 = angular.module('WebMis20', [
                 var btn_width = btn_elem.width();
                 div_elem.width(Math.max(btn_width, 500));
                 scope.shown = true;
+                inp_elem.focus(); // Тут должен быть фокус, но нифига не получается
             };
             scope.to_hide_delay = function () {
                 if (!timeout) {

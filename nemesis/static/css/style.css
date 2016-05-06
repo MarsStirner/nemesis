@@ -445,7 +445,13 @@ tr.row-clickable {
     display: block;
     position: absolute;
     z-index: 10;
-    margin-top: 8px;
+    margin-top: -9px;
+    margin-left: -9px;
+    margin-right: 0; /* Здесь, возможно, даже положительное число должно быть из-за пэддинга надстоящего элемента */
+    /*max-height: 500px;*/
+    /*overflow-y: auto;*/
+}
+.popupable .mkb-table {
     max-height: 500px;
     overflow-y: auto;
 }
