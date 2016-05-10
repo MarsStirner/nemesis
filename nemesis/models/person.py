@@ -289,9 +289,11 @@ class vrbPersonWithSpeciality(db.Model):
     name = db.Column(db.String(101), nullable=False, index=True)
     orgStructure_id = db.Column(db.ForeignKey('OrgStructure.id'))
     speciality_id = db.Column(db.ForeignKey('rbSpeciality.id'))
+    org_id = db.Column(db.ForeignKey('Organisation.id'))
 
     orgStructure = db.relationship('OrgStructure', lazy='joined')
     speciality = db.relationship('rbSpeciality', lazy='joined')
+    org = db.relationship('Organisation')
 
     def __json__(self):
         return {
