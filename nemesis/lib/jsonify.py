@@ -1540,6 +1540,7 @@ class ActionVisualizer(object):
             'beg_date': action.begDate,
             'end_date': action.endDate,
             'planned_end_date': action.plannedEndDate,
+            'create_datetime': action.createDatetime,
             'status': ActionStatus(action.status),
             'set_person': action.setPerson,
             'person': action.person,
