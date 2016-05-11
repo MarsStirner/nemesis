@@ -37,6 +37,10 @@ class EnumBase(object):
     def is_valid(self):
         return self.value in self.codes
 
+    @property
+    def name(self):
+        return self.names.get(self.value)
+
     def __unicode__(self):
         return self.codes.get(self.value, None)
 

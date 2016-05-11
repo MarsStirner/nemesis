@@ -11,7 +11,7 @@ angular.module('hitsl.core')
         es.onmessage = function (event) {
             $rootScope.$apply(function () {
                 var message = JSON.parse(event.data);
-                console.log(message);
+                //console.log(message);
                 _.each(map, function (item) {
                     var topic = item[0], cb = item[1];
                     if (topic == message.topic) {
@@ -50,6 +50,9 @@ angular.module('hitsl.core')
         Simargl.subscribe('mail', function (msg) {
             get_mail_summary();
             event_source.send('new:id', msg.data.id);
+        });
+        Simargl.subscribe('mail:notify', function (msg) {
+            event_source.send('new_mail', msg.data.id);
         });
         this.subscribe = event_source.eventSource.subscribe;
         this.set_mark = function (mark_type, ids, value) {

@@ -73,19 +73,29 @@ angular.module('WebMis20.directives')
             }
         };
     }])
-    .directive('wmPersonSelect', ['$compile', '$http', function ($compile, $http) {
+    .value('PersonSelectKind', {
+        onlyDoctors: 0,
+        onlyOrgPersons: 1
+    })
+    .directive('wmPersonSelect', ['$compile', '$http', 'PersonSelectKind',
+            function ($compile, $http, PersonSelectKind) {
         return {
             restrict: 'E',
             scope: true,
             require: 'ngModel',
             link: function (scope, element, attrs) {
+                var personKind = PersonSelectKind[attrs.personKind];
+                if (personKind === undefined) {
+                    personKind = PersonSelectKind.onlyDoctors;
+                }
+
                 scope.persons = [];
                 scope.refresh_choices = function (query) {
-                    if (!query) { return; }
+                    if (!query) { return }
                     $http.get(url_api_search_persons, {
                         params: {
                             q: query,
-                            only_doctors: scope.$eval(attrs.onlyDoctors || "true") ? undefined : false
+                            person_kind: personKind
                         }
                     }).success(function (data) {
                         scope.persons = data.result;
