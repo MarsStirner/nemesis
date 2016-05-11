@@ -12,7 +12,7 @@ angular.module('WebMis20')
                 $timeout(function () {
                     scope.popup.opened = !prev_state;
                     if (!ngModelCtrl.$modelValue) {
-                        ngModelCtrl.$setViewValue(new Date());
+                        ngModelCtrl.$setViewValue(new Date().toISOString().slice(0, 10));
                     }
                 });
             };
