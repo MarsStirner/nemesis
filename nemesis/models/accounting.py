@@ -2,6 +2,8 @@
 
 import datetime
 
+from nemesis.lib.types import Undefined
+from nemesis.models.refbooks import RefBookMixin
 from sqlalchemy import orm
 
 from nemesis.systemwide import db
@@ -384,10 +386,11 @@ class Invoice(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
-    contract_id = db.Column(db.Integer, db.ForeignKey('Contract.id'), nullable=False)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
+    contract_id = db.Column(db.ForeignKey('Contract.id'), nullable=False)
+    parent_id = db.Column(db.ForeignKey('Invoice.id'))
     setDate = db.Column(db.Date, nullable=False)
     settleDate = db.Column(db.Date)
     number = db.Column(db.Unicode(20), nullable=False)
@@ -397,31 +400,68 @@ class Invoice(db.Model):
     draft = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     contract = db.relationship('Contract')
+    createPerson = db.relationship('Person', foreign_keys=[createPerson_id])
+    modifyPerson = db.relationship('Person', foreign_keys=[modifyPerson_id])
+    parent = db.relationship('Invoice', remote_side=[id], backref='refunds')
     item_list = db.relationship(
         'InvoiceItem',
         primaryjoin='and_(InvoiceItem.invoice_id==Invoice.id, InvoiceItem.parent_id == None, InvoiceItem.deleted == 0)'
     )
-
-    def __init__(self):
-        self._total_sum = None
-        self._total_sum_loaded = False
-
-    @orm.reconstructor
-    def init_on_load(self):
-        self._total_sum = None
-        self._total_sum_loaded = False
+    refund_items = db.relationship(
+        'InvoiceItem',
+        primaryjoin='and_(InvoiceItem.refund_id == Invoice.id, InvoiceItem.deleted == 0)'
+    )
 
     @property
     def total_sum(self):
-        if not self._total_sum_loaded:
-            self._total_sum = self._get_recalc_total_sum()
-            self._total_sum_loaded = True
+        if not hasattr(self, '_total_sum'):
+            from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
+            self._total_sum = calc_invoice_total_sum(self)
         return self._total_sum
 
     @total_sum.setter
     def total_sum(self, val):
         self._total_sum = val
-        self._total_sum_loaded = True
+
+    @total_sum.deleter
+    def total_sum(self):
+        if hasattr(self, '_total_sum'):
+            del self._total_sum
+
+    @property
+    def refund_sum(self):
+        if not hasattr(self, '_refund_sum'):
+            from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_refund_sum
+            self._refund_sum = calc_invoice_refund_sum(self)
+        return self._refund_sum
+
+    @refund_sum.setter
+    def refund_sum(self, value):
+        self._refund_sum = value
+
+    @refund_sum.deleter
+    def refund_sum(self):
+        if hasattr(self, '_refund_sum'):
+            del self._refund_sum
+
+    @property
+    def coordinated_refund(self):
+        if not hasattr(self, '_coordinated_refund'):
+            self._coordinated_refund = Invoice.query.filter(
+                Invoice.parent == self,
+                Invoice.deleted == 0,
+                Invoice.settleDate.is_(None),
+            ).first()
+        return self._coordinated_refund
+
+    @coordinated_refund.setter
+    def coordinated_refund(self, value):
+        raise
+
+    @coordinated_refund.deleter
+    def coordinated_refund(self):
+        if hasattr(self, '_coordinated_refund'):
+            del self._coordinated_refund
 
     def get_all_entities(self):
         result = [self]
@@ -431,25 +471,23 @@ class Invoice(db.Model):
 
         return result
 
-    def _get_recalc_total_sum(self):
-        from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
-        return calc_invoice_total_sum(self)
-
 
 class InvoiceItem(db.Model):
     __tablename__ = u'InvoiceItem'
 
     id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('Invoice.id'), nullable=False)
-    concreteService_id = db.Column(db.Integer, db.ForeignKey('Service.id'))
-    discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
+    invoice_id = db.Column(db.ForeignKey('Invoice.id'), nullable=False)
+    refund_id = db.Column(db.ForeignKey('Invoice.id'))
+    concreteService_id = db.Column(db.ForeignKey('Service.id'))
+    discount_id = db.Column(db.ForeignKey('ServiceDiscount.id'))
     price = db.Column(db.Numeric(15, 2), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     sum = db.Column(db.Numeric(15, 2), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
     parent_id = db.Column(db.Integer, db.ForeignKey('InvoiceItem.id'))
 
-    invoice = db.relationship('Invoice')
+    invoice = db.relationship('Invoice', foreign_keys=[invoice_id])
+    refund = db.relationship('Invoice', foreign_keys=[refund_id])
     service = db.relationship('Service')
     discount = db.relationship('ServiceDiscount')
     parent_item = db.relationship('InvoiceItem', remote_side=[id])
@@ -470,6 +508,23 @@ class InvoiceItem(db.Model):
     @subitem_list.setter
     def subitem_list(self, value):
         self._subitem_list = value
+
+    @property
+    def is_refunded(self):
+        return self.refund_id is not None
+
+    def set_refund(self, refund, recursive=Undefined):
+        """
+        @type refund: Invoice
+        @type recursive: bool|Undefined
+        @param refund:
+        @param recursive:
+        @return:
+        """
+        self.refund = refund
+        if refund is None and recursive is True or refund is not None and recursive is not False:
+            for item in self.subitem_list:
+                item.set_refund(refund, recursive)
 
     def init_subitem_list(self):
         self._subitem_list = self._get_subitems()
@@ -509,13 +564,13 @@ class FinanceTransaction(db.Model):
     sum = db.Column(db.Numeric(15, 2), nullable=False)
 
     contragent = db.relationship('Contract_Contragent')
-    invoice = db.relationship('Invoice')
+    invoice = db.relationship('Invoice', backref='transactions')
     trx_type = db.relationship('rbFinanceTransactionType')
     operation_type = db.relationship('rbFinanceOperationType')
     pay_type = db.relationship('rbPayType')
 
 
-class rbFinanceTransactionType(db.Model):
+class rbFinanceTransactionType(db.Model, RefBookMixin):
     __tablename__ = 'rbFinanceTransactionType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -533,7 +588,7 @@ class rbFinanceTransactionType(db.Model):
         return self.id
 
 
-class rbFinanceOperationType(db.Model):
+class rbFinanceOperationType(db.Model, RefBookMixin):
     __tablename__ = 'rbFinanceOperationType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -551,7 +606,7 @@ class rbFinanceOperationType(db.Model):
         return self.id
 
 
-class rbPayType(db.Model):
+class rbPayType(db.Model, RefBookMixin):
     __tablename__ = 'rbPayType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

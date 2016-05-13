@@ -99,6 +99,15 @@ def calc_invoice_total_sum(invoice):
     return total_sum
 
 
+def calc_invoice_refund_sum(refund):
+    """
+    @type refund: nemesis.models.accounting.Invoice
+    @param refund:
+    @return:
+    """
+    return sum(item.sum for item in refund.refund_items)
+
+
 def calc_invoice_sum_wo_discounts(invoice):
     total_sum = sum(
         calc_invoice_item_total_sum(item, ignore_discount=True)
