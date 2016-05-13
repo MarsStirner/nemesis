@@ -885,4 +885,17 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('checkboxButton', [function () {
+    return {
+        restrict: 'A',
+        replace: true,
+        template: function (element, attributes) {
+            return '<button class="btn" ng-click="{0} = !{0}" \
+                        ng-class="{\'btn-danger\': {0},\'btn-default\':! {0} }">\
+                        <i class="fa" ng-class="{\'fa-check-square-o\':{0},\'fa-square-o\':!{0} }"></i>\
+                        {1}\
+                    </button>'.formatNonEmpty(attributes.checkboxButton, element.html())
+        }
+    }
+}])
 ;

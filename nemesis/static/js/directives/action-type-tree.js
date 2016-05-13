@@ -233,7 +233,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         assigned: node.assignable.map(function (prop) {return prop[0]}),
                         assignable: node.assignable,
                         planned_end_date: new Date(),
-                        service: null
+                        service: null,
+                        urgent: false
                     };
                     if ($scope.at_service_data.hasOwnProperty(node.id)) {
                         var service_data = $scope.at_service_data[node.id];
@@ -301,7 +302,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                     type_id: action.type_id,
                                     assigned: action.assigned,
                                     planned_end_date: action.planned_end_date,
-                                    service: action.service
+                                    service: action.service,
+                                    urgent: action.urgent
                                 }
                             })
                         }
@@ -460,7 +462,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <h4 class="modal-title" id="myModalLabel">Новое действие</h4>\
         </div>\
         <div class="modal-body modal-scrollable">\
-            <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()"></input>\
+            <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()" />\
             <div class="checkbox">\
                 <label>\
                     <input type="checkbox" ng-model="conditions.person_check" ng-change="set_filter()" ng-disabled="!personal_check_enabled" />\
@@ -508,7 +510,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         <div class="modal-body modal-scrollable">\
             <div class="row">\
                 <div class="col-md-6">\
-                    <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()"></input>\
+                    <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()" />\
                     <div class="checkbox">\
                         <label>\
                             <input type="checkbox" ng-model="conditions.person_check" ng-change="set_filter()" ng-disabled="!personal_check_enabled" />\
@@ -560,32 +562,16 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                      wm-validate="validate_direction_date"></div>\
                             </div>\
                             <div class="col-md-4">\
-                                <button class="btn btn-danger btn-sm pull-right" ng-click="prepared2create.splice($index, 1)">\
-                                    <i class="glyphicon glyphicon-trash"></i>\
-                                </button>\
+                                <div class="pull-right">\
+                                    <button class="btn-sm" checkbox-button="action.urgent">Срочно</button>\
+                                    <button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)">\
+                                        <i class="glyphicon glyphicon-trash"></i>\
+                                    </button>\
+                                </div>\
                             </div>\
                             </div>\
                         </li>\
                     </ul>\
-                    <!-- <table class="table table-condensed">\
-                    <thead>\
-                        <tr>\
-                            <th>Наименование</th>\
-                            <th>Дата/время назначения</th>\
-                            <th>Удалить</th>\
-                        </tr>\
-                    </thead>\
-                    <tbody>\
-                        <tr ng-repeat="action in prepared2create">\
-                            <td ng-if="!action.assignable.length" ng-bind="action.type_name"></td>\
-                            <td ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name"></a></td>\
-                            <td><div fs-datetime ng-model="action.planned_end_date" class="validatable"\
-                                    wm-validate="validate_direction_date"></div>\
-                            </td>\
-                            <td><button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)"><i class="glyphicon glyphicon-trash"></i></button></td>\
-                        </tr>\
-                    </tbody>\
-                    </table> -->\
                     <div ng-if="labDirectionsForm.$invalid && labDirectionsForm.$error.directionDate"\
                         class="alert alert-danger">\
                         Планируемая дата и время выполнения не могут быть раньше текущей даты и времени\

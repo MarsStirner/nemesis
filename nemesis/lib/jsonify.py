@@ -1096,7 +1096,8 @@ class EventVisualizer(object):
             'can_read': UserUtils.can_read_action(action),
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
-            'payment': aviz.make_action_payment_info(action)
+            'payment': aviz.make_action_payment_info(action),
+            'urgent': action.isUrgent,
         }
 
     def make_ultra_small_actions(self, event):
