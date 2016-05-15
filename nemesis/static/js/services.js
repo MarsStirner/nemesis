@@ -1,30 +1,38 @@
 'use strict';
 
-angular.module('WebMis20.services', []).
-    service('WMAppointment', ['$http', function ($http) {
+angular.module('WebMis20.services', ['hitsl.core']).
+    service('WMAppointment', ['ApiCalls', function (ApiCalls) {
         return {
             make: function (ticket, client_id, appointment_type_id, associated_event_id, note) {
-                return $http.post(url_schedule_api_appointment, {
-                    client_id: client_id,
-                    ticket_id: ticket.id,
-                    appointment_type_id: appointment_type_id,
-                    event_id: associated_event_id,
-                    note: note
-                });
+                return ApiCalls.wrapper(
+                    'POST',
+                    url_schedule_api_appointment, 
+                    {
+                        client_id: client_id,
+                        ticket_id: ticket.id,
+                        appointment_type_id: appointment_type_id,
+                        event_id: associated_event_id,
+                        note: note
+                    });
             },
             cancel: function (ticket, client_id) {
-                return $http.post(url_schedule_api_appointment, {
-                    client_id: client_id,
-                    ticket_id: ticket.id,
-                    delete: true
-                });
+                return ApiCalls.wrapper(
+                    'POST', 
+                    url_schedule_api_appointment, 
+                    {
+                        client_id: client_id,
+                        ticket_id: ticket.id,
+                        delete: true
+                    });
             },
             change_notes: function (ticket_client_id, notes) {
-                return $http.post(url_schedule_api_appointment, {
-                    client_id: client_id,
-                    ticket_id: ticket.id,
-                    note: notes
-                });
+                return ApiCalls.wrapper(
+                    url_schedule_api_appointment, 
+                    {
+                        client_id: client_id,
+                        ticket_id: ticket.id,
+                        note: notes
+                    });
             }
         }
     }]).

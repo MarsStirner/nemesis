@@ -11,32 +11,35 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         <button type="button" class="close" ng-click="cancel()">&times;</button>\
                         <h4 class="modal-title" id="myModalLabel">Отменить запись на приём?</h4>\
                     </div>\
-                    <div class="modal-body" ng-if="!error">\
+                    <div class="modal-body" ng-if="!error.text">\
                         Отменить <span ng-if="ticket.attendance_type.code == \'CITO\'">экстренную</span>\
                         <span ng-if="ticket.attendance_type.code == \'extra\'">сверхплановую</span>\
                             запись на приём к <strong>[[ person.name ]]</strong> ([[ person.speciality.name ]])\
                         <span ng-if="ticket.attendance_type.code == \'planned\'">на <strong>[[ ticket.begDateTime | asMomentFormat:\'HH:mm DD.MM.YY\' ]]</strong></span>?\
                     </div>\
-                    <div class="modal-body" ng-if="error">\
+                    <div class="modal-body" ng-if="error.text">\
                         [[ error.text ]]\
                     </div>\
                     <div class="modal-footer">\
                         <button type="button" class="btn btn-default" ng-click="cancel()">Не отменять запись</button>\
-                        <button type="button" class="btn btn-danger" ng-click="accept()" ng-disabled="error">Отменить запись</button>\
+                        <button type="button" class="btn btn-danger" ng-click="accept()" ng-disabled="error.text">Отменить запись</button>\
                     </div>',
                 backdrop : 'static',
                 controller: function ($scope, $http, $modalInstance) {
                     $scope.ticket = ticket;
                     $scope.person = person;
-                    $scope.error = null;
+                    $scope.error = {};
                     $scope.accept = function () {
-                        WMAppointment.cancel(ticket, client_id).success(function (data) {
-                            $modalInstance.close(data);
-                        }).error(function () {
-                            $scope.error = {
-                                text: 'Ошибка при отмене записи на приём'
+                        WMAppointment.cancel(ticket, client_id).then(
+                            function () {
+                                $modalInstance.close();
+                            },
+                            function (meta) {
+                                $scope.error = {
+                                    text: meta.name
+                                }
                             }
-                        });
+                        );
                     };
                     $scope.cancel = function () {
                         $modalInstance.dismiss('cancel');
@@ -53,6 +56,7 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         <h4 class="modal-title" id="myModalLabel">Записать на приём?</h4>\
                     </div>\
                     <div class="modal-body modal-scrollable">\
+                        <alert type="danger" close="clear_error()" ng-if="error.text" ng-bind-html="error.text"></alert>\
                         <div id="page1" ng-show="page === 0">\
                             <wm-search-client client-id="model.client.client_id" query="client_query"\
                                 on-select="select_client(selected_client)"></wm-search-client>\
@@ -106,6 +110,7 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         appointment_type: null,
                         associated_event_id: null
                     };
+                    $scope.error = {};
                     $scope.client_name = client_name;
                     $scope.client_query = '';
                     $scope.rbAppointmentType.get_by_code_async('amb').then(function (at) {
@@ -159,17 +164,21 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                             $scope.model.appointment_type.id,
                             $scope.model.associated_event_id,
                             $scope.model.note
-                        ).success(function (data) {
-                            $modalInstance.close(data);
-                        }).error(function () {
-                            $scope.error = {
-                                text: 'Ошибка при записи на приём'
-                            };
-                        });
+                        ).then(
+                            function () { $modalInstance.close() },
+                            function (meta) {
+                                $scope.error = {
+                                    text: meta.name
+                                };
+                            }
+                        );
                     };
                     $scope.cancel = function () {
                         $modalInstance.dismiss('cancel');
                     };
+                    $scope.clear_error = function () {
+                        $scope.error = {};
+                    }
                 },
                 size: size,
                 windowClass: client_id ? '' : 'modal-scrollable'
