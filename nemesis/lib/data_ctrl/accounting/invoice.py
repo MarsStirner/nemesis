@@ -3,6 +3,8 @@
 import datetime
 
 from decimal import Decimal
+
+from nemesis.lib.types import Undefined
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import union, exists, join
 
@@ -203,11 +205,18 @@ class InvoiceSelecter(BaseSelecter):
 
         if 'event_id' in flt_args:
             event_id = safe_int(flt_args['event_id'])
-            self.query = self.query.join(InvoiceItem, Service).filter(
+            self.query = self.query.join(InvoiceItem, InvoiceItem.invoice_id == Invoice.id).join(Service).filter(
                 Service.event_id == event_id,
                 Service.deleted == 0,
                 Invoice.deleted == 0
             )
+
+        refunds = flt_args.get('refunds', Undefined)
+        only_refunds = flt_args.get('only_refunds', Undefined)
+        if only_refunds is True:
+            self.query = self.query.filter(Invoice.parent_id.isnot(None))
+        elif refunds is Undefined or refunds is False:
+            self.query = self.query.filter(Invoice.parent_id.is_(None))
 
         if 'query' in flt_args:
             query = u'%{0}%'.format(flt_args['query'])
