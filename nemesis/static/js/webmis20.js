@@ -492,6 +492,138 @@ var WebMis20 = angular.module('WebMis20', [
     };
     return PrintingService;
 }])
+.factory('JasperPrintingService', ['$window', '$http', '$rootScope', '$timeout', 'CurrentUser', 'WMConfig',
+        function ($window, $http, $rootScope, $timeout, CurrentUser, WMConfig) {
+    var JasperPrintingService = function (context_type) {
+        if (arguments.length >= 3) {
+            this.target = arguments[2]
+        } else {
+            this.target = '_blank'
+        }
+        this.context_type = context_type;
+        this.context = null;
+        this.templates = [];
+    };
+    JasperPrintingService.prototype.set_context = function (context) {
+        if (context === this.context) return;
+        this.context = context;
+        var t = this;
+        return $http.get(url_jr_print_templates + '?folder=' + context)
+        .success(function (data) {
+            t.templates = data.result.sort(function (left, right) {
+                return (left.code < right.code) ? -1 : (left.code > right.code ? 1 : 0)
+            });
+            t.loaded = true;
+        })
+        .error(function (data, status) {
+            if (data === '' && status === 0) {
+                t.not_available = true;
+            }
+            t.loaded = false;
+        });
+    };
+    JasperPrintingService.prototype.set_template_meta = function (template, callback) {
+        if (template === this.template) return callback();
+        this.template = template;
+        var t = this;
+        return $http.get(url_jr_print_template_meta + '?template_id=' + template.id)
+        .success(function (data) {
+            t.template.meta = data.result;
+            return callback();
+        })
+        .error(function (data, status) {
+            if (data === '' && status === 0) {
+                t.not_available = true;
+            }
+        });
+    };
+    JasperPrintingService.prototype.is_available = function () {
+        return this.loaded !== undefined ? Boolean(this.context) && !this.not_available : true;
+    };
+    JasperPrintingService.prototype.is_loaded = function () {
+        return Boolean(this.context) && this.loaded;
+    };
+    JasperPrintingService.prototype.file_get = function (verb, url, data, target, on_error) {
+        var form = document.createElement("form");
+        form.id = 'myForm';
+        form.action = url;
+        form.method = verb;
+        form.target = target || "_blank";
+        if (data) {
+            var json = angular.toJson(data);
+            var input = document.createElement("textarea");
+            input.name = 'json';
+            input.value = json;
+            form.appendChild(input);
+        }
+        form.style.display = 'none';
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        // todo: найти способ отправки post запроса с параметрами, ответ
+        // todo: которого по выборку пользователя открывается в соответствующем
+        // todo: типу файла приложении или сохраняется на диск и при этом иметь
+        // todo: возможность реагировать на успех и ошибку ответа
+        // ajax_form.submit(function(){
+        //     $.ajax({
+        //         url: ajax_form.attr('action'),
+        //         type: 'post',
+        //         data: ajax_form.serialize(),
+        //         dataType: 'text',
+        //         success: function (res) {
+        //             var w = $window.open();
+        //         },
+        //         error: function (res, err_code) {
+        //         }
+        //     });
+        //     return false;
+        // });
+        // ajax_form.submit();
+
+        // вместо promise
+        return {then: function(onsuccess, onerror) {
+            return onsuccess();
+        }}
+    };
+    JasperPrintingService.prototype.print_template = function(template_data_list, separated) { // [ {template_id, context}, ... ]
+        var self = this;
+        var send_data = {
+            separate: separated,
+            documents: template_data_list.map(function (item) {
+                return {
+                    id: item.template_id,
+                    code: item.code,
+                    context_type: self.context_type,
+                    context: angular.extend(
+                        {}, item.context, {
+                            'currentOrgStructure': "",
+                            'currentOrganisation': WMConfig.local_config.default_org_id,
+                            'currentPerson': CurrentUser.get_main_user().id
+                        }
+                    )
+                }
+            }
+        )};
+        return self.file_get('POST', url_jr_print_template, send_data, undefined, function (data, status) {
+            var result = data.result,
+            info = (data === '' && status === 0) ?
+                {
+                    text: 'Ошибка соединения с сервером печати',
+                    code: status,
+                    data: null,
+                    type: 'danger'
+                } :
+                {
+                    text: result.name,
+                    code: status,
+                    data: result.data,
+                    type: 'danger'
+                };
+            $rootScope.$broadcast('printing_error', info);
+        });
+    };
+    return JasperPrintingService;
+}])
 .factory('EventType', ['RefBook', 'AgeSex', function (RefBook, AgeSex) {
     var EventType = function () {
         RefBook.call(this, 'EventType');
