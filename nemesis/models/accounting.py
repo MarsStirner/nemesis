@@ -2,7 +2,7 @@
 
 import datetime
 
-from nemesis.lib.types import Undefined
+from nemesis.lib.types import Undefined, CalculatedProperty, CalculatedPropertyRO
 from nemesis.models.refbooks import RefBookMixin
 from sqlalchemy import orm
 
@@ -412,62 +412,33 @@ class Invoice(db.Model):
         primaryjoin='and_(InvoiceItem.refund_id == Invoice.id, InvoiceItem.deleted == 0)'
     )
 
+    total_sum = CalculatedProperty('_total_sum')
+    refund_sum = CalculatedProperty('_refund_sum')
+    coordinated_refund = CalculatedPropertyRO('_coordinated_refund')
+
     @orm.reconstructor
     def kill_calculated_fields(self):
         del self.total_sum
         del self.refund_sum
         del self.coordinated_refund
 
-    @property
+    @total_sum
     def total_sum(self):
-        if not hasattr(self, '_total_sum'):
-            from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
-            self._total_sum = calc_invoice_total_sum(self)
-        return self._total_sum
+        from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
+        return calc_invoice_total_sum(self)
 
-    @total_sum.setter
-    def total_sum(self, val):
-        self._total_sum = val
-
-    @total_sum.deleter
-    def total_sum(self):
-        if hasattr(self, '_total_sum'):
-            del self._total_sum
-
-    @property
+    @refund_sum
     def refund_sum(self):
-        if not hasattr(self, '_refund_sum'):
-            from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_refund_sum
-            self._refund_sum = calc_invoice_refund_sum(self)
-        return self._refund_sum
+        from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_refund_sum
+        return calc_invoice_refund_sum(self)
 
-    @refund_sum.setter
-    def refund_sum(self, value):
-        self._refund_sum = value
-
-    @refund_sum.deleter
-    def refund_sum(self):
-        if hasattr(self, '_refund_sum'):
-            del self._refund_sum
-
-    @property
+    @coordinated_refund
     def coordinated_refund(self):
-        if not hasattr(self, '_coordinated_refund'):
-            self._coordinated_refund = Invoice.query.filter(
-                Invoice.parent == self,
-                Invoice.deleted == 0,
-                Invoice.settleDate.is_(None),
-            ).first()
-        return self._coordinated_refund
-
-    @coordinated_refund.setter
-    def coordinated_refund(self, value):
-        raise
-
-    @coordinated_refund.deleter
-    def coordinated_refund(self):
-        if hasattr(self, '_coordinated_refund'):
-            del self._coordinated_refund
+        return Invoice.query.filter(
+            Invoice.parent == self,
+            Invoice.deleted == 0,
+            Invoice.settleDate.is_(None),
+        ).first()
 
     def get_all_entities(self):
         result = [self]
