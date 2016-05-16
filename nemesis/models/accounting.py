@@ -412,6 +412,12 @@ class Invoice(db.Model):
         primaryjoin='and_(InvoiceItem.refund_id == Invoice.id, InvoiceItem.deleted == 0)'
     )
 
+    @orm.reconstructor
+    def kill_calculated_fields(self):
+        del self.total_sum
+        del self.refund_sum
+        del self.coordinated_refund
+
     @property
     def total_sum(self):
         if not hasattr(self, '_total_sum'):
