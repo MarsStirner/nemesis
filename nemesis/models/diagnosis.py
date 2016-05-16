@@ -67,7 +67,7 @@ class Diagnosis(db.Model):
     endDate = db.Column(db.Date)
 
     client = db.relationship('Client')
-    person = db.relationship('Person', foreign_keys=[person_id], lazy=False, innerjoin=True)
+    person = db.relationship('Person', foreign_keys=[person_id], lazy=False)
     modifyPerson = db.relationship('Person', foreign_keys=[modifyPerson_id])
     createPerson = db.relationship('Person', foreign_keys=[createPerson_id])
 
