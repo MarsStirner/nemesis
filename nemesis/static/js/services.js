@@ -6,7 +6,7 @@ angular.module('WebMis20.services', ['hitsl.core']).
             make: function (ticket, client_id, appointment_type_id, associated_event_id, note) {
                 return ApiCalls.wrapper(
                     'POST',
-                    url_schedule_api_appointment, 
+                    url_schedule_api_appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,
@@ -18,7 +18,7 @@ angular.module('WebMis20.services', ['hitsl.core']).
             cancel: function (ticket, client_id) {
                 return ApiCalls.wrapper(
                     'POST', 
-                    url_schedule_api_appointment, 
+                    url_schedule_api_appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,
@@ -27,7 +27,8 @@ angular.module('WebMis20.services', ['hitsl.core']).
             },
             change_notes: function (ticket_client_id, notes) {
                 return ApiCalls.wrapper(
-                    url_schedule_api_appointment, 
+                    'POST',
+                    url_schedule_api_appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,
