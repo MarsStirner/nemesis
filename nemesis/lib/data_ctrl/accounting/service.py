@@ -611,11 +611,15 @@ class ServiceController(BaseModelController):
     def check_service_in_invoice(self, service):
         if not service.id:
             return False
-        return self.session.query(
-            exists().select_from(
-                join(Service, InvoiceItem, InvoiceItem.service).join(Invoice)
-            ).where(Service.id == service.id).where(Invoice.deleted == 0).where(Service.deleted == 0)
-        ).scalar()
+        return self.session.query(Invoice).join(
+            InvoiceItem, InvoiceItem.invoice_id == Invoice.id
+        ).join(
+            Service, Service.id == InvoiceItem.concreteService_id
+        ).filter(
+            InvoiceItem.deleted == 0,
+            Invoice.deleted == 0,
+            Service.deleted == 0,
+        ).count() > 0
 
     def check_service_is_paid(self, service):
         if not service.id:

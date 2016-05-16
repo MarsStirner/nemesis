@@ -273,7 +273,7 @@ class InvoiceSelecter(BaseSelecter):
         Invoice = self.model_provider.get('Invoice')
         InvoiceItem = self.model_provider.get('InvoiceItem')
 
-        self.query = self.query.join(InvoiceItem).filter(
+        self.query = self.query.join(InvoiceItem, InvoiceItem.invoice_id == Invoice.id).filter(
             Invoice.deleted == 0,
             InvoiceItem.deleted == 0,
             InvoiceItem.concreteService_id == service_id
