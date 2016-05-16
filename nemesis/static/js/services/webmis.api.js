@@ -178,6 +178,29 @@ WebMis20
             return wrapper('POST', url, {}, data);
         }
     };
+    this.refund = {
+        get: function (invoice_id) {
+            return ApiCalls.wrapper(
+                'GET', WMConfig.url.api_invoice_refund_get.format(invoice_id)
+            )
+        },
+        save: function (invoice_id, items) {
+            return ApiCalls.wrapper(
+                'POST', WMConfig.url.api_invoice_refund_save.format(invoice_id), {},
+                {item_list: items}
+            )
+        },
+        delete: function (invoice_id) {
+            return ApiCalls.wrapper(
+                'DELETE', WMConfig.url.api_invoice_refund_delete.format(invoice_id)
+            )
+        },
+        process: function (invoice_id, pay_type) {
+            return ApiCalls.wrapper(
+                'POST', WMConfig.url.api_invoice_refund_process.format(invoice_id), {}, 
+                {pay_type: pay_type})
+        }
+    };
     this.finance_trx = {
         get_new: function (args) {
             var url = WMConfig.url.api_finance_transaction_get;

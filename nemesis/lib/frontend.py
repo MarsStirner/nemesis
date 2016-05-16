@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from flask import url_for
+
 __author__ = 'viruzzz-kun'
 
 
@@ -23,3 +25,13 @@ def frontend_config(func):
     return func
 
 
+def uf_placeholders(endpoint, arg_names):
+    args = range(-100, -100-len(arg_names), -1)
+    kwargs = {
+        name: placeholder
+        for name, placeholder in zip(arg_names, args)
+    }
+    url = url_for(endpoint, **kwargs)
+    for i, a in enumerate(args):
+        url = url.replace(str(a), '{%d}' % i)
+    return url
