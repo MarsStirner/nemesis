@@ -337,8 +337,9 @@ angular.module('WebMis20.directives')
                                         // лекарственная форма
                                         formulation: {
                                             name: record.rls.form,
-                                            value: record.dose.value,
-                                            unit: record.dose.unit.code
+                                            value: record.rls.dosage.value,
+                                            unit: record.rls.dosage.unit.code
+
                                         },
                                         // способ применения
                                         dosing_formulation: {
@@ -347,7 +348,12 @@ angular.module('WebMis20.directives')
                                         // частота
                                         dosage_frequency: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name),
                                         // длительность
-                                        dosage_duration: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
+                                        dosage_duration: '{0} {1}'.format(record.duration.value, record.duration.unit.name),
+                                        // доза препарата
+                                        value: record.dose.value,
+                                        unit: record.dose.unit.code,
+                                        // примечание
+                                        special: record.note
                                     },
                                     patient: 'hitsl.mis:{0}'.format(client.id)
                                 }
