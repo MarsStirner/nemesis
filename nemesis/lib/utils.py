@@ -678,3 +678,12 @@ def get_max_item_attribute_value(model, attr):
     if not row:
         return None
     return row[0]
+
+
+def bail_out(exc):
+    """
+    Extremely small function to bail out with exception
+    @type exc: Exception
+    @raise: exc
+    """
+    raise exc

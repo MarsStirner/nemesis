@@ -3,6 +3,7 @@ from flask import flash
 from flask import render_template
 from flask.ext.login import current_user
 from nemesis.app import app
+from nemesis.lib.html_utils import UIException
 from nemesis.lib.utils import request_wants_json
 from nemesis.lib.utils import jsonify
 
@@ -24,3 +25,25 @@ def page_not_found(e):
     flash(u'Указанный вами адрес не найден')
     template_name = '404.html' if current_user.is_authenticated() else '404_v2.html'
     return render_template(template_name), 404
+
+
+@app.errorhandler(UIException)
+def ui_exception_handler(exception):
+    """
+    @type exception: UIException
+    @param exception:
+    @return:
+    """
+    return (
+        render_template(
+            'error.html',
+            **dict(
+                exception.kwargs,
+                title=exception.title,
+                message=exception.message,
+                code=exception.code,
+            )
+        ),
+        exception.code,
+        {'content-type': 'text/html; charset=utf-8'}
+    )

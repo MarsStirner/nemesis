@@ -98,11 +98,16 @@ def check_action_service_requirements(action_type_id, price_list_item_id=None):
 
     if required:
         if not price_list_item_id:
-            result['message'] = u'Отсутствует атрибут `price_list_item_id`'
+            result['message'] = u'Действие требует оплаты, однако не передан атрибут `price_list_item_id`. ' \
+                                u'Возможно, в настройках прайс-листа для выбранного договора отсутствует позиция, ' \
+                                u'соответствующая выбранному действию.'
         else:
             pli_matched = check_at_service_pli_match(action_type_id, price_list_item_id)
             if not pli_matched:
-                result['message'] = u'Отсутствует позиция в прайс-листе для данного документа'
+                result['message'] = u'Действие требует оплаты, однако в настройках прайс-листа для выбранного ' \
+                                    u'договора отсутствует позиция, соответствующая выбранному действию. Атрибут ' \
+                                    u'`price_list_item_id` не соответствует ни одной встречающейся в данном прайс-' \
+                                    u'листе позиции'
             else:
                 result['result'] = True
     return result
