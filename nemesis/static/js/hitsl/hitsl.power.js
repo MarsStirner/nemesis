@@ -338,5 +338,8 @@ _.mixin({
             result[keyMaker(item, index, object)] = item;
         });
         return result;
+    },
+    passThrough: function (func) {
+        return function (arg) { func(arg); return arg; }
     }
 });
