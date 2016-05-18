@@ -1109,6 +1109,8 @@ class rbLaboratory(db.Model):
     ownName = db.Column(db.String(128), nullable=False)
     labName = db.Column(db.String(128), nullable=False)
 
+    tests = db.relationship('rbTest', secondary='rbLaboratory_Test', backref='labs')  # обработать удалённые тесты
+
     def __json__(self):
         return {
             'id': self.id,
@@ -1117,7 +1119,7 @@ class rbLaboratory(db.Model):
         }
 
 
-class rbLaboratory_Test(db.Model):
+class rbLaboratory_TestAssoc(db.Model):
     __tablename__ = u'rbLaboratory_Test'
     __table_args__ = (
         db.Index(u'code', u'book', u'code'),
