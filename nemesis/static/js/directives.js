@@ -1060,7 +1060,8 @@ angular.module('WebMis20.directives')
                 if (typeName == "OrgStructure") scope.$refBook = RefBookService.get('OrgStructure');
                 if (typeName == "Person") scope.$refBook = RefBookService.get('Person');
                 if (typeName == "Service") scope.$refBook = RefBookService.get('rbService');
-                var template = templates[typeName].replace('is_required', String(scope.metadata['required'] || true));
+                var required = scope.metadata['required'];
+                var template = templates[typeName].replace('is_required', String(required == undefined ? true: required));
                 var child = $(template);
                 $(element).append(child);
                 $compile(child)(scope);
