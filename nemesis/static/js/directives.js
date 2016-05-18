@@ -303,8 +303,11 @@ angular.module('WebMis20.directives')
                     return PharmExpertIntegration.enabled() && pharmExpertResult.url;
                 };
                 scope.btnCheckClass = function () {
-                    if (pharmExpertResult.value_max > 1) return 'btn-danger';
-                    if (pharmExpertResult.value_max > 0) return 'btn-warning';
+                    var vmax = String(pharmExpertResult.value_max);
+                    if (['3', '4'].has(vmax)) return 'btn-danger';
+                    if (['1', '2'].has(vmax)) return 'btn-warning';
+                    if (['-1', '0'].has(vmax)) return 'btn-success';
+                    if (['duplicate', 'active_duplicate'].has(vmax)) return 'btn-primary';
                     return 'btn-default';
                 };
                 scope.check = function () {
@@ -335,27 +338,29 @@ angular.module('WebMis20.directives')
                                     // data2: ,
                                     dosage: {
                                         // лекарственная форма
-                                        formulation: {
+                                        form: {
                                             name: record.rls.form,
-                                            value: record.rls.dosage.value,
-                                            unit: record.rls.dosage.unit.code
-
+                                            value: safe_traverse(record.rls.dosage, ['value']),
+                                            unit: safe_traverse(record.rls.dosage, ['unit', 'code'])
                                         },
                                         // способ применения
-                                        dosing_formulation: {
+                                        method: {
                                             name: record.method.name
                                         },
                                         // частота
-                                        dosage_frequency: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name),
+                                        frequency: {
+                                            name: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name)
+                                        },
                                         // длительность
-                                        dosage_duration: '{0} {1}'.format(record.duration.value, record.duration.unit.name),
+                                        duration: {
+                                            name: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
+                                        },
                                         // доза препарата
                                         value: record.dose.value,
                                         unit: record.dose.unit.code,
                                         // примечание
                                         special: record.note
-                                    },
-                                    patient: 'hitsl.mis:{0}'.format(client.id)
+                                    }
                                 }
                             })
                             .makeObject(function (item, index, object) { return index })
@@ -363,7 +368,8 @@ angular.module('WebMis20.directives')
                         ,
                         user_info: {
                             age_days: String(client.age_tuple[0]),
-                            sex: (client.sex_raw == 2)?('f'):('m')
+                            sex: (client.sex_raw == 2)?('f'):('m'),
+                            patient: 'hitsl.mis:{0}'.format(client.id)
                         }
                     }
                 };
@@ -416,8 +422,7 @@ angular.module('WebMis20.directives')
                 </tbody>\
                 <tbody ng-if="canAdd() || canCheck()">\
                     <tr>\
-                        <td colspan="6">&nbsp;</td>\
-                        <td class="text-right">\
+                        <td colspan="7" class="text-right">\
                             <button class="btn" \
                                 ng-class="btnCheckClass()" \
                                 ng-if="canCheck()" ng-click="check()"><i class="fa fa-check"></i></button>\

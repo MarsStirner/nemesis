@@ -3,9 +3,9 @@
  */
 
 angular.module('hitsl.core')
-.service('PharmExpertIntegration', ['$modal', '$http', '$q', '$rootScope', '$sce', 'WMConfig', 'NotificationService', function ($modal, $http, $q, $rootScope, $sce, WMConfig, NotificationService) {
-
-    var security_key = '8ab87e9fe50512461b04d16e97b88bc9857387d32c9b2f9a577c2928';
+.service('PharmExpertIntegration', [
+    '$modal', '$http', '$q', '$rootScope', '$sce', '$window', 'WMConfig', 'NotificationService',
+    function ($modal, $http, $q, $rootScope, $sce, $window, WMConfig, NotificationService) {
 
     /* Extracted from AngularJS */
     function forEachSorted(obj, iterator, context) {
@@ -89,14 +89,30 @@ angular.module('hitsl.core')
         return defer.promise;
     };
     this.modal = function (config) {
+        var handler;
+        function unlink_message () {
+            $window.removeEventListener("message", handler);
+        }
         var scope = $rootScope.$new(true);
         scope.url = $sce.trustAsResourceUrl(config.url);
-        $modal.open({
+        var modal = $modal.open({
             templateUrl: '/WebMis20/modal-pharmexpert.html',
             backdrop : 'static',
             scope: scope,
+            controller: function PharmExpertModalCtrl ($scope, $modalInstance) {
+                handler = function (event) {
+                    var data = JSON.parse(event.data);
+                    // TODO: А здесь мы однажды сделаем получение фидбэка от ФЭ.
+                    $scope.$close(data);
+                };
+                $window.addEventListener("message", handler, false);
+            },
             size: 'lg'
         });
+        return modal.result.then(
+            _.passThrough(unlink_message),
+            _.passThrough(unlink_message)
+        );
     };
     this.enabled = function () {
         return WMConfig.local_config.pharmexpert.enabled;
