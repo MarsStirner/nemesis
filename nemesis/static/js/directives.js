@@ -1026,7 +1026,12 @@ angular.module('WebMis20.directives')
         var ui_select_template =
             '<div fs-select="" items="$refBook.objects" ng-required=is_required ng-model="model" class="validatable">[[item.name]]</div>';
         var ui_select_multiple_template =
-            '<rb-select multiple="true" ref-book="$refBook.objects" ng-model="model" class="validatable"></rb-select>';
+            '<ui-select multiple ng-model="$parent.model" theme="select2" class="validatable" close-on-select="false">\
+                <ui-select-match>[[ $item.name ]]</ui-select-match>\
+                <ui-select-choices repeat="item in $refBook.objects | filter: {name: $select.search} | limitTo:50">\
+                    <div ng-bind-html="item.name | highlight: $select.search"></div>\
+                </ui-select-choices>\
+            </ui-select>';
         var templates = {
             Integer: '<input ng-required=is_required class="validatable form-control" type="text" ng-pattern="/^([1-9]\\d*|0)$/" ng-model="model"></input>',
             String:  '<input ng-required=is_required class="validatable form-control" type="text" ng-model="model"></input>',
@@ -1044,7 +1049,12 @@ angular.module('WebMis20.directives')
             Organisation:
                 '<div fs-select="" items="$refBook.objects" ng-required=is_required ng-model="model" class="validatable">[[item.short_name]]</div>',
             MultiOrganisation:
-                '<rb-select multiple="true" ref-book="$refBook.objects" ng-model="model" class="validatable" custom-name="itemShortName"></rb-select>',
+                '<ui-select multiple ng-model="$parent.model" theme="select2" class="validatable" close-on-select="false">\
+                    <ui-select-match>[[ $item.short_name ]]</ui-select-match>\
+                    <ui-select-choices repeat="item in $refBook.objects | filter: {short_name: $select.search} | limitTo:50">\
+                        <div ng-bind-html="item.short_name | highlight: $select.search"></div>\
+                    </ui-select-choices>\
+                </ui-select>',
             OrgStructure: ui_select_template,
             MultiOrgStructure: ui_select_multiple_template,
             Person:  ui_select_template,
@@ -1052,7 +1062,7 @@ angular.module('WebMis20.directives')
             Service: ui_select_template,
             MultiService: ui_select_multiple_template,
             MKB: '<ui-mkb ng-required=is_required ng-model="model"></ui-mkb>',
-            MultiMKB: '<ui-select multiple ng-model="model" theme="select2" ref-book="MKB" close-on-select="false">\
+            MultiMKB: '<ui-select multiple ng-model="$parent.model" theme="select2" ref-book="MKB" close-on-select="false">\
                            <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
                            <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
                                <div ng-bind-html="mkb.code | highlight: $select.search"></div>\
@@ -1071,23 +1081,13 @@ angular.module('WebMis20.directives')
             },
             link: function (scope, element, attributes) {
                 var typeName = scope.metadata['type'];
-                if (typeName == "RefBook") scope.$refBook = RefBookService.get(scope.metadata['arguments'][0]);
-                if (typeName == "Organisation") scope.$refBook = RefBookService.get('Organisation');
-                if (typeName == "OrgStructure") scope.$refBook = RefBookService.get('OrgStructure');
-                if (typeName == "Person") scope.$refBook = RefBookService.get('Person');
-                if (typeName == "Service") scope.$refBook = RefBookService.get('rbService');
-                var refBook_name;
-                if (typeName == "MultiRefBook") refBook_name = scope.metadata['arguments'][0];
-                if (typeName == "MultiOrganisation") refBook_name = 'Organisation';
-                if (typeName == "MultiOrgStructure") refBook_name = 'OrgStructure';
-                if (typeName == "MultiPerson") refBook_name = 'Person';
-                if (typeName == "MultiService") refBook_name = 'rbService';
+                if (["RefBook", "MultiRefBook"].has(typeName)) scope.$refBook = RefBookService.get(scope.metadata['arguments'][0]);
+                if (["Organisation", "MultiOrganisation"].has(typeName)) scope.$refBook = RefBookService.get('Organisation');
+                if (["OrgStructure", "MultiOrgStructure"].has(typeName)) scope.$refBook = RefBookService.get('OrgStructure');
+                if (["Person", "MultiPerson"].has(typeName)) scope.$refBook = RefBookService.get('Person');
+                if (["Service", "MultiService"].has(typeName)) scope.$refBook = RefBookService.get('rbService');
                 scope.is_required = scope.metadata['required'];
-                scope.itemShortName = function (selected) {
-                    return selected ? selected.short_name : undefined;
-                };
                 var template = templates[typeName];
-                if (refBook_name) template = template.replace('\$refBook\.objects', refBook_name);
                 var child = $(template);
                 $(element).append(child);
                 $compile(child)(scope);
