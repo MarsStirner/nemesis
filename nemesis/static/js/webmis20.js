@@ -510,9 +510,7 @@ var WebMis20 = angular.module('WebMis20', [
         var t = this;
         return $http.get(url_jr_print_templates + '?folder=' + context)
         .success(function (data) {
-            t.templates = data.result.sort(function (left, right) {
-                return (left.code < right.code) ? -1 : (left.code > right.code ? 1 : 0)
-            });
+            t.templates = data.result;
             t.loaded = true;
         })
         .error(function (data, status) {
