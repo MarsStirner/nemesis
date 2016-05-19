@@ -1024,28 +1024,44 @@ angular.module('WebMis20.directives')
     ])
     .directive('uiPrintVariable', ['$compile', 'RefBookService', function ($compile, RefBookService) {
         var ui_select_template =
-            '<div fs-select="" items="$refBook.objects" ng-required="is_required" ng-model="model" class="validatable">[[item.name]]</div>';
+            '<div fs-select="" items="$refBook.objects" ng-required=is_required ng-model="model" class="validatable">[[item.name]]</div>';
+        var ui_select_multiple_template =
+            '<rb-select multiple="true" ref-book="$refBook.objects" ng-model="model" class="validatable"></rb-select>';
         var templates = {
-            Integer: '<input ng-required="is_required" class="validatable form-control" type="text" ng-pattern="/^([1-9]\\d*|0)$/" ng-model="model"></input>',
-            String:  '<input ng-required="is_required" class="validatable form-control" type="text" ng-model="model"></input>',
-            Float:   '<input ng-required="is_required" class="validatable form-control" type="text" ng-pattern="/^([1-9]\\d*|0)(.\\d+)?$/" ng-model="model"></input>',
+            Integer: '<input ng-required=is_required class="validatable form-control" type="text" ng-pattern="/^([1-9]\\d*|0)$/" ng-model="model"></input>',
+            String:  '<input ng-required=is_required class="validatable form-control" type="text" ng-model="model"></input>',
+            Float:   '<input ng-required=is_required class="validatable form-control" type="text" ng-pattern="/^([1-9]\\d*|0)(.\\d+)?$/" ng-model="model"></input>',
             Boolean:
                 '<div class="fs-checkbox fs-racheck">\
                     <a class="fs-racheck-item" href="javascript:void(0)" ng-click="model = !model" fs-space="model = !model">\
                 <span class="fs-check-outer"><span ng-show="model" class="fs-check-inner"></span></span>[[ metadata.title ]]</a></div>',
-            Date:    '<div fs-date ng-required="is_required" ng-model="model" class="validatable"></div>',
-            Time:    '<div fs-time ng-required="is_required" ng-model="model" class="validatable"></div>',
-            List:    '<div fs-select items="metadata.arguments" ng-model="model" ng-required="true" class="validatable">[[ item ]]</div>',
+            Date:    '<div fs-date ng-required=is_required ng-model="model" class="validatable"></div>',
+            Time:    '<div fs-time ng-required=is_required ng-model="model" class="validatable"></div>',
+            List:    '<div fs-select items="metadata.arguments" ng-model="model" ng-required=is_required class="validatable">[[ item ]]</div>',
             Multilist: '<div fs-checkbox items="metadata.arguments" ng-model="model" class="validatable">[[ item ]]</div>',
             RefBook: ui_select_template,
+            MultiRefBook: ui_select_multiple_template,
             Organisation:
-                '<div fs-select="" items="$refBook.objects" ng-required="is_required" ng-model="model" class="validatable">[[item.short_name]]</div>',
+                '<div fs-select="" items="$refBook.objects" ng-required=is_required ng-model="model" class="validatable">[[item.short_name]]</div>',
+            MultiOrganisation:
+                '<rb-select multiple="true" ref-book="$refBook.objects" ng-model="model" class="validatable" custom-name="itemShortName"></rb-select>',
             OrgStructure: ui_select_template,
+            MultiOrgStructure: ui_select_multiple_template,
             Person:  ui_select_template,
+            MultiPerson:  ui_select_multiple_template,
             Service: ui_select_template,
-            MKB: '<ui-mkb ng-model="model"></ui-mkb>',
+            MultiService: ui_select_multiple_template,
+            MKB: '<ui-mkb ng-required=is_required ng-model="model"></ui-mkb>',
+            MultiMKB: '<ui-select multiple ng-model="model" theme="select2" ref-book="MKB" close-on-select="false">\
+                           <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
+                           <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
+                               <div ng-bind-html="mkb.code | highlight: $select.search"></div>\
+                               <small style="font-style: italic" ng-bind-html="mkb.name"></small>\
+                           </ui-select-choices>\
+                       </ui-select>',
             SpecialVariable: 'Special Variable',
-            Area: '<ui-select ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
+            Area: '<ui-select ext-select-area ng-required=is_required theme="select2" ng-model="$parent.model"></ui-select>',
+            MultiArea: '<ui-select multiple ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
         };
         return {
             restrict: 'A',
@@ -1060,8 +1076,18 @@ angular.module('WebMis20.directives')
                 if (typeName == "OrgStructure") scope.$refBook = RefBookService.get('OrgStructure');
                 if (typeName == "Person") scope.$refBook = RefBookService.get('Person');
                 if (typeName == "Service") scope.$refBook = RefBookService.get('rbService');
-                var required = scope.metadata['required'];
-                var template = templates[typeName].replace('is_required', String(required == undefined ? true: required));
+                var refBook_name;
+                if (typeName == "MultiRefBook") refBook_name = scope.metadata['arguments'][0];
+                if (typeName == "MultiOrganisation") refBook_name = 'Organisation';
+                if (typeName == "MultiOrgStructure") refBook_name = 'OrgStructure';
+                if (typeName == "MultiPerson") refBook_name = 'Person';
+                if (typeName == "MultiService") refBook_name = 'rbService';
+                scope.is_required = scope.metadata['required'];
+                scope.itemShortName = function (selected) {
+                    return selected ? selected.short_name : undefined;
+                };
+                var template = templates[typeName];
+                if (refBook_name) template = template.replace('\$refBook\.objects', refBook_name);
                 var child = $(template);
                 $(element).append(child);
                 $compile(child)(scope);
