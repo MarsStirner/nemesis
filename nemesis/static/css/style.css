@@ -1031,3 +1031,7 @@ li.active>a.cuslom-tab-pills {
     max-height: 64px;
     overflow-y: hidden;
 }
+
+.text-striked {
+    text-decoration: line-through;
+}

@@ -1258,7 +1258,7 @@ class EventVisualizer(object):
             'event_id': event_id
         })
         invoice_repr = InvoiceRepr()
-        return invoice_repr.represent_listed_invoices(invoice_list)
+        return invoice_repr.represent_listed_invoices_for_event(invoice_list)
 
     def make_event_services(self, event_id):
 
