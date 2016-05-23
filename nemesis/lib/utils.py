@@ -443,7 +443,7 @@ def safe_double(val):
 def safe_decimal(val):
     if val is None:
         return None
-    val = Decimal(val)
+    val = Decimal(str(val))
     return val
 
 

@@ -24,10 +24,8 @@ WebMis20
                 method;
             if (contract_id) {
                 url += contract_id;
-                method = 'POST';
-            } else {
-                method = 'PUT';
             }
+            method = 'POST';
             return wrapper(method, url, {}, data)
                 .then(function (contract) {
                     NotificationService.notify(
@@ -91,11 +89,10 @@ WebMis20
             var url = WMConfig.url.api_service_get;
             if (service_id) {
                 url += service_id;
-                return wrapper('GET', url, args);
             } else {
                 url += '?new=true';
-                return wrapper('POST', url, {}, args);
             }
+            return wrapper('GET', url, args);
         },
         save_service_list: function (args) {
             return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
@@ -131,21 +128,15 @@ WebMis20
             } else {
                 url += '?new=true';
             }
-            if (args) {
-                return wrapper('POST', url, undefined, args);
-            } else {
-                return wrapper('GET', url, args);
-            }
+            return wrapper('GET', url, args);
         },
         save: function (invoice_id, data) {
             var url = WMConfig.url.api_invoice_save,
                 method;
             if (invoice_id) {
                 url += invoice_id;
-                method = 'POST';
-            } else {
-                method = 'PUT';
             }
+            method = 'POST';
             return wrapper(method, url, {}, data)
                 .then(function (invoice) {
                     NotificationService.notify(
@@ -180,25 +171,32 @@ WebMis20
     };
     this.refund = {
         get: function (invoice_id) {
-            return ApiCalls.wrapper(
-                'GET', WMConfig.url.api_invoice_refund_get.format(invoice_id)
-            )
+            return wrapper('GET', WMConfig.url.api_invoice_refund_get.format(invoice_id));
         },
-        save: function (invoice_id, items) {
-            return ApiCalls.wrapper(
-                'POST', WMConfig.url.api_invoice_refund_save.format(invoice_id), {},
-                {item_list: items}
-            )
+        save: function (invoice_id, data) {
+            return wrapper('POST', WMConfig.url.api_invoice_refund_save.format(invoice_id), {}, data);
         },
-        delete: function (invoice_id) {
-            return ApiCalls.wrapper(
-                'DELETE', WMConfig.url.api_invoice_refund_delete.format(invoice_id)
-            )
+        del: function (invoice_id) {
+            return wrapper('DELETE', WMConfig.url.api_invoice_refund_delete.format(invoice_id));
         },
-        process: function (invoice_id, pay_type) {
-            return ApiCalls.wrapper(
-                'POST', WMConfig.url.api_invoice_refund_process.format(invoice_id), {}, 
-                {pay_type: pay_type})
+        process: function (invoice_id, data) {
+            return wrapper('POST', WMConfig.url.api_invoice_refund_process.format(invoice_id), {}, data)
+                .then(function (payer) {
+                    NotificationService.notify(
+                        200,
+                        'Возврат проведён',
+                        'success',
+                        5000
+                    );
+                    return payer;
+                }, function (result) {
+                    NotificationService.notify(
+                        500,
+                        'Ошибка сохранения, свяжитесь с администратором',
+                        'danger'
+                    );
+                    return $q.reject(result);
+                });
         }
     };
     this.finance_trx = {
@@ -209,7 +207,7 @@ WebMis20
         },
         make_trx: function (trx_type_code, data) {
             var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_make, trx_type_code);
-            return wrapper('PUT', url, {}, data)
+            return wrapper('POST', url, {}, data)
                 .then(function (payer) {
                     NotificationService.notify(
                         200,
@@ -234,7 +232,7 @@ WebMis20
         },
         make_invoice_trx: function (trx_type_code, data) {
             var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_invoice_make, trx_type_code);
-            return wrapper('PUT', url, {}, data)
+            return wrapper('POST', url, {}, data)
                 .then(function (invoice) {
                     NotificationService.notify(
                         200,

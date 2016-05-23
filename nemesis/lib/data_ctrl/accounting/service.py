@@ -11,7 +11,7 @@ from nemesis.models.actions import Action
 from nemesis.models.event import Event
 from nemesis.models.enums import ServiceKind
 from nemesis.lib.utils import (safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict,
-    safe_traverse_attrs)
+    safe_traverse_attrs, safe_datetime)
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
@@ -330,7 +330,7 @@ class ServiceController(BaseModelController):
         if 'tests_data' in serviced_entity_data:
             assigned = serviced_entity_data['tests_data']['assigned']
             data = {
-                'plannedEndDate': serviced_entity_data['tests_data']['planned_end_date']
+                'plannedEndDate': safe_datetime(serviced_entity_data['tests_data']['planned_end_date'])
             }
         else:
             assigned = data = None
@@ -619,6 +619,7 @@ class ServiceController(BaseModelController):
             InvoiceItem.deleted == 0,
             Invoice.deleted == 0,
             Service.deleted == 0,
+            Service.id == service.id
         ).count() > 0
 
     def check_service_is_paid(self, service):

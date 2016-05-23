@@ -402,7 +402,11 @@ class Invoice(db.Model):
     contract = db.relationship('Contract')
     createPerson = db.relationship('Person', foreign_keys=[createPerson_id])
     modifyPerson = db.relationship('Person', foreign_keys=[modifyPerson_id])
-    parent = db.relationship('Invoice', remote_side=[id], backref='refunds')
+    parent = db.relationship(
+        'Invoice',
+        remote_side=[id],
+        backref=db.backref('refunds', primaryjoin='and_(Invoice.id == remote(Invoice.parent_id), remote(Invoice.deleted) == 0)')
+    )
     item_list = db.relationship(
         'InvoiceItem',
         primaryjoin='and_(InvoiceItem.invoice_id==Invoice.id, InvoiceItem.parent_id == None, InvoiceItem.deleted == 0)'
@@ -415,6 +419,14 @@ class Invoice(db.Model):
     total_sum = CalculatedProperty('_total_sum')
     refund_sum = CalculatedProperty('_refund_sum')
     coordinated_refund = CalculatedPropertyRO('_coordinated_refund')
+    sum_ = CalculatedProperty('_sum_')
+
+    @orm.reconstructor
+    def kill_calculated_fields(self):
+        del self.total_sum
+        del self.refund_sum
+        del self.coordinated_refund
+        del self.sum_
 
     @orm.reconstructor
     def kill_calculated_fields(self):
@@ -432,6 +444,12 @@ class Invoice(db.Model):
         from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_refund_sum
         return calc_invoice_refund_sum(self)
 
+    @sum_
+    def sum_(self):
+        from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_sum_with_refunds
+        return calc_invoice_sum_with_refunds(self)
+
+
     @coordinated_refund
     def coordinated_refund(self):
         return Invoice.query.filter(
@@ -439,6 +457,14 @@ class Invoice(db.Model):
             Invoice.deleted == 0,
             Invoice.settleDate.is_(None),
         ).first()
+
+    def get_all_subitems(self):
+        result = []
+        for item in self.item_list:
+            result.append(item)
+            result.extend(item.get_flatten_subitems())
+
+        return result
 
     def get_all_entities(self):
         result = [self]
@@ -490,18 +516,8 @@ class InvoiceItem(db.Model):
     def is_refunded(self):
         return self.refund_id is not None
 
-    def set_refund(self, refund, recursive=Undefined):
-        """
-        @type refund: Invoice
-        @type recursive: bool|Undefined
-        @param refund:
-        @param recursive:
-        @return:
-        """
+    def set_refund(self, refund):
         self.refund = refund
-        if refund is None and recursive is True or refund is not None and recursive is not False:
-            for item in self.subitem_list:
-                item.set_refund(refund, recursive)
 
     def init_subitem_list(self):
         self._subitem_list = self._get_subitems()

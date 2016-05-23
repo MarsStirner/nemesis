@@ -105,7 +105,7 @@ def calc_invoice_refund_sum(refund):
     @param refund:
     @return:
     """
-    return sum(item.sum for item in refund.refund_items)
+    return sum(item.sum for item in refund.refund_items if not item.service.price_list_item.isAccumulativePrice)
 
 
 def calc_invoice_sum_wo_discounts(invoice):
@@ -114,6 +114,20 @@ def calc_invoice_sum_wo_discounts(invoice):
         for item in invoice.item_list
     )
     return total_sum
+
+
+def calc_invoice_sum_with_refunds(invoice):
+    total_sum = invoice.total_sum
+    refunds_sum = calc_invoice_refunds_sum(invoice)
+    return total_sum - refunds_sum
+
+
+def calc_invoice_refunds_sum(invoice):
+    refunds_sum = Decimal(0)
+    for refund in invoice.refunds:
+        if check_refund_closed(refund):
+            refunds_sum += refund.refund_sum
+    return refunds_sum
 
 
 def calc_payer_balance(payer):
@@ -136,6 +150,10 @@ def get_finance_trx_type(trx_type_code):
 
 
 def check_invoice_closed(invoice):
+    return invoice.settleDate is not None
+
+
+def check_refund_closed(invoice):
     return invoice.settleDate is not None
 
 

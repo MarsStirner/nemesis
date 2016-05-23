@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import logging
 
 from decimal import Decimal
 
@@ -18,6 +19,9 @@ from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 from .service import ServiceController
 from .finance_trx import FinanceTrxController
 from .utils import calc_invoice_total_sum, calc_invoice_item_total_sum
+
+
+logger = logging.getLogger('simple')
 
 
 class InvoiceController(BaseModelController):
@@ -118,8 +122,8 @@ class InvoiceController(BaseModelController):
             data['item_list'] = data['item_list']
         if 'service_list' in data:
             data['service_list'] = [
-                self.session.query(Service).get(service_data['id'])
-                for service_data in data['service_list']
+                self.session.query(Service).get(service_id)
+                for service_id in data['service_list']
             ]
         if safe_bool(data.get('generate_number', False)):
             inv_counter = InvoiceCounter('invoice')
@@ -152,14 +156,12 @@ class InvoiceController(BaseModelController):
         trx_ctrl = FinanceTrxController()
         op_list = trx_ctrl.get_invoice_finance_operations(invoice)
 
-        pay_sum = Decimal('0')
-        cancel_sum = Decimal('0')
+        paid_sum = Decimal('0')
         for op in op_list:
+            if op.op_type.value not in (FinanceOperationType.invoice_pay[0], FinanceOperationType.payer_balance_in[0]):
+                logger.critical(u'Некорректная транзакция с id = {0} по счёту с id = {1}'.format(op.trx.id, invoice.id))
             if op.op_type.value == FinanceOperationType.invoice_pay[0]:
-                pay_sum += op.op_sum
-            if op.op_type.value == FinanceOperationType.invoice_cancel[0]:
-                cancel_sum += op.op_sum
-        paid_sum = pay_sum - cancel_sum
+                paid_sum += op.op_sum
         invoice_total_sum = invoice.total_sum
         paid = paid_sum >= invoice_total_sum
         debt_sum = invoice_total_sum - paid_sum
@@ -169,6 +171,26 @@ class InvoiceController(BaseModelController):
             'invoice_total_sum': invoice_total_sum,
             'paid_sum': paid_sum,
             'debt_sum': debt_sum,
+            'settle_date': settle_date
+        }
+
+    def get_refund_payment_info(self, invoice):
+        trx_ctrl = FinanceTrxController()
+        op_list = trx_ctrl.get_invoice_finance_operations(invoice)
+
+        refund_sum = Decimal('0')
+        for op in op_list:
+            if op.op_type.value not in (FinanceOperationType.invoice_cancel[0], FinanceOperationType.payer_balance_out[0]):
+                logger.critical(u'Некорректная транзакция с id = {0} по счёту с id = {1}'.format(op.trx.id, invoice.id))
+            if op.op_type.value == FinanceOperationType.invoice_cancel[0]:
+                refund_sum += op.op_sum
+        refund_total_sum = invoice.refund_sum
+        refunded = refund_sum >= refund_total_sum
+        settle_date = invoice.settleDate
+        return {
+            'refunded': refunded,
+            'refund_total_sum': refund_total_sum,
+            'refund_sum': refund_sum,
             'settle_date': settle_date
         }
 
@@ -185,6 +207,10 @@ class InvoiceController(BaseModelController):
         same_number = counter.check_number_used(number)
         if same_number:
             raise ApiException(409, u'Невозможно сохранить счет: счет с таким номером уже существует')
+
+    def get_invoice_event(self, invoice):
+        sel = self.get_selecter()
+        return sel.get_invoice_event(invoice.id)
 
 
 class InvoiceSelecter(BaseSelecter):
@@ -210,13 +236,6 @@ class InvoiceSelecter(BaseSelecter):
                 Service.deleted == 0,
                 Invoice.deleted == 0
             )
-
-        refunds = flt_args.get('refunds', Undefined)
-        only_refunds = flt_args.get('only_refunds', Undefined)
-        if only_refunds is True:
-            self.query = self.query.filter(Invoice.parent_id.isnot(None))
-        elif refunds is Undefined or refunds is False:
-            self.query = self.query.filter(Invoice.parent_id.is_(None))
 
         if 'query' in flt_args:
             query = u'%{0}%'.format(flt_args['query'])
@@ -265,7 +284,14 @@ class InvoiceSelecter(BaseSelecter):
                 Invoice.deleted == 0,
                 Contract.deleted == 0,
                 Contract_Contragent.deleted == 0
-            ).order_by(Invoice.settleDate.is_(None).desc(), Invoice.setDate.desc())
+            ).order_by(Invoice.settleDate.is_(None).desc(), Invoice.setDate.desc(), Invoice.id.desc())
+
+        refunds = flt_args.get('refunds', Undefined)
+        only_refunds = flt_args.get('only_refunds', Undefined)
+        if only_refunds is True:
+            self.query = self.query.filter(Invoice.parent_id.isnot(None))
+        elif refunds is Undefined or refunds is False:
+            self.query = self.query.filter(Invoice.parent_id.is_(None))
 
         return self
 
@@ -279,6 +305,23 @@ class InvoiceSelecter(BaseSelecter):
             InvoiceItem.concreteService_id == service_id
         )
         return self.get_all()
+
+    def get_invoice_event(self, invoice_id):
+        Event = self.model_provider.get('Event')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+        Service = self.model_provider.get('Service')
+
+        event_id_q = self.model_provider.get_query('Event').join(
+            Service, InvoiceItem
+        ).filter(
+            Service.deleted == 0,
+            InvoiceItem.deleted == 0,
+            InvoiceItem.invoice_id == invoice_id
+        ).with_entities(Event.id.label('event_id')).subquery()
+        self.query = self.model_provider.get_query('Event').join(
+            event_id_q, Event.id == event_id_q.c.event_id
+        )
+        return self.get_one()
 
 
 class InvoiceItemController(BaseModelController):

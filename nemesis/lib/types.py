@@ -20,6 +20,7 @@ class CalculatedProperty(object):
 
     def __call__(self, function):
         self.__func = function
+        return self
 
     def __get__(self, instance, owner):
         if not hasattr(instance, self.__name):
