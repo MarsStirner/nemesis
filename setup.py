@@ -36,7 +36,7 @@ setup(
     #test_suite='nemesis.tests',
     install_requires=[
         'Flask',
-        'SQLAlchemy==0.9.9',
+        'SQLAlchemy',
         'Flask-SQLAlchemy',
         'pytz',
         'Flask-BabelEx',
