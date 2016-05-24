@@ -181,6 +181,8 @@ class FinanceTrxController(BaseModelController):
             return item_list
 
     def get_invoice_finance_operations(self, invoice):
+        if not invoice.id:
+            return []
         trx_list = self.session.query(FinanceTransaction).filter(
             FinanceTransaction.invoice_id == invoice.id
         ).all()
