@@ -65,10 +65,14 @@ class Vesta(object):
         if len(parent_code) == 13:  # убрать после конвертации уже записанных кодов кладр
             parent_code = parent_code[:-2]
         url = u'{0}/find/KLD172/'.format(cls.get_url())
+        flt = {
+            'identparent': parent_code,
+            'is_actual': '1'
+        }
+        if level is not None:
+            flt['level'] = level
         try:
-            response = requests.post(url, data=json.dumps({"level": level,
-                                                           "identparent": parent_code,
-                                                           "is_actual": "1"}))
+            response = requests.post(url, json=flt)
             response_json = response.json()
         except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
             logger.error(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e), exc_info=True)
