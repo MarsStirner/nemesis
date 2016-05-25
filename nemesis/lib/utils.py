@@ -6,6 +6,7 @@ import uuid
 
 from functools import wraps
 from decimal import Decimal
+
 from pytz import timezone
 from flask import current_app, request, abort, json, session, make_response
 from flask.ext.principal import Permission, RoleNeed, ActionNeed, PermissionDenied
@@ -14,8 +15,8 @@ from sqlalchemy import func
 
 from nemesis.systemwide import db
 from nemesis.app import app
-from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
-from nemesis.models.client import Client, ClientIdentification
+# from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
+# from nemesis.models.client import Client, ClientIdentification
 
 
 logger = logging.getLogger('simple')
@@ -41,6 +42,7 @@ def breadcrumb(view_title):
                 if client_id == u'new':
                     title = u"Новый пациент"
                 else:
+                    from nemesis.models.client import Client
                     client = Client.query.get(client_id)
                     title = client.nameText if client else ''
             elif request.path == u'/event/event.html':
@@ -100,6 +102,7 @@ _permissions = dict()
 
 @app.before_first_request
 def init_roles():
+    from nemesis.models.person import rbUserProfile
     user_roles = db.session.query(rbUserProfile).all()
     if user_roles:
         for role in user_roles:
@@ -508,6 +511,8 @@ def get_new_uuid():
     """Сгенерировать новый uuid уникальный в пределах бд.
     @rtype: application.models.exist.UUID
     """
+    from nemesis.models.exists import UUID
+
     uuid_model = UUID()
     # paranoia mode on
     unique = False
@@ -526,6 +531,7 @@ def get_new_event_ext_id(event_type_id, client_id):
     if not et.counter_id:
         return ''
 
+    from nemesis.models.exists import rbCounter
     counter = rbCounter.query.filter_by(id=et.counter_id).with_for_update().first()
     if not counter:
         return ''
@@ -557,6 +563,8 @@ def _get_external_id_from_counter(prefix, value, separator, client_id):
     def get_id_prefix(val):
         if val == '':
             return str(client_id)
+        from nemesis.models.client import ClientIdentification
+        from nemesis.models.exists import rbAccountingSystem
         ext_val = ClientIdentification.query.join(rbAccountingSystem).filter(
             ClientIdentification.client_id == client_id, rbAccountingSystem.code == val).first()
         return ext_val.identifier if ext_val else None
