@@ -555,6 +555,8 @@ def int_get_atl_flat(at_class, event_type_id=None):
         ActionPropertyType.isAssignable != 0,
         ActionPropertyType.actionType_id.in_(id_list.keys()),
         ActionPropertyType.deleted == 0
+    ).order_by(
+        ActionPropertyType.idx, ActionPropertyType.id
     )
     # Да, данные в итоговом результате заполняются через id_list
     map(lambda (at_id, apt_id, name, age, sex):
