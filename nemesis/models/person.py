@@ -78,6 +78,12 @@ class Person(db.Model):
     uuid = db.relationship('UUID')
     curation_levels = db.relationship('rbOrgCurationLevel', secondary='PersonCuration')
 
+    contacts = db.relationship(
+        'PersonContact',
+        primaryjoin='and_(PersonContact.person_id==Person.id, PersonContact.deleted == 0)',
+        backref=db.backref('person'),
+    )
+
     @property
     def nameText(self):
         return u' '.join((u'%s %s %s' % (self.lastName, self.firstName, self.patrName)).split())
@@ -334,3 +340,31 @@ class PersonCurationAssoc(db.Model):
 
     person = db.relationship('Person')
     org_curation_level = db.relationship('rbOrgCurationLevel')
+
+class PersonContact(db.Model):
+    __tablename__ = 'PersonContact'
+
+    id = db.Column(db.Integer, primary_key=True)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
+    person_id = db.Column(db.ForeignKey('Person.id'), nullable=False, index=True)
+    contactType_id = db.Column(db.Integer, db.ForeignKey('rbContactType.id'), nullable=False, index=True)
+    value = db.Column(db.String(32), nullable=False)
+
+    contactType = db.relationship(u'rbContactType', lazy=False)
+
+    @property
+    def name(self):
+        return self.contactType.name if self.contactType else None
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'deleted': self.deleted,
+            'contact_type': self.contactType,
+            'contact_text': self.value,
+        }
+
+    def __int__(self):
+        return self.id
