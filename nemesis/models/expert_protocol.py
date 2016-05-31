@@ -4,6 +4,7 @@ import datetime
 
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.systemwide import db
+from nemesis.models.enums import MeasureStatus
 
 
 class ExpertProtocol(db.Model):
@@ -238,3 +239,10 @@ class EventMeasure(db.Model):
     @property
     def measure(self):
         return self.scheme_measure.measure if self.schemeMeasure_id is not None else self.manual_measure
+
+    @property
+    def literal_status(self):
+        status = self.status
+        if status:
+            return unicode(MeasureStatus(status))
+        return ''
