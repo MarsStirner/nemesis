@@ -258,3 +258,4 @@ class rbRadzRiskFactor_StageAssoc(db.Model):
 
     factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
     stage_id = db.Column(db.ForeignKey('rbRadzStage.id'), primary_key=True)
+    points = db.Column(db.Integer, nullable=False)
