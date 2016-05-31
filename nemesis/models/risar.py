@@ -112,6 +112,7 @@ class Errand(db.Model):
     result = db.Column(db.Text, nullable=False)
     readingDate = db.Column(db.DateTime)
     status_id = db.Column(db.ForeignKey('rbErrandStatus.id'), nullable=False)
+    communications = db.Column(db.Text, nullable=False)
 
     event = db.relationship('Event')
     status = db.relationship('rbErrandStatus')
@@ -130,7 +131,8 @@ class Errand(db.Model):
             'planned_exec_date': self.plannedExecDate,
             'exec_date': self.execDate,
             'result': self.result,
-            'reading_date': self.readingDate
+            'reading_date': self.readingDate,
+            "communications": self.communications
         }
 
 
