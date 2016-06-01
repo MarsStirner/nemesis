@@ -833,7 +833,7 @@ class rbResult(db.Model):
     regionalCode = db.Column(db.String(8), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
-    eventPurpose = db.relationship(u'rbEventTypePurpose')
+    eventPurpose = db.relationship(u'rbEventTypePurpose', lazy='joined')
 
     def __json__(self):
         return {

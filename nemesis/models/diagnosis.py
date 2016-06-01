@@ -2,6 +2,8 @@
 import datetime
 
 from blinker._utilities import lazy_property
+from nemesis.models.refbooks import RefBookMixin
+from nvesta.library.shape import RefBook
 from sqlalchemy import Table
 
 from nemesis.models.utils import safe_current_user_id
@@ -213,7 +215,7 @@ class Action_Diagnosis(db.Model):
     diagnosisKind = db.relationship('rbDiagnosisKind', lazy=False)
 
 
-class rbDiagnosisTypeN(db.Model):
+class rbDiagnosisTypeN(db.Model, RefBookMixin):
     __tablename__ = "rbDiagnosisTypeN"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -235,7 +237,7 @@ class rbDiagnosisTypeN(db.Model):
         }
 
 
-class rbDiagnosisKind(db.Model):
+class rbDiagnosisKind(db.Model, RefBookMixin):
     __tablename__ = "rbDiagnosisKind"
 
     id = db.Column(db.Integer, primary_key=True)

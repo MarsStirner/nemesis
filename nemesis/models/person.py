@@ -2,6 +2,7 @@
 
 import datetime
 
+from nemesis.models.refbooks import RefBookMixin
 from sqlalchemy import Table
 
 from nemesis.models.utils import safe_current_user_id
@@ -67,7 +68,7 @@ class Person(db.Model):
     academicTitle_id = db.Column(db.Integer, db.ForeignKey('rbAcademicTitle.id'))
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
 
-    post = db.relationship('rbPost')
+    post = db.relationship('rbPost', lazy=False)
     speciality = db.relationship('rbSpeciality', lazy=False)
     organisation = db.relationship('Organisation')
     org_structure = db.relationship('OrgStructure')
@@ -133,7 +134,7 @@ class Person(db.Model):
         return self.id
 
 
-class rbSpeciality(db.Model):
+class rbSpeciality(db.Model, RefBookMixin):
     __tablename__ = 'rbSpeciality'
     _table_description = u'Специальности'
 

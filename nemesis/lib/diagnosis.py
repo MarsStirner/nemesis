@@ -48,11 +48,8 @@ def update_diagnosis_kind_info(action, diagnosis, diagnosis_types_info):
     add_to_event = action.person == action.event.execPerson
     diagnosis_id = diagnosis.id
 
-    diagnosis_kinds = rbDiagnosisKind.query.all()
-    diagnosis_types = rbDiagnosisTypeN.query.all()
-
-    dk_by_code = {dk.code: dk for dk in diagnosis_kinds}
-    dt_by_code = {dt.code: dt for dt in diagnosis_types}
+    dk_by_code = rbDiagnosisKind.cache().by_code()
+    dt_by_code = rbDiagnosisTypeN.cache().by_code()
 
     for diagnosis_type, diagnosis_kind in six.iteritems(diagnosis_types_info):
         dk_code = diagnosis_kind['code']

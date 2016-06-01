@@ -1044,7 +1044,7 @@ class EventVisualizer(object):
         return sorted(res, key=lambda dt: dt.rank)
 
     def make_diagnosis_types_info(self, diagnosis, event):
-        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
+        associated = rbDiagnosisKind.cache().by_code().get('associated')
 
         event_diagnosis_types_info = self.make_event_diagnosis_types_info(event)
 
@@ -1779,7 +1779,7 @@ class ActionVisualizer(object):
         return service_payment
 
     def make_diagnosis_types_info(self, diagnosis, action):
-        associated = rbDiagnosisKind.query.filter(rbDiagnosisKind.code == 'associated').first()
+        associated = rbDiagnosisKind.cache().by_code().get('associated')
 
         action_diagnoses = Action_Diagnosis.query.filter(
             Action_Diagnosis.deleted == 0,

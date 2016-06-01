@@ -2,6 +2,7 @@
 from flask import render_template, request, redirect, current_app
 from flask.ext.principal import Identity, identity_changed
 from flask.ext.login import current_user
+from nemesis.lib.apiutils import api_method
 from sqlalchemy.orm import lazyload, joinedload
 
 from nemesis.lib.utils import jsonify
@@ -24,6 +25,7 @@ def doctor_to_assist():
         master_user.current_role = (profile.code, profile.name)
         current_user.set_master(master_user)
         identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+        # Что?!
         return jsonify({
             'redirect_url': request.args.get('next') or UserProfileManager.get_default_url()
         })
@@ -33,6 +35,7 @@ def doctor_to_assist():
 
 
 @app.route('/api/doctors_to_assist')
+@api_method
 def api_doctors_to_assist():
     viz = PersonTreeVisualizer()
     persons = db.session.query(Person).add_entity(rbUserProfile).join(Person.user_profiles).filter(
@@ -46,6 +49,6 @@ def api_doctors_to_assist():
         Person.firstName
     )
     res = [viz.make_person_for_assist(person, profile) for person, profile in persons]
-    return jsonify(res)
+    return res
 
 
