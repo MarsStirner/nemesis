@@ -1181,13 +1181,13 @@ angular.module('WebMis20.directives')
             }
         }
     }])
-    .directive('wmOrgStructureTree', ['SelectAll', '$compile', '$http', 'FlatTree', 'WMConfig',
-            function (SelectAll, $compile, $http, FlatTree, WMConfig) {
+    .directive('wmOrgStructureTree', ['SelectAll', '$compile', 'FlatTree', 'WMConfig', 'ApiCalls',
+            function (SelectAll, $compile, FlatTree, WMConfig, ApiCalls) {
         // depends on wmCustomDropdown
         return {
             restrict: 'E',
+            require: ['^ngModel', '^wmCustomDropdown'],
             scope: {
-                onSelect: '&?',
                 nodesSelectable: '@'
             },
             template:
@@ -1216,11 +1216,14 @@ angular.module('WebMis20.directives')
                         </li>\
                     </ul>\
                 </div>',
-            link: function (scope) {
+            link: function (scope, element, attributes, controllers) {
+                var ngModelController = controllers[0],
+                    wmCustomDropdown = controllers[1];
                 var scope_query = '';
                 var sas = scope.sas = new SelectAll([]);
                 var der_tree = new FlatTree('parent_id');
                 var tree = scope.tree = {};
+                scope.ngModel = ngModelController;
 
                 function doFilter() {
                     var keywords = scope_query.toLowerCase().split();
@@ -1257,26 +1260,32 @@ angular.module('WebMis20.directives')
                     }
                     return angular.extend(item, {is_node: is_node});
                 }
-                $http.get(url_get_orgstructure, {
-                    params: {
-                        org_id: WMConfig.local_config.default_org_id
-                    }
-                })
-                .success(function (data) {
-                    der_tree.set_array(data.result);
+                ApiCalls.wrapper(
+                    'GET',
+                    url_get_orgstructure,
+                    { org_id: WMConfig.local_config.default_org_id }
+                )
+                .then(function (result) {
+                    der_tree.set_array(result);
                     doFilter();
                 });
-                scope.$on('FilterChanged', function (event, query) {
+                wmCustomDropdown.$scope.$on('FilterChanged', function (event, query) {
                     scope_query = query;
-                    doFilter()
+                    doFilter();
+                });
+                wmCustomDropdown.$scope.$on('QueryClear', function () {
+                    scope.ngModel.$setViewValue(null);
+                    scope.ngModel.$render();
                 });
                 scope.select = function (node) {
-                    if (scope.$parent.$ctrl) {
-                        scope.$parent.$ctrl.$set_query(node.name);
-                        scope.$parent.$ctrl.$select(node);
-                    }
-                    scope.onSelect(node);
-                }
+                    scope.ngModel.$setViewValue(node);
+                    scope.ngModel.$render();
+                };
+                scope.$watch('ngModel.$modelValue', function (n, o) {
+                    wmCustomDropdown.$scope.$query = n ? n.name : '';
+                    if (angular.equals(n, o)) return n;
+                    wmCustomDropdown.$scope.$broadcast('NodeSelected', n);
+                });
             }
         }
     }])

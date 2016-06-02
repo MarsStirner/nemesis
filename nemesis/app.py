@@ -134,6 +134,9 @@ def fc_urls():
                 'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
                 'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
             }
+        },
+        'ui': {
+            'defaultHideTimeout': 400
         }
     }
 
