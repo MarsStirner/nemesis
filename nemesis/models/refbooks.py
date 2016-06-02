@@ -49,7 +49,7 @@ class rbUnitsGroup(db.Model):
         }
 
 
-class rbUnits(db.Model):
+class rbUnits(db.Model, RefBookMixin):
     __tablename__ = "rbUnits"
 
     id = db.Column(db.Integer, primary_key=True)

@@ -30,7 +30,7 @@ class rlsNomen(db.Model):
     unit = db.relationship(u'rbUnits', primaryjoin='rlsNomen.units_id == rbUnits.id', lazy=False)
 
     def __json__(self):
-        variants = [rbUnits.query.filter(rbUnits.code == u'mg').first()]
+        variants = [rbUnits.cache().by_code()[u'mg']]
         if self.unit:
             variants.extend(self.unit.group.children)
         return {

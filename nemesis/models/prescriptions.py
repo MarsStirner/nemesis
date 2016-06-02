@@ -31,11 +31,11 @@ class MedicalPrescription(db.Model):
     modifyPerson = db.relationship(u'Person', primaryjoin='MedicalPrescription.modifyPerson_id == Person.id')
 
     action = db.relationship(u'Action', backref='medication_prescriptions')
-    rls = db.relationship(u'rlsNomen')
-    dose_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.dose_unit_id == rbUnits.id')
-    duration_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.duration_unit_id == rbUnits.id')
-    frequency_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.frequency_unit_id == rbUnits.id')
-    methodOfAdministration = db.relationship(u'rbMethodOfAdministration')
+    rls = db.relationship(u'rlsNomen', lazy='joined')
+    dose_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.dose_unit_id == rbUnits.id', lazy='joined')
+    duration_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.duration_unit_id == rbUnits.id', lazy='joined')
+    frequency_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.frequency_unit_id == rbUnits.id', lazy='joined')
+    methodOfAdministration = db.relationship(u'rbMethodOfAdministration', lazy='joined')
 
     @property
     def status(self):
@@ -75,6 +75,7 @@ class MedicalPrescription(db.Model):
             'modify_person': self.modifyPerson,
             'create_datetime': self.createDatetime,
             'modify_datetime': self.modifyDatetime,
+            'action_id': self.action_id,
         }
 
     def set_json(self, data):

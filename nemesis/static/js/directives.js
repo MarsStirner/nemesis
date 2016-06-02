@@ -174,7 +174,7 @@ angular.module('WebMis20.directives')
      </table>'
         };
     }])
-    .directive('medicationPrescriptions', ['$modal', 'CurrentUser', 'PharmExpertIntegration', function ($modal, CurrentUser, PharmExpertIntegration) {
+    .directive('medicationPrescriptions', ['$modal', '$window', 'CurrentUser', 'PharmExpertIntegration', function ($modal, $window, CurrentUser, PharmExpertIntegration) {
         function get_rls_name (rls) {
             if (!rls) { return '-' }
             else if (rls.dosage.unit) {
@@ -245,6 +245,53 @@ angular.module('WebMis20.directives')
             });
             return deferred.result;
         }
+        function prepareDataPharmExpert (model, action) {
+            var client = action.client;
+            return {
+                medicaments: _.chain(model)
+                    .filter(function (record) { return ! record.deleted })
+                    .map(function makeMedicineFE(record) {
+                        return {
+                            name: record.rls.trade_name,
+                            data1: action.beg_date,
+                            // data2: ,
+                            dosage: {
+                                // лекарственная форма
+                                form: {
+                                    name: record.rls.form,
+                                    value: safe_traverse(record.rls.dosage, ['value']),
+                                    unit: safe_traverse(record.rls.dosage, ['unit', 'code'])
+                                },
+                                // способ применения
+                                method: {
+                                    name: record.method.name
+                                },
+                                // частота
+                                frequency: {
+                                    name: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name)
+                                },
+                                // длительность
+                                duration: {
+                                    name: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
+                                },
+                                // доза препарата
+                                value: record.dose.value,
+                                unit: record.dose.unit.code,
+                                // примечание
+                                special: record.note
+                            }
+                        }
+                    })
+                    .makeObject(function (item, index, object) { return index })
+                    .value()
+                ,
+                user_info: {
+                    age_days: String(client.age_tuple[0]),
+                    sex: (client.sex_raw == 2)?('f'):('m'),
+                    patient: 'hitsl.mis:{0}'.format(client.id)
+                }
+            }
+        }
         return {
             restrict: 'E',
             scope: {
@@ -252,6 +299,8 @@ angular.module('WebMis20.directives')
                 action: '='
             },
             link: function (scope, element, attrs) {
+                var editable = Boolean(scope.action);
+                var pharmExpertResult = {};
                 scope.edit = function (p) {
                     edit_dialog(_.deepCopy(p)).then(function (model) {
                         angular.extend(p, model);
@@ -280,12 +329,16 @@ angular.module('WebMis20.directives')
                     delete p.deleted;
                     checkPE();
                 };
+                scope.openAction = function (p) {
+                    // FIXME
+                    $window.open(url_for_schedule_html_action + '?action_id=' + p.action_id);
+                };
                 scope.get_rls_name = get_rls_name;
                 scope.canEdit = function (p) {
                     var is_editor = [
                         safe_traverse(p, ['related', 'action_person_id'])
                     ].has(CurrentUser.id);
-                    return (is_editor && !p.closed) || !p.id;
+                    return editable && ((is_editor && !p.closed) || !p.id)
                 };
                 scope.canRemove = function (p) {
                     var cancellers = [
@@ -294,13 +347,16 @@ angular.module('WebMis20.directives')
                         safe_traverse(p, ['related', 'event_exec_person_id'])
                     ],
                         is_canceller = cancellers.has(CurrentUser.id);
-                    return (is_canceller && !p.closed) || !p.id
+                    return editable && ((is_canceller && !p.closed) || !p.id)
                 };
                 scope.canAdd = function () {
-                    return safe_traverse(scope, ['action', 'person', 'id']) == CurrentUser.id
+                    return editable && safe_traverse(scope, ['action', 'person', 'id']) == CurrentUser.id
                 };
                 scope.canCheck = function () {
-                    return PharmExpertIntegration.enabled() && pharmExpertResult.url;
+                    return editable && PharmExpertIntegration.enabled() && pharmExpertResult.url;
+                };
+                scope.canOpenAction = function (p) {
+                    return !editable && p.action_id;
                 };
                 scope.btnCheckClass = function () {
                     var vmax = String(pharmExpertResult.value_max);
@@ -313,10 +369,10 @@ angular.module('WebMis20.directives')
                 scope.check = function () {
                     PharmExpertIntegration.modal(pharmExpertResult);
                 };
-                var pharmExpertResult = {};
                 var checkPE = function () {
+                    if (!scope.action) return;
                     if (!PharmExpertIntegration.enabled()) return;
-                    var data = prepareDataPharmExpert();
+                    var data = prepareDataPharmExpert(scope.model, scope.action);
                     PharmExpertIntegration.check(data).then(
                         function (result) {
                             _.extend(pharmExpertResult, {
@@ -326,56 +382,7 @@ angular.module('WebMis20.directives')
                         }
                     )
                 };
-                var prepareDataPharmExpert = function () {
-                    var client = scope.action.client;
-                    return {
-                        medicaments: _.chain(scope.model)
-                            .filter(function (record) { return ! record.deleted })
-                            .map(function makeMedicineFE(record) {
-                                return {
-                                    name: record.rls.trade_name,
-                                    data1: scope.action.beg_date,
-                                    // data2: ,
-                                    dosage: {
-                                        // лекарственная форма
-                                        form: {
-                                            name: record.rls.form,
-                                            value: safe_traverse(record.rls.dosage, ['value']),
-                                            unit: safe_traverse(record.rls.dosage, ['unit', 'code'])
-                                        },
-                                        // способ применения
-                                        method: {
-                                            name: record.method.name
-                                        },
-                                        // частота
-                                        frequency: {
-                                            name: '{0} раз в {1}'.format(record.frequency.value, record.frequency.unit.name)
-                                        },
-                                        // длительность
-                                        duration: {
-                                            name: '{0} {1}'.format(record.duration.value, record.duration.unit.name)
-                                        },
-                                        // доза препарата
-                                        value: record.dose.value,
-                                        unit: record.dose.unit.code,
-                                        // примечание
-                                        special: record.note
-                                    }
-                                }
-                            })
-                            .makeObject(function (item, index, object) { return index })
-                            .value()
-                        ,
-                        user_info: {
-                            age_days: String(client.age_tuple[0]),
-                            sex: (client.sex_raw == 2)?('f'):('m'),
-                            patient: 'hitsl.mis:{0}'.format(client.id)
-                        }
-                    }
-                };
-                if (scope.action) {
-                    checkPE();
-                }
+                checkPE();
             },
             templateUrl: '/WebMis20/prescription-edit.html'
         }
@@ -409,6 +416,7 @@ angular.module('WebMis20.directives')
                             <div class="pull-right">\
                                 <button class="btn btn-primary" ng-click="edit(p)" ng-if="canEdit(p)"><i class="fa fa-pencil"></i></button>\
                                 <button class="btn btn-danger" ng-click="remove(p)" ng-if="canRemove(p)"><i class="fa fa-trash"></i></button>\
+                                <button class="btn btn-default" ng-click="openAction(p)" ng-if="canOpenAction(p)"><i class="fa fa-book"></i></button> \
                             </div>\
                         </td>\
                     </tr>\
