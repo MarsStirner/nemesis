@@ -43,11 +43,12 @@ angular.module('WebMis20.directives.goodies', [])
         this.nodes = [];
         this.array = [];
         this.masterField = masterField;
-        var idField = this.idField = arguments[1] || 'id';
-        var childrenField = this.childrenField = arguments[2] || 'children';
+        this.idField = arguments[1] || 'id';
+        this.childrenField = arguments[2] || 'children';
         this.masterDict = dict({
             root: []
-        })
+        });
+        this.set_array([]);
     };
     Tree.prototype.set_array = function (array) {
         var idField = this.idField,
