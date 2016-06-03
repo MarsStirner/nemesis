@@ -2,7 +2,7 @@
  * Created by mmalkov on 14.07.14.
  */
 angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodies'])
-.service('ActionTypeTreeService', ['$http', '$q', 'CurrentUser', function ($http, $q, CurrentUser) {
+.service('ActionTypeTreeService', ['$http', '$q', 'CurrentUser', 'WMConfig', function ($http, $q, CurrentUser, WMConfig) {
     var trees = [],
         cur_user = CurrentUser.get_main_user();
     var Tree = function () {
@@ -137,7 +137,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             at_class = filter_params.at_class;
         if (! trees[at_class]) {
             trees[at_class] = new Tree();
-            $http.get(url_for_schedule_api_atl_get_flat, {
+            $http.get(WMConfig.url.actions.atl_get_flat, {
                 params: {
                     at_class: at_class,
                     event_type_id: filter_params.event_type_id
@@ -153,8 +153,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
     }
 }])
 .service('ActionTypeTreeModal', [
-        '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService', 'MessageBox',
-        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService, MessageBox) {
+        '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService', 'MessageBox', 'WMConfig',
+        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService, MessageBox, WMConfig) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -189,7 +189,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             var Controller = function ($scope, $modalInstance) {
                 var service;
                 $scope.prepared2create = [];
-                $scope.url_for_schedule_html_action = url_for_schedule_html_action;
+                $scope.url_for_schedule_html_action = WMConfig.url.actions.action_html;
                 $scope.event_id = event_id;
                 var conditions = $scope.conditions = {
                     query: '',
@@ -267,7 +267,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             event_id: $scope.event_id,
                             service: service
                         };
-                        $http.post('/actions/api/action/', data)
+                        $http.post(WMConfig.url.actions.action_post.format(''), data)
                             .then(
                                 $scope.$close,
                                 function (response) {
@@ -281,7 +281,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     } else {
                         var service_available = $scope.at_service_data.hasOwnProperty(node.id),
                             service_data = $scope.at_service_data[node.id];
-                        var url = url_for_schedule_html_action + '?action_type_id=' + node.id +
+                        var url = WMConfig.url.actions.action_html + '?action_type_id=' + node.id +
                             '&event_id=' + $scope.event_id;
                         if (service_available) {
                             url = '{0}&price_list_item_id={1}&service_kind_id={2}'.format(
@@ -294,7 +294,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
                 $scope.create_actions = function () {
                     $http.post(
-                        url_schedule_api_create_lab_direction,
+                        WMConfig.url.actions.create_lab_direction,
                         {
                             event_id: event_id,
                             directions: $scope.prepared2create.map(function (action) {

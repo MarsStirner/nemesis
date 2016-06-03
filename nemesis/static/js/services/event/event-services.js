@@ -2,8 +2,8 @@
 
 angular.module('WebMis20.services').
     service('WMEventServices', [
-            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind', 'RefBookService',
-            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind, RefBookService) {
+            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind', 'RefBookService', 'WMConfig',
+            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind, RefBookService, WMConfig) {
         var rbDiagnosisType = RefBookService.get('rbDiagnosisTypeN');
         function contains_sg (event, at_id, service_id) {
             return event.services.some(function (sg) {
@@ -177,7 +177,7 @@ angular.module('WebMis20.services').
             },
             get_action_ped: function (action_type_id) {
                 var deferred = $q.defer();
-                $http.get(url_api_get_action_ped, {
+                $http.get(WMConfig.url.actions.get_action_ped, {
                     params: {
                         action_type_id: action_type_id
                     }
@@ -242,7 +242,7 @@ angular.module('WebMis20.services').
             },
             delete_action: function (event, action) {
                 var self = this;
-                return $http.delete(url_for_actions_api_delete_action + action.id);
+                return $http.delete(WMConfig.url.actions.delete_action.format(action.id));
             },
             isPaymentPerService: function(event) {
                 return safe_traverse(event, ['payment', 'paymentKind']) === PaymentKind.perService;

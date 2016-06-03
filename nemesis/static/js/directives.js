@@ -175,8 +175,8 @@ angular.module('WebMis20.directives')
         };
     }])
     .directive(
-        'medicationPrescriptions', ['$modal', '$window', 'CurrentUser', 'PharmExpertIntegration', 'RefBookService',
-        function ($modal, $window, CurrentUser, PharmExpertIntegration, RefBookService) {
+        'medicationPrescriptions', ['$modal', '$window', 'CurrentUser', 'PharmExpertIntegration', 'RefBookService', 'WMConfig',
+        function ($modal, $window, CurrentUser, PharmExpertIntegration, RefBookService, WMConfig) {
         function get_rls_name (rls) {
             if (!rls) { return '-' }
             else if (rls.dosage.unit) {
@@ -200,7 +200,7 @@ angular.module('WebMis20.directives')
             $scope.get_rls_name = get_rls_name;
             $scope.get_rls = function (query){
                 if (!query) return;
-                return $http.get(url_rls_search, {
+                return $http.get(WMConfig.url.actions.rls_search, {
                     params: {
                         q: query,
                         short: true,
@@ -338,8 +338,7 @@ angular.module('WebMis20.directives')
                     checkPE();
                 };
                 scope.openAction = function (p) {
-                    // FIXME
-                    $window.open(url_for_schedule_html_action + '?action_id=' + p.action_id);
+                    $window.open(WMConfig.url.actions.action_html + '?action_id=' + p.action_id);
                 };
                 scope.get_rls_name = get_rls_name;
                 scope.canEdit = function (p) {
