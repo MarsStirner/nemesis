@@ -27,14 +27,20 @@ class MedicalPrescription(db.Model):
     reasonOfCancel = db.Column(db.String(256))
     note = db.Column(db.String(256))
 
-    createPerson = db.relationship(u'Person', primaryjoin='MedicalPrescription.createPerson_id == Person.id')
-    modifyPerson = db.relationship(u'Person', primaryjoin='MedicalPrescription.modifyPerson_id == Person.id')
+    createPerson = db.relationship(u'Person', foreign_keys=[createPerson_id])
+    modifyPerson = db.relationship(u'Person', foreign_keys=[modifyPerson_id])
 
-    action = db.relationship(u'Action', backref='medication_prescriptions')
+    action = db.relationship(
+        u'Action',
+        backref=db.backref(
+            'medication_prescriptions',
+            primaryjoin='and_(MedicalPrescription.action_id == Action.id, MedicalPrescription.status_id == 1)'
+        )
+    )
     rls = db.relationship(u'rlsNomen', lazy='joined')
-    dose_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.dose_unit_id == rbUnits.id', lazy='joined')
-    duration_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.duration_unit_id == rbUnits.id', lazy='joined')
-    frequency_unit = db.relationship(u'rbUnits', primaryjoin='MedicalPrescription.frequency_unit_id == rbUnits.id', lazy='joined')
+    dose_unit = db.relationship(u'rbUnits', foreign_keys=[dose_unit_id], lazy='joined')
+    duration_unit = db.relationship(u'rbUnits', foreign_keys=[duration_unit_id], lazy='joined')
+    frequency_unit = db.relationship(u'rbUnits', foreign_keys=[frequency_unit_id], lazy='joined')
     methodOfAdministration = db.relationship(u'rbMethodOfAdministration', lazy='joined')
 
     @property

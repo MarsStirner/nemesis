@@ -174,7 +174,9 @@ angular.module('WebMis20.directives')
      </table>'
         };
     }])
-    .directive('medicationPrescriptions', ['$modal', '$window', 'CurrentUser', 'PharmExpertIntegration', function ($modal, $window, CurrentUser, PharmExpertIntegration) {
+    .directive(
+        'medicationPrescriptions', ['$modal', '$window', 'CurrentUser', 'PharmExpertIntegration', 'RefBookService',
+        function ($modal, $window, CurrentUser, PharmExpertIntegration, RefBookService) {
         function get_rls_name (rls) {
             if (!rls) { return '-' }
             else if (rls.dosage.unit) {
@@ -292,6 +294,7 @@ angular.module('WebMis20.directives')
                 }
             }
         }
+        var MedicationPrescriptionStatus = RefBookService.get('MedicationPrescriptionStatus');
         return {
             restrict: 'E',
             scope: {
@@ -310,23 +313,28 @@ angular.module('WebMis20.directives')
                 scope.remove = function (p) {
                     if (!p.id) {
                         p.deleted = true;
+                        p.status = MedicationPrescriptionStatus.get_by_code('stopped');
                         checkPE();
                     } else {
                         cancel_dialog(_.deepCopy(p)).then(function (model) {
                             angular.extend(p, model);
                             p.deleted = true;
+                            p.status = MedicationPrescriptionStatus.get_by_code('stopped');
                             checkPE();
                         })
                     }
                 };
                 scope.add = function () {
-                    edit_dialog({}).then(function (model) {
+                    edit_dialog({
+                        status: MedicationPrescriptionStatus.get_by_code('active')
+                    }).then(function (model) {
                         scope.model.push(model);
                         checkPE();
                     })
                 };
                 scope.restore = function (p) {
                     delete p.deleted;
+                    p.status = MedicationPrescriptionStatus.get_by_code('active');
                     checkPE();
                 };
                 scope.openAction = function (p) {
