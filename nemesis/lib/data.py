@@ -287,6 +287,11 @@ def delete_action(action):
     if not UserUtils.can_delete_action(action):
         raise ActionException(u'У пользователя нет прав на удаление действия с id = %s' % action.id)
     action.delete()
+    from nemesis.lib.data_ctrl.accounting.service import ServiceController
+    ctrl = ServiceController()
+    service = ctrl.get_action_service(action)
+    if service:
+        ctrl.delete_service(service, True)
     return action
 
 

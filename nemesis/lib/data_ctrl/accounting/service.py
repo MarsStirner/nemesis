@@ -466,15 +466,16 @@ class ServiceController(BaseModelController):
             # ActionProperty.isAssigned меняется на уровне родительской лабораторной услуги
             pass
 
-    def delete_service(self, service):
+    def delete_service(self, service, raw=False):
         if not self.check_can_delete_service(service):
             raise ApiException(403, u'Невозможно удалить услугу с id = {0}'.format(service.id))
-        self._delete_service(service)
+        self._delete_service(service, raw)
         return service
 
-    def _delete_service(self, service):
+    def _delete_service(self, service, raw=False):
         service.deleted = 1
-        self._delete_serviced_entity(service)
+        if not raw:
+            self._delete_serviced_entity(service)
         for subservice in service.subservice_list:
             self._delete_service(subservice)
         return service
