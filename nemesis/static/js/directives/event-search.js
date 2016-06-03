@@ -25,7 +25,7 @@ angular.module('WebMis20.directives').
                     canceler = $q.defer();
                     if ($scope.query) {
                         $http.get(
-                            url_event_search, {
+                            WMConfig.url.event.event_search, {
                                 params: {
                                     q: $scope.query
                                 },
@@ -44,7 +44,7 @@ angular.module('WebMis20.directives').
                     return WMConfig.url.patients.client_info_full + '?client_id=' + client_id;
                 };
                 $scope.get_event_url = function (event_id) {
-                    return url_for_event_html_event_info + '?event_id=' + event_id;
+                    return WMConfig.url.event.html.event_info + '?event_id=' + event_id;
                 };
                 $scope.onEventSelect = function (selected_record) {
                     $scope.event_id = selected_record.id;

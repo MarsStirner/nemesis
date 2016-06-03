@@ -2,7 +2,7 @@
  * Created by mmalkov on 11.07.14.
  */
 angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'])
-.service('WMAppointmentDialog', ['$modal', 'WMAppointment', 'RefBookService', function ($modal, WMAppointment, RefBookService) {
+.service('WMAppointmentDialog', ['$modal', 'WMAppointment', 'RefBookService', 'WMConfig', function ($modal, WMAppointment, RefBookService, WMConfig) {
     return {
         cancel: function (ticket, person, client_id) {
             return $modal.open({
@@ -125,7 +125,7 @@ angular.module('WebMis20.services.dialogs', ['WebMis20.services', 'ui.bootstrap'
                         if (!client_id) {
                             return;
                         }
-                        $http.get(url_api_event_stationary_open_get, {
+                        $http.get(WMConfig.url.event.event_stationary_open, {
                             params: {
                                 client_id: client_id
                             }

@@ -154,7 +154,7 @@ angular.module('WebMis20.services').
                 });
                 if (group_saved) {
                     $http.post(
-                        url_for_event_api_service_delete_service, {
+                        WMConfig.url.event.delete_service, {
                             event_id: event.info.id,
                             action_id_list: action_id_list
                         }
@@ -203,7 +203,7 @@ angular.module('WebMis20.services').
                 }
             },
             reload_diagnoses: function (event) {
-                return $http.get(url_api_diagnosis_get, {
+                return $http.get(WMConfig.url.event.diagnosis, {
                     params: {
                         event_id: event.event_id
                     }
@@ -213,7 +213,7 @@ angular.module('WebMis20.services').
             },
             delete_event: function (event) {
                 return $http.post(
-                    url_for_delete_event, {
+                    WMConfig.url.event.delete_event, {
                         event_id: event.event_id
                     }
                 );
@@ -236,7 +236,7 @@ angular.module('WebMis20.services').
                 return deferred.promise;
             },
             close_event: function (event) {
-                return $http.post(url_event_close, {
+                return $http.post(WMConfig.url.event.event_close, {
                     event: event.info
                 });
             },

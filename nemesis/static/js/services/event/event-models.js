@@ -30,8 +30,8 @@ angular.module('WebMis20.services.models').
         };
         return this;
     }]).
-    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMEventServiceGroup', 'WMEventPaymentList', 'WMEventServices', 'PaymentKind',
-        function($http, $q, WMClient, WMEventServiceGroup, WMEventPaymentList, WMEventServices, PaymentKind) {
+    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMConfig',
+        function($http, $q, WMClient, WMConfig) {
             var WMEvent = function(event_id, client_id, ticket_id) {
                 this.event_id = parseInt(event_id);
                 this.client_id = client_id;
@@ -73,7 +73,7 @@ angular.module('WebMis20.services.models').
 
             WMEvent.prototype.reload = function() {
                 var self = this;
-                var url = this.is_new() ? url_event_new : url_event_get;
+                var url = this.is_new() ? WMConfig.url.event.event_new : WMConfig.url.event.event_get;
                 var params = this.is_new() ? {
                     client_id: this.client_id,
                     ticket_id: this.ticket_id,
@@ -91,7 +91,7 @@ angular.module('WebMis20.services.models').
             WMEvent.prototype.save = function(close_event) {
                 var self = this;
                 var deferred = $q.defer();
-                $http.post(url_event_save, {
+                $http.post(WMConfig.url.event.event_save, {
                     event: this.info,
                     diagnoses: this.diagnoses,  // TODO: Отдаются только актуальные диагнозы. Надо закрытые?
                     ticket_id: this.ticket_id,
@@ -151,11 +151,11 @@ angular.module('WebMis20.services.models').
                 self.movings = data.result.movings;
                 self.blood_history = data.result.blood_history;
                 self.vmp_quoting = data.result.vmp_quoting;
-            }
+            };
             WMStationaryEvent.prototype.save = function() {
                 var self = this;
                 var deferred = $q.defer();
-                $http.post(url_event_save, {
+                $http.post(WMConfig.url.event.event_save, {
                     event: this.info,
                     received: this.received,
                     payment: this.payment,
