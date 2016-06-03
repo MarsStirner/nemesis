@@ -213,11 +213,7 @@ class rbRadzStage(db.Model):
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.Unicode(128), nullable=False)
 
-    risk_factors = db.relationship(
-        'rbRadzRiskFactor',
-        secondary='rbRadzRiskFactor_Stage',
-        backref='stages'
-    )
+    stage_factor_assoc = db.relationship('rbRadzRiskFactor_StageAssoc')
 
     def __json__(self):
         return {
@@ -235,7 +231,7 @@ class rbRadzRiskFactor(db.Model):
     _table_description = u'Факторы риска по Радзинскому'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    code = db.Column(db.Unicode(32), nullable=False)
+    code = db.Column(db.Unicode(64), nullable=False)
     name = db.Column(db.Unicode(128), nullable=False)
     group_id = db.Column(db.ForeignKey('rbRadzRiskFactorGroup.id'), nullable=False)
 
@@ -259,3 +255,5 @@ class rbRadzRiskFactor_StageAssoc(db.Model):
     factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
     stage_id = db.Column(db.ForeignKey('rbRadzStage.id'), primary_key=True)
     points = db.Column(db.Integer, nullable=False)
+
+    factor = db.relationship('rbRadzRiskFactor')
