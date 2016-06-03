@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('WebMis20.directives').
-    directive('wmSearchEvent', ['$q', '$http', 'PrintingService', function ($q, $http, PrintingService) {
+    directive('wmSearchEvent', ['$q', '$http', 'PrintingService', 'WMConfig', function ($q, $http, PrintingService, WMConfig) {
         return {
             restrict: 'E',
             scope: {
@@ -41,7 +41,7 @@ angular.module('WebMis20.directives').
                     }
                 };
                 $scope.get_client_url = function (client_id) {
-                    return url_for_patien_info_full + '?client_id=' + client_id;
+                    return WMConfig.url.patients.client_info_full + '?client_id=' + client_id;
                 };
                 $scope.get_event_url = function (event_id) {
                     return url_for_event_html_event_info + '?event_id=' + event_id;

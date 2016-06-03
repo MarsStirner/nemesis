@@ -613,7 +613,7 @@ angular.module('WebMis20')
         }
     }
 }])
-.directive('extSelectClientSearch', ['$http', function ($http) {
+.directive('extSelectClientSearch', ['$http', 'WMClient', function ($http, WMClient) {
     return {
         restrict: 'A',
         require: ['uiSelect', 'ngModel'],
@@ -637,7 +637,7 @@ angular.module('WebMis20')
                     scope.placeholder = iAttrs.placeholder || 'ФИО пациента';
                     scope.get_clients = function (query) {
                         if (!query) return;
-                        return $http.get(url_client_search, {
+                        return $http.get(WMConfig.url.patients.client_search, {
                             params: {
                                 q: query,
                                 short: true,
@@ -815,7 +815,7 @@ angular.module('WebMis20')
         }
     }
 }])
-.directive('extSelectVmpCoupon', ['$http', function ($http) {
+.directive('extSelectVmpCoupon', ['$http', 'WMConfig', function ($http, WMConfig) {
     return {
         restrict: 'A',
         require: ['uiSelect', 'ngModel'],
@@ -835,7 +835,7 @@ angular.module('WebMis20')
                     scope.$watch(tAttrs.client, function (newVal, oldVal) {
                         if (newVal) {
                             scope.client_id = newVal;
-                            $http.get(url_client_get_vmpcoupons, {
+                            $http.get(WMConfig.url.patients.client_get_vmpcoupons, {
                                 params: {
                                     client_id: scope.client_id
                                 }

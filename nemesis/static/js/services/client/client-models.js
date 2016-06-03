@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services.models').
-    factory('WMClient', ['ApiCalls',
-        function(ApiCalls) {
+    factory('WMClient', ['ApiCalls', 'WMConfig',
+        function(ApiCalls, WMConfig) {
             function initialize(self, data, info_type) {
                 // В разных интерфейсах поля модели могут отличаться
                 function add_id_doc() {
@@ -137,7 +137,7 @@ angular.module('WebMis20.services.models').
                     url_args[info_type] = true;
                 }
 
-                return ApiCalls.wrapper('GET', url_client_get, url_args).then(function(result) {
+                return ApiCalls.wrapper('GET', WMConfig.url.patients.client_get, url_args).then(function(result) {
                     initialize(self, result, info_type);
                 });
             };
@@ -151,7 +151,7 @@ angular.module('WebMis20.services.models').
 
             WMClient.prototype.save = function() {
                 var data = this.get_changed_data();
-                return ApiCalls.wrapper('POST', url_client_save, undefined, data);
+                return ApiCalls.wrapper('POST', WMConfig.url.patients.client_save, undefined, data);
             };
 
             WMClient.prototype.get_changed_data = function() {

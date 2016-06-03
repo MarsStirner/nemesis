@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal', '$http', '$q', 'NotificationService',
-            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal, $http, $q) {
+    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal', '$http', '$q', 'WMConfig',
+            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal, $http, $q, WMConfig) {
         function get_actual_address (client, entity) {
             var addrs =  client[entity].filter(function (el) {
                 return el.deleted === 0;
@@ -482,7 +482,7 @@ angular.module('WebMis20.services').
                     'Вы действительно хотите удалить талон ВМП?'
                 ).then(function () {
                     $http.post(
-                        url_api_coupon_delete, {
+                        WMConfig.url.patients.coupon_delete, {
                             coupon: coupon
                         }
                     ).success(function(){
@@ -508,7 +508,7 @@ angular.module('WebMis20.services').
                         $scope.coupon = coupon;
                         $scope.parse_xlsx = function() {
                             $http.post(
-                                url_api_coupon_parse, {
+                                WMConfig.url.patients.coupon_parse, {
                                     coupon: $scope.coupon_file
                                 }
                             ).success(function(data){
@@ -522,7 +522,7 @@ angular.module('WebMis20.services').
                     }
                 }).result.then(function (result) {
                     $http.post(
-                        url_api_coupon_save, {
+                        WMConfig.url.patients.coupon_save, {
                             client_id: client.client_id,
                             coupon: result[0],
                             coupon_file: result[1]

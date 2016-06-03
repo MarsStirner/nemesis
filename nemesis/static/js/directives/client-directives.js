@@ -536,7 +536,7 @@ angular.module('WebMis20.directives').
             }
         }
     }]).
-    directive('wmClientsShort', ['$http', function ($http) {
+    directive('wmClientsShort', ['$http', 'WMConfig', function ($http, WMConfig) {
         return {
             restrict: 'E',
             replace: true,
@@ -550,7 +550,7 @@ angular.module('WebMis20.directives').
                     return (client) ? (client.full_name + ' (' + client.birth_date + ')') : ('-');
                 };
                 scope.search_clients = function (query) {
-                    return $http.get(url_client_search, {
+                    return $http.get(WMConfig.url.patients.client_search, {
                         params: {
                             q:query,
                             short: true

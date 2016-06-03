@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('WebMis20.directives').
-    directive('wmSearchClient', ['$q', '$http', function ($q, $http) {
+    directive('wmSearchClient', ['$q', '$http', 'WMConfig', function ($q, $http, WMConfig) {
         return {
             restrict: 'E',
             scope: {
@@ -26,7 +26,7 @@ angular.module('WebMis20.directives').
                     canceler = $q.defer();
                     if ($scope.query) {
                         $http.get(
-                            url_client_search, {
+                            WMConfig.url.patients.client_search, {
                                 params: {
                                     q: $scope.query
                                 },
@@ -39,7 +39,7 @@ angular.module('WebMis20.directives').
                 };
 
                 $scope.open_new_client = function (client_id) {
-                    window.open(url_client_html + '?client_id=' + client_id, '_blank');
+                    window.open(WMConfig.url.patients.client_html + '?client_id=' + client_id, '_blank');
                 };
 
                 $scope.onClientSelect = function (selected_record) {
