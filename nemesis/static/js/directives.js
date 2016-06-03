@@ -66,7 +66,7 @@ angular.module('WebMis20.directives')
             }
         };
     }])
-    .directive('wmPersonSelect', ['$compile', '$http', function ($compile, $http) {
+    .directive('wmPersonSelect', ['$compile', '$http', 'WMConfig', function ($compile, $http, WMConfig) {
         return {
             restrict: 'E',
             scope: true,
@@ -75,7 +75,7 @@ angular.module('WebMis20.directives')
                 scope.persons = [];
                 scope.refresh_choices = function (query) {
                     if (!query) { return; }
-                    $http.get(url_api_search_persons, {
+                    $http.get(WMConfig.url.schedule.search_persons, {
                         params: {
                             q: query,
                             only_doctors: scope.$eval(attrs.onlyDoctors || "true") ? undefined : false
@@ -1277,7 +1277,7 @@ angular.module('WebMis20.directives')
                 }
                 ApiCalls.wrapper(
                     'GET',
-                    url_get_orgstructure,
+                    WMConfig.url.schedule.get_orgstructure,
                     { org_id: WMConfig.local_config.default_org_id }
                 )
                 .then(function (result) {

@@ -2,7 +2,7 @@
  * Created by mmalkov on 11.07.14.
  */
 angular.module('WebMis20.directives.personTree', [])
-.directive('personTree', ['$http', 'PersonTreeUpdater', function($http, PersonTreeUpdater) {
+.directive('personTree', ['$http', 'PersonTreeUpdater', 'WMConfig', function($http, PersonTreeUpdater, WMConfig) {
     return {
         restrict: 'E',
         replace: true,
@@ -49,7 +49,7 @@ angular.module('WebMis20.directives.personTree', [])
             $scope.persons_with_scheds = [];
             $scope.reloadTree = function() {
                 $http.get(
-                    url_schedule_all_persons_tree
+                    WMConfig.url.schedule.persons_tree
                 ).success(function (data) {
                     $scope.data = data.result;
                     $scope.compose();
@@ -150,7 +150,7 @@ angular.module('WebMis20.directives.personTree', [])
             };
             $scope.refresh_schedule_info = function (date_period) {
                 if (!date_period || !date_period.length) return;
-                $http.get(url_api_persons_tree_schedule_info, {
+                $http.get(WMConfig.url.schedule.persons_tree_schedule_info, {
                     params: {
                         beg_date: date_period[0].toISOString(),
                         end_date: date_period[1].toISOString()

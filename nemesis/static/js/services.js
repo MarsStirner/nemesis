@@ -1,12 +1,12 @@
 'use strict';
 
 angular.module('WebMis20.services', ['hitsl.core']).
-    service('WMAppointment', ['ApiCalls', function (ApiCalls) {
+    service('WMAppointment', ['ApiCalls', 'WMConfig', function (ApiCalls, WMConfig) {
         return {
             make: function (ticket, client_id, appointment_type_id, associated_event_id, note) {
                 return ApiCalls.wrapper(
                     'POST',
-                    url_schedule_api_appointment, {},
+                    WMConfig.url.schedule.appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,
@@ -17,8 +17,8 @@ angular.module('WebMis20.services', ['hitsl.core']).
             },
             cancel: function (ticket, client_id) {
                 return ApiCalls.wrapper(
-                    'POST', 
-                    url_schedule_api_appointment, {},
+                    'POST',
+                    WMConfig.url.schedule.appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,
@@ -28,7 +28,7 @@ angular.module('WebMis20.services', ['hitsl.core']).
             change_notes: function (ticket_client_id, notes) {
                 return ApiCalls.wrapper(
                     'POST',
-                    url_schedule_api_appointment, {},
+                    WMConfig.url.schedule.appointment, {},
                     {
                         client_id: client_id,
                         ticket_id: ticket.id,

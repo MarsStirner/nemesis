@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('WebMis20.services.models')
-.service('WMProcedureOffices', ['$q', '$http', function ($q, $http) {
+.service('WMProcedureOffices', ['$q', '$http', 'WMConfig', function ($q, $http, WMConfig) {
     var cache;
     this.get = function () {
         if (cache) {
@@ -9,7 +9,7 @@ angular.module('WebMis20.services.models')
             deferred.resolve(cache);
             return deferred.promise;
         }
-        return $http.get(url_api_procedure_offices_get, {})
+        return $http.get(WMConfig.url.schedule.procedure_offices, {})
         .then(function (response) {
             return cache = response.data.result;
         });
