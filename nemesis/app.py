@@ -111,6 +111,11 @@ def fc_urls():
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
     print_subsystem_url = config.get('PRINT_SUBSYSTEM_URL', '').rstrip('/') + '/'
+    current_role = None
+    try:
+        current_role = current_user.current_role
+    except AttributeError:
+        pass
     return {
         'url': {
             'logout': url_for("logout"),
@@ -140,7 +145,7 @@ def fc_urls():
                 'create_event': "{0}patients/{{0}}/appeals/new/?token={1}&role={2}".format(
                     config.get('WEBMIS10_URL', ''),
                     request.cookies.get(config['CASTIEL_AUTH_TOKEN']),
-                    current_user.current_role
+                    current_role
                 ),
             },
             'nemesis': {
