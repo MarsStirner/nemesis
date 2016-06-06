@@ -700,9 +700,9 @@ angular.module('WebMis20.directives')
         <thead>\
             <tr>\
                 <th>\
-                    <input type="checkbox" ng-checked="ps.templates.length == selected_templates.length" ng-click="select_all_templates()">\
+                    <input id="template-all" type="checkbox" ng-checked="ps.templates.length == selected_templates.length" ng-click="select_all_templates()">\
                 </th>\
-                <th>Наименование</th>\
+                <th><label for="template-all">Наименование</label></th>\
             </tr>\
         </thead>\
         <tbody>\
