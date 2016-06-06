@@ -35,12 +35,12 @@ angular.module('hitsl.core')
     })
     .service('UserMail', function (Simargl, ApiCalls, WMConfig, OneWayEvent, CurrentUser, NotificationService) {
         var event_source = new OneWayEvent(),
-            get_mail_url = WMConfig.url.api_user_mail;
+            get_mail_url = WMConfig.url.useraccount.user_mail;
         if (!get_mail_url) {
             throw 'ВСЁ ПРОПАЛО!'
         }
         function get_mail_summary (pass) {
-            ApiCalls.wrapper('GET', WMConfig.url.api_user_mail_summary).then(_.partial(event_source.send, 'unread'));
+            ApiCalls.wrapper('GET', WMConfig.url.useraccount.user_mail_summary).then(_.partial(event_source.send, 'unread'));
             return pass;
         }
         Simargl.when_ready(function () {
@@ -56,11 +56,11 @@ angular.module('hitsl.core')
             var method = "PUT";
             if (! (ids instanceof Array)) ids = [ids];
             if (!value) {method = "DELETE"}
-            return ApiCalls.wrapper(method, WMConfig.url.api_user_mail_alter.format(ids.join(':'), mark_type)).then(get_mail_summary);
+            return ApiCalls.wrapper(method, WMConfig.url.useraccount.user_mail_alter.format(ids.join(':'), mark_type)).then(get_mail_summary);
         };
         this.mail_move = function (folder, ids) {
             if (! (ids instanceof Array)) ids = [ids];
-            return ApiCalls.wrapper('MOVE', WMConfig.url.api_user_mail_alter.format(ids.join(':'), folder)).then(get_mail_summary);
+            return ApiCalls.wrapper('MOVE', WMConfig.url.useraccount.user_mail_alter.format(ids.join(':'), folder)).then(get_mail_summary);
         };
         this.get_mail = function (folder, skip, limit) {
             return ApiCalls.wrapper('GET', get_mail_url.format(folder || ''), {

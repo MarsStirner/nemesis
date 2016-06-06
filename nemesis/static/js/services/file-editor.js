@@ -324,7 +324,7 @@ angular.module('WebMis20')
                 );
                 return;
             }
-            $http.post(WMConfig.url.api_patient_file_attach_save, {
+            $http.post(WMConfig.url.patients.file_attach.save, {
                 client_id: client_id,
                 file_attach: makeAttachFileDocumentInfo($scope.file_attach)
             }).success(function (data, status) {
@@ -348,7 +348,7 @@ angular.module('WebMis20')
                 'Удаление документа',
                 'Документ будет удален. Продолжить?'
             ).then(function () {
-                $http.delete(WMConfig.url.api_patient_file_attach_delete, {
+                $http.delete(WMConfig.url.patients.file_attach.delete, {
                     params: {
                         cfa_id: $scope.file_attach.id
                     }
@@ -385,7 +385,7 @@ angular.module('WebMis20')
                     'Удаление страницы документа',
                     'Текущая страница документа будет удалена. Продолжить?'
                 ).then(function () {
-                    $http.delete(WMConfig.url.api_patient_file_attach_delete, {
+                    $http.delete(WMConfig.url.patients.file_attach.delete, {
                         params: {
                             file_meta_id: $scope.currentFile.id
                         }
@@ -417,7 +417,7 @@ angular.module('WebMis20')
             }
             $scope.currentFile = $scope.file_attach.file_document.getFile($scope.selected.currentPage);
             if ($scope.currentFile.id && !$scope.currentFile.isLoaded()) {
-                $http.get(WMConfig.url.api_patient_file_attach, {
+                $http.get(WMConfig.url.patients.file_attach.get, {
                     params: {
                         file_meta_id: $scope.currentFile.id
                     }
@@ -552,7 +552,7 @@ angular.module('WebMis20')
             var idx = params.idx || 0,
                 file_attach,
                 readOnly = !params.editMode;
-            return $http.get(WMConfig.url.api_patient_file_attach, {
+            return $http.get(WMConfig.url.patients.file_attach.get, {
                 params: {
                     cfa_id: cfa_id
                 }

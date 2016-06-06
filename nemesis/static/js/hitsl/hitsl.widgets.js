@@ -515,7 +515,7 @@ angular.module('WebMis20')
         link: function (scope) {
             scope.subscribed = false;
             function process (method) {
-                return ApiCalls.wrapper(method, WMConfig.url.api_subscription.format(scope.oid))
+                return ApiCalls.wrapper(method, WMConfig.url.useraccount.subscription.format(scope.oid))
                     .then(function (result) {
                         scope.subscribed = result;
                         return result
