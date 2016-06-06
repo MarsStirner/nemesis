@@ -351,7 +351,7 @@ var WebMis20 = angular.module('WebMis20', [
     }
 }])
 // Services
-.factory('RefBook', ['$http', '$rootScope', function ($http, $rootScope) {
+.factory('RefBook', ['$http', '$rootScope', 'WMConfig', function ($http, $rootScope, WMConfig) {
     var RefBook = function (name) {
         this.name = name;
         this.objects = [];
@@ -359,7 +359,7 @@ var WebMis20 = angular.module('WebMis20', [
     };
     RefBook.prototype.load = function () {
         var t = this;
-        this.loading = $http.get(rb_root + this.name)
+        this.loading = $http.get(WMConfig.url.nemesis.rb_root + this.name)
         .success(function (data) {
             t.objects = data.result;
             $rootScope.$broadcast('rb_load_success_'+ t.name, {
@@ -451,7 +451,7 @@ var WebMis20 = angular.module('WebMis20', [
         if (context === this.context) return;
         this.context = context;
         var t = this;
-        return $http.get(url_print_templates + context + '.json')
+        return $http.get(WMConfig.url.nemesis.print_subsystem.templates + context + '.json')
         .success(function (data) {
             t.templates = data.result.sort(function (left, right) {
                 return (left.code < right.code) ? -1 : (left.code > right.code ? 1 : 0)
@@ -489,7 +489,7 @@ var WebMis20 = angular.module('WebMis20', [
                 }
             }
         )};
-        return $http.post(url_print_template, send_data)
+        return $http.post(WMConfig.url.nemesis.print_subsystem.print, send_data)
         .success(function (data) {
             var w = $window.open();
             w.document.open();

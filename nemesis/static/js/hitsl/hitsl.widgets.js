@@ -854,7 +854,7 @@ angular.module('WebMis20')
         }
     }
 }])
-.directive('extSelectArea', ['$http', 'RisarApi', function ($http, RisarApi) {
+.directive('extSelectArea', ['$http', 'WMConfig', function ($http, WMConfig) {
     return {
         restrict: 'A',
         require: ['uiSelect', 'ngModel'],
@@ -873,7 +873,7 @@ angular.module('WebMis20')
                         return scope.level1[item.parent_code];
                     };
                     scope.get_areas = function () {
-                        return $http.get(url_area_list)
+                        return $http.get(WMConfig.url.nemesis.area_list)
                         .then(function (res) {
                             scope.level1 = res.data.result[0];
                             scope.areas = res.data.result[1];

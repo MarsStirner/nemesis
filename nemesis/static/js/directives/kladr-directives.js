@@ -232,7 +232,7 @@ angular.module('WebMis20.directives').
     </div>'
         };
     }]).
-    directive('wmKladrLocality', ['$http', function($http) {
+    directive('wmKladrLocality', ['$http', 'WMConfig', function($http, WMConfig) {
         return {
             require: ['^?wmKladrAddress', '^ngModel'],
             restrict: 'E',
@@ -244,7 +244,7 @@ angular.module('WebMis20.directives').
                 $scope.refreshLocalityList = function(search_query) {
                     $scope.searchInput = search_query;
                     if (!search_query || search_query.length < 2) return [];
-                    var url = '{0}{1}/'.format(search_kladr_city, search_query);
+                    var url = '{0}{1}/'.format(WMConfig.url.nemesis.kladr.search_city, search_query);
                     $http.get(url, {}).then(function(res) {
                         $scope.locality_list =  res.data.result;
                     });
@@ -305,7 +305,7 @@ angular.module('WebMis20.directives').
                  </select>'
         }
     }]).
-    directive('wmKladrStreet', ['$http', function($http) {
+    directive('wmKladrStreet', ['$http', 'WMConfig', function($http, WMConfig) {
         return {
             require: ['^wmKladrAddress', '^ngModel'],
             restrict: 'E',
@@ -318,7 +318,7 @@ angular.module('WebMis20.directives').
                     $scope.searchInput = search_query;
                     var locality_code = $scope.getSelectedLocation();
                     if (!locality_code || !search_query || search_query.length < 2) return [];
-                    var url = '{0}{1}/{2}/'.format(search_kladr_street, locality_code, search_query);
+                    var url = '{0}{1}/{2}/'.format(WMConfig.url.nemesis.kladr.search_street, locality_code, search_query);
                     $http.get(url, {}).then(function(res) {
                         $scope.street_list =  res.data.result;
                     });

@@ -3,7 +3,7 @@
 /*jslint browser:true*/
 'use strict';
 angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
-.service('ThesaurusService', ['$http', '$q', 'FlatTree',function ($http, $q, FlatTree) {
+.service('ThesaurusService', ['$http', '$q', 'FlatTree','WMConfig', function ($http, $q, FlatTree, WMConfig) {
     var cache = {};
     function convert(item) {
         return {
@@ -38,7 +38,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         if (cache.hasOwnProperty(code)) {
             defer.resolve(cache[code]);
         } else {
-            $http.get(rbThesaurus_root + code)
+            $http.get(WMConfig.url.nemesis.rbThesaurus_root + code)
             .success(function (data) {
                 var result = cache[code] = new Thesaurus(data.result);
                 defer.resolve(result)

@@ -2,7 +2,8 @@
 
 import pytz
 
-from flask import Flask, url_for
+from flask import Flask, url_for, request
+from flask.ext.login import current_user
 from werkzeug.contrib.profiler import ProfilerMiddleware
 
 from nemesis.lib.frontend import frontend_config
@@ -109,6 +110,7 @@ def fc_urls():
     coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
+    print_subsystem_url = config.get('PRINT_SUBSYSTEM_URL', '').rstrip('/') + '/'
     return {
         'url': {
             'logout': url_for("logout"),
@@ -133,6 +135,29 @@ def fc_urls():
                 'get_info_preparation': pharmexpert_url + 'api/getInfoPreparationStatus',
                 'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
                 'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
+            },
+            'webmis_1_0': {
+                'create_event': "{0}patients/{{0}}/appeals/new/?token={1}&role={2}".format(
+                    config.get('WEBMIS10_URL', ''),
+                    request.cookies.get(config['CASTIEL_AUTH_TOKEN']),
+                    current_user.current_role
+                ),
+            },
+            'nemesis': {
+                'rb_root': url_for('api_refbook'),
+                'rbThesaurus_root': url_for('api_thesaurus'),
+                'print_subsystem': {
+                    'base': print_subsystem_url,
+                    'templates': print_subsystem_url + 'templates/',
+                    'print': print_subsystem_url + 'print_template'
+                },
+                'kladr': {
+                    'search_city': url_for('kladr_search_city'),
+                    'search_street': url_for('kladr_search_street'),
+                },
+                'area_list': url_for('api_area_list'),
+                'roles': url_for('api_roles'),
+                'doctors_to_assist': url_for('api_doctors_to_assist'),
             }
         },
         'ui': {

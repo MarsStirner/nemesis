@@ -1,7 +1,7 @@
 var SelectMasterUserCtrl = function ($scope, $http, $window, WMConfig) {
     $scope.user = {};
     $scope.get_users = function () {
-        $http.get(url_api_doctors_to_assist)
+        $http.get(WMConfig.url.nemesis.doctors_to_assist)
         .success(function (data) {
             $scope.users = data.result;
         });

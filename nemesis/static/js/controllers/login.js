@@ -1,4 +1,4 @@
-var LoginCtrl = function ($scope, $http) {
+var LoginCtrl = function ($scope, $http, WMConfig) {
     $scope.login = $("#login").val();
     $scope.role = null;
     $scope.roles = [];
@@ -6,7 +6,7 @@ var LoginCtrl = function ($scope, $http) {
         if (!$scope.login){
             return null;
         }
-        $http.get(url_roles_api + $scope.login)
+        $http.get(WMConfig.url.nemesis.roles + $scope.login)
         .success(function (data) {
             $scope.roles = data.result;
         })
@@ -16,4 +16,4 @@ var LoginCtrl = function ($scope, $http) {
     }
 };
 
-WebMis20.controller('LoginCtrl', ['$scope', '$http', LoginCtrl]);
+WebMis20.controller('LoginCtrl', ['$scope', '$http', 'WMConfig', LoginCtrl]);
