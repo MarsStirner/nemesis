@@ -2,10 +2,9 @@
 import logging
 from datetime import datetime, time, timedelta, date
 
+import blinker
 import sqlalchemy
 from flask.ext.login import current_user
-from sqlalchemy.orm.util import aliased
-
 from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.lib.calendar import calendar
@@ -13,9 +12,8 @@ from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STA
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
-from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
-                                    TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
-                                    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
+from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
+                                    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
 from nemesis.models.client import Client
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.event import Event, EventType_Action
@@ -23,6 +21,7 @@ from nemesis.models.exists import Person, OrgStructure
 from nemesis.models.prescriptions import MedicalPrescription
 from nemesis.models.utils import safe_current_user_id
 from nemesis.systemwide import db, cache
+from sqlalchemy.orm.util import aliased
 
 logger = logging.getLogger('simple')
 
@@ -335,6 +334,7 @@ def create_TTJ_record(action):
         raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
 
     client = action.event.client
+    ttj_ids = set()
     for attt in at_tissue_types:
         ttj = TakenTissueJournal.query.filter(
             TakenTissueJournal.client == client,
@@ -353,9 +353,13 @@ def create_TTJ_record(action):
             ttj.testTubeType = attt.testTubeType
         else:
             ttj.amount += attt.amount
-        # ttj.actions.append(action)
+            if ttj.statusCode == u"finished":
+                # Если забор уже произведён, то, вероятно, надо уведомить Ядро/ЛИС о дозаказе
+                ttj_ids.add(ttj.id)
+                # ttj.statusCode = u"waiting"  # Вот, правда, чёрт его знает, надо переводить забор или нет
         action.tissues.append(ttj)
         db.session.add(ttj)
+    blinker.signal('Core.Notify.TakenTissueJournal').send(None, ttj_ids)
 
 
 def isRedDay(date):
