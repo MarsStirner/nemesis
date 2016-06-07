@@ -341,7 +341,7 @@ def create_TTJ_record(action):
             TakenTissueJournal.client == client,
             TakenTissueJournal.tissueType == attt.tissueType,
             TakenTissueJournal.testTubeType == attt.testTubeType,
-            TakenTissueJournal.datetimeTaken == planned_end_date,
+            TakenTissueJournal.datetimePlanned == planned_end_date,
         ).first()
         if not ttj:
             ttj = TakenTissueJournal()
@@ -349,15 +349,20 @@ def create_TTJ_record(action):
             ttj.tissueType = attt.tissueType
             ttj.amount = attt.amount
             ttj.unit = attt.unit
-            ttj.datetimeTaken = planned_end_date
+            ttj.datetimePlanned = planned_end_date
             ttj.externalId = action.event.externalId
             ttj.testTubeType = attt.testTubeType
         else:
-            ttj.amount += attt.amount
-            if ttj.statusCode == u"finished":
-                # Если забор уже произведён, то, вероятно, надо уведомить Ядро/ЛИС о дозаказе
+            if ttj.statusCode == 0:
+                ttj.amount += attt.amount
+            else:
+                # Если забор уже произведён, то надо уведомить врача о возможных проблемах
+                action.note = u'Биозабор уже %s. Возможны проблемы с нехваткой биоматериала для новых анализов' % (
+                    {1: u'начат', 2: u'закончен'}.get(ttj.statusCode, u'отправлен в ЛИС')
+                )
+            if ttj.statusCode in (3, 4):
+                # Отправка в ЛИС уже произведена. Надо переотправить
                 ttj_ids.add(ttj.id)
-                # ttj.statusCode = u"waiting"  # Вот, правда, чёрт его знает, надо переводить забор или нет
         action.tissues.append(ttj)
         db.session.add(ttj)
     blinker.signal('Core.Notify.TakenTissueJournal').send(None, ttj_ids)

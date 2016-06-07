@@ -188,8 +188,9 @@ class ServiceKind(EnumLoadable):
 class TTJStatus(Enum):
     waiting = 0, u'Ожидание'
     in_progress = 1, u'Выполнение'
-    sending_to_lab = 3, u'Отправка в лабораторию'
     finished = 2, u'Закончено'
+    sent_to_lab = 3, u'Отправлено в лабораторию'
+    fail_to_lab = 4, u'Неудачно отправлено в лабораторию'
 
 
 class CardFillRate(Enum):

@@ -1084,7 +1084,8 @@ class TakenTissueJournal(db.Model):
     externalId = db.Column(db.String(30), nullable=False)
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
-    datetimeTaken = db.Column(db.DateTime, nullable=False)
+    datetimePlanned = db.Column(db.DateTime, nullable=False)
+    datetimeTaken = db.Column(db.DateTime)
     execPerson_id = db.Column(db.ForeignKey('Person.id'), index=True)
     note = db.Column(db.String(128), nullable=False, default='')
     barcode = db.Column(db.Integer, nullable=False)  # set with trigger
@@ -1110,7 +1111,8 @@ class TakenTissueJournal(db.Model):
     def __json__(self):
         return {
             'id': self.id,
-            'datetime': self.datetimeTaken,
+            'datetime_taken': self.datetimeTaken,
+            'datetime_planned': self.datetimePlanned,
             'client': self.client,
             'execPerson': self.execPerson,
             'tissueType': self.tissueType,
