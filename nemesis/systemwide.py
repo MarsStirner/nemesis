@@ -6,6 +6,7 @@ from flask.ext.principal import Principal
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.cache import Cache
 from flask.ext.celery import Celery
+from blinker import Namespace
 
 
 db = SQLAlchemy()
@@ -21,3 +22,5 @@ login_manager = LoginManager()
 beaker_session = BeakerSession()
 
 celery = Celery()
+
+signals_ns = Namespace()
