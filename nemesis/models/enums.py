@@ -224,3 +224,11 @@ class RadzinskyStage(EnumLoadable):
     before32 = 2, u'Факторы до 32 недель'
     after33 = 3, u'Факторы после 33 недель'
     intranatal = 4, u'Интранатальные факторы'
+
+
+class FisherKTGRate(EnumLoadable):
+    __tablename__ = 'rbFisherKTGRate'
+
+    normality = 1, u'Состояние в норме'
+    prepathological = 2, u'Предпатологическое состояние'
+    attention_required = 3, u'Состояние требует повышенного внимания'

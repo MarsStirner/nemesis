@@ -257,3 +257,21 @@ class rbRadzRiskFactor_StageAssoc(db.Model):
     points = db.Column(db.Integer, nullable=False)
 
     factor = db.relationship('rbRadzRiskFactor')
+
+
+class rbFisherKTGRate(db.Model):
+    __tablename__ = 'rbFisherKTGRate'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
