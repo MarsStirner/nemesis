@@ -7,11 +7,12 @@ import sqlalchemy
 from flask.ext.login import current_user
 from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
+from nemesis.lib.apiutils import ApiException
 from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime, bail_out
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
 from nemesis.models.client import Client
@@ -76,7 +77,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
 
     now = datetime.now()
     now_date = now.date()
-    actionType = ActionType.query.get(int(action_type_id))
+    actionType = ActionType.query.get(int(action_type_id)) or bail_out(ApiException(404, u'Тип действия с id=%s не найден' % action_type_id))
     if isinstance(event, (int, long, basestring)):
         event = Event.query.get(int(event))
     if event is None:

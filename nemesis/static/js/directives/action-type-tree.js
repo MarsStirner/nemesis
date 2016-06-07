@@ -267,7 +267,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             event_id: $scope.event_id,
                             service: service
                         };
-                        $http.post(WMConfig.url.actions.action_post.format(''), data)
+                        $http.post(WMConfig.url.actions.action_save.format(''), data)
                             .then(
                                 $scope.$close,
                                 function (response) {

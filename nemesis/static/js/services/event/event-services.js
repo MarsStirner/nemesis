@@ -242,7 +242,7 @@ angular.module('WebMis20.services').
             },
             delete_action: function (event, action) {
                 var self = this;
-                return $http.delete(WMConfig.url.actions.delete_action.format(action.id));
+                return $http.delete(WMConfig.url.actions.action_delete.format(action.id));
             },
             isPaymentPerService: function(event) {
                 return safe_traverse(event, ['payment', 'paymentKind']) === PaymentKind.perService;
