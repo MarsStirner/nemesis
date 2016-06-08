@@ -495,14 +495,12 @@ var WebMis20 = angular.module('WebMis20', [
 <div class="modal-footer"><button type="button" class="btn btn-primary" ng-click="print()">Печать</button><button type="button" class="btn btn-default" ng-click="$dismiss()">Закрыть</button></div>',
             backdrop : 'static',
             controller: function ($scope) {
-                var element;
-                $timeout(function () { element = $('#print-iframe') }, 0); // на момент создания контроллера елемент ещё не существует
                 $scope.print = function () {
-                    element[0].contentWindow.print();
+                    $('#print-iframe')[0].contentWindow.print();
                 };
                 $http.post(WMConfig.url.nemesis.print_subsystem.print, send_data)
                     .success(function (data) {
-                        element.contents().find('body').html(data);
+                        $('#print-iframe').contents().find('body').html(data);
                         $timeout($scope.print, 300); // timeout to fix chrome (36) behaviour - empty print preview https://code.google.com/p/chromium/issues/detail?id=396667
                     })
                     .error(function (data, status) {
