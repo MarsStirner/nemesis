@@ -9,19 +9,27 @@ angular.module('hitsl.core')
         if (config === undefined) config = {};
         var defer = $q.defer();
         function process(response) {
-            if (response.status != 200 || response.data.meta.code != 200) {
-                var text = (response.status === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
+            var data_meta_status = safe_traverse(response.data, ['meta', 'code'], response.status),
+                data_meta_name = safe_traverse(response.data, ['meta', 'name'], 'Внутренняя ошибка сервера'),
+                data_meta = safe_traverse(response.data, ['meta'], {code: data_meta_status, name: data_meta_name});
+            if (!_.has(response.data, 'meta')) {
+                console.log('Strange response');
+                console.log([method, url, params, data, config]);
+                console.log(response);
+            }
+            if (response.status != 200 || data_meta_status != 200) {
                 NotificationService.notify(
-                    response.data.meta.code,
-                    text.format(response.data.meta.name),
+                    data_meta_status,
+                    'Ошибка.<br/>{0}'.format(data_meta_name),
                     'danger'
                 );
-                defer.reject(response.data.meta);
+                defer.reject(data_meta);
             } else {
                 defer.resolve(response.data.result);
             }
             return response;
         }
+        if (!angular.isString(url)) { throw 'Неверное значение URL запроса: {0}'.format(url) }
         $http({
             method: method,
             url: url,
