@@ -34,7 +34,7 @@ class Action(db.Model):
     setPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True)
     isUrgent = db.Column(db.Boolean, nullable=False, server_default=u"'0'")
     begDate = db.Column(db.DateTime)
-    plannedEndDate = db.Column(db.DateTime, nullable=False)
+    plannedEndDate = db.Column(db.DateTime)
     endDate = db.Column(db.DateTime)
     note = db.Column(db.Text, nullable=False, default='')
     person_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True)

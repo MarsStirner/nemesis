@@ -424,34 +424,23 @@ def get_planned_end_datetime(action_type_id):
     current_date = now.date()
     action_type = ActionType.query.get(int(action_type_id))
 
-    defaultPlannedEndDate = action_type.defaultPlannedEndDate
-    currentDate = datetime.now()
-    if defaultPlannedEndDate == DPED_UNDEFINED:
-        plannedEndDate = None
-    elif defaultPlannedEndDate == DPED_NEXT_DAY:
-        plannedEndDate = addPeriod(currentDate, 2, True)
-    elif defaultPlannedEndDate == DPED_NEXT_WORK_DAY:
-        plannedEndDate = addPeriod(currentDate, 2, False)
-    elif defaultPlannedEndDate == DPED_CURRENT_DAY:
-        plannedEndDate = current_date
-    else:
-        plannedEndDate = None
+    default_planned_end = action_type.defaultPlannedEndDate
+    if default_planned_end == DPED_UNDEFINED:
+        return None
+    planned_end_date = current_date
+    if default_planned_end == DPED_NEXT_DAY:
+        planned_end_date = addPeriod(now, 2, True)
+    elif default_planned_end == DPED_NEXT_WORK_DAY:
+        planned_end_date = addPeriod(now, 2, False)
 
-    plannedEndTime = None
-    if plannedEndDate:
-        if defaultPlannedEndDate < DPED_CURRENT_DAY:
-            plannedEndTime = time(7, 0)
-        elif defaultPlannedEndDate == DPED_CURRENT_DAY:
-            cur_hour = now.hour
-            if cur_hour == 23:
-                plannedEndTime = time(23, 59)
-            else:
-                plannedEndTime = time(cur_hour + 1, 0)
-    if plannedEndDate is None:
-        plannedEndDate = current_date
-    if plannedEndTime is None:
-        plannedEndTime = time(7, 0)
-    return datetime.combine(plannedEndDate, plannedEndTime)
+    planned_end_time = time(7, 0)
+    if default_planned_end == DPED_CURRENT_DAY:
+        cur_hour = now.hour
+        if cur_hour == 23:
+            planned_end_time = time(23, 59)
+        else:
+            planned_end_time = time(cur_hour + 1, 0)
+    return datetime.combine(planned_end_date, planned_end_time)
 
 
 @cache.memoize(86400)
