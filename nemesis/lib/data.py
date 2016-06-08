@@ -329,10 +329,16 @@ def create_TTJ_record(action):
     """
     planned_end_date = action.plannedEndDate
     if not planned_end_date:
-        raise ActionException(u'Не заполнена плановая дата исследования')
+        raise ActionException(
+            u'Не заполнена плановая дата исследования "%s" (ActionType.id = %s)' % (
+                action.actionType.name,
+                action.actionType_id))
     at_tissue_types = action.actionType.tissue_types
     if not at_tissue_types:
-        raise ActionException(u'Неверно настроены параметры биозаборов для создания лабораторных исследований')
+        raise ActionException(
+            u'Действие "%s" требует забор биоматериала, но не указан ни один необходимый тип биоматериала (ActionType.id = %s)' % (
+                action.actionType.name,
+                action.actionType_id))
 
     client = action.event.client
     ttj_ids = set()
