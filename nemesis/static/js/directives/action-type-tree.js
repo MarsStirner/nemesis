@@ -95,27 +95,40 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             var filtered = {
                 root: new TreeItem(null)
             };
-            angular.forEach(self.lookup, function (value, key) {
-                try {
-                    if (is_acceptable(keywords, value)) {
-                        var clone = value.clone();
-                        clone.assignable = clone.assignable.filter(function (item) {
+            _.chain(
+                self.lookup
+            ).filter(
+                _.partial(is_acceptable, keywords)
+            ).each(
+                function (value) {
+                    var id = value.id;
+                    var clone = filtered[id] = value.clone();
+                    clone.assignable = _.chain(
+                        clone.assignable
+                    ).filter(
+                        function (item) {
                             return age_acceptable(client_info, item[2]) && sex_acceptable(client_info, item[3])
-                        }).map(function (item) {
+                        }
+                    ).map(
+                        function (item) {
                             return [item[0], item[1]];
-                        });
-                        filtered[key] = clone;
-                        for (var id = value.gid, value = self.lookup[id]; id; id = value.gid, value = self.lookup[id]) {
-                            if (id && !filtered.hasOwnProperty(id)) {
-                                filtered[id] =  self.lookup[id].clone();
-                            }
+                        }
+                    ).value();
+                    while (id) {
+                        id = value.gid;
+                        if (!id) break;
+                        if (!_.has(self.lookup, id)) {
+                            console.log('Проблема с ActionType.id = {0}: его родитель ActionType.id = {1} не найден или удалён'.format(value.id, value.gid));
+                            return
+                        }
+                        value = self.lookup[id];
+
+                        if (!_.has(filtered, id)) {
+                            filtered[id] =  value.clone();
                         }
                     }
-                } catch(e) {
-                    // possible ActionType inconsistency
-                    console.log('Error filtering ActionType tree branch for at_id = ' + key);
                 }
-            });
+            ).value();
             angular.forEach(filtered, function (value) {
                 var gid = value.gid;
                 if (!value.id) return;
