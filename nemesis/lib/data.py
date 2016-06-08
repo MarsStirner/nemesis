@@ -365,7 +365,7 @@ def create_TTJ_record(action):
                 ttj_ids.add(ttj.id)
         action.tissues.append(ttj)
         db.session.add(ttj)
-    blinker.signal('Core.Notify.TakenTissueJournal').send(None, ttj_ids)
+    blinker.signal('Core.Notify.TakenTissueJournal').send(None, ids=ttj_ids)
 
 
 def isRedDay(date):
