@@ -8,7 +8,7 @@ WebMis20
     var wrapper = ApiCalls.wrapper;
     this.contract = {
         get: function (contract_id, args) {
-            var url = WMConfig.url.api_contract_get;
+            var url = WMConfig.url.accounting.api_contract_get;
             if (contract_id) {
                 url += contract_id;
             } else {
@@ -17,10 +17,10 @@ WebMis20
             return wrapper('GET', url, args);
         },
         get_list: function (args) {
-            return wrapper('POST', WMConfig.url.api_contract_list, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_contract_list, {}, args);
         },
         save: function (contract_id, data) {
-            var url = WMConfig.url.api_contract_save,
+            var url = WMConfig.url.accounting.api_contract_save,
                 method;
             if (contract_id) {
                 url += contract_id;
@@ -45,29 +45,29 @@ WebMis20
                 });
         },
         del: function (contract_id) {
-            return wrapper('DELETE', WMConfig.url.api_contract_delete + contract_id);
+            return wrapper('DELETE', WMConfig.url.accounting.api_contract_delete + contract_id);
         },
         get_available: function (args) {
-            return wrapper('GET', WMConfig.url.api_contract_get_available, args);
+            return wrapper('GET', WMConfig.url.accounting.api_contract_get_available, args);
         }
     };
     this.contragent = {
         get_list: function (args) {
-            return wrapper('POST', WMConfig.url.api_contragent_list, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_contragent_list, {}, args);
         },
         search_payer: function (args) {
-            return wrapper('POST', WMConfig.url.api_contragent_search_payer, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_contragent_search_payer, {}, args);
         },
         get_payer: function (payer_id) {
-            return wrapper('GET', WMConfig.url.api_contragent_payer_get + payer_id);
+            return wrapper('GET', WMConfig.url.accounting.api_contragent_payer_get + payer_id);
         },
         get_client: function (client_id) {
-            return wrapper('GET', WMConfig.url.api_contragent_client_get + client_id);
+            return wrapper('GET', WMConfig.url.accounting.api_contragent_client_get + client_id);
         }
     };
     this.contingent = {
         get: function (contingent_id, args) {
-            var url = WMConfig.url.api_contingent_get;
+            var url = WMConfig.url.accounting.api_contingent_get;
             if (contingent_id) {
                 url += contingent_id;
             } else {
@@ -78,15 +78,15 @@ WebMis20
     };
     this.pricelist = {
         get_list: function (args) {
-            return wrapper('POST', WMConfig.url.api_pricelist_list, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_pricelist_list, {}, args);
         }
     };
     this.service = {
         search_mis_action_services: function (args) {
-            return wrapper('GET', WMConfig.url.api_service_search, args);
+            return wrapper('GET', WMConfig.url.accounting.api_service_search, args);
         },
         get: function (service_id, args) {
-            var url = WMConfig.url.api_service_get;
+            var url = WMConfig.url.accounting.api_service_get;
             if (service_id) {
                 url += service_id;
             } else {
@@ -95,34 +95,34 @@ WebMis20
             return wrapper('GET', url, args);
         },
         save_service_list: function (args) {
-            return wrapper('POST', WMConfig.url.api_service_list_save, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_service_list_save, {}, args);
         },
         get_list: function (event_id) {
-            return wrapper('GET', WMConfig.url.api_service_list + event_id);
+            return wrapper('GET', WMConfig.url.accounting.api_service_list + event_id);
         },
         del: function (service_id) {
-            return wrapper('DELETE', WMConfig.url.api_service_delete + service_id);
+            return wrapper('DELETE', WMConfig.url.accounting.api_service_delete + service_id);
         },
         calc_sum: function (args) {
-            return wrapper('POST', WMConfig.url.api_service_calc_sum, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_service_calc_sum, {}, args);
         },
         refreshServiceSubservices: function (service) {
-            return wrapper('POST', WMConfig.url.api_service_refresh_subservices, {}, service);
+            return wrapper('POST', WMConfig.url.accounting.api_service_refresh_subservices, {}, service);
         },
         get_service_at_price: function (contract_id) {
-            return wrapper('GET', WMConfig.url.api_service_at_price_get + contract_id);
+            return wrapper('GET', WMConfig.url.accounting.api_service_at_price_get + contract_id);
         }
     };
     this.service_discount = {
         get_list: function (args) {
-            return wrapper('GET', WMConfig.url.api_service_discount_list, undefined, undefined, {
+            return wrapper('GET', WMConfig.url.accounting.api_service_discount_list, undefined, undefined, {
                 cache: true
             });
         }
     };
     this.invoice = {
         get: function (invoice_id, args) {
-            var url = WMConfig.url.api_invoice_get;
+            var url = WMConfig.url.accounting.api_invoice_get;
             if (invoice_id) {
                 url += invoice_id;
             } else {
@@ -131,7 +131,7 @@ WebMis20
             return wrapper('GET', url, args);
         },
         save: function (invoice_id, data) {
-            var url = WMConfig.url.api_invoice_save,
+            var url = WMConfig.url.accounting.api_invoice_save,
                 method;
             if (invoice_id) {
                 url += invoice_id;
@@ -156,13 +156,13 @@ WebMis20
                 });
         },
         del: function (invoice_id) {
-            return wrapper('DELETE', WMConfig.url.api_invoice_delete + invoice_id);
+            return wrapper('DELETE', WMConfig.url.accounting.api_invoice_delete + invoice_id);
         },
         search: function (args) {
-            return wrapper('POST', WMConfig.url.api_invoice_search, {}, args);
+            return wrapper('POST', WMConfig.url.accounting.api_invoice_search, {}, args);
         },
         calc_sum: function (invoice_id, data) {
-            var url = WMConfig.url.api_invoice_calc_sum;
+            var url = WMConfig.url.accounting.api_invoice_calc_sum;
             if (invoice_id) {
                 url += invoice_id;
             }
@@ -171,16 +171,16 @@ WebMis20
     };
     this.refund = {
         get: function (invoice_id) {
-            return wrapper('GET', WMConfig.url.api_invoice_refund_get.format(invoice_id));
+            return wrapper('GET', WMConfig.url.accounting.api_invoice_refund_get.format(invoice_id));
         },
         save: function (invoice_id, data) {
-            return wrapper('POST', WMConfig.url.api_invoice_refund_save.format(invoice_id), {}, data);
+            return wrapper('POST', WMConfig.url.accounting.api_invoice_refund_save.format(invoice_id), {}, data);
         },
         del: function (invoice_id) {
-            return wrapper('DELETE', WMConfig.url.api_invoice_refund_delete.format(invoice_id));
+            return wrapper('DELETE', WMConfig.url.accounting.api_invoice_refund_delete.format(invoice_id));
         },
         process: function (invoice_id, data) {
-            return wrapper('POST', WMConfig.url.api_invoice_refund_process.format(invoice_id), {}, data)
+            return wrapper('POST', WMConfig.url.accounting.api_invoice_refund_process.format(invoice_id), {}, data)
                 .then(function (payer) {
                     NotificationService.notify(
                         200,
@@ -201,12 +201,12 @@ WebMis20
     };
     this.finance_trx = {
         get_new: function (args) {
-            var url = WMConfig.url.api_finance_transaction_get;
+            var url = WMConfig.url.accounting.api_finance_transaction_get;
             url += '?new=true';
             return wrapper('GET', url, args);
         },
         make_trx: function (trx_type_code, data) {
-            var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_make, trx_type_code);
+            var url = '{0}{1}/'.format(WMConfig.url.accounting.api_finance_transaction_make, trx_type_code);
             return wrapper('POST', url, {}, data)
                 .then(function (payer) {
                     NotificationService.notify(
@@ -226,12 +226,12 @@ WebMis20
                 });
         },
         get_new_invoice_trxes: function (args) {
-            var url = WMConfig.url.api_finance_transaction_invoice_get;
+            var url = WMConfig.url.accounting.api_finance_transaction_invoice_get;
             url += '?new=true';
             return wrapper('GET', url, args);
         },
         make_invoice_trx: function (trx_type_code, data) {
-            var url = '{0}{1}/'.format(WMConfig.url.api_finance_transaction_invoice_make, trx_type_code);
+            var url = '{0}{1}/'.format(WMConfig.url.accounting.api_finance_transaction_invoice_make, trx_type_code);
             return wrapper('POST', url, {}, data)
                 .then(function (invoice) {
                     NotificationService.notify(
