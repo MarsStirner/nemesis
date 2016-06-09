@@ -2,7 +2,7 @@
 
 import hashlib
 from flask import url_for
-from flask.ext.login import UserMixin, AnonymousUserMixin, current_user
+from flask_login import UserMixin, AnonymousUserMixin, current_user
 
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_traverse_attrs, initialize_name

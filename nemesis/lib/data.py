@@ -4,7 +4,7 @@ from datetime import datetime, time, timedelta, date
 
 import blinker
 import sqlalchemy
-from flask.ext.login import current_user
+from flask_login import current_user
 from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.lib.apiutils import ApiException

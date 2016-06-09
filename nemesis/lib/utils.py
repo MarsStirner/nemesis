@@ -9,8 +9,8 @@ from decimal import Decimal
 
 from pytz import timezone
 from flask import current_app, request, abort, json, session, make_response
-from flask.ext.principal import Permission, RoleNeed, ActionNeed, PermissionDenied
-from flask.ext.login import current_user
+from flask_principal import Permission, RoleNeed, ActionNeed, PermissionDenied
+from flask_login import current_user
 from sqlalchemy import func
 
 from nemesis.systemwide import db

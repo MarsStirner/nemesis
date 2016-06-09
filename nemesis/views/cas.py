@@ -4,8 +4,8 @@ import urllib2
 import requests
 from requests.exceptions import ConnectionError
 from flask import render_template, abort, request, redirect, url_for, session, current_app
-from flask.ext.principal import Identity, AnonymousIdentity, identity_changed, identity_loaded, RoleNeed, UserNeed, ActionNeed
-from flask.ext.login import login_user, logout_user, current_user
+from flask_principal import Identity, AnonymousIdentity, identity_changed, identity_loaded, RoleNeed, UserNeed, ActionNeed
+from flask_login import login_user, logout_user, current_user
 from itsdangerous import json
 
 from nemesis.systemwide import login_manager

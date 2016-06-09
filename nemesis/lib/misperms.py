@@ -15,7 +15,7 @@ class Permission(object):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                from flask.ext.login import current_user
+                from flask_login import current_user
                 from flask import abort
                 if (current_user
                     and current_user.is_authenticated()

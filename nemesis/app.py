@@ -3,7 +3,7 @@
 import pytz
 
 from flask import Flask, url_for, request
-from flask.ext.login import current_user
+from flask_login import current_user
 from werkzeug.contrib.profiler import ProfilerMiddleware
 
 from nemesis.lib.frontend import frontend_config

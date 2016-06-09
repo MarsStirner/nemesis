@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from flask.ext.login import current_user
+from flask_login import current_user
 
 from nemesis.lib.data import create_action
 from nemesis.models.actions import ActionType

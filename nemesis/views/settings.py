@@ -13,7 +13,7 @@ def settings_html():
     from nemesis.models.caesar import Settings
     from wtforms import StringField
     from wtforms.validators import DataRequired
-    from flask.ext.wtf import Form
+    from flask_wtf import Form
     try:
         class ConfigVariablesForm(Form):
             pass

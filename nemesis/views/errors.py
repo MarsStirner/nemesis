@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import flash
 from flask import render_template
-from flask.ext.login import current_user
+from flask_login import current_user
 from nemesis.app import app
 from nemesis.lib.html_utils import UIException
 from nemesis.lib.utils import request_wants_json

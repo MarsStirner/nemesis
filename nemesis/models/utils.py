@@ -2,7 +2,7 @@
 import uuid
 from sqlalchemy import types
 from sqlalchemy.engine import reflection
-from flask.ext.login import current_user
+from flask_login import current_user
 
 
 def safe_current_user_id():
