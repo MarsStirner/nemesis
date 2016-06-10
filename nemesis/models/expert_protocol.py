@@ -238,3 +238,17 @@ class EventMeasure(db.Model):
     @property
     def measure(self):
         return self.scheme_measure.measure if self.schemeMeasure_id is not None else self.manual_measure
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'event_id': self.event_id,
+            'beg_datetime': self.begDateTime,
+            'end_datetime': self.endDateTime,
+            'status': self.status,
+            'appointment_action_id': self.appointmentAction_id,
+            'result_action_id': self.resultAction_id,
+            'is_actual': self.is_actual,
+            'scheme_measure_id': self.schemeMeasure_id,
+            'measure_id': self.measure_id
+        }
