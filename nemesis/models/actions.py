@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-import requests
+import re
 
 from sqlalchemy import orm
 
@@ -13,6 +13,9 @@ from nemesis.models.enums import TTJStatus
 from nemesis.models.utils import safe_current_user_id, get_model_by_name
 
 __author__ = 'mmalkov'
+
+
+apt_valueDomain_String_re = re.compile(ur"'(.*?)'")
 
 
 class Action(db.Model):
@@ -369,7 +372,22 @@ class ActionPropertyType(db.Model):
             from nemesis.lib.utils import parse_json
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
-            return [choice.strip('\' ') for choice in self.valueDomain.split(',')]
+            values = [match.strip() for match in apt_valueDomain_String_re.findall(self.valueDomain)]
+            if not self.valueDomain.strip():
+                return {
+                    'subtype': None,
+                    'values': [],
+                }
+            elif '*' in values:
+                return {
+                    'subtype': 'Free',
+                    'values': filter(lambda x: x != '*', values),
+                }
+            else:
+                return {
+                    'subtype': 'Select',
+                    'values': values,
+                }
         return None
 
     def __json__(self):
@@ -388,12 +406,8 @@ class ActionPropertyType(db.Model):
             'norm': self.norm,
             'vector': bool(self.isVector),
         }
-        if self.typeName == 'String' and value_domain:
-            if '*' in value_domain:
-                result['type_name'] = 'String/Free'
-                result['domain_obj'] = filter(lambda x: x != '*', value_domain)
-            else:
-                result['type_name'] = 'String/Select'
+        if self.typeName == 'String' and value_domain['subtype']:
+            result['type_name'] = 'String/{0}'.format(value_domain['subtype'])
         return result
 
 
