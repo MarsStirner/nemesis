@@ -332,10 +332,11 @@ _.mixin({
         return Object.prototype.toString.call(input) === '[object Date]' ||
             input instanceof Date;
     },
-    makeObject: function (array, keyMaker) {
+    makeObject: function (array, keyMaker, objectMaker) {
         var result = {};
+        objectMaker = objectMaker || function (item) { return item };
         _.forEach(array, function (item, index, object) {
-            result[keyMaker(item, index, object)] = item;
+            result[keyMaker(item, index, object)] = objectMaker(item);
         });
         return result;
     },

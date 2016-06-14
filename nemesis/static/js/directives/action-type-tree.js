@@ -2,10 +2,11 @@
  * Created by mmalkov on 14.07.14.
  */
 angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodies'])
-.service('ActionTypeTreeService', ['$http', '$q', 'CurrentUser', 'WMConfig', function ($http, $q, CurrentUser, WMConfig) {
+.service('ActionTypeTreeService', ['ApiCalls', '$q', 'CurrentUser', 'WMConfig', function (ApiCalls, $q, CurrentUser, WMConfig) {
     var trees = [],
         cur_user = CurrentUser.get_main_user();
     var Tree = function () {
+        var self = this;
         var TreeItem = function (source) {
             if (!source) {
                 this.id = null;
@@ -37,18 +38,33 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         TreeItem.prototype.clone = function () {
             return new TreeItem(this)
         };
-        var self = this;
+        TreeItem.prototype.sort_children = function () {
+            if (this.children && _.isArray(this.children)) {
+                this.children.sort(function (x, y) {
+                    var a = self.lookup[x],
+                        b = self.lookup[y];
+                    if (a.code > b.code) {
+                        return 1;
+                    } else if (a.code < b.code) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                })
+            }
+        };
         self.lookup = {};
         self.set_data = function (data) {
-            self.lookup = {};
-            data.map(function (item) {
-                self.lookup[item[0]] =  new TreeItem(item)
-            });
-            angular.forEach(self.lookup, function (tree_item, at_id) {
-                if (tree_item.gid && self.lookup.hasOwnProperty(tree_item.gid)) {
-                    self.lookup[tree_item.gid].children.push(at_id);
+            self.lookup = _.chain(
+                data
+            ).makeObject(
+                function (item) { return item[0] },
+                function (item) { return new TreeItem(item) }
+            ).each(function (item, at_id, context) {
+                if (item.gid && _.has(context, item.gid)) {
+                    context[item.gid].children.push(at_id);
                 }
-            });
+            }).value()
         };
         function tissue_acceptable(action_type, tissue_required) {
             // split at_class 1 in diag action types and lab action types
@@ -73,9 +89,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         }
         self.personally_acceptable = personally_acceptable;
         function keywords_acceptable(keywords, item) {
-            return keywords.filter(function (keyword) {
-                return (item.name.toLowerCase() + ' ' + item.code.toLowerCase()).indexOf(keyword) !== -1
-            }).length == keywords.length;
+            var item_test_data = '{0} {1}'.format(item.name, item.code).toLowerCase();
+            return _.all(keywords, function (keyword) {
+                return item_test_data.indexOf(keyword) !== -1
+            });
         }
         self.filter = function (query, client_info, check_os, check_person, tissue_required) {
             function is_acceptable(keywords, item) {
@@ -114,6 +131,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             return [item[0], item[1]];
                         }
                     ).value();
+                    // Построение недостающих родительских узлов - подъём по дереву вверх до первого найденного
                     while (id) {
                         id = value.gid;
                         if (!id) break;
@@ -129,14 +147,21 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     }
                 }
             ).value();
-            angular.forEach(filtered, function (value) {
+            _.chain(
+                filtered
+            ).each(function (value) {
+                // Установка идентификаторов дочерних элементов у каждого элемента в отфильтрованном дереве
                 var gid = value.gid;
                 if (!value.id) return;
                 var o = filtered[gid || 'root'];
                 if (o) {
                     o.children.push(value.id)
                 }
-            });
+            }).each(function (value) {
+                // Сортировка идентификаторов дочерних элементов
+                // Это нельзя сделать в перыдущей функции, потому что там они ещё не все готовы
+                value.sort_children()
+            }).value();
             var render_node = function (id) {
                 var value = filtered[id];
                 value.children = value.children.map(render_node);
@@ -150,15 +175,19 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             at_class = filter_params.at_class;
         if (! trees[at_class]) {
             trees[at_class] = new Tree();
-            $http.get(WMConfig.url.actions.atl_get_flat, {
-                params: {
+            ApiCalls.wrapper(
+                'GET',
+                WMConfig.url.actions.atl_get_flat,
+                {
                     at_class: at_class,
                     event_type_id: filter_params.event_type_id
                 }
-            }).success(function (data) {
-                trees[at_class].set_data(data.result);
-                deferred.resolve(trees[at_class]);
-            })
+            ).then(
+                function (data) {
+                    trees[at_class].set_data(data);
+                    deferred.resolve(trees[at_class]);
+                }
+            )
         } else {
             deferred.resolve(trees[at_class]);
         }
