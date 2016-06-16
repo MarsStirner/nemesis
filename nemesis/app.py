@@ -15,6 +15,9 @@ app = Flask(__name__)
 # noinspection PyUnresolvedReferences
 def bootstrap_app(templates_dir):
     from systemwide import db, cache, babel, principal, login_manager, beaker_session, celery
+    from nemesis.api_blueprint.rb import module as rb_module
+
+    app.register_blueprint(rb_module, url_prefix='/api')
 
     if templates_dir:
         app.template_folder = templates_dir
@@ -149,8 +152,8 @@ def fc_urls():
                 ),
             },
             'nemesis': {
-                'rb_root': url_for('api_refbook'),
-                'rbThesaurus_root': url_for('api_thesaurus'),
+                'rb_root': url_for('rb.api_refbook'),
+                'rbThesaurus_root': url_for('rb.api_thesaurus'),
                 'print_subsystem': {
                     'base': print_subsystem_url,
                     'templates': print_subsystem_url + 'templates/',

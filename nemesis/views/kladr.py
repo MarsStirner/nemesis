@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask_login import current_user
+from nemesis.api_blueprint.rb import clears_rb_cache
 
 from nemesis.app import app
 from nemesis.lib.apiutils import api_method
@@ -31,21 +32,22 @@ def kladr_search_street(city_code=None, search_query=None, limit=100):
 
 
 @app.route('/clear_cache/')
+@clears_rb_cache
 def clear_cache():
     cache.clear()
-    import os
-    import shutil
-    nginx_cache_path = '/var/cache/nginx'
-    try:
-        cache_list = os.listdir(nginx_cache_path)
-        for _name in cache_list:
-            entity_path = os.path.join(nginx_cache_path, _name)
-            if os.path.isdir(entity_path):
-                shutil.rmtree(entity_path)
-            elif os.path.isfile(entity_path):
-                os.remove(entity_path)
-    except Exception as e:
-        print e
+    # import os
+    # import shutil
+    # nginx_cache_path = '/var/cache/nginx'
+    # try:
+    #     cache_list = os.listdir(nginx_cache_path)
+    #     for _name in cache_list:
+    #         entity_path = os.path.join(nginx_cache_path, _name)
+    #         if os.path.isdir(entity_path):
+    #             shutil.rmtree(entity_path)
+    #         elif os.path.isfile(entity_path):
+    #             os.remove(entity_path)
+    # except Exception as e:
+    #     print e
     return u'Кэш справочников удалён', 200, [('content-type', 'text/plain; charset=utf-8')]
 
 
