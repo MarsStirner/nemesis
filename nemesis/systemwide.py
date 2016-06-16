@@ -10,7 +10,7 @@ from flask_celery import Celery
 
 db = SQLAlchemy()
 
-cache = Cache(config={'CACHE_TYPE': 'simple'})
+cache = Cache()
 
 babel = Babel()
 

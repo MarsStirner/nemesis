@@ -175,14 +175,13 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             at_class = filter_params.at_class;
         if (! trees[at_class]) {
             trees[at_class] = new Tree();
-            ApiCalls.wrapper(
-                'GET',
-                WMConfig.url.actions.atl_get_flat,
-                {
-                    at_class: at_class,
-                    event_type_id: filter_params.event_type_id
-                }
-            ).then(
+            var url;
+            if (_.isUndefined(filter_params.event_type_id)) {
+                url = '{0}{1}'.format(WMConfig.url.actions.atl_get_flat, at_class)
+            } else {
+                url = '{0}{1}/{2}'.format(WMConfig.url.actions.atl_get_flat, at_class, filter_params.event_type_id)
+            }
+            ApiCalls.wrapper('GET',url).then(
                 function (data) {
                     trees[at_class].set_data(data);
                     deferred.resolve(trees[at_class]);

@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+import contextlib
 import logging
+from collections import namedtuple
 from datetime import datetime, time, timedelta, date
 
+import collections
+
 import blinker
+import six
 import sqlalchemy
 from flask_login import current_user
 from nemesis.lib.action.utils import action_needs_service
@@ -449,141 +454,145 @@ def get_planned_end_datetime(action_type_id):
     return datetime.combine(planned_end_date, planned_end_time)
 
 
-@cache.memoize(86400)
-def int_get_atl_flat(at_class, event_type_id=None):
-    """Получить плоское дерево типов действий.
+def _split_to_integers(string):
+    if string:
+        return map(int, string.split())
+    return []
 
-    :returns {
-        'action_type_id': [
-            ActionType.id,
-            ActionType.name,
-            ActionType.code,
-            ActionType.flatCode,
-            ActionType.group_id,
-            [at age from parseAgeSelector],
-            ActionType.sex,
-            [OrgStructure.id, ],
-            ActionType.isRequiredTissue,
-            [
-                list of assignable apts data
-                (apt_id, apt_name, [apt age from parseAgeSelector], apt.sex),
-            ]
-        ]
-    }
-    """
-    id_list = {}
 
-    def schwing(t):
-        t = list(t)
-        t[5] = list(parseAgeSelector(t[5]))
-        t[7] = t[7].split() if t[7] else None
-        t[8] = bool(t[8])
-        t.append([])
-        id_list[t[0]] = t
-        return t
+at_tuple = collections.namedtuple(
+    'at_tuple',
+    'id name code flat_code gid age sex at_os required_tissue at_apt class_ at_et children'
+)
 
-    def _filter_atl(query):
-        """
-        Отфильтровать сырые AT по возможности их создания для выбранного
-        типа события и по существованию соответствующих позиций в прайсе услуг.
+at_flat_tuple = collections.namedtuple(
+    'at_flat_tuple',
+    'id name code flat_code gid age sex at_os required_tissue at_apt'
+)
 
-        В итоговый результат нужно также включить внутренние узлы дерева для
-        возможности построения этого самого дерева в интерфейсе. Поэтому к
-        отфильтрованным AT сначала добавляются все возможные промежуточные
-        узлы, а затем лишние убираются.
-        """
-        at_2 = aliased(ActionType, name='AT2')
-        internal_nodes_q = db.session.query(ActionType.id.distinct().label('id'), ActionType.group_id).join(
-            at_2, ActionType.id == at_2.group_id
-        ).filter(
-            ActionType.deleted == 0, at_2.deleted == 0,
-            ActionType.hidden == 0, at_2.hidden == 0,
-            ActionType.class_ == at_class, at_2.class_ == at_class
-        ).subquery('AllInternalNodes')
-        # 1) filter atl query by EventType_Action reference and include *all* internal AT tree nodes in result
-        ats = query.outerjoin(
-            internal_nodes_q, ActionType.id == internal_nodes_q.c.id
-        ).outerjoin(
-            EventType_Action, db.and_(EventType_Action.actionType_id == ActionType.id,
-                                      EventType_Action.eventType_id == event_type_id)
-        ).filter(
-            db.or_(internal_nodes_q.c.id != None, EventType_Action.id != None)
+
+def at_tuple_2_flat_tuple_convert(item):
+    return at_flat_tuple(*item[:10])
+
+
+@cache.memoize(3600)
+def select_all_at():
+    tmp_apt_dict = {
+        id_: (id_, name, parseAgeSelector(age))
+        for id_, name, age in ActionPropertyType.query.filter(
+            ActionPropertyType.deleted == 0,
+            ActionPropertyType.isAssignable == 1,
+        ).with_entities(
+            ActionPropertyType.id,
+            ActionPropertyType.name,
+            ActionPropertyType.age,
         )
-
-        result = map(schwing, ats)
-
-        # remove unnecessary internal nodes
-        all_internal_nodes = dict((at_id, gid) for at_id, gid in db.session.query(internal_nodes_q))
-        used_internal_nodes = set()
-        for item in result:
-            at_id = item[0]
-            gid = item[4]
-            if at_id not in all_internal_nodes and gid:
-                used_internal_nodes.add(gid)
-        while used_internal_nodes:
-            at_id = used_internal_nodes.pop()
-            if at_id in all_internal_nodes:
-                used_internal_nodes.add(all_internal_nodes[at_id])
-                del all_internal_nodes[at_id]
-
-        exclude_ids = all_internal_nodes.keys()
-        result = [item for item in result if item[0] not in exclude_ids]
-        # and from external reference
-        for at_id in exclude_ids:
-            del id_list[at_id]
-        return result
-
-
-    ats = db.session.query(
-        ActionType.id,
-        ActionType.name,
-        ActionType.code,
-        ActionType.flatCode,
-        ActionType.group_id,
-        ActionType.age,
-        ActionType.sex,
-        group_concat(OrgStructure_ActionType.master_id, ' '),
-        ActionType.isRequiredTissue
-    ).outerjoin(OrgStructure_ActionType).filter(
-        ActionType.class_ == at_class,
+    }
+    at_apt_dict = {
+        at_id: [tmp_apt_dict.get(apt_id) for apt_id in _split_to_integers(apt_ids)]
+        for at_id, apt_ids in ActionPropertyType.query.filter(
+            ActionPropertyType.deleted == 0,
+            ActionPropertyType.isAssignable == 1,
+        ).group_by(
+            ActionPropertyType.actionType_id
+        ).with_entities(
+            ActionPropertyType.actionType_id,
+            group_concat(ActionPropertyType.id, ' '),
+        )
+    }
+    at_os_dict = {
+        at_id: _split_to_integers(os_ids)
+        for at_id, os_ids in OrgStructure_ActionType.query.group_by(
+            OrgStructure_ActionType.actionType_id
+        ).with_entities(
+            OrgStructure_ActionType.actionType_id,
+            group_concat(OrgStructure_ActionType.master_id, ' ')
+        )
+    }
+    at_et_dict = {
+        at_id: _split_to_integers(et_ids)
+        for at_id, et_ids in EventType_Action.query.group_by(
+            EventType_Action.actionType_id
+        ).with_entities(
+            EventType_Action.actionType_id,
+            group_concat(EventType_Action.eventType_id, ' ')
+        )
+    }
+    l = ActionType.query.filter(
         ActionType.deleted == 0,
-        ActionType.hidden == 0
-    ).group_by(ActionType.id)
-
-    if event_type_id:
-        result = _filter_atl(ats)
-    else:
-        result = map(schwing, ats)
-
-    apts = db.session.query(
-        ActionPropertyType.actionType_id,
-        ActionPropertyType.id,
-        ActionPropertyType.name,
-        ActionPropertyType.age,
-        ActionPropertyType.sex
-    ).filter(
-        ActionPropertyType.isAssignable != 0,
-        ActionPropertyType.actionType_id.in_(id_list.keys()),
-        ActionPropertyType.deleted == 0
-    ).order_by(
-        ActionPropertyType.idx, ActionPropertyType.id
+        ActionType.hidden == 0,
+        ActionType.class_.in_([0, 1, 2, 3])
+    ).with_entities(
+        ActionType.id,              # 0
+        ActionType.name,            # 1
+        ActionType.code,            # 2
+        ActionType.flatCode,        # 3
+        ActionType.group_id,        # 4
+        ActionType.age,             # 5
+        ActionType.sex,             # 6
+        ActionType.isRequiredTissue,    # 7
+        ActionType.class_,          # 8
     )
-    # Да, данные в итоговом результате заполняются через id_list
-    map(lambda (at_id, apt_id, name, age, sex):
-        id_list[at_id][9].append(
-            (apt_id, name, list(parseAgeSelector(age)), sex)
-        ),
-        apts)
+    tmp_dict = {
+        id_: at_tuple(
+            id_,
+            name,
+            code,
+            flat_code,
+            gid,
+            parseAgeSelector(age),
+            sex,
+            at_os_dict.get(id_, []),
+            bool(required_tissue),
+            at_apt_dict.get(id_, []),
+            class_,
+            at_et_dict.get(id_, []),
+            set(),
+        )
+        for id_, name, code, flat_code, gid, age, sex, required_tissue, class_ in l
+    }
+
+    for item in six.itervalues(tmp_dict):
+        if item.gid in tmp_dict:
+            tmp_dict[item.gid].children.add(item.id)
+
+    result = collections.defaultdict(dict)
+
+    for item in six.itervalues(tmp_dict):
+        result[item.class_][item.id] = item
+
     return result
 
 
-@cache.cached(86400, key_prefix='AT_dict_all')
+@cache.memoize(3600)
+def int_get_atl_flat(at_class, event_type_id=None):
+    d = select_all_at()[at_class]
+    if event_type_id is None:
+        filtered = {
+            item.id: at_tuple_2_flat_tuple_convert(item)
+            for item in six.itervalues(d)
+        }
+    else:
+        filtered = {
+            item.id: at_tuple_2_flat_tuple_convert(item)
+            for item in six.itervalues(d)
+            if event_type_id in item.at_et
+        }
+    for item in six.itervalues(filtered):
+        gid = item.gid
+        if gid and gid not in filtered and gid in d:
+            filtered[gid] = at_tuple_2_flat_tuple_convert(d[gid])
+
+    return filtered
+
+
+@cache.memoize(3600)
 def int_get_atl_dict_all():
-    all_at_apt = {}
-    for class_ in range(4):
-        flat = int_get_atl_flat(class_)
-        all_at_apt.update(dict([(at[0], at) for at in flat]))
-    return all_at_apt
+    result = {}
+    for d in six.itervalues(select_all_at()):
+        for item in six.itervalues(d):
+            result[item.id] = at_tuple_2_flat_tuple_convert(item)
+    return result
 
 
 def get_patient_location(event, dt=None):
