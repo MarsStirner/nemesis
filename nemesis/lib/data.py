@@ -579,7 +579,7 @@ def int_get_atl_flat(at_class, event_type_id=None):
             for item in six.itervalues(d)
             if event_type_id in item.at_et
         }
-    for item in six.itervalues(filtered):
+    for item in filtered.values():
         gid = item.gid
         if gid and gid not in filtered and gid in d:
             filtered[gid] = at_tuple_2_flat_tuple_convert(d[gid])
