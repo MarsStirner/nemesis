@@ -177,9 +177,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             trees[at_class] = new Tree();
             var url;
             if (_.isUndefined(filter_params.event_type_id)) {
-                url = '{0}{1}'.format(WMConfig.url.actions.atl_get_flat, at_class)
+                url = '{0}{1}/'.format(WMConfig.url.actions.atl_get_flat, at_class)
             } else {
-                url = '{0}{1}/{2}'.format(WMConfig.url.actions.atl_get_flat, at_class, filter_params.event_type_id)
+                url = '{0}{1}/{2}/'.format(WMConfig.url.actions.atl_get_flat, at_class, filter_params.event_type_id)
             }
             ApiCalls.wrapper('GET',url).then(
                 function (data) {
