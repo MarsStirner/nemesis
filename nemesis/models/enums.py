@@ -203,3 +203,7 @@ class CardFillRate(Enum):
     waiting = 1, u'Ожидается'
     filled = 2, u'Заполнено'
     not_filled = 3, u'Не заполнено'
+
+
+class FileAttachType(Enum):
+    errand = 1, u'Поручения'
