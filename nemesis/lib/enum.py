@@ -38,7 +38,7 @@ class EnumBase(object):
         return self.value in self.codes
 
     def __unicode__(self):
-        return self.codes.get(self.value, None)
+        return self.codes.get(self.value, None) or u'Unknown id={0}'.format(self.value)
 
     def __json__(self):
         result = {
