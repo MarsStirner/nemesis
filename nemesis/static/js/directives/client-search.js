@@ -89,17 +89,19 @@ angular.module('WebMis20.directives').
         </tr>\
         </thead>\
         <tbody>\
-        <tr ng-repeat="result in results" style="cursor: pointer"\
-            ng-class="{\'bg-info text-info\': result.info.id === client_id}">\
-            <td ng-bind-html="result.info.id | highlight: query" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind-html="result.info.full_name | highlight: query" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind-html="result.info.birth_date | asDate | highlight: query" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind="result.info.sex.name" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind-html="result.id_document.doc_text | highlight: query" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind-html="result.info.snils | formatSnils | highlight: query" class="whitespace: nowrap" ng-click="onClientSelect(result)"></td>\
-            <td ng-bind-html="result.compulsory_policy.policy_text | highlight: query" ng-click="onClientSelect(result)"></td>\
+        <tr ng-repeat="result in results" style="cursor: pointer" ng-class="{\'bg-info text-info\': result.info.id === client_id}">\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.id | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.full_name | highlight: query" class="nowrap"></td>\
             <td ng-click="onClientSelect(result)">\
-                <div ng-repeat="policy in result.voluntary_policies"><span ng-bind-html="policy.policy_text | highlight: query"></span></div>\
+                <div ng-bind-html="result.info.birth_date | asDate | highlight: query"></div>\
+                <div ng-bind-html="result.info.age"></div>\
+            </td>\
+            <td ng-click="onClientSelect(result)" ng-bind="result.info.sex.name"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.id_document.doc_text | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.snils | formatSnils | highlight: query" class="nowrap"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.compulsory_policy.policy_text | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)">\
+                <div ng-repeat="policy in result.voluntary_policies" ng-bind-html="policy.policy_text | highlight: query"></div>\
             </td>\
             <td class="cursor-default">\
                 <wm-client-contacts contacts="result.contacts"></wm-client-contacts>\
