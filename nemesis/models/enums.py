@@ -143,6 +143,11 @@ class EventMeasureActuality(Enum):
 class ErrandStatus(EnumLoadable):
     __tablename__ = 'rbErrandStatus'
 
+    waiting = 1, u'ожидание'
+    executed = 2, u'выполнено'
+    expired = 3, u'просрочено'
+    late_execution = 4, u'выполнено с опозданием'
+
 
 class MedicationPrescriptionStatus(Enum):
     draft = 0, u'Черновик'
