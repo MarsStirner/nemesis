@@ -86,14 +86,15 @@ class InvalidKladrLocality(AbstractKladrLocality):
 
 class KladrLocality(AbstractKladrLocality):
     def __init__(self, loc_info):
-        self.code = loc_info.get('code')
-        self.name = loc_info.get('name')
+        self.code = loc_info.get('identcode')
+        self.name = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
         self.level = loc_info.get('level')
         self.parent_code = loc_info.get('identparent')
 
         self.parents = {
-            p.level: p
+            p['level']: p
             for p in loc_info.get('parents', [])
+            if p.get('level')
         }
         self.fullname = u', '.join(
             [u'{0}. {1}'.format(p['shorttype'], p['name']) for p in loc_info['parents']] + [self.name]
@@ -146,8 +147,8 @@ class KladrStreet(AbstractKladrStreet):
     code_len = 13
 
     def __init__(self, street_info):
-        self.code = street_info.get('code')
-        self.name = street_info.get('name')
+        self.code = street_info.get('identcode')
+        self.name = u'{0} {1}'.format(street_info['fulltype'], street_info['name'])
 
     def __json__(self):
         return {
