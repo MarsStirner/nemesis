@@ -42,7 +42,7 @@ class Street(db.Model):
     infis = db.Column(db.String(5), nullable=False, index=True)
 
 
-class KladrLocality(object):
+class AbstractKladrLocality(object):
     # I - IV KLADR levels
     code_len = 11
     level_digits = {
@@ -51,29 +51,53 @@ class KladrLocality(object):
         3: 8,
         4: 11
     }
+    invalid = None
+    name = None
+    code = None
+    parent_code = None
+    level = None
+    parents = None
+    fullname = None
 
-    def __init__(self, **kwargs):
-        if 'invalid' in kwargs:
-            self.invalid = kwargs['invalid']
-            self.name = None
-            self.code = kwargs['code'] if 'code' in kwargs else None
-            self.level = None
-        else:
-            self.code = kwargs['code'] if 'code' in kwargs else None
-            self.name = kwargs['name'] if 'name' in kwargs else None
-            self.level = int(kwargs['level']) if 'level' in kwargs else None
-            self.parent_code = kwargs['parent_code'] if 'parent_code' in kwargs else None
-        self._set_parents(kwargs.get('parents', []))
+    def get_region_code(self):
+        if self.code:
+            return self.code[:2].ljust(self.code_len, '0')
 
-    def _set_parents(self, parent_list):
-        self.parents = dict((p.level, p) for p in parent_list)
-        fullname = ', '.join(
-            filter(None, [
-                (self.parents[level].name if level in self.parents else (self.name if self.level == level else None))
-                for level in range(1, 5)
-            ])
+    def get_district_code(self):
+        if self.code:
+            return self.code[:5].ljust(self.code_len, '0')
+
+
+class InvalidKladrLocality(AbstractKladrLocality):
+    def __init__(self, message):
+        self.invalid = message
+
+    def __json__(self):
+        return {
+            'code': None,
+            'name': self.invalid,
+            'fullname': self.invalid,
+            'parent_code': None
+        }
+
+    def __unicode__(self):
+        return self.invalid
+
+
+class KladrLocality(AbstractKladrLocality):
+    def __init__(self, loc_info):
+        self.code = loc_info.get('code')
+        self.name = loc_info.get('name')
+        self.level = loc_info.get('level')
+        self.parent_code = loc_info.get('identparent')
+
+        self.parents = {
+            p.level: p
+            for p in loc_info.get('parents', [])
+        }
+        self.fullname = u', '.join(
+            [u'{0}. {1}'.format(p['shorttype'], p['name']) for p in loc_info['parents']] + [self.name]
         )
-        self.fullname = fullname
 
     def get_parent(self, level):
         if 0 < level < self.level:
@@ -84,58 +108,52 @@ class KladrLocality(object):
                 self.parents[level] = new_loc if new_loc.level == level else None
             return self.parents[level]
 
-    def get_region_code(self):
-        if self.code:
-            return self.code[:2].ljust(self.code_len, '0')
-
-    def get_district_code(self):
-        if self.code:
-            return self.code[:5].ljust(self.code_len, '0')
-
     def __json__(self):
-        if hasattr(self, 'invalid'):
-            return {
-                'code': self.code,
-                'name': self.invalid,
-                'fullname': self.invalid,
-                'parent_code': self.invalid
-            }
-        else:
-            return {
-                'code': self.code,
-                'name': self.name,
-                'fullname': self.fullname,
-                'parent_code': self.parent_code
-            }
+        return {
+            'code': self.code,
+            'name': self.name,
+            'fullname': self.fullname,
+            'parent_code': self.parent_code
+        }
 
     def __unicode__(self):
-        return self.invalid if hasattr(self, 'invalid') else self.fullname
+        return self.fullname
 
 
-class KladrStreet(object):
+class AbstractKladrStreet(object):
+    code_len = 13
+    invalid = None
+    code = None
+    name = None
+
+
+class InvalidKladrStreet(AbstractKladrStreet):
+    def __init__(self, message):
+        self.invalid = message
+
+    def __json__(self):
+        return {
+            'code': None,
+            'name': self.invalid
+        }
+
+    def __unicode__(self):
+        return self.invalid
+
+
+class KladrStreet(AbstractKladrStreet):
     # V KLADR level
     code_len = 13
 
-    def __init__(self, **kwargs):
-        if 'invalid' in kwargs:
-            self.invalid = kwargs['invalid']
-            self.code = kwargs['code'] if 'code' in kwargs else None
-            self.name = None
-        else:
-            self.code = kwargs['code'] if 'code' in kwargs else None
-            self.name = kwargs['name'] if 'name' in kwargs else None
+    def __init__(self, street_info):
+        self.code = street_info.get('code')
+        self.name = street_info.get('name')
 
     def __json__(self):
-        if hasattr(self, 'invalid'):
-            return {
-                'code': self.code,
-                'name': self.invalid,
-            }
-        else:
-            return {
-                'code': self.code,
-                'name': self.name,
-            }
+        return {
+            'code': self.code,
+            'name': self.name,
+        }
 
     def __unicode__(self):
-        return self.invalid if hasattr(self, 'invalid') else self.name
+        return self.name
