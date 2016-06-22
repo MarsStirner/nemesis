@@ -99,7 +99,7 @@ class Vesta(object):
             data = cls._get_data(url)
             if not data:
                 return InvalidKladrStreet(u'Не найдена улица в кладр по коду {0}'.format(code))
-            return KladrStreet(data)
+            return KladrStreet(data[0])
         except VestaException as e:
             return InvalidKladrStreet(e.message)
         except Exception:
