@@ -12,6 +12,29 @@ from nemesis.models.kladr_models import KladrLocality, KladrStreet
 logger = logging.getLogger('simple')
 
 
+class VestaException(Exception):
+    pass
+
+
+def as_kladr_locality(loc_info):
+    name = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
+    return {
+        'code': loc_info.get('code'),
+        'name': name,
+        'fullname': u', '.join(
+            [u'{0}. {1}'.format(p['shorttype'], p['name']) for p in loc_info['parents']] + [name]
+        ),
+        'parent_code': loc_info['identparent']
+    }
+
+
+def as_klasdr_stree(street_info):
+    return {
+        'code': street_info['code'],
+        'name': street_info['name'],
+    }
+
+
 class Vesta(object):
     class Result(object):
         def __init__(self, success=True, msg=''):
@@ -47,7 +70,7 @@ class Vesta(object):
                 locality = KladrLocality(invalid=u'Не найден адрес в кладр по коду {0}'.format(code))
             else:
                 loc_info = data[0]
-                locality = _make_kladr_locality(loc_info)
+                locality = as_kladr_locality(loc_info)
         return locality
 
     @classmethod
@@ -94,7 +117,7 @@ class Vesta(object):
                 locality = KladrStreet(invalid=u'Не найдена улица в кладр по коду {0}'.format(code))
             else:
                 street_info = data[0]
-                locality = _make_kladr_street(street_info)
+                locality = as_klasdr_stree(street_info)
         return locality
 
     @classmethod
@@ -103,7 +126,7 @@ class Vesta(object):
         url = u'{0}/kladr/psg/search/{1}/{2}/'.format(cls.get_url(), query, limit)
         result, data = cls._get_data(url)
         if result.success and data:
-            return [_make_kladr_locality(loc_info) for loc_info in data]
+            return [as_kladr_locality(loc_info) for loc_info in data]
         else:
             return []
 
@@ -113,7 +136,7 @@ class Vesta(object):
         url = u'{0}/kladr/street/search/{1}/{2}/{3}/'.format(cls.get_url(), locality_code, query, limit)
         result, data = cls._get_data(url)
         if result.success and data:
-            return [_make_kladr_street(street_info) for street_info in data]
+            return [as_klasdr_stree(street_info) for street_info in data]
         else:
             return []
 
