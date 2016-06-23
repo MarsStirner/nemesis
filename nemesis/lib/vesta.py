@@ -2,11 +2,10 @@
 import logging
 
 import requests
-import json
 
 from nemesis.app import app
 from nemesis.systemwide import cache
-from nemesis.models.kladr_models import KladrLocality, KladrStreet
+from nemesis.models.kladr_models import InvalidKladrLocality, KladrLocality, InvalidKladrStreet, KladrStreet
 
 
 logger = logging.getLogger('simple')
@@ -17,11 +16,6 @@ class VestaException(Exception):
 
 
 class Vesta(object):
-    class Result(object):
-        def __init__(self, success=True, msg=''):
-            self.success = success
-            self.message = msg
-
     @classmethod
     def get_url(cls):
         return u'{0}'.format(app.config['VESTA_URL'].rstrip('/'))
@@ -30,12 +24,25 @@ class Vesta(object):
     def _get_data(cls, url):
         try:
             response = requests.get(url)
-            response_json = response.json()
-        except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
-            logger.error(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e), exc_info=True)
-            return Vesta.Result(False, u'Ошибка получения данных по url {0}'.format(url)), None
+            response_json = response.json()['data']
+        except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError, KeyError) as e:
+            logger.exception(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e))
+            raise VestaException(u'Ошибка получения данных по url {0}'.format(url))
         else:
-            return Vesta.Result(), response_json.get('data')
+            return response_json
+
+    @classmethod
+    def _post_data(cls, url, data):
+        try:
+            response = requests.post(url, json=data)
+            response_json = response.json()['data']
+        except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError, KeyError) as e:
+            logger.exception(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e))
+            raise VestaException(u'Ошибка получения данных по url {0}'.format(url))
+        else:
+            return response_json
+
+    # Locality
 
     @classmethod
     @cache.memoize(86400)
@@ -43,46 +50,44 @@ class Vesta(object):
         if len(code) == 13:  # убрать после конвертации уже записанных кодов кладр
             code = code[:-2]
         url = u'{0}/kladr/city/{1}/'.format(cls.get_url(), code)
-        result, data = cls._get_data(url)
-        if not result.success:
-            locality = KladrLocality(invalid=u'Ошибка загрузки данных кладр')
-        else:
+        try:
+            data = cls._get_data(url)
             if not data:
-                locality = KladrLocality(invalid=u'Не найден адрес в кладр по коду {0}'.format(code))
-            else:
-                loc_info = data[0]
-                locality = _make_kladr_locality(loc_info)
-        return locality
+                return InvalidKladrLocality(u'Не найден адрес в кладр по коду {0}'.format(code))
+            return KladrLocality(data[0])
+        except VestaException as e:
+            return InvalidKladrLocality(e.message)
+        except Exception:
+            return InvalidKladrLocality(u'Ошибка загрузки данных КЛАДР')
 
     @classmethod
     @cache.memoize(86400)
     def get_kladr_locality_list(cls, level, parent_code):
-        locality_list = []
         if len(parent_code) == 13:  # убрать после конвертации уже записанных кодов кладр
             parent_code = parent_code[:-2]
         url = u'{0}/find/KLD172/'.format(cls.get_url())
         try:
-            response = requests.post(url, data=json.dumps({"level": level,
-                                                           "identparent": parent_code,
-                                                           "is_actual": "1"}))
-            response_json = response.json()
-        except (requests.ConnectionError, requests.exceptions.MissingSchema, ValueError) as e:
-            logger.error(u'Ошибка получения данных из ПС (url {0}): {1}'.format(url, e), exc_info=True)
-            result = Vesta.Result(False, u'Ошибка получения данных по url {0}'.format(url)), None
-        else:
-            result, data = Vesta.Result(), response_json.get('data')
+            return map(
+                KladrLocality,
+                cls._post_data(url, {"level": level, "identparent": parent_code, "is_actual": "1"})
+            )
+        except VestaException as e:
+            return [InvalidKladrLocality(e.message)]
+        except Exception:
+            return [InvalidKladrLocality(u'Ошибка загрузки данных КЛАДР')]
 
-        if not result.success:
-            locality_list = [KladrLocality(invalid=u'Ошибка загрузки данных кладр')]
-        else:
-            if not data:
-                locality_list = []
-            else:
-                for loc_info in data:
-                    name = fullname = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
-                    locality_list.append(KladrLocality(code=loc_info['identcode'], name=name, fullname=fullname,
-                                                       parent_code=loc_info['identparent']))
-        return locality_list
+    @classmethod
+    @cache.memoize(86400)
+    def search_kladr_locality(cls, query, limit=300):
+        url = u'{0}/kladr/psg/search/{1}/{2}/'.format(cls.get_url(), query, limit)
+        try:
+            return map(KladrLocality, cls._get_data(url))
+        except VestaException as e:
+            return [InvalidKladrLocality(e.message)]
+        except Exception:
+            return [InvalidKladrLocality(u'Ошибка загрузки данных КЛАДР')]
+
+    # Street
 
     @classmethod
     @cache.memoize(86400)
@@ -90,36 +95,26 @@ class Vesta(object):
         if len(code) == 17:  # убрать после конвертации уже записанных кодов кладр
             code = code[:-2]
         url = u'{0}/kladr/street/{1}/'.format(cls.get_url(), code)
-        result, data = cls._get_data(url)
-        if not result.success:
-            locality = KladrStreet(invalid=u'Ошибка загрузки данных кладр')
-        else:
+        try:
+            data = cls._get_data(url)
             if not data:
-                locality = KladrStreet(invalid=u'Не найдена улица в кладр по коду {0}'.format(code))
-            else:
-                street_info = data[0]
-                locality = _make_kladr_street(street_info)
-        return locality
-
-    @classmethod
-    @cache.memoize(86400)
-    def search_kladr_locality(cls, query, limit=300):
-        url = u'{0}/kladr/psg/search/{1}/{2}/'.format(cls.get_url(), query, limit)
-        result, data = cls._get_data(url)
-        if result.success and data:
-            return [_make_kladr_locality(loc_info) for loc_info in data]
-        else:
-            return []
+                return InvalidKladrStreet(u'Не найдена улица в кладр по коду {0}'.format(code))
+            return KladrStreet(data[0])
+        except VestaException as e:
+            return InvalidKladrStreet(e.message)
+        except Exception:
+            return InvalidKladrStreet(u'Ошибка загрузки данных кладр')
 
     @classmethod
     @cache.memoize(86400)
     def search_kladr_street(cls, locality_code, query, limit=100):
         url = u'{0}/kladr/street/search/{1}/{2}/{3}/'.format(cls.get_url(), locality_code, query, limit)
-        result, data = cls._get_data(url)
-        if result.success and data:
-            return [_make_kladr_street(street_info) for street_info in data]
-        else:
-            return []
+        try:
+            return map(KladrStreet, cls._get_data(url))
+        except VestaException as e:
+            return InvalidKladrStreet(e.message)
+        except Exception:
+            return InvalidKladrStreet(u'Ошибка загрузки данных кладр')
 
     @classmethod
     @cache.memoize(60)
@@ -136,16 +131,3 @@ class Vesta(object):
             raise VestaException(u'No result from Vesta')
         return j['data']
 
-
-def _make_kladr_locality(loc_info):
-    code = loc_info['identcode']
-    name = u'{0}. {1}'.format(loc_info['shorttype'], loc_info['name'])
-    level = loc_info['level']
-    parents = map(_make_kladr_locality, loc_info.get('parents', []))
-    return KladrLocality(code=code, name=name, level=level, parents=parents)
-
-
-def _make_kladr_street(street_info):
-    code = street_info['identcode']
-    name = u'{0} {1}'.format(street_info['fulltype'], street_info['name'])
-    return KladrStreet(code=code, name=name)
