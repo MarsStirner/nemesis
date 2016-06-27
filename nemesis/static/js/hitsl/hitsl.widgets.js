@@ -835,7 +835,7 @@ angular.module('WebMis20')
                     scope.$watch(tAttrs.client, function (newVal, oldVal) {
                         if (newVal) {
                             scope.client_id = newVal;
-                            $http.get(WMConfig.url.patients.client_get_vmpcoupons, {
+                            $http.get(WMConfig.url.patients.client_vmp_coupons, {
                                 params: {
                                     client_id: scope.client_id
                                 }

@@ -132,7 +132,7 @@ angular.module('WebMis20.services.models').
             return WMPoliclinicEvent
         }
     ]).
-    factory('WMStationaryEvent', ['WMEvent', '$q', '$http', function(WMEvent, $q, $http) {
+    factory('WMStationaryEvent', ['WMEvent', '$q', '$http', 'WMConfig', function(WMEvent, $q, $http, WMConfig) {
             var WMStationaryEvent = function (event_id, client_id, ticket_id) {
                 WMEvent.call(this, event_id, client_id, ticket_id);
                 this.request_type_kind = "stationary";
