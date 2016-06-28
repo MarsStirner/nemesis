@@ -465,6 +465,7 @@ angular.module('hitsl.ui', [
     'rcWizard',
     'nvd3ChartDirectives',
     'legendDirectives',
-    'ui.calendar'
+    'ui.calendar',
+    'ngFileUpload'
 ])
 ;

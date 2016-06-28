@@ -25,8 +25,7 @@ class UUIDColumn(types.TypeDecorator):
     impl = types.Binary
 
     def __init__(self):
-        self.impl.length = 16
-        types.TypeDecorator.__init__(self, length=self.impl.length)
+        types.TypeDecorator.__init__(self, length=16)
 
     def process_bind_param(self, value, dialect=None):
         if value and isinstance(value, uuid.UUID):

@@ -110,6 +110,7 @@ def fc_urls():
     coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
+    devourer_url = config['DEVOURER_URL'].rstrip('/') + '/'
     return {
         'url': {
             'logout': url_for("logout"),
@@ -134,6 +135,9 @@ def fc_urls():
                 'get_info_preparation': pharmexpert_url + 'api/getInfoPreparationStatus',
                 'get_info_preparation_by_key': pharmexpert_url + 'api/getInfoPreparationByKey',
                 'get_info_prepararion_html': pharmexpert_url + 'api/getInfoPreparationHTML',
+            },
+            'devourer': {
+                'upload': devourer_url + 'api/0/upload'
             }
         }
     }
@@ -162,6 +166,9 @@ def fc_settings():
                 'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),
                 'security_key': app.config.get('PHARMEXPERT_SECURITY_KEY', ''),
             },
+            'devourer': {
+                'max_file_size': None
+            }
         }
     }
 

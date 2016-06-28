@@ -1070,7 +1070,7 @@ angular.module('WebMis20.directives')
                            </ui-select-choices>\
                        </ui-select>',
             SpecialVariable: 'Special Variable',
-            Area: '<ui-select ext-select-area ng-required=is_required theme="select2" ng-model="$parent.model"></ui-select>',
+            Area: '<ui-select ext-select-area ng-required="is_required" theme="select2" ng-model="$parent.model"></ui-select>',
             MultiArea: '<ui-select multiple ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
         };
         return {

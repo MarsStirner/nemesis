@@ -854,17 +854,30 @@ angular.module('WebMis20')
         }
     }
 }])
-.directive('extSelectArea', ['$http', 'RisarApi', function ($http, RisarApi) {
+.directive('extSelectArea', ['$http', function ($http) {
     return {
         restrict: 'A',
         require: ['uiSelect', 'ngModel'],
         compile: function compile (tElement, tAttrs, transclude) {
             // Add the inner content to the element
+            var isMultiple = tAttrs.multiple !== undefined;
+            if (isMultiple){
+                tElement.append(
+                    '<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]" >\
+                        <span ng-bind="$item.name"></span>\
+                    </ui-select-match>'
+                )
+            } else {
+                tElement.append(
+                    '<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]" >\
+                        [[$select.selected.name]]\
+                    </ui-select-match>'
+                )
+            }
             tElement.append(
-'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.name ]]</ui-select-match>\
-<ui-select-choices group-by="group_areas" repeat="area in areas">\
-    <div ng-bind-html="area.name | highlight: $select.search"></div>\
-</ui-select-choices> ');
+                '<ui-select-choices group-by="group_areas" repeat="area in areas">\
+                   <div ng-bind-html="area.name | highlight: $select.search"></div>\
+                </ui-select-choices> ');
             return {
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
