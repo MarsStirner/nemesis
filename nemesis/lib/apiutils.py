@@ -150,6 +150,8 @@ def api_method(func=None, hook=None):
             else:
                 if isinstance(result, RawApiResult):
                     j, code, headers = jsonify_ok(result.obj, result.result_code, result.result_name)
+                    if result.extra_headers:
+                        headers.update(result.extra_headers)
                 else:
                     j, code, headers = jsonify_ok(result)
                 if hook:

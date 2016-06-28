@@ -465,7 +465,10 @@ def format_money(val, scale=2):
 def safe_uuid(val):
     if not isinstance(val, basestring):
         return None
-    u_obj = uuid.UUID(val)
+    try:
+        u_obj = uuid.UUID(val)
+    except ValueError:
+        return None
     return u_obj
 
 
