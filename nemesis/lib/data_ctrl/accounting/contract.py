@@ -289,10 +289,8 @@ class ContragentController(BaseModelController):
 
     def search_payers(self, args):
         selecter = self.get_selecter()
-        selecter.apply_filter(con_ca_type=ContractContragentType.payer[0], **args)
-        selecter.apply_sort_order(**args)
-        listed_data = selecter.get_all()
-        return listed_data
+        res = selecter.search_payers(args['query'])
+        return res
 
     def get_payer(self, payer_id):
         payer = self.get_contragent(payer_id)
@@ -505,10 +503,7 @@ class ContragentSelecter(BaseSelecter):
         Client = self.model_provider.get('Client')
         Contract = self.model_provider.get('Contract')
 
-        self.query = self.query.filter(Contract_Contragent.deleted == 0).options(
-            joinedload(Contract_Contragent.client),
-            joinedload(Contract_Contragent.payer_contract_list),
-        )
+        self.query = self.query.filter(Contract_Contragent.deleted == 0)
 
         if 'ca_type_code' in flt_args:
             ca_type_id = ContragentType.getId(flt_args['ca_type_code'])
@@ -524,37 +519,14 @@ class ContragentSelecter(BaseSelecter):
                         Organisation.fullName.like(query)
                     ))
                 elif ca_type_id == ContragentType.individual[0]:
-                    self.query = self.query.filter(or_(
-                        Client.firstName.like(query),
-                        Client.lastName.like(query),
-                        Client.patrName.like(query)
-                    ))
-            return self
-
-        if 'con_ca_type' in flt_args:
-            con_ca_type_id = flt_args['con_ca_type']
-            if con_ca_type_id == ContractContragentType.payer[0]:
-                self.query = self.query.join(
-                    (Contract, Contract.payer_id == Contract_Contragent.id)
-                ).filter(
-                    Contract.deleted == 0,
-                    Contract_Contragent.deleted == 0
-                )
-            if 'query' in flt_args:
-                query = u'%{0}%'.format(flt_args['query'])
-                self.query = self.query.outerjoin(Client).outerjoin(Organisation).filter(or_(
-                    and_(
-                        Contract_Contragent.client_id.isnot(None),
-                        or_(Client.firstName.like(query),
-                            Client.lastName.like(query),
-                            Client.patrName.like(query))
-                    ),
-                    and_(
-                        Contract_Contragent.organisation_id.isnot(None),
-                        or_(Organisation.shortName.like(query),
-                            Organisation.fullName.like(query))
+                    self.query = self.query.filter(
+                        func.concat_ws(' ',
+                                       Client.lastName,
+                                       Client.firstName,
+                                       Client.patrName).like(query)
                     )
-                ))
+            self.query = self.query.limit(100)
+            return self
 
         if 'client_id' in flt_args:
             self.query = self.query.filter(Contract_Contragent.client_id == flt_args['client_id'])
@@ -563,6 +535,38 @@ class ContragentSelecter(BaseSelecter):
         if 'not_contragent_id' in flt_args:
             self.query = self.query.filter(Contract_Contragent.id != flt_args['not_contragent_id'])
         return self
+
+    def search_payers(self, search_query):
+        Contract_Contragent = self.model_provider.get('Contract_Contragent')
+        Organisation = self.model_provider.get('Organisation')
+        Client = self.model_provider.get('Client')
+        Contract = self.model_provider.get('Contract')
+
+        self.query = self.query.join(
+            (Contract, Contract.payer_id == Contract_Contragent.id)
+        ).filter(
+            Contract.deleted == 0,
+            Contract_Contragent.deleted == 0
+        )
+        search_query = u'%{0}%'.format(search_query)
+        self.query = self.query.outerjoin(Client).outerjoin(Organisation).filter(or_(
+            and_(
+                Contract_Contragent.client_id.isnot(None),
+                func.concat_ws(' ',
+                               Client.lastName,
+                               Client.firstName,
+                               Client.patrName).like(search_query)
+            ),
+            and_(
+                Contract_Contragent.organisation_id.isnot(None),
+                or_(Organisation.shortName.like(search_query),
+                    Organisation.fullName.like(search_query))
+            )
+        )).options(
+            joinedload(Contract_Contragent.client),
+            joinedload(Contract_Contragent.payer_contract_list),
+        )
+        return self.get_all()
 
 
 class ContingentSelecter(BaseSelecter):

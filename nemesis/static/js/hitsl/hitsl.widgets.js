@@ -613,7 +613,7 @@ angular.module('WebMis20')
         }
     }
 }])
-.directive('extSelectClientSearch', ['$http', 'WMClient', function ($http, WMClient) {
+.directive('extSelectClientSearch', ['$http', 'WMConfig', function ($http, WMConfig) {
     return {
         restrict: 'A',
         require: ['uiSelect', 'ngModel'],
