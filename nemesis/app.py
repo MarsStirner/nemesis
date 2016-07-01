@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytz
+import re
 
 from flask import Flask, url_for, request
 from flask_login import current_user
@@ -111,6 +112,7 @@ def fc_urls():
     """
     config = app.config
     coldstar_url = config['COLDSTAR_URL'].rstrip('/') + '/'
+    coldstar_ws_url = re.sub(ur'^http(s?)://(.*)$', ur'ws\g<1>://\g<2>', coldstar_url)
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
     print_subsystem_url = config.get('PRINT_SUBSYSTEM_URL', '').rstrip('/') + '/'
@@ -133,7 +135,8 @@ def fc_urls():
                 'ezekiel_release_lock': coldstar_url + "ezekiel/release/{0}",
             },
             'ezekiel': {
-                'EventSource': coldstar_url + "ezekiel-es/{0}",
+                'EventSource': coldstar_url + "ezekiel/es/{0}",
+                'WebSocket': coldstar_ws_url + "ezekiel/ws",
             },
             'simargl': {
                 'EventSource': simargl_url + 'simargl-es',

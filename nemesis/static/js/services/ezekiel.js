@@ -3,29 +3,108 @@
  */
 
 angular.module('WebMis20')
-.factory('EzekielLock', ['$rootScope', 'ApiCalls', 'WMConfig', 'OneWayEvent', function ($rootScope, ApiCalls, WMConfig, OneWayEvent) {
+.factory('WebSocketFactory', ['$rootScope', 'OneWayEvent', function ($rootScope, OneWayEvent) {
+    var $apply = _.bind($rootScope.$apply, $rootScope);
     function jped (event) {return JSON.parse(event.data)}
+    return function (url) {
+        var self = this,
+            ws = new WebSocket(url),
+            owe = new OneWayEvent();
+        this.subscribe = owe.eventSource.subscribe;
+        this.close = ws.close;
+        this.send = function (data) {
+            ws.send(JSON.stringify(data))
+        };
+        ws.onclose = _.compose($apply, _.partial(owe.send, 'closed'));
+        ws.onopen = _.compose($apply, function () {
+            owe.send('opened');
+            self.connected = true;
+        });
+        ws.onerror = _.compose($apply, _.partial(owe.send, 'error'));
+        ws.onmessage = _.compose($apply, _.partial(owe.send, 'message'), jped);
+        this.connected = false;
+    }
+}])
+.factory('EzekielLock', ['$rootScope', '$timeout', 'ApiCalls', 'WMConfig', 'OneWayEvent', 'WebSocketFactory', function ($rootScope, $timeout, ApiCalls, WMConfig, OneWayEvent, WebSocketFactory) {
+    function jped (event) {return JSON.parse(event.data)}
+    var ws = null;
 
     return function (name) {
         var self = this,
             owe = new OneWayEvent(),
-            eventSource = new EventSource(WMConfig.url.ezekiel.EventSource.format(name), {withCredentials: true});
+            setup_es = function () {
+                var eventSource = new EventSource(WMConfig.url.ezekiel.EventSource.format(name), {withCredentials: true});
+                eventSource.addEventListener('acquired', _.compose(_.bind($rootScope.$apply, $rootScope), lock_acquired, jped));
+                eventSource.addEventListener('rejected', _.compose(_.bind($rootScope.$apply, $rootScope), lock_rejected, jped));
+                eventSource.addEventListener('prolonged', _.compose(_.bind($rootScope.$apply, $rootScope), lock_prolonged, jped));
+                eventSource.addEventListener('exception', _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost, jped));
+                eventSource.onerror = _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost);
 
-        eventSource.addEventListener('acquired', _.compose(_.bind($rootScope.$apply, $rootScope), lock_acquired, jped));
-        eventSource.addEventListener('rejected', _.compose(_.bind($rootScope.$apply, $rootScope), lock_rejected, jped));
-        eventSource.addEventListener('prolonged', _.compose(_.bind($rootScope.$apply, $rootScope), lock_prolonged, jped));
-        eventSource.addEventListener('exception', _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost, jped));
-        eventSource.onerror = _.compose(_.bind($rootScope.$apply, $rootScope), lock_lost);
+                self.release = function () {
+                    eventSource.close();
+                    set_null();
+                    owe.send('released');
+                };
+                self.close = function () {
+                    eventSource.close();
+                };
+
+            },
+            setup_ws = function () {
+                console.log(WMConfig.url.ezekiel.WebSocket);
+                if (!ws) {ws = new WebSocketFactory(WMConfig.url.ezekiel.WebSocket)}
+                ws.subscribe('message', function (message) {
+                    var event = message.event;
+                    if (event == 'ping') {
+                        console.log('ping: {0}'.format(message.data));
+                        return;
+                    }
+                    var object_id = safe_traverse(message, ['data', 'object_id']);
+                    if (object_id === self.object_id) {
+                        if (event == 'acquired') {
+                            lock_acquired(message.data)
+                        } else if (event == 'released') {
+                            lock_rejected(message.data)
+                        } else if (event == 'prolonged') {
+                            lock_prolonged(message.data)
+                        } else {
+                            ws.close();
+                            ws = null;
+                            lock_lost(message.data);
+                        }
+                    }
+                });
+                ws.subscribe('closed', lock_lost);
+                ws.subscribe('error', lock_lost);
+                ws.subscribe('closed', function () {
+                    if (ws) {
+                        try {
+                            ws.close()
+                        } catch (e) {}
+                        ws = null;
+
+                    }
+                    console.log('setting up ws...');
+                    $timeout(setup_ws, 5000)
+                });
+                if (ws.connected) {
+                    make_acquire()
+                } else {
+                    ws.subscribe('opened', make_acquire)
+                }
+                function make_acquire() {
+                    ws.send({
+                        command: 'acquire',
+                        object_id: name
+                    })
+                }
+
+            };
 
         this.subscribe = owe.eventSource.subscribe;
-        this.release = function () {
-            eventSource.close();
-            set_null();
-            owe.send('released');
-        };
-        this.close = function () {
-            eventSource.close();
-        };
+        this.object_id = name;
+
+        setup_ws();
 
         function set_null () {
             self.acquired = null;
