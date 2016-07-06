@@ -37,6 +37,7 @@ class PriceListSelecter(BaseSelecter):
         super(PriceListSelecter, self).__init__(query)
 
     def apply_filter(self, **flt_args):
+        self.query = self.query.filter(PriceList.deleted == 0)
         if 'finance_id' in flt_args:
             finance_id = safe_int(flt_args['finance_id'])
             self.query = self.query.filter(PriceList.finance_id == finance_id)
