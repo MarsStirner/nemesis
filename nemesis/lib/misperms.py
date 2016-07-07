@@ -18,9 +18,8 @@ class Permission(object):
                 from flask.ext.login import current_user
                 from flask import abort
                 if (current_user
-                    and current_user.is_authenticated()
-                    and hasattr(current_user, 'current_role')
-                    and current_user.current_role == self.code):
+                    and current_user.is_authenticated
+                    and getattr(current_user, 'current_role') == self.code):
 
                     return func(*args, **kwargs)
                 return abort(http_exception)
