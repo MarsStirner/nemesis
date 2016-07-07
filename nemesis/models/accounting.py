@@ -106,7 +106,7 @@ class PriceList(db.Model):
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     code = db.Column(db.Unicode(16), nullable=False)
     name = db.Column(db.Unicode(255), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
@@ -125,7 +125,7 @@ class PriceListItem(db.Model):
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     priceList_id = db.Column(db.Integer, db.ForeignKey('PriceList.id'), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
     service_id = db.Column(db.Integer, db.ForeignKey('rbService.id'), nullable=False)
@@ -236,7 +236,7 @@ class Service(db.Model):
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     priceListItem_id = db.Column(db.Integer, db.ForeignKey('PriceListItem.id'), nullable=False)
     serviceKind_id = db.Column(db.Integer, db.ForeignKey('rbServiceKind.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('Service.id'))
@@ -371,7 +371,7 @@ class ServiceDiscount(db.Model):
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     code = db.Column(db.Unicode(32))
     name = db.Column(db.Unicode(1024), nullable=False)
     valuePct = db.Column(db.Float)
@@ -386,9 +386,9 @@ class Invoice(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
-    createPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), default=safe_current_user_id, onupdate=safe_current_user_id)
     contract_id = db.Column(db.ForeignKey('Contract.id'), nullable=False)
     parent_id = db.Column(db.ForeignKey('Invoice.id'))
     setDate = db.Column(db.Date, nullable=False)
@@ -548,6 +548,7 @@ class FinanceTransaction(db.Model):
     __tablename__ = u'FinanceTransaction'
 
     id = db.Column(db.Integer, primary_key=True)
+    createPerson_id = db.Column(db.ForeignKey('Person.id'), default=safe_current_user_id)
     trxDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     trxType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceTransactionType.id'), nullable=False)
     financeOperationType_id = db.Column(db.Integer, db.ForeignKey('rbFinanceOperationType.id'), nullable=False)
@@ -561,6 +562,7 @@ class FinanceTransaction(db.Model):
     trx_type = db.relationship('rbFinanceTransactionType')
     operation_type = db.relationship('rbFinanceOperationType')
     pay_type = db.relationship('rbPayType')
+    createPerson = db.relationship('Person', foreign_keys=[createPerson_id])
 
 
 class rbFinanceTransactionType(db.Model, RefBookMixin):

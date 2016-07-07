@@ -739,5 +739,10 @@ class ServiceSphinxSearchSelecter(BaseSphinxSearchSelecter):
         return self
 
     def apply_limit(self, **limit_args):
-        self.search = self.search.limit(0, limit_args.get('limit_max') or 100)
+        self.search = self.search.limit(
+            0, limit_args.get('limit_max') or 100
+        ).options(
+            # this assumes that server sphinx conf has increased max_matches param
+            max_matches=limit_args.get('limit_max') or 1000
+        )
         return self
