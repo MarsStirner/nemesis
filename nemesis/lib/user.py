@@ -525,7 +525,7 @@ class UserProfileManager(object):
     @classmethod
     def _get_user_role(cls, for_master_user=False):
         user = cls.user or current_user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return None
         if for_master_user:
             user = user.get_main_user()
