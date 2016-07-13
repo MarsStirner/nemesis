@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import render_template_string
-from flask.ext.login import current_user
+from flask_login import current_user
 from nemesis.app import app
 from nemesis.lib.apiutils import api_method
 

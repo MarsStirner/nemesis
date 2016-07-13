@@ -2,7 +2,7 @@
 
 import hashlib
 from flask import url_for
-from flask.ext.login import UserMixin, AnonymousUserMixin, current_user
+from flask_login import UserMixin, AnonymousUserMixin, current_user
 
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_traverse_attrs, initialize_name
@@ -525,7 +525,7 @@ class UserProfileManager(object):
     @classmethod
     def _get_user_role(cls, for_master_user=False):
         user = cls.user or current_user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return None
         if for_master_user:
             user = user.get_main_user()

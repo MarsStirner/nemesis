@@ -2,8 +2,9 @@
 import logging
 from datetime import datetime, time, timedelta, date
 
+import six
 import sqlalchemy
-from flask.ext.login import current_user
+from flask_login import current_user
 from sqlalchemy.orm.util import aliased
 
 from nemesis.lib.action.utils import action_needs_service
@@ -59,7 +60,7 @@ class ActionException(Exception): pass
 class ActionServiceException(Exception): pass
 
 
-def create_action(action_type_id, event, src_action=None, assigned=None, properties=None, data=None):
+def create_action(action_type, event, src_action=None, assigned=None, properties=None, data=None):
     """
     Базовое создание действия, например для отправки клиентской стороне.
 
@@ -72,12 +73,16 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     :return: Action model
     """
     # TODO: transfer some checks from ntk
-    if not action_type_id or not event:
+    if not action_type or not event:
         raise AttributeError
 
     now = datetime.now()
     now_date = now.date()
-    actionType = ActionType.query.get(int(action_type_id))
+    if isinstance(action_type, (six.string_types, int)):
+        action_type_id = int(action_type)
+        action_type = ActionType.query.get(action_type_id)
+    else:
+        action_type_id = action_type.id
     if isinstance(event, (int, long, basestring)):
         event = Event.query.get(int(event))
     if event is None:
@@ -85,45 +90,45 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     main_user_p = Person.query.get(current_user.get_main_user().id)
 
     action = Action()
-    action.actionType = actionType
+    action.actionType = action_type
     action.actionType_id = action_type_id
     action.event = event
     action.event_id = event.id  # need for now
     action.begDate = now  # todo
     action.setPerson = main_user_p
-    action.office = actionType.office or u''
-    action.amount = actionType.amount if actionType.amountEvaluation in (0, 7) else 1
-    action.status = actionType.defaultStatus
+    action.office = action_type.office or u''
+    action.amount = action_type.amount if action_type.amountEvaluation in (0, 7) else 1
+    action.status = action_type.defaultStatus
     action.account = 0
     action.uet = 0  # TODO: calculate UET
 
-    if actionType.defaultEndDate == DED_CURRENT_DATE:
+    if action_type.defaultEndDate == DED_CURRENT_DATE:
         action.endDate = now
-    elif actionType.defaultEndDate == DED_EVENT_SET_DATE:
+    elif action_type.defaultEndDate == DED_EVENT_SET_DATE:
         action.endDate = event.setDate
-    elif actionType.defaultEndDate == DED_EVENT_EXEC_DATE:
+    elif action_type.defaultEndDate == DED_EVENT_EXEC_DATE:
         action.endDate = event.execDate
 
-    if actionType.defaultDirectionDate == DDD_EVENT_SET_DATE:
+    if action_type.defaultDirectionDate == DDD_EVENT_SET_DATE:
         action.directionDate = event.setDate
-    elif actionType.defaultDirectionDate == DDD_CURRENT_DATE:
+    elif action_type.defaultDirectionDate == DDD_CURRENT_DATE:
         action.directionDate = now
-    elif actionType.defaultDirectionDate == DDD_ACTION_EXEC_DATE and action.endDate:
+    elif action_type.defaultDirectionDate == DDD_ACTION_EXEC_DATE and action.endDate:
         action.directionDate = max(action.endDate, event.setDate)
     else:
         action.directionDate = event.setDate
 
     if src_action:
         action.person = src_action.person
-    elif actionType.defaultExecPerson_id:
-        action.person = Person.query.get(actionType.defaultExecPerson_id)
-    elif actionType.defaultPersonInEvent == DP_UNDEFINED:
+    elif action_type.defaultExecPerson_id:
+        action.person = Person.query.get(action_type.defaultExecPerson_id)
+    elif action_type.defaultPersonInEvent == DP_UNDEFINED:
         action.person = None
-    elif actionType.defaultPersonInEvent == DP_SET_PERSON:
+    elif action_type.defaultPersonInEvent == DP_SET_PERSON:
         action.person = action.setPerson
-    elif actionType.defaultPersonInEvent == DP_EVENT_EXEC_PERSON:
+    elif action_type.defaultPersonInEvent == DP_EVENT_EXEC_PERSON:
         action.person = event.execPerson
-    elif actionType.defaultPersonInEvent == DP_CURRENT_USER:
+    elif action_type.defaultPersonInEvent == DP_CURRENT_USER:
         action.person = main_user_p
 
     action.plannedEndDate = get_planned_end_datetime(action_type_id)
@@ -146,7 +151,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
         assigned = []
     src_props = dict((prop.type_id, prop) for prop in src_action.properties) if src_action else {}
     full_props = dict((prop_desc['type']['id'], prop_desc) for prop_desc in properties) if properties else {}
-    prop_types = actionType.property_types.filter(ActionPropertyType.deleted == 0)
+    prop_types = action_type.property_types.filter(ActionPropertyType.deleted == 0)
     for prop_type in prop_types:
         if recordAcceptableEx(event.client.sexCode, event.client.age_tuple(now_date), prop_type.sex, prop_type.age):
             prop = ActionProperty()
@@ -205,7 +210,7 @@ def update_action_prescriptions(action, prescriptions):
             p_obj.status_id = safe_traverse(presc, 'status', 'id', default=MedicationPrescriptionStatus.stopped[0])
 
 
-def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None,
+def create_new_action(action_type, event_id, src_action=None, assigned=None, properties=None, data=None,
                       service_data=None):
     """
     Создание действия для сохранения в бд.
@@ -218,7 +223,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     :param data: словарь с данными для установки произвольных параметров действия
     :return: Action model
     """
-    action = create_action(action_type_id, event_id, src_action, assigned, properties, data)
+    action = create_action(action_type, event_id, src_action, assigned, properties, data)
     update_action_prescriptions(action, data.get('prescriptions'))
 
     org_structure = action.event.current_org_structure

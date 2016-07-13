@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from flask.ext.login import current_user
+from flask_login import current_user
 
 from nemesis.lib.data import create_action
 from nemesis.models.actions import ActionType
@@ -80,7 +80,7 @@ class StationaryEventBuilder(EventBuilder):
 
     def create_received(self):
         action_type = ActionType.query.filter(ActionType.flatCode == u'received').first()
-        self.event.received = create_action(action_type.id, self.event)
+        self.event.received = create_action(action_type, self.event)
 
 
 class EventConstructionDirector(object):

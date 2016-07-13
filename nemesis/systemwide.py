@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from flask.ext.babel import Babel
-from flask.ext.beaker import BeakerSession
-from flask.ext.login import LoginManager
-from flask.ext.principal import Principal
-from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.cache import Cache
-from flask.ext.celery import Celery
+from flask_babel import Babel
+from flask_beaker import BeakerSession
+from flask_login import LoginManager
+from flask_principal import Principal
+from flask_sqlalchemy import SQLAlchemy
+from flask_cache import Cache
+from flask_celery import Celery
 
 
 db = SQLAlchemy()

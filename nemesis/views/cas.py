@@ -4,8 +4,8 @@ import urllib2
 import requests
 from requests.exceptions import ConnectionError
 from flask import render_template, abort, request, redirect, url_for, session, current_app, make_response
-from flask.ext.principal import Identity, AnonymousIdentity, identity_changed, identity_loaded, RoleNeed, UserNeed, ActionNeed
-from flask.ext.login import login_user, logout_user, current_user
+from flask_principal import Identity, AnonymousIdentity, identity_changed, identity_loaded, RoleNeed, UserNeed, ActionNeed
+from flask_login import login_user, logout_user, current_user
 from itsdangerous import json
 
 from nemesis.systemwide import login_manager
@@ -143,7 +143,7 @@ def process_html_login(auth_token):
                 return response
 
             user_id = cas_data['user_id']
-            if not current_user.is_authenticated() or current_user.id != user_id:
+            if not current_user.is_authenticated or current_user.id != user_id:
                 create_user_session(user_id)
                 response = redirect(request.url or UserProfileManager.get_default_url())
                 # Если эту строку раскомментировать, то в домене не будет работать никогда.

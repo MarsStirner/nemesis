@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import render_template, request, redirect, current_app
-from flask.ext.principal import Identity, identity_changed
-from flask.ext.login import current_user
+from flask_principal import Identity, identity_changed
+from flask_login import current_user
 from sqlalchemy.orm import lazyload, joinedload
 
 from nemesis.lib.utils import jsonify
