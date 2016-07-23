@@ -771,13 +771,41 @@ class ActionProperty_Person(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Person')
 
 
-class ActionProperty_String(ActionProperty__ValueType):
+class ActionProperty_String_Base(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_String'
 
     id = db.Column(db.Integer, db.ForeignKey('ActionProperty.id'), primary_key=True, nullable=False)
     index = db.Column(db.Integer, primary_key=True, nullable=False, server_default=u"'0'")
-    value = db.Column(db.Text, nullable=False)
+    value_ = db.Column('value', db.Text, nullable=False)
+
+
+class ActionProperty_String(ActionProperty_String_Base):
     property_object = db.relationship('ActionProperty', backref='_value_String')
+
+    @property
+    def value(self):
+        return self.value_
+
+    @value.setter
+    def value(self, val):
+        self.value_ = val
+
+
+class ActionProperty_JSON(ActionProperty_String_Base):
+    property_object = db.relationship('ActionProperty', backref='_value_JSON')
+
+    @property
+    def value(self):
+        import json
+        try:
+            return json.loads(self.value_)
+        except:
+            return None
+
+    @value.setter
+    def value(self, value):
+        import json
+        self.value_ = json.dumps(value)
 
 
 class ActionProperty_Time(ActionProperty__ValueType):
