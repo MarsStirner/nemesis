@@ -1,6 +1,7 @@
 /**
  * Created by mmalkov on 10.02.14.
  */
+"use strict";
 var WebMis20 = angular.module('WebMis20', [
     'hitsl.core',
     'hitsl.ui',
@@ -169,6 +170,20 @@ var WebMis20 = angular.module('WebMis20', [
 .filter('pluck', function () {
     return function (array, attribute) {
         return _.pluck(array, attribute)
+    }
+})
+.filter('count', function () {
+    return function (array) {
+        if (_.isArray(array)) {
+            return array.length
+        } else {
+            return 0;
+        }
+    }
+})
+.filter('negate', function () {
+    return function (arg) {
+        return !arg
     }
 })
 .filter('event_type_filter', function() {
