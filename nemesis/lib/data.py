@@ -167,7 +167,10 @@ def create_action(action_type, event, src_action=None, assigned=None, properties
                 prop.value = prop_desc['value']
                 prop.isAssigned = prop_desc['is_assigned']
             elif prop.type.defaultValue:
-                prop.set_value(prop.type.defaultValue, True)
+                if prop.type.isVector:
+                    prop.set_value([prop.type.defaultValue], True)
+                else:
+                    prop.set_value(prop.type.defaultValue, True)
             else:
                 prop.value = None
             action.properties.append(prop)

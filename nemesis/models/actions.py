@@ -682,7 +682,7 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
     @property
     def value(self):
         if not hasattr(self, 'table_name'):
-            domain = ActionProperty.query.get(self.id).type.valueDomain
+            domain = self.property_object.type.valueDomain
             self.table_name = domain.split(';')[0]
         try:
             result = Vesta.get_rb(self.table_name, self.value_)
