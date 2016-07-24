@@ -186,6 +186,19 @@ var WebMis20 = angular.module('WebMis20', [
         return !arg
     }
 })
+.filter('contains', function () {
+    return function (array, against) {
+        if (_.isArray(array)) {
+            if (_.isArray(against)) {
+                return _.any(against, _.partial(_.contains, array))
+            } else {
+                return _.contains(array, against)
+            }
+        } else {
+            return false;
+        }
+    }
+})
 .filter('event_type_filter', function() {
     return function(items, props) {
         var out = [];
