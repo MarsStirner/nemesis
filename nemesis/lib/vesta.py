@@ -144,7 +144,7 @@ class Vesta(object):
         j = response.json()
         if 'data' not in j:
             raise VestaNotFoundException(u'No result from Vesta')
-        return j['data']
+        return j['data'] or []
 
 
 def _make_kladr_locality(loc_info):
