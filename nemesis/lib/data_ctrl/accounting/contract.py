@@ -36,25 +36,25 @@ class ContractController(BaseModelController):
         contract.begDate = now
         contract_type_default = self.session.query(rbContractType).filter(rbContractType.code == u'01').first()
 
-        if safe_bool(params.get('draft', False)):
+        finance_id = safe_int(params.get('finance_id'))
+        is_draft = safe_bool(params.get('draft', False))
+        generate_number = safe_bool(params.get('generate_number', False))
+
+        if is_draft:
             contract.number = u'Новый договор'
             contract.draft = 1
-            contract.pricelist_list = PriceListController().get_listed_data({
-                'finance_id': params.get('finance_id'),
-                'for_date': now.date(),
-            })
             contract.contract_type = contract_type_default
 
-        if safe_bool(params.get('generate_number', False)):
-            contract_counter = ContractCounter('contract')
-            contract.number = contract_counter.get_next_number()
-
-        finance_id = safe_int(params.get('finance_id'))
         if finance_id:
+            contract.pricelist_list = PriceListController().get_actual_pricelist(finance_id, now.date())
             finance = contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
             if finance.code == u'4':  # Платные услуги
                 contract.contract_type = contract_type_default
                 contract.endDate = now.replace(month=12, day=31)
+
+        if generate_number:
+            contract_counter = ContractCounter('contract')
+            contract.number = contract_counter.get_next_number()
 
         contract.deleted = 0
 

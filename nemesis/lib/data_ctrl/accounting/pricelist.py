@@ -29,6 +29,11 @@ class PriceListController(BaseModelController):
         pl_id_list = [safe_int(item[0]) for item in data_list]
         return pl_id_list
 
+    def get_actual_pricelist(self, finance_id, date):
+        date = safe_date(date)
+        selecter = self.get_selecter()
+        return selecter.get_actual_pricelist(finance_id, date)
+
 
 class PriceListSelecter(BaseSelecter):
 
@@ -55,6 +60,15 @@ class PriceListSelecter(BaseSelecter):
             PriceList.deleted == 0
         ).with_entities(PriceList.id)
         return self
+
+    def get_actual_pricelist(self, finance_id, date):
+        self.query = self.query.filter(
+            PriceList.deleted == 0,
+            PriceList.finance_id == finance_id,
+            PriceList.begDate <= date,
+            PriceList.endDate >= date
+        )
+        return self.get_all()
 
 
 class PriceListItemController(BaseModelController):
