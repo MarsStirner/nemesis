@@ -46,7 +46,7 @@ class ContractController(BaseModelController):
             contract.contract_type = contract_type_default
 
         if finance_id:
-            contract.pricelist_list = PriceListController().get_actual_pricelist(finance_id, now.date())
+            contract.pricelist_list = PriceListController().get_actual_pricelists(finance_id, now.date())
             finance = contract.finance = self.session.query(rbFinance).filter(rbFinance.id == finance_id).first()
             if finance.code == u'4':  # Платные услуги
                 contract.contract_type = contract_type_default
