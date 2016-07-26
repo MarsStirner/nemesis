@@ -131,6 +131,23 @@ var WebMis20 = angular.module('WebMis20', [
         return data
     }
 })
+.filter('applyFilter', function ($filter) {
+    return function (array, filter_name) {
+        var filter;
+        if (_.isFunction(filter_name)) {
+            filter = filter_name;
+        } else if (typeof filter_name === 'string') {
+            filter = $filter(filter_name);
+        } else {
+            return array;
+        }
+        if (_.isArray(array)) {
+            return _.map(array, filter);
+        } else {
+            return array;
+        }
+    }
+})
 .filter('attribute', function ($filter) {
     return function (array, attribute) {
         var value = arguments[2];
