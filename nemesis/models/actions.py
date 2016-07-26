@@ -212,7 +212,7 @@ class ActionProperty(db.Model):
         klass = self.get_value_container_class()
         klass.mark_as_deleted(self)
 
-    def set_value(self, value, raw=False):
+    def set_value(self, value, raw=None):
         if self.type.isVector and not (isinstance(value, (list, tuple)) or value is None):
             raise Exception(u'Tried assigning non-list value (%s) to vector action property (%s)' % (value, self.type.name))
         if not self.type.isVector and isinstance(value, (list, tuple)):
@@ -225,10 +225,7 @@ class ActionProperty(db.Model):
 
         def make_value(value, index=0):
             value_container = value_container_class()
-            if raw:
-                value_container.set_raw_value(value)
-            else:
-                value_container.set_value(value)
+            value_container.set_value(value, raw)
             value_container.index = index
             value_container.property_object = self
             db.session.add(value_container)
@@ -245,12 +242,12 @@ class ActionProperty(db.Model):
                 if value is None or value == '':
                     delete_value(value_container[0])
                 else:
-                    value_container[0].set_value(value)
+                    value_container[0].set_value(value, raw)
         else:
             if value:
                 m = min(len(value_container), len(value))
                 for i in xrange(m):
-                    value_container[i].set_value(value[i])
+                    value_container[i].set_value(value[i], raw)
 
                 if len(value_container) < len(value):
                     for i in xrange(m, len(value)):
@@ -416,8 +413,8 @@ class ActionProperty__ValueType(db.Model):
         else:
             self.value = value
 
-    def set_value(self, value):
-        if isinstance(value, dict):
+    def set_value(self, value, raw=None):
+        if isinstance(value, dict) or raw is True:
             return self.set_raw_value(value)
         else:
             self.value = value
@@ -674,10 +671,7 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
     def set_raw_value(self, value):
         if isinstance(value, dict):
             value = value['code']
-        if hasattr(self, 'value_'):
-            self.value_ = value
-        else:
-            self.value = value
+        self.value_ = value
 
     @property
     def value(self):
@@ -793,6 +787,9 @@ class ActionProperty_String(ActionProperty_String_Base):
 
 class ActionProperty_JSON(ActionProperty_String_Base):
     property_object = db.relationship('ActionProperty', backref='_value_JSON')
+
+    def set_value(self, value, raw=None):
+        self.value = value
 
     @property
     def value(self):
