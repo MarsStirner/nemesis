@@ -898,4 +898,91 @@ angular.module('WebMis20')
         }
     }
 }])
+.controller('InplaceTableCtrl', ['$scope', function($scope) {
+    var edited = null,
+        self = this,
+        deleted = null;
+    this.$tmp = {};
+    this.$edit = function (index) {
+        edited = index;
+        self.$tmp = _.deepCopy(self.$model[index]);
+    };
+    this.$cancel = function () {
+        var tmp = self.$model[edited];
+        if (self.$tmp === tmp) {
+            self.$model.splice(edited, 1);
+        }
+        edited = null;
+        self.$tmp = {};
+    };
+    this.$save = function () {
+        self.$model.splice(edited, 1, self.$tmp);
+        edited = null;
+        self.$tmp = {};
+    };
+    this.$delete = function (index) {
+        // На самом деле, код для удаления (с возможность undelete) сейчас не работает, но мне некогда этим заниматься.
+        deleted = {
+            object: self.$model.splice(index, 1),
+            index: index
+        }
+    };
+    this.$add = function () {
+        edited = self.$model.length;
+        self.$tmp = {};
+        self.$model.push(self.$tmp);
+    };
+    this.$edited = function (index) {
+        return (index === undefined) ? edited !== null : edited == index;
+    };
+    this.$deleted = function (index) {
+        return deleted && deleted.index == index;
+    };
+    this.$undelete = function () {
+        if (deleted !== null) {
+            self.$model.splice(deleted.index, 0, deleted.object);
+            deleted = null;
+        }
+    };
+}])
+.directive('inplaceTable', [function () {
+    return {
+        restrict: 'ACE',
+        require: ['^inplaceTable', '^ngModel'],
+        controller: 'InplaceTableCtrl',
+        controllerAs: '$table',
+        scope: true,
+        link: function ($scope, element, attributes, ctrls) {
+            var InplaceTableCtrl = ctrls[0],
+                ngModelCtrl = ctrls[1];
+            $scope.$table.$model = [];
+            $scope.$watch(function () {
+                return ngModelCtrl.$modelValue;
+            }, function (n, o) {
+                $scope.$table.$model = n;
+            });
+        }
+    }
+}])
+.directive('inplaceTableButtons', [function () {
+    return {
+        restrict: 'E',
+        template: '\
+<button class="btn btn-primary" tooltip="Редактировать" ng-if="!$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$edit($index)">\
+    <i class="fa fa-pencil"></i>\
+</button>\
+<button class="btn btn-danger" tooltip="Удалить" ng-if="!$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$delete($index)">\
+    <i class="fa fa-trash"></i>\
+</button>\
+<button class="btn btn-default" tooltip="Отменить" ng-if="$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$cancel($index)">\
+    <i class="fa fa-times"></i>\
+</button>\
+<button class="btn btn-success" tooltip="Сохранить" ng-if="$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$save($index)">\
+    <i class="fa fa-save"></i>\
+</button>\
+<button class="btn btn-success" tooltip="Восстановить" ng-if="$table.$deleted($index)" ng-click="$table.$undelete()">\
+    <i class="fa fa-save"></i>\
+</button>'
+    }
+}])
 ;
