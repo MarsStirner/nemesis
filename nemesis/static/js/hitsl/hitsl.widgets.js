@@ -968,16 +968,16 @@ angular.module('WebMis20')
     return {
         restrict: 'E',
         template: '\
-<button class="btn btn-primary" tooltip="Редактировать" ng-if="!$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$edit($index)">\
+<button class="btn btn-primary" tooltip="Редактировать" ng-if="!$table.$edited($index)" ng-disabled="$table.$edited()" ng-click="$table.$edit($index)">\
     <i class="fa fa-pencil"></i>\
 </button>\
-<button class="btn btn-danger" tooltip="Удалить" ng-if="!$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$delete($index)">\
+<button class="btn btn-danger" tooltip="Удалить" ng-if="!$table.$edited($index)" ng-disabled="$table.$edited()" ng-click="$table.$delete($index)">\
     <i class="fa fa-trash"></i>\
 </button>\
-<button class="btn btn-default" tooltip="Отменить" ng-if="$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$cancel($index)">\
+<button class="btn btn-default" tooltip="Отменить" ng-if="$table.$edited($index)" ng-click="$table.$cancel($index)">\
     <i class="fa fa-times"></i>\
 </button>\
-<button class="btn btn-success" tooltip="Сохранить" ng-if="$table.$edited($index) && !$table.$deleted($index)" ng-click="$table.$save($index)">\
+<button class="btn btn-success" tooltip="Сохранить" ng-if="$table.$edited($index)" ng-click="$table.$save($index)">\
     <i class="fa fa-save"></i>\
 </button>\
 <button class="btn btn-success" tooltip="Восстановить" ng-if="$table.$deleted($index)" ng-click="$table.$undelete()">\
