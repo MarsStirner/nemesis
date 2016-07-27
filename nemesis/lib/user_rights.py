@@ -6,6 +6,7 @@ urEventPoliclinicOmsCreate = u'evtPoliclinicOmsCreate'  # Имеет возмо�
 urEventPoliclinicDmsCreate = u'evtPoliclinicDmsCreate'  # Имеет возможность создавать поликлинические обращения ДМС
 urEventDiagnosticPaidCreate = u'evtDiagnosticPaidCreate'  # Имеет возможность создавать диагностические обращения платные
 urEventDiagnosticBudgetCreate = u'evtDiagnosticBudgetCreate'  # Имеет возможность создавать диагностические обращения бюджет
+urEventAllAdmPermCreate = u'evtAllAdmPermCreate'  # Имеет возможность создавать все обращения с финансированием "Административное разрешение"
 
 urEventPoliclinicPaidClose = u'evtPoliclinicPaidClose'  # Имеет возможность закрывать поликлинические обращения платные
 urEventPoliclinicOmsClose = u'evtPoliclinicOmsClose'  # Имеет возможность закрывать поликлинические обращения ОМС

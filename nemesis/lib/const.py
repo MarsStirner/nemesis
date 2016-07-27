@@ -14,6 +14,7 @@ OMS_EVENT_CODE = '2'
 DMS_EVENT_CODE = '3'
 VMP_EVENT_CODE = '6'
 BUDGET_EVENT_CODE = '1'
+ADM_PERM_EVENT_CODES = ('8', 'admperm1', 'admperm2')
 PAYER_EVENT_CODES = ('4', '3', '2')
 POLICLINIC_EVENT_CODES = ('policlinic',)
 STATIONARY_EVENT_CODES = ('clinic', 'hospital', 'stationary')

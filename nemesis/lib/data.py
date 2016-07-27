@@ -80,13 +80,14 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     if not action_type_id or not event:
         raise AttributeError
 
-    now = datetime.now()
-    now_date = now.date()
     actionType = ActionType.query.get(int(action_type_id)) or bail_out(ApiException(404, u'Тип действия с id=%s не найден' % action_type_id))
     if isinstance(event, (int, long, basestring)):
         event = Event.query.get(int(event))
     if event is None:
         raise ValueError('Event neither refer to existing Event nor newly created model')
+    now = datetime.now()
+    now_date = now.date()
+    default_dt = get_new_action_default_dt(event)
     main_user_p = Person.query.get(current_user.get_main_user().id)
 
     action = Action()
@@ -94,7 +95,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     action.actionType_id = action_type_id
     action.event = event
     action.event_id = event.id  # need for now
-    action.begDate = now  # todo
+    action.begDate = default_dt
     action.setPerson = main_user_p
     action.office = actionType.office or u''
     action.amount = actionType.amount if actionType.amountEvaluation in (0, 7) else 1
@@ -103,7 +104,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     action.uet = 0  # TODO: calculate UET
 
     if actionType.defaultEndDate == DED_CURRENT_DATE:
-        action.endDate = now
+        action.endDate = default_dt
     elif actionType.defaultEndDate == DED_EVENT_SET_DATE:
         action.endDate = event.setDate
     elif actionType.defaultEndDate == DED_EVENT_EXEC_DATE:
@@ -112,7 +113,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     if actionType.defaultDirectionDate == DDD_EVENT_SET_DATE:
         action.directionDate = event.setDate
     elif actionType.defaultDirectionDate == DDD_CURRENT_DATE:
-        action.directionDate = now
+        action.directionDate = default_dt
     elif actionType.defaultDirectionDate == DDD_ACTION_EXEC_DATE and action.endDate:
         action.directionDate = max(action.endDate, event.setDate)
     else:
@@ -142,9 +143,11 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
 
     # some restrictions
     if action.status == ActionStatus.finished[0] and not action.endDate:
-        action.endDate = now
+        action.endDate = default_dt
     elif action.endDate and action.status != ActionStatus.finished[0]:
         action.status = ActionStatus.finished[0]
+
+    check_action_dates(action)
 
     # properties
     if assigned is None:
@@ -267,6 +270,8 @@ def update_action(action, **kwargs):
         if attr in kwargs:
             setattr(action, attr, kwargs.get(attr))
 
+    check_action_dates(action)
+
     # properties (only assigned data)
     assigned = kwargs.get('properties_assigned')
     if assigned:
@@ -324,6 +329,32 @@ def format_action_data(json_data):
         'properties': json_data['properties']
     }
     return data
+
+
+def get_new_action_default_dt(event):
+    now = datetime.now()
+    e_beg = event.setDate
+    e_end = event.execDate
+
+    default_date = now
+    if now < e_beg:
+        default_date = e_beg
+    elif e_end is not None:
+        if now > e_end:
+            default_date = e_end
+    return default_date
+
+
+def check_action_dates(action):
+    e_beg = action.event.setDate
+    e_end = action.event.execDate
+    for d, name in ((action.begDate, u'Дата начала'),
+                    (action.endDate, u'Дата окончания'),
+                    (action.plannedEndDate, u'Плановая дата выполнения')):
+        if d is not None and (d < e_beg or (e_end is not None and d > e_end)):
+            raise ActionException(u'{0} выходит за период действия обращения {1}-{2}'.format(
+                name, e_beg, e_end or u''
+            ))
 
 
 def create_TTJ_record(action):

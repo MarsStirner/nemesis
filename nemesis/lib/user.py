@@ -14,8 +14,9 @@ from ..models.exists import rbUserProfile
 
 from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
-    urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventPoliclinicPaidClose,
-    urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose, urEventDiagnosticBudgetClose)
+    urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
+    urEventPoliclinicPaidClose, urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
+    urEventDiagnosticBudgetClose)
 
 
 class User(UserMixin):
@@ -279,6 +280,10 @@ class UserUtils(object):
             if not current_user.has_right(urEventDiagnosticBudgetCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
+        elif event.is_adm_permission:
+            if not current_user.has_right(urEventAllAdmPermCreate):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
         # все остальные можно
         return True
 
@@ -292,14 +297,6 @@ class UserUtils(object):
             ) or (
                 not event.is_closed and current_user.has_right('clientEventUpdate')
             ))  # TODO: or check exec_person.id?
-        )
-
-    @staticmethod
-    def can_edit_event_payment_info(event):
-        return current_user.has_right('adm') or (
-            (current_user.has_right('evtPaymentInfoUpdate') and (
-                not event.is_closed if event else True)
-            )
         )
 
     @staticmethod
