@@ -123,7 +123,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
     }
 }])
 .directive('wysiwyg', ['$q', '$compile', '$templateCache', function ($q, $compile, $templateCache) {
-    var regexp_cleanHtml = new RegExp('(<br>|\s|<div><br><\/div>|&nbsp;)', 'g');
+    var regexp_cleanHtml = new RegExp('(<br>|\\s|<div><br><\/div>|&nbsp;)', 'g');
     var readFileIntoDataUrl = function (fileInfo) {
         var loader = $q.defer(),
             fReader = new FileReader();
