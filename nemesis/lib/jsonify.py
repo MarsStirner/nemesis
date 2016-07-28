@@ -915,7 +915,6 @@ class EventVisualizer(object):
         data = {
             'event': self.make_event(event),
             'ro': not UserUtils.can_edit_event(event) if event.id else False,
-            'has_access_to_payment_info': UserUtils.can_edit_event_payment_info(event),
             'can_read_diagnoses': UserUtils.can_read_dignoses(event),
             'can_edit_diagnoses': UserUtils.can_edit_dignoses(event),
             'can_create_actions': (
@@ -1130,118 +1129,6 @@ class EventVisualizer(object):
         usal = map(make_usa, actions)
         return usal
 
-    def make_event_payment(self, event, client=None):
-        from blueprints.event.lib.utils import get_event_payment_kind
-        payment_kind = get_event_payment_kind(event)
-        if client:
-            cvis = ClientVisualizer()
-            local_contract = cvis.make_payer_for_lc(client)
-            payments = []
-        else:
-            local_contract = self.make_event_local_contract(event)
-            payments = self.make_payments(event, payment_kind) if event else []
-        return {
-            'local_contract': local_contract,
-            'payments': payments,
-            'payment_kind': payment_kind
-        }
-
-    def make_payments(self, event, payment_kind):
-        from blueprints.event.lib.utils import PaymentKind
-        if payment_kind == PaymentKind.per_service:
-            return [
-                self.make_payment_for_action(payment)
-                for payment in event.payments if payment.master_id == event.id
-            ]
-        else:
-            return [
-                self.make_payment_for_event(payment)
-                for payment in event.payments if payment.master_id == event.id
-            ]
-
-    def make_payment_for_event(self, payment):
-        return {
-            'id': payment.id,
-            'date': payment.date,
-            'sum': payment.sum,
-            'sum_discount': payment.sumDiscount,
-            'action_id': payment.action_id,
-            'service_id': payment.service_id,
-        }
-
-    def make_payment_for_action(self, payment):
-        return {
-            'id': payment.id,
-            'date': payment.date,
-            'sum': payment.actionSum,
-            'sum_discount': payment.sumDisc,
-            'action_id': payment.action_id,
-            'service_id': payment.service_id,
-        }
-
-    def make_event_local_contract(self, event):
-        if event and event.localContract:
-            local_contract = event.localContract
-        else:
-            from blueprints.event.lib.utils import create_new_local_contract
-            local_contract = create_new_local_contract({
-                'date_contract': datetime.date.today(),
-                'number_contract': ''
-            })
-        lc = {
-            'id': local_contract.id,
-            'number_contract': local_contract.numberContract,
-            'date_contract': local_contract.dateContract,
-            'coord_text': local_contract.coordText,
-            'first_name': local_contract.firstName,
-            'last_name': local_contract.lastName,
-            'patr_name': local_contract.patrName,
-            'birth_date': local_contract.birthDate,
-            'doc_type_id': local_contract.documentType_id,
-            'doc_type': local_contract.documentType,
-            'serial_left': local_contract.serialLeft,
-            'serial_right': local_contract.serialRight,
-            'number': local_contract.number,
-            'reg_address': local_contract.regAddress,
-            'payer_org_id': local_contract.org_id,
-            'payer_org': local_contract.org,
-        }
-        if event and event.id and local_contract.id:
-            other_events = db.session.query(
-                Event.id, Event.externalId
-            ).filter(
-                Event.localContract_id == local_contract.id,
-                Event.id != event.id
-            ).all()
-        else:
-            other_events = []
-        lc['shared_in_events'] = other_events
-        return lc
-
-    def make_prev_events_contracts(self, event_list):
-        def make_event_small_info(event):
-            return {
-                'id': event.id,
-                'set_date': event.setDate,
-                'exec_date': event.execDate,
-                'descr': u'Обращение №{0}, {1}'.format(
-                    event.externalId,
-                    safe_traverse_attrs(event, 'eventType', 'name', default=u'')
-                )
-            }
-
-        result = []
-        for event in event_list:
-            if not event.localContract_id:
-                continue
-            lc = self.make_event_local_contract(event)
-            lc['shared_in_events'].append([event.id, event.externalId])
-            result.append({
-                'local_contract': lc,
-                'event_info': make_event_small_info(event)
-            })
-        return result
-
     def make_event_grouped_services(self, event_id):
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         from blueprints.accounting.lib.represent import ServiceRepr
@@ -1381,23 +1268,6 @@ class EventVisualizer(object):
             )
 
         return services_grouped
-
-    def make_search_event_info(self, event):
-        pviz = PersonTreeVisualizer()
-        cviz = ClientVisualizer()
-
-        return {
-            'id': event.id,
-            'external_id': event.externalId,
-            'exec_person': pviz.make_person_ws(event.execPerson) if event.execPerson else None,
-            'set_date': event.setDate,
-            'beg_date_date': safe_date(event.setDate),  # ffs chrome timezones
-            'exec_date': event.execDate,
-            'end_date_date': safe_date(event.execDate),
-            'event_type': self.make_short_event_type(event.eventType),
-            'client': cviz.make_short_client_info(event.client),
-            'contract': self.make_event_local_contract(event)
-        }
 
     def make_search_payments_list(self, payment):
         pviz = PersonTreeVisualizer()
