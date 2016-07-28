@@ -13,3 +13,5 @@ urEventPoliclinicOmsClose = u'evtPoliclinicOmsClose'  # Имеет возмож�
 urEventPoliclinicDmsClose = u'evtPoliclinicDmsClose'  # Имеет возможность закрывать поликлинические обращения ДМС
 urEventDiagnosticPaidClose = u'evtDiagnosticPaidClose'  # Имеет возможность закрывать диагностические обращения платные
 urEventDiagnosticBudgetClose = u'evtDiagnosticBudgetClose'  # Имеет возможность закрывать диагностические обращения бюджет
+
+urEventAllAdmPermSetExecDate = u'evtAllAdmPermSetExecDate'  # Имеет возможность устанавливать дату завершения в обращениях с финансированием "Административное разрешение"

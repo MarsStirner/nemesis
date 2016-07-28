@@ -16,7 +16,7 @@ from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
     urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
     urEventPoliclinicPaidClose, urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
-    urEventDiagnosticBudgetClose)
+    urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate)
 
 
 class User(UserMixin):
@@ -286,6 +286,18 @@ class UserUtils(object):
                 return False
         # все остальные можно
         return True
+
+    @staticmethod
+    def can_set_event_exec_date(event):
+        event_type = event and event.eventType
+        if not event_type:
+            return False
+        if current_user.has_right('adm'):
+            return True
+        elif event.is_adm_permission:
+            if current_user.has_right(urEventAllAdmPermSetExecDate):
+                return True
+        return False
 
     @staticmethod
     def can_edit_event(event):
