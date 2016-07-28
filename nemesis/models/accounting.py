@@ -449,14 +449,13 @@ class Invoice(db.Model):
         from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_sum_with_refunds
         return calc_invoice_sum_with_refunds(self)
 
-
     @coordinated_refund
     def coordinated_refund(self):
         return Invoice.query.filter(
             Invoice.parent == self,
             Invoice.deleted == 0,
             Invoice.settleDate.is_(None),
-        ).first()
+        ).first() if self.id else None
 
     def get_all_subitems(self):
         result = []

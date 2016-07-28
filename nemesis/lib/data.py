@@ -746,6 +746,7 @@ def _get_hosp_release_query(event):
     return query
 
 
+# @cache.memoize(50)
 def get_assignable_apts(at_id, client_id=None):
     all_at_data = int_get_atl_dict_all()
     at_data = all_at_data.get(at_id)

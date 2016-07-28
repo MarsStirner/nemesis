@@ -2,8 +2,7 @@
 
 import datetime
 
-from sqlalchemy import exists
-from sqlalchemy.orm import join
+from sqlalchemy.orm import joinedload
 
 from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount, rbServiceKind
 from nemesis.models.client import Client
@@ -318,10 +317,7 @@ class ServiceController(BaseModelController):
         return matched
 
     def get_services_by_event(self, event_id):
-        args = {
-            'event_id': event_id
-        }
-        service_list = self.get_listed_data(args)
+        service_list = self.get_selecter().get_event_services(event_id)
         return service_list
 
     def get_new_service_action(self, service, serviced_entity_data):
@@ -702,6 +698,22 @@ class ServiceSelecter(BaseSelecter):
             )
         return self
 
+    def get_event_services(self, event_id):
+        Service = self.model_provider.get('Service')
+
+        self.query = self.query.filter(
+            Service.event_id == event_id,
+            Service.parent_id == None,
+            Service.deleted == 0
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
+        )
+        return self.get_all()
+
     def get_action_service(self, action_id):
         # вообще этому место в области экшенов
         Service = self.model_provider.get('Service')
@@ -717,6 +729,12 @@ class ServiceSelecter(BaseSelecter):
         self.query = self.query.filter(
             Service.parent_id == service_id,
             Service.deleted == 0
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
         )
         return self.get_all()
 
