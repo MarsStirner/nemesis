@@ -216,6 +216,19 @@ var WebMis20 = angular.module('WebMis20', [
         }
     }
 })
+.filter('deep_filter', function () {
+    return function (array, object) {
+        var arg_chain = _.map(object, function (check_value, key) {
+            return [key.split('.'), check_value]
+        });
+        var filter_function = function (item) {
+            return _.every(arg_chain, function (arg) {
+                return safe_traverse(item, arg[0]) == arg[1];
+            });
+        };
+        return _.filter(array, filter_function);
+    }
+})
 .filter('event_type_filter', function() {
     return function(items, props) {
         var out = [];
