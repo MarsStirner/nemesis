@@ -912,8 +912,6 @@ class EventVisualizer(object):
         return self.make_event_info_for_current_role(event, True)
 
     def make_event_info_for_current_role(self, event, new=False):
-        import time
-        s = time.clock()
         data = {
             'event': self.make_event(event),
             'ro': not UserUtils.can_edit_event(event) if event.id else False,
@@ -924,13 +922,9 @@ class EventVisualizer(object):
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
             ),
+            'services': [],
+            'invoices': self.make_event_invoices(event.id)
         }
-        print ' >> event_data', time.clock() - s
-
-        data['services'] = self.make_event_grouped_services(event.id)
-        print ' >> services', time.clock() - s
-        data['invoices'] = self.make_event_invoices(event.id)
-        print ' >> invoices', time.clock() - s
 
         if UserProfileManager.has_ui_admin():
             data['diagnoses'] = self.make_diagnoses(event, True)
@@ -1247,19 +1241,6 @@ class EventVisualizer(object):
                 'event_info': make_event_small_info(event)
             })
         return result
-
-    def make_event_grouped_services(self, event_id):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        from blueprints.accounting.lib.represent import ServiceRepr
-        import time
-        s = time.clock()
-        service_ctrl = ServiceController()
-        service_list = service_ctrl.get_services_by_event(event_id)
-        print ' >>> get services', time.clock() - s
-        service_repr = ServiceRepr()
-        res = service_repr.represent_listed_event_services(service_list)
-        print ' >>> represent services', time.clock() - s
-        return res
 
     def make_event_invoices(self, event_id):
         from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
