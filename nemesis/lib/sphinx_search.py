@@ -7,9 +7,8 @@ from nemesis.app import app
 
 class SearchConfig(BaseSearchConfig):
     DEBUG = app.config['DEBUG']
-    # WITH_META = True
-    # WITH_STATUS = DEBUG
-    # ^ убрали для совместимости с новой версией sphinx'a
+    WITH_META = True
+    WITH_STATUS = DEBUG
     WITH_STATUS = False
     if app.config['SEARCHD_CONNECTION']:
         SEARCHD_CONNECTION = app.config['SEARCHD_CONNECTION']
@@ -41,7 +40,7 @@ class SearchPatient():
                                                'document': 50,
                                                'policy': 50})
         #fixme: after sphinxit merge https://github.com/semirook/sphinxit/pull/20
-        search = search.order_by('weight() desc, lastName asc, firstName asc, patrName', 'asc')
+        search = search.order_by('@weight desc, lastName asc, firstName asc, patrName', 'asc')
         result = search.ask()
         return result
 
@@ -60,7 +59,7 @@ class SearchEvent():
         search = Search(indexes=['events'], config=SearchConfig)
         search = search.match(query)
         # sphinxit uses set - an unordered data structure - for storing query order params
-        search = search.limit(0, 50).order_by('weight() DESC, event_date', 'DESC')
+        search = search.limit(0, 50).order_by('@weight DESC, event_date', 'DESC')
         result = search.ask()
         return result
 
