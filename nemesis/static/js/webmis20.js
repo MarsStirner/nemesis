@@ -198,7 +198,7 @@ var WebMis20 = angular.module('WebMis20', [
         }
     }
 })
-.filter('negate', function () {
+.filter(    'negate', function () {
     return function (arg) {
         return !arg
     }
