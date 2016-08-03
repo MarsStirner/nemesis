@@ -215,6 +215,10 @@ var WebMis20 = angular.module('WebMis20', [
             return false;
         }
     }
+}).filter('intersects', function () {
+    return function (array, against) {
+        return _.intersection(array, against).length > 0
+    }
 })
 .filter('deep_filter', function () {
     return function (array, object) {
