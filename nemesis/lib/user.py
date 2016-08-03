@@ -259,15 +259,15 @@ class UserUtils(object):
             if not current_user.has_right(urEventPoliclinicOmsCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
-            client = event.client
-            if not (client.policy and client.policy.is_valid(event.setDate)):
-                out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
-                                     u'действующего полиса ОМС' % unicode(event_type)
-                return False
-            if not safe_traverse_attrs(client, 'reg_address', 'is_russian'):
-                out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без адреса ' \
-                                     u'регистрации в РФ' % unicode(event_type)
-                return False
+            # client = event.client
+            # if not (client.policy and client.policy.is_valid(event.setDate)):
+            #     out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
+            #                          u'действующего полиса ОМС' % unicode(event_type)
+            #     return False
+            # if not safe_traverse_attrs(client, 'reg_address', 'is_russian'):
+            #     out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без адреса ' \
+            #                          u'регистрации в РФ' % unicode(event_type)
+            #     return False
         elif event.is_policlinic and event.is_dms:
             if not current_user.has_right(urEventPoliclinicDmsCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
