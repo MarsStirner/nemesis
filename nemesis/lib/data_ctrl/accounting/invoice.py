@@ -404,8 +404,8 @@ class InvoiceItemController(BaseModelController):
         return item
 
     def update_invoice_item_service(self, invoice_item, item_data):
+        service_ctrl = ServiceController()
         if invoice_item.service:
-            service_ctrl = ServiceController()
             service = service_ctrl.update_service(invoice_item.service, dict(
                 discount_id=item_data.get('discount_id')
             ))
@@ -421,6 +421,9 @@ class InvoiceItemController(BaseModelController):
             if item_service_id:
                 subitem = existing_si_map[item_service_id]
                 self.update_invoice_item_service(subitem, subitem_data)
+
+        if invoice_item.service:
+            service_ctrl.update_service_sum(invoice_item.service)
 
     def _format_invoice_item_data(self, data):
         if 'from_service' in data:

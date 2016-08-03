@@ -478,6 +478,9 @@ class ServiceController(BaseModelController):
             # ActionProperty.isAssigned меняется на уровне родительской лабораторной услуги
             pass
 
+    def update_service_sum(self, service):
+        service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
+
     def delete_service(self, service, raw=False):
         if not self.check_can_delete_service(service):
             raise ApiException(403, u'Невозможно удалить услугу с id = {0}'.format(service.id))
