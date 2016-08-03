@@ -292,7 +292,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             });
                     }
                     $scope.prepared2create.push(newAction);
-                    WMEventServices.get_action_ped(node.id).then(function (ped) {
+                    WMEventServices.get_action_ped(node.id, $scope.event_id).then(function (ped) {
                         newAction.planned_end_date = ped;
                     });
                 };

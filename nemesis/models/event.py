@@ -6,7 +6,7 @@ import re
 from nemesis.lib.agesex import AgeSex, parseAgeSelector
 from nemesis.lib.const import PAYER_EVENT_CODES, STATIONARY_EVENT_CODES, DIAGNOSTIC_EVENT_CODES, \
     POLICLINIC_EVENT_CODES, PAID_EVENT_CODE, OMS_EVENT_CODE, DMS_EVENT_CODE, BUDGET_EVENT_CODE, DAY_HOSPITAL_CODE, \
-    VMP_EVENT_CODE
+    VMP_EVENT_CODE, ADM_PERM_EVENT_CODES
 from nemesis.lib.settings import Settings
 from nemesis.models.client import ClientDocument
 from nemesis.models.diagnosis import EventType_rbDiagnosisType
@@ -144,7 +144,16 @@ class Event(db.Model):
 
     @property
     def is_pre_closed(self):
-        return self.execDate and (self.result_id is not None)
+        return self.check_is_closed()
+
+    def check_is_closed(self, by_date=True):
+        if by_date is True:
+            by_date = datetime.datetime.now()
+        return (
+            self.execDate is not None and
+            (self.execDate <= by_date if by_date else True) and
+            self.result_id is not None
+        )
 
     @property
     def is_policlinic(self):
@@ -181,6 +190,10 @@ class Event(db.Model):
     @property
     def is_budget(self):
         return self.eventType.finance.code == BUDGET_EVENT_CODE
+
+    @property
+    def is_adm_permission(self):
+        return self.eventType.finance.code in ADM_PERM_EVENT_CODES
 
     @property
     def prescriptions(self):

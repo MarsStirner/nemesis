@@ -110,9 +110,13 @@ def jsonify_api_exception(exc, tb):
 
 
 def jsonify_exception(exc, tb):
+    try:
+        name = unicode(exc)
+    except:
+        name = repr(exc)
     meta = dict(
         code=500,
-        name=repr(exc),
+        name=name,
     )
     if app.debug:
         meta['traceback'] = map(encode_tb, tb)

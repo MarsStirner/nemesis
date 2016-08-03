@@ -122,11 +122,12 @@ angular.module('WebMis20.services').
         }
 
         return {
-            get_action_ped: function (action_type_id) {
+            get_action_ped: function (action_type_id, event_id) {
                 var deferred = $q.defer();
                 $http.get(WMConfig.url.actions.get_action_ped, {
                     params: {
-                        action_type_id: action_type_id
+                        action_type_id: action_type_id,
+                        event_id: event_id
                     }
                 }).success(function (data) {
                     deferred.resolve(new Date(data.result.ped));
