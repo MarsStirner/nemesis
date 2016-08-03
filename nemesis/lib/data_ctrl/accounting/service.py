@@ -16,7 +16,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignable_apts, get_planned_end_datetime,
-    update_action, delete_action)
+    update_action, delete_action, fit_planned_end_date)
 from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind
@@ -72,7 +72,8 @@ class ServiceController(BaseModelController):
                 name=search_item.get('at_name'),
                 at_id=search_item.get('action_type_id'),
                 client_id=safe_traverse_attrs(service, 'event', 'client_id'),
-                contract_id=safe_traverse_attrs(service, 'event', 'contract_id')
+                contract_id=safe_traverse_attrs(service, 'event', 'contract_id'),
+                event=safe_traverse_attrs(service, 'event')
             )
             self.set_new_service_serviced_entity(service, se_data)
         elif 'serviced_entity_from_action' in params:
@@ -148,7 +149,8 @@ class ServiceController(BaseModelController):
                 service_kind.value,
                 at_id=at_id,
                 client_id=client_id,
-                contract_id=parent_service.event.contract_id
+                contract_id=parent_service.event.contract_id,
+                event=parent_service.event
             ),
         })
         return new_service
@@ -391,7 +393,12 @@ class ServiceController(BaseModelController):
                 assignable = flt_assignable
 
             assigned = [apt_data[0] for apt_data in assignable]  # apt.id list
-            planned_end_date = get_planned_end_datetime(at_id)
+            if 'event' in kwargs:
+                event = kwargs['event']
+                planned_end_date = get_planned_end_datetime(at_id)
+                planned_end_date = fit_planned_end_date(planned_end_date, event)
+            else:
+                planned_end_date = None
             ped_disabled = False
             return {
                 'id': None,

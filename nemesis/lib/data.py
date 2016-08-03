@@ -133,6 +133,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
         action.person = main_user_p
 
     action.plannedEndDate = get_planned_end_datetime(action_type_id)
+    fit_planned_end_date(action.plannedEndDate, event)
     action.uuid = get_new_uuid()
 
     # set changed attributes
@@ -483,6 +484,16 @@ def get_planned_end_datetime(action_type_id):
         else:
             planned_end_time = time(cur_hour + 1, 0)
     return datetime.combine(planned_end_date, planned_end_time)
+
+
+def fit_planned_end_date(ped, event):
+    max_date = event.execDate
+    min_date = event.setDate
+
+    ped = max(ped, min_date)
+    if max_date:
+        ped = min(ped, max_date)
+    return ped
 
 
 def _split_to_integers(string):
