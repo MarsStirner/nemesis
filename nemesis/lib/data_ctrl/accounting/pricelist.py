@@ -112,8 +112,10 @@ class PriceListItemController(BaseModelController):
         return result_list
 
     def get_apts_prices_by_pricelist(self, apt_id_list, contract_id):
+        pl_ctrl = PriceListController()
+        pricelist_id_list = pl_ctrl.get_contract_pricelist_id_list(contract_id)
         sel = self.get_selecter()
-        result_list = sel.get_filtered_apt_price_by_contract_pricelist(apt_id_list, contract_id)
+        result_list = sel.get_filtered_apt_price_by_pricelist(apt_id_list, pricelist_id_list)
         return {apt_id: price for apt_id, price in result_list}
 
 
@@ -222,19 +224,12 @@ class PriceListItemSelecter(BaseSelecter):
         )
         return self.get_all()
 
-    def get_filtered_apt_price_by_contract_pricelist(self, apt_id_list, contract_id):
+    def get_filtered_apt_price_by_pricelist(self, apt_id_list, pricelist_id_list):
         PriceListItem = self.model_provider.get('PriceListItem')
-        PriceList = self.model_provider.get('PriceList')
-        Contract_PriceListAssoc = self.model_provider.get('Contract_PriceListAssoc')
-        Contract = self.model_provider.get('Contract')
         rbTest_Service = self.model_provider.get('rbTest_Service')
         rbTest = self.model_provider.get('rbTest')
         ActionPropertyType = self.model_provider.get('ActionPropertyType')
         self.query = self.query.join(
-            PriceList,
-            Contract_PriceListAssoc,
-            Contract
-        ).join(
             rbTest_Service, and_(PriceListItem.service_id == rbTest_Service.service_id,
                                  between(func.curdate(),
                                          rbTest_Service.begDate,
@@ -244,7 +239,7 @@ class PriceListItemSelecter(BaseSelecter):
             rbTest,
             ActionPropertyType
         ).filter(
-            Contract.id == contract_id,
+            PriceListItem.priceList_id.in_(pricelist_id_list),
             PriceListItem.deleted == 0,
             between(func.curdate(),
                     PriceListItem.begDate,
