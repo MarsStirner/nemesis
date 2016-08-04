@@ -194,3 +194,114 @@ class rbPreEclampsiaRate(db.Model):
             'code': self.code,
             'name': self.name
         }
+
+
+class rbRadzinskyRiskRate(db.Model):
+    __tablename__ = 'rbRadzinskyRiskRate'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'value': self.value
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRadzRiskFactorGroup(db.Model):
+    __tablename__ = 'rbRadzRiskFactorGroup'
+    _table_description = u'Группы факторов риска по Радзинскому'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(255), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRadzStage(db.Model):
+    __tablename__ = 'rbRadzStage'
+    _table_description = u'Этапы определения риска по Радзинскому'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+
+    stage_factor_assoc = db.relationship('rbRadzRiskFactor_StageAssoc')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRadzRiskFactor(db.Model):
+    __tablename__ = 'rbRadzRiskFactor'
+    _table_description = u'Факторы риска по Радзинскому'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(64), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+    group_id = db.Column(db.ForeignKey('rbRadzRiskFactorGroup.id'), nullable=False)
+
+    group = db.relationship('rbRadzRiskFactorGroup')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'group_id': self.group_id
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRadzRiskFactor_StageAssoc(db.Model):
+    __tablename__ = u'rbRadzRiskFactor_Stage'
+
+    factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
+    stage_id = db.Column(db.ForeignKey('rbRadzStage.id'), primary_key=True)
+    points = db.Column(db.Integer, nullable=False)
+
+    factor = db.relationship('rbRadzRiskFactor')
+
+
+class rbFisherKTGRate(db.Model):
+    __tablename__ = 'rbFisherKTGRate'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
