@@ -146,6 +146,12 @@ class Vesta(object):
             raise VestaNotFoundException(u'No result from Vesta')
         return j['result']
 
+    @classmethod
+    def _insert_id(cls, item):
+        if 'id' not in item:
+            item['id'] = item.get('_id')
+        return item
+
 
 def _make_kladr_locality(loc_info):
     code = loc_info['identcode']

@@ -11,11 +11,6 @@ from nemesis.systemwide import cache
 __author__ = 'viruzzz-kun'
 
 
-def _insert_id(item):
-   item['id'] = item.get('_id')
-   return item
-
-
 def api_refbook_int(name, code=None):
     if name is None:
         return []
@@ -53,7 +48,7 @@ def api_refbook_int(name, code=None):
             else:
                 return [safe_dict(rb) for rb in ref_book.query.order_by(_order).all()]
 
-    return map(_insert_id, Vesta.get_rb(name))
+    return map(Vesta._insert_id, Vesta.get_rb(name))
 
 
 def check_rb_value_exists(rb_name, value_code, field_name=None):

@@ -685,7 +685,7 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
             traceback.print_exc()
             return
         else:
-            return {'id': result['_id'], 'name': result['name'], 'code': result['code']}
+            return Vesta._insert_id(result)
 
     @value.setter
     def value(self, val):
