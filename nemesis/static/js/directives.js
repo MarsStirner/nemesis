@@ -993,8 +993,13 @@ angular.module('WebMis20.directives')
         template: function(el, attrs) {
           var itemTpl, name, template;
           itemTpl = el.html() || '{{item.label}}';
-          name = "fsRadio_" + "{{item.code}}";
-          return template = "<div class='fs-widget-root fs-radio fs-racheck' ng-class=\"{disabled: disabled, enabled: !disabled}\">\n  <div class=\"fs-radio-item\"\n     ng-repeat=\"item in $refBook.objects\" >\n    <input\n     fs-null-form\n     type=\"radio\"\n     ng-model=\"$parent.selectedItem\"\n     name=\"" + name + "\"\n     ng-value=\"item\"\n     ng-disabled=\"disabled\"\n     id=\"" + name + "_[[$index]]\" />\n\n    <label for=\"" + name + "_[[$index]]\">\n      <span class='fs-radio-btn'><span></span></span>\n\n      " + itemTpl + "\n    </label>\n  </div>\n</div>";
+          name = "fsRadio_" + _.random(100000000, 999999999);
+          return template = "\
+<div class='fs-widget-root fs-radio fs-racheck' ng-class=\"{disabled: disabled, enabled: !disabled}\">\
+    <div class=\"fs-radio-item\" ng-repeat=\"item in $refBook.objects\">\
+        <input fs-null-form type=\"radio\" ng-model=\"$parent.selectedItem\" name=\"{0}\" ng-value=\"item\" ng-disabled=\"disabled\" id=\"{0}_[[$index]]\" />\
+            <label for=\"{0}_[[$index]]\">\
+              <span class='fs-radio-btn'><span></span></span> {1}</label></div></div>".format(name, itemTpl);
         },
         link: function(scope, element, attrs, ngModelCtrl, transcludeFn) {
           if (ngModelCtrl) {
