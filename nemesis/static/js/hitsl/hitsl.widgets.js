@@ -979,9 +979,6 @@ angular.module('WebMis20')
 </button>\
 <button class="btn btn-success" tooltip="Сохранить" ng-if="$table.$edited($index)" ng-click="$table.$save($index)">\
     <i class="fa fa-save"></i>\
-</button>\
-<button class="btn btn-success" tooltip="Восстановить" ng-if="$table.$deleted($index)" ng-click="$table.$undelete()">\
-    <i class="fa fa-save"></i>\
 </button>'
     }
 }])

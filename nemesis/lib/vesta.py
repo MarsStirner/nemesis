@@ -135,16 +135,22 @@ class Vesta(object):
         if code is not None:
             if code == '':
                 raise VestaNotFoundException(u'`code` cannot be an empty string')
-            url = u'{0}/v1/{1}/code/{2}/'.format(cls.get_url(), name, code)
+            url = u'{0}/v2/rb/{1}/data/code/{2}/'.format(cls.get_url(), name, code)
         else:
-            url = u'{0}/v1/{1}/'.format(cls.get_url(), name)
+            url = u'{0}/v2/rb/{1}/data/'.format(cls.get_url(), name)
         response = requests.get(url)
         if response.status_code != 200:
             raise VestaException(u'Error in Vesta server')
         j = response.json()
-        if 'data' not in j:
+        if 'result' not in j:
             raise VestaNotFoundException(u'No result from Vesta')
-        return j['data'] or []
+        return j['result']
+
+    @classmethod
+    def _insert_id(cls, item):
+        if 'id' not in item:
+            item['id'] = item.get('_id')
+        return item
 
 
 def _make_kladr_locality(loc_info):

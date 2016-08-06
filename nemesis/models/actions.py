@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import re
+import six
 
 from sqlalchemy import orm
 
@@ -129,6 +130,19 @@ class Action(db.Model):
                 prop.pl_price = filtered_apt_prices[prop.type_id]
             else:
                 prop.has_pricelist_service = False
+
+    def update_action_integrity(self):
+        must_have_props = {
+            prop_type.id: prop_type
+            for prop_type in self.actionType.property_types.filter(ActionPropertyType.deleted == 0)
+        }
+        have_props = {
+            prop.type_id: prop
+            for prop in self.properties
+        }
+        for type_id, prop_type in six.iteritems(must_have_props):
+            if type_id not in have_props:
+                create_property(self, prop_type)
 
     def __getitem__(self, item):
         return self.propsByCode[item]
@@ -699,7 +713,7 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
             traceback.print_exc()
             return
         else:
-            return {'id': result['_id'], 'name': result['name'], 'code': result['code']}
+            return Vesta._insert_id(result)
 
     @value.setter
     def value(self, val):
@@ -1476,3 +1490,28 @@ class rbMicroorganism(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(256), nullable=False)
+
+
+def create_property(action, prop_type):
+    from nemesis.lib.utils import bail_out
+    from nemesis.lib.apiutils import ApiException
+
+    if not isinstance(prop_type, ActionPropertyType):
+        apt_code = prop_type
+        prop_type = action.actionType.property_types.filter(
+            ActionPropertyType.deleted == 0, ActionPropertyType.code == apt_code
+        ).first() or bail_out(
+            ApiException(
+                500,
+                u'Action.id = %s, ActionType.id = %s (%s), ActionPropertyType.code = %s. '
+                u'Свойство действия не обнаружено у этого типа действия' % (
+                    action.id, action.actionType_id, action.actionType.name, apt_code)))
+    prop = ActionProperty()
+    prop.type = prop_type
+    prop.action = action
+    prop.isAssigned = False
+    if prop.type.defaultValue:
+        prop.set_value(prop.type.defaultValue, True)
+    else:
+        prop.value = None
+    action.properties.append(prop)
