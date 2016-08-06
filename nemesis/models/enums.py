@@ -76,9 +76,8 @@ class PerinatalRiskRate(EnumLoadable):
 
     @property
     def order(self):
-        # like value field in db table, but now it uses
+        # like value field in db table, but now it uses id
         return self.value
-
 
 
 class PreeclampsiaRisk(Enum):
@@ -212,3 +211,33 @@ class CardFillRate(Enum):
 
 class FileAttachType(Enum):
     errand = 1, u'Поручения'
+
+
+class RadzinskyRiskRate(EnumLoadable):
+    __tablename__ = 'rbRadzinskyRiskRate'
+
+    low = 1, u'Низкая'
+    medium = 2, u'Средняя'
+    high = 3, u'Высокая'
+
+    @property
+    def order(self):
+        # like value field in db table, but now it uses id
+        return self.value
+
+
+class RadzinskyStage(EnumLoadable):
+    __tablename__ = 'rbRadzStage'
+
+    anamnestic = 1, u'Анамнестические факторы'
+    before32 = 2, u'Факторы до 32 недель'
+    after33 = 3, u'Факторы после 33 недель'
+    intranatal = 4, u'Интранатальные факторы'
+
+
+class FisherKTGRate(EnumLoadable):
+    __tablename__ = 'rbFisherKTGRate'
+
+    normality = 1, u'Состояние в норме'
+    prepathological = 2, u'Предпатологическое состояние'
+    attention_required = 3, u'Состояние требует повышенного внимания'

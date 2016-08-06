@@ -13,9 +13,19 @@ class ExpertProtocol(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True)
     name = db.Column(db.Unicode(255), nullable=False)
+    sex = db.Column(db.Integer, nullable=False, server_default="'0'")
+    age = db.Column(db.String(9), nullable=False, server_default="''")
     deleted = db.Column(db.Integer, nullable=False, server_default="'0'")
 
     schemes = db.relationship('ExpertScheme', backref='protocol')
+
+
+class ExpertProtocol_ActionTypeAssoc(db.Model):
+    __tablename__ = u'ExpertProtocol_ActionType'
+
+    id = db.Column(db.Integer, primary_key=True)
+    protocol_id = db.Column(db.Integer, db.ForeignKey('ExpertProtocol.id'), nullable=False)
+    actionType_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), nullable=False)
 
 
 class ExpertScheme(db.Model):
@@ -246,3 +256,17 @@ class EventMeasure(db.Model):
         if status:
             return unicode(MeasureStatus(status))
         return ''
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'event_id': self.event_id,
+            'beg_datetime': self.begDateTime,
+            'end_datetime': self.endDateTime,
+            'status': self.status,
+            'appointment_action_id': self.appointmentAction_id,
+            'result_action_id': self.resultAction_id,
+            'is_actual': self.is_actual,
+            'scheme_measure_id': self.schemeMeasure_id,
+            'measure_id': self.measure_id
+        }
