@@ -41,6 +41,10 @@ class EnumBase(object):
     def name(self):
         return self.names.get(self.value)
 
+    @property
+    def code(self):
+        return self.__unicode__()
+
     def __unicode__(self):
         return self.codes.get(self.value, None)
 
