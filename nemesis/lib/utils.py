@@ -687,3 +687,8 @@ def get_max_item_attribute_value(model, attr):
     if not row:
         return None
     return row[0]
+
+
+def bail_out(exc):
+    # TODO: DELETE ME, когда я буду в nemesis
+    raise exc
