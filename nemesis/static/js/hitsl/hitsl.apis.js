@@ -9,7 +9,7 @@ angular.module('hitsl.core')
         if (options === undefined) options = {};
         var defer = $q.defer();
         function process(response) {
-            if (response.status != 200 || response.data.meta.code != 200) {
+            if (response.status >= 400 || response.data.meta.code >= 400) {
                 var text = (response.status === 500) ? 'Внутренняя ошибка сервера.<br/>{0}' : 'Ошибка.<br/>{0}';
                 NotificationService.notify(
                     response.data.meta.code,
