@@ -147,6 +147,11 @@ class Action(db.Model):
     def __getitem__(self, item):
         return self.propsByCode[item]
 
+    def __json__(self):
+        return {
+            'id': self.id
+        }
+
 
 class ActionProperty(db.Model):
     __tablename__ = u'ActionProperty'
