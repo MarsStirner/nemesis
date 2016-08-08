@@ -80,11 +80,13 @@ class PerinatalRiskRate(EnumLoadable):
         return self.value
 
 
-class PreeclampsiaRisk(Enum):
-    # впоследствии будет больше значений
-    undefined = 0, u'не определен'
-    has_risk = 1, u'есть риск'
-    no_risk = 2, u'нет риска'
+class PreeclampsiaRisk(EnumLoadable):
+    __tablename__ = 'rbPreEclampsiaRate'
+
+    unknown = 1, u'не определено'
+    mild = 2, u'умеренная'
+    heavy = 3, u'тяжёлая'
+    ChAH = 4, u'на фоне ХАГ'
 
 
 class PregnancyPathology(EnumLoadable):
