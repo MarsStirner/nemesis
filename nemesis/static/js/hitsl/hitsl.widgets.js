@@ -902,6 +902,9 @@ angular.module('WebMis20')
     var edited = null,
         self = this,
         deleted = null;
+    $scope.$watch('$model', function (n, o) {
+        if (!_.isArray(n)) { $scope.$model = [] }
+    });
     this.$tmp = {};
     this.$edit = function (index) {
         edited = index;
