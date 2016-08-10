@@ -230,9 +230,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     action = create_action(action_type_id, event_id, src_action, assigned, properties, data)
     update_action_prescriptions(action, data.get('prescriptions'))
 
-    org_structure = action.event.current_org_structure
-    if action.actionType.isRequiredTissue and org_structure:
-        create_TTJ_record(action)
+    create_new_action_ttjs(action)
 
     # Service
     if action_needs_service(action):
@@ -246,6 +244,12 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
         db.session.add_all(new_service.get_flatten_subservices())
 
     return action
+
+
+def create_new_action_ttjs(action):
+    org_structure = action.event.current_org_structure
+    if action.actionType.isRequiredTissue and org_structure:
+        create_TTJ_record(action)
 
 
 def update_action(action, **kwargs):

@@ -16,7 +16,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignable_apts, get_planned_end_datetime,
-    update_action, delete_action, fit_planned_end_date)
+    update_action, delete_action, fit_planned_end_date, create_new_action_ttjs)
 from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind
@@ -473,6 +473,14 @@ class ServiceController(BaseModelController):
             # ActionProperty.isAssigned меняется на уровне родительской лабораторной услуги
             pass
 
+    def update_new_service(self, service, service_data):
+        if service.serviceKind_id in (ServiceKind.lab_action[0], ServiceKind.simple_action[0]):
+            create_new_action_ttjs(service.serviced_entity)
+        elif service.serviceKind_id == ServiceKind.group[0]:
+            for subservice in service.subservice_list:
+                self.update_new_service(subservice, service_data)
+        return service
+
     def delete_service(self, service, raw=False):
         if not self.check_can_delete_service(service):
             raise ApiException(403, u'Невозможно удалить услугу с id = {0}'.format(service.id))
@@ -534,6 +542,7 @@ class ServiceController(BaseModelController):
                 result.extend(service.get_flatten_subservices())
             else:
                 service = self.get_new_service(service_data)
+                service = self.update_new_service(service, service_data)
                 result.append(service)
                 # добавить в список изменений все подуслуги
                 result.extend(service.get_flatten_subservices())
