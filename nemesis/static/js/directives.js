@@ -1085,7 +1085,12 @@ angular.module('WebMis20.directives')
                 model: '=model'
             },
             link: function (scope, element, attributes) {
-                var typeName = scope.metadata['type'];
+                var typeName = scope.metadata['type'],
+                    extendedTypeName = typeName.split("."),
+                    refBookAttr = extendedTypeName.length == 2 ? extendedTypeName[1] : undefined;
+
+                typeName = _.isUndefined(refBookAttr) || _.isEmpty(refBookAttr) ? typeName : extendedTypeName[0];
+
                 if (["RefBook", "MultiRefBook"].has(typeName)) scope.$refBook = RefBookService.get(scope.metadata['arguments'][0]);
                 if (["Organisation", "MultiOrganisation"].has(typeName)) scope.$refBook = RefBookService.get('Organisation');
                 if (["OrgStructure", "MultiOrgStructure"].has(typeName)) scope.$refBook = RefBookService.get('OrgStructure');
