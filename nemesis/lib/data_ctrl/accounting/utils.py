@@ -31,7 +31,7 @@ def calc_item_sum(price, amount, discount=None):
 
 
 def _nullify_subservices_sum(service):
-    service.set_sum_(0)
+    service.sum = 0
     for ss in service.subservice_list:
         _nullify_subservices_sum(ss)
 
@@ -42,7 +42,7 @@ def calc_service_total_sum(service):
     if service.price_list_item.service.isComplex:
         if service.price_list_item.isAccumulativePrice:
             # общая сумма вычисляется как сумма всех подуслуг
-            return sum(ss.sum_ for ss in service.subservice_list)
+            return sum(ss.sum for ss in service.subservice_list if ss.deleted == 0)
         else:
             # у услуги фиксированная стоимость; все подуслуги должны иметь пустую сумму
             for ss in service.subservice_list:

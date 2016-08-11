@@ -2,8 +2,7 @@
 
 import datetime
 
-from sqlalchemy import exists
-from sqlalchemy.orm import join
+from sqlalchemy.orm import joinedload
 
 from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount, rbServiceKind
 from nemesis.models.client import Client
@@ -19,7 +18,7 @@ from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignabl
     update_action, delete_action, fit_planned_end_date, create_new_action_ttjs)
 from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
-from .utils import calc_item_sum, get_searched_service_kind
+from .utils import calc_item_sum, get_searched_service_kind, calc_service_total_sum
 from nemesis.lib.action.utils import at_is_lab
 
 
@@ -59,7 +58,7 @@ class ServiceController(BaseModelController):
         else:
             service.subservice_list = self.get_new_subservices_from_pricelist(service)
 
-        service.recalc_sum()
+        service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
 
         return service
 
@@ -320,11 +319,12 @@ class ServiceController(BaseModelController):
         return matched
 
     def get_services_by_event(self, event_id):
-        args = {
-            'event_id': event_id
-        }
-        service_list = self.get_listed_data(args)
+        service_list = self.get_selecter().get_event_services(event_id)
         return service_list
+
+    def get_paginated_services_by_event(self, event_id, page, per_page):
+        res = self.get_selecter().get_event_services(event_id, page, per_page)
+        return res
 
     def get_new_service_action(self, service, serviced_entity_data):
         event_id = service.event_id
@@ -421,8 +421,11 @@ class ServiceController(BaseModelController):
                 'action_id': None
             }
 
-    def get_service(self, service_id):
-        return self.get_selecter().get_by_id(service_id)
+    def get_service(self, service_id, full_load=False):
+        if full_load:
+            return self.get_selecter().get_service(service_id)
+        else:
+            return self.get_selecter().get_by_id(service_id)
 
     def update_service(self, service, json_data):
         json_data = self._format_service_data(json_data)
@@ -455,6 +458,8 @@ class ServiceController(BaseModelController):
 
         if 'serviced_entity' in json_data:
             self.update_service_serviced_entity(service, json_data['serviced_entity'])
+
+        service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
         return service
 
     def update_service_serviced_entity(self, service, serviced_entity_data):
@@ -480,6 +485,9 @@ class ServiceController(BaseModelController):
             for subservice in service.subservice_list:
                 self.update_new_service(subservice, service_data)
         return service
+
+    def update_service_sum(self, service):
+        service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
 
     def delete_service(self, service, raw=False):
         if not self.check_can_delete_service(service):
@@ -559,7 +567,7 @@ class ServiceController(BaseModelController):
         """
         service_id = service_data.get('id')
         if service_id:
-            service = self.get_service(service_id)
+            service = self.get_service(service_id, full_load=True)
             # service = self.update_service(service, service_data)
         else:
             service = self.get_new_service(service_data)
@@ -590,6 +598,8 @@ class ServiceController(BaseModelController):
                     )
             service.subservice_list = upd_ss_list
             self.update_service_serviced_entity(service, service_data['serviced_entity'])
+
+        service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
 
         return service
 
@@ -667,9 +677,8 @@ class ServiceController(BaseModelController):
             is_paid = invoice_payment['paid']
         else:
             is_paid = False
-        sum_ = service.sum_
         return {
-            'sum': sum_,
+            'sum': service.sum,
             'is_paid': is_paid
         }
 
@@ -718,6 +727,41 @@ class ServiceSelecter(BaseSelecter):
             )
         return self
 
+    def get_service(self, service_id):
+        Service = self.model_provider.get('Service')
+
+        self.query = self.query.filter(
+            Service.id == service_id
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True).
+                joinedload('service', innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
+        )
+        return self.get_one()
+
+    def get_event_services(self, event_id, page=None, per_page=None):
+        Service = self.model_provider.get('Service')
+
+        self.query = self.query.filter(
+            Service.event_id == event_id,
+            Service.parent_id == None,
+            Service.deleted == 0
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True).
+                joinedload('service', innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
+        )
+        if page is not None:
+            return self.paginate(page, per_page or 10)
+        else:
+            return self.get_all()
+
     def get_action_service(self, action_id):
         # вообще этому место в области экшенов
         Service = self.model_provider.get('Service')
@@ -733,6 +777,13 @@ class ServiceSelecter(BaseSelecter):
         self.query = self.query.filter(
             Service.parent_id == service_id,
             Service.deleted == 0
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True).
+                joinedload('service', innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
         )
         return self.get_all()
 

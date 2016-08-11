@@ -244,6 +244,7 @@ class Service(db.Model):
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'))
     actionProperty_id = db.Column(db.Integer, db.ForeignKey('ActionProperty.id'))
     amount = db.Column(db.Float, nullable=False)
+    sum = db.Column(db.Numeric(15, 2), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
     discount_id = db.Column(db.Integer, db.ForeignKey('ServiceDiscount.id'))
 
@@ -255,33 +256,43 @@ class Service(db.Model):
     action_property = db.relationship('ActionProperty')
     discount = db.relationship('ServiceDiscount')
 
+    subservice_list = CalculatedProperty('_subservice_list')
+    can_edit = CalculatedPropertyRO('_can_edit')
+    can_delete = CalculatedPropertyRO('_can_delete')
+
+    @orm.reconstructor
+    def kill_calculated_fields(self):
+        del self.subservice_list
+        del self.can_edit
+        del self.can_delete
+
+        self._in_invoice = None
+        self._invoice = None
+        self._invoice_loaded = False
+
+    @can_edit
+    def can_edit(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        return service_ctrl.check_can_edit_service(self)
+
+    @can_delete
+    def can_delete(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        return service_ctrl.check_can_delete_service(self)
+
+    @subservice_list
+    def subservice_list(self):
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        return service_ctrl.get_subservices(self)
+
     def __init__(self):
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
         self._subservice_list = None
-        self._sum = None
-        self._sum_loaded = False
-
-    @orm.reconstructor
-    def init_on_load(self):
-        self._in_invoice = None
-        self._invoice = None
-        self._invoice_loaded = False
-        self._subservice_list = None
-        self._sum = None
-        self._sum_loaded = False
-
-    @property
-    def sum_(self):
-        if not self._sum_loaded:
-            self._sum = self._get_recalc_sum()
-            self._sum_loaded = True
-        return self._sum
-
-    def set_sum_(self, val):
-        self._sum = val
-        self._sum_loaded = True
 
     @property
     def in_invoice(self):
@@ -296,24 +307,6 @@ class Service(db.Model):
             self._invoice = invoice
             self._invoice_loaded = True
         return self._invoice
-
-    @property
-    def subservice_list(self):
-        if self._subservice_list is None:
-            self.init_subservice_list()
-        return self._subservice_list
-
-    @subservice_list.setter
-    def subservice_list(self, value):
-        self._subservice_list = value
-
-    def recalc_sum(self):
-        self._sum = self._get_recalc_sum()
-
-    def init_subservice_list(self):
-        self._subservice_list = self._get_subservices()
-        for ss in self._subservice_list:
-            ss.init_subservice_list()
 
     @property
     def serviced_entity(self):
@@ -352,16 +345,6 @@ class Service(db.Model):
         invoice_ctrl = InvoiceController()
         invoice = invoice_ctrl.get_service_invoice(self)
         return invoice
-
-    def _get_recalc_sum(self):
-        from nemesis.lib.data_ctrl.accounting.utils import calc_service_total_sum
-        return calc_service_total_sum(self) if self.priceListItem_id is not None else 0
-
-    def _get_subservices(self):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        service_ctrl = ServiceController()
-        ss_list = service_ctrl.get_subservices(self)
-        return ss_list
 
 
 class ServiceDiscount(db.Model):
@@ -428,12 +411,6 @@ class Invoice(db.Model):
         del self.coordinated_refund
         del self.sum_
 
-    @orm.reconstructor
-    def kill_calculated_fields(self):
-        del self.total_sum
-        del self.refund_sum
-        del self.coordinated_refund
-
     @total_sum
     def total_sum(self):
         from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_total_sum
@@ -449,14 +426,13 @@ class Invoice(db.Model):
         from nemesis.lib.data_ctrl.accounting.utils import calc_invoice_sum_with_refunds
         return calc_invoice_sum_with_refunds(self)
 
-
     @coordinated_refund
     def coordinated_refund(self):
         return Invoice.query.filter(
             Invoice.parent == self,
             Invoice.deleted == 0,
             Invoice.settleDate.is_(None),
-        ).first()
+        ).first() if self.id else None
 
     def get_all_subitems(self):
         result = []

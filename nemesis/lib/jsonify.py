@@ -921,7 +921,7 @@ class EventVisualizer(object):
                 [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
                 if event.id else [False] * 4
             ),
-            'services': self.make_event_grouped_services(event.id),
+            'services': [],
             'invoices': self.make_event_invoices(event.id)
         }
 
@@ -1128,14 +1128,6 @@ class EventVisualizer(object):
             }
         usal = map(make_usa, actions)
         return usal
-
-    def make_event_grouped_services(self, event_id):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        from blueprints.accounting.lib.represent import ServiceRepr
-        service_ctrl = ServiceController()
-        service_list = service_ctrl.get_services_by_event(event_id)
-        service_repr = ServiceRepr()
-        return service_repr.represent_listed_event_services(service_list)
 
     def make_event_invoices(self, event_id):
         from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController

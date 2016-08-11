@@ -91,7 +91,7 @@ class ContractCounter(Counter):
 
 class InvoiceCounter(Counter):
     def check_number_used(self, number):
-        return Invoice.query.filter(Invoice.number == number).count() > 0
+        return Invoice.query.filter(Invoice.number == unicode(number)).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""

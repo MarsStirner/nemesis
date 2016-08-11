@@ -2,14 +2,9 @@
 
 angular.module('WebMis20.services').
     service('WMEventServices', [
-            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'PaymentKind', 'RefBookService', 'WMConfig',
-            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, PaymentKind, RefBookService, WMConfig) {
+            '$http', '$injector', '$q', 'MessageBox', 'Settings', 'WMEventFormState', 'CurrentUser', 'RefBookService', 'WMConfig',
+            function ($http, $injector, $q, MessageBox, Settings, WMEventFormState, CurrentUser, RefBookService, WMConfig) {
         var rbDiagnosisType = RefBookService.get('rbDiagnosisTypeN');
-        function contains_sg (event, at_id, service_id) {
-            return event.services.some(function (sg) {
-                return sg.at_id === at_id && (sg.service_id !== undefined ? sg.service_id === service_id : true);
-            });
-        }
         function check_event_ache_result_required() {
             return Settings.get_string('Event.mandatoryResult') == '1';
         }
@@ -127,54 +122,6 @@ angular.module('WebMis20.services').
         }
 
         return {
-            add_service: function(event, service_group) {
-                if (!contains_sg(event, service_group.at_id, service_group.service_id)) {
-                    var service_data = angular.extend(
-                            service_group,
-                            {
-                                amount: 1,
-                                sum: service_group.price,
-                                actions: [undefined]
-                            }
-                        ),
-                        SgModel = $injector.get('WMEventServiceGroup');
-                    event.services.push(new SgModel(service_data, event.payment.payments));
-                }
-            },
-            remove_service: function(event, sg_idx) {
-                if (!confirm('Вы действительно хотите удалить выбранную группу услуг?')) {
-                    return;
-                }
-                var sg = event.services[sg_idx];
-                var action_id_list = sg.actions.map(function (a) {
-                    return a.action_id;
-                });
-                var group_saved = action_id_list.length && action_id_list.every(function (a_id) {
-                    return a_id !== undefined && a_id !== null;
-                });
-                if (group_saved) {
-                    $http.post(
-                        WMConfig.url.event.delete_service, {
-                            event_id: event.info.id,
-                            action_id_list: action_id_list
-                        }
-                    ).success(function() {
-                        event.services.splice(sg_idx, 1);
-                    }).error(function() {
-                        alert('error');
-                    });
-                } else {
-                    event.services.splice(sg_idx, 1);
-                }
-            },
-            coordinate: function (action, off) {
-                var user = off ? null : {id: CurrentUser.id},
-                    date = off ? null : new Date();
-                if ((action.is_coordinated() && off) || (!action.is_coordinated() && !off)) {
-                    action.coord_person = user;
-                    action.coord_date = date;
-                }
-            },
             get_action_ped: function (action_type_id, event_id) {
                 var deferred = $q.defer();
                 $http.get(WMConfig.url.actions.get_action_ped, {
@@ -188,29 +135,6 @@ angular.module('WebMis20.services').
                     deferred.reject();
                 });
                 return deferred.promise;
-            },
-            add_diagnosis: function (event, diagnosis) {
-                event.diagnoses.push(diagnosis);
-            },
-            delete_diagnosis: function (diag_list, diagnosis, deleted) {
-                if (arguments.length < 3) {
-                    deleted = 1;
-                }
-                if (diagnosis && diagnosis.id) {
-                    diagnosis.deleted = deleted;
-                } else {
-                    var idx = diag_list.indexOf(diagnosis);
-                    diag_list.splice(idx, 1);
-                }
-            },
-            reload_diagnoses: function (event) {
-                return $http.get(WMConfig.url.event.diagnosis, {
-                    params: {
-                        event_id: event.event_id
-                    }
-                }).success(function (data) {
-                    event.diagnoses = data.result;
-                });
             },
             delete_event: function (event) {
                 return $http.post(
@@ -244,9 +168,6 @@ angular.module('WebMis20.services').
             delete_action: function (event, action) {
                 var self = this;
                 return $http.delete(WMConfig.url.actions.action_delete.format(action.id));
-            },
-            isPaymentPerService: function(event) {
-                return safe_traverse(event, ['payment', 'paymentKind']) === PaymentKind.perService;
             }
         };
     }]).

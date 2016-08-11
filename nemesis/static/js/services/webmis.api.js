@@ -94,11 +94,11 @@ WebMis20
             }
             return wrapper('GET', url, args);
         },
-        save_service_list: function (args) {
-            return wrapper('POST', WMConfig.url.accounting.api_service_list_save, {}, args);
+        save_service_list: function (data, args) {
+            return wrapper('POST', WMConfig.url.accounting.api_service_list_save, args, data);
         },
-        get_list: function (event_id) {
-            return wrapper('GET', WMConfig.url.accounting.api_service_list + event_id);
+        get_list: function (event_id, args) {
+            return wrapper('GET', WMConfig.url.accounting.api_service_list + event_id, args);
         },
         del: function (service_id) {
             return wrapper('DELETE', WMConfig.url.accounting.api_service_delete + service_id);
