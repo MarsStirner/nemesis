@@ -11,7 +11,9 @@ angular.module('WebMis20')
             ws = new WebSocket(url),
             owe = new OneWayEvent();
         this.subscribe = owe.eventSource.subscribe;
-        this.close = ws.close;
+        this.close = function () {
+            ws.close();
+        };
         this.send = function (data) {
             ws.send(JSON.stringify(data))
         };
@@ -67,6 +69,8 @@ angular.module('WebMis20')
                             lock_rejected(message.data)
                         } else if (event == 'prolonged') {
                             lock_prolonged(message.data)
+                        } else if (event == 'rejected') {
+                            lock_rejected(message.data)
                         } else {
                             ws.close();
                             ws = null;
