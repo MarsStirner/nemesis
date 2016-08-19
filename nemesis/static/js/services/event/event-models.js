@@ -64,8 +64,9 @@ angular.module('WebMis20.services.models').
                 self.info.client.init_from_obj({
                     client_data: client_info
                 }, 'for_event');
-                self.diagnoses_all = data.result.diagnoses || [];
-                self.diagnoses = _.filter(data.result.diagnoses || [], function (diag) {return ! diag.end_date});
+                var diagnoses_all = (_.isArray(data.result.diagnoses)) ? data.result.diagnoses : [];
+                self.diagnoses_all = diagnoses_all;
+                self.diagnoses = _.filter(diagnoses_all, function (diag) {return ! diag.end_date});
                 self.services = data.result.services;
                 self.invoices = data.result.invoices;
                 self.is_closed = self.closed();
