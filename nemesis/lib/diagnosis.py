@@ -43,7 +43,7 @@ def create_diagnostic(diagnostic_data, action):
     person_id = safe_traverse(diagnostic_data, 'person', 'id')
     if person_id:
         person = Person.query.get(person_id)
-        diagnostic.person = diagnostic.modifyPerson = person
+        diagnostic.person = diagnostic.createPerson = diagnostic.modifyPerson = person
     diagnostic.mkb = mkb
     diagnostic.mkb_ex = mkb2
     diagnostic.traumaType_id = safe_traverse(diagnostic_data, 'trauma', 'id')
@@ -172,7 +172,7 @@ def create_or_update_diagnoses(action, diagnoses_data):
                 diagnosis.client = action.event.client
                 diagnosis.person = Person.query.get(safe_traverse(diagnosis_data, 'person', 'id'))
 
-            diagnosis.setDate = safe_datetime(diagnosis_data.get('set_date'))
+            diagnosis.setDate = safe_date(diagnosis_data.get('set_date'))
             diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
             person_id = safe_traverse(diagnosis_data, 'person', 'id')
             if person_id:
