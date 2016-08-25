@@ -9,7 +9,7 @@ from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.models.enums import TTJStatus
-from nemesis.models.utils import safe_current_user_id, get_model_by_name
+from nemesis.models.utils import safe_current_user_id, get_model_by_name, UUIDColumn
 
 __author__ = 'mmalkov'
 
@@ -62,6 +62,7 @@ class Action(db.Model):
     parentAction_id = db.Column(db.Integer, index=True)
     uuid_id = db.Column(db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
     dcm_study_uid = db.Column(db.String(50))
+    uuid = db.Column(UUIDColumn(), nullable=False)
 
     actionType = db.relationship(u'ActionType')
     event = db.relationship(u'Event')
@@ -72,7 +73,6 @@ class Action(db.Model):
     # tissues = db.relationship(u'Tissue', secondary=u'ActionTissue')
     properties = db.relationship(u'ActionProperty')
     self_finance = db.relationship(u'rbFinance')
-    uuid = db.relationship('UUID')
     bbt_response = db.relationship(u'BbtResponse', uselist=False)
 
     @property

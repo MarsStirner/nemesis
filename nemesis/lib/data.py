@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-import contextlib
 import logging
-from collections import namedtuple
-from datetime import datetime, time, timedelta, date
-
+import uuid
 import collections
-
 import blinker
 import six
 import sqlalchemy
+
+from datetime import datetime, time, timedelta, date
+
 from flask_login import current_user
+
 from nemesis.lib.action.utils import action_needs_service
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
@@ -17,7 +17,7 @@ from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime, bail_out
+from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
 from nemesis.models.client import Client
@@ -27,7 +27,6 @@ from nemesis.models.exists import Person, OrgStructure
 from nemesis.models.prescriptions import MedicalPrescription
 from nemesis.models.utils import safe_current_user_id
 from nemesis.systemwide import db, cache
-from sqlalchemy.orm.util import aliased
 
 logger = logging.getLogger('simple')
 
@@ -134,7 +133,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
 
     action.plannedEndDate = get_planned_end_datetime(action_type_id)
     action.plannedEndDate = fit_planned_end_date(action.plannedEndDate, event)
-    action.uuid = get_new_uuid()
+    action.uuid = uuid.uuid4()
 
     # set changed attributes
     if data:
