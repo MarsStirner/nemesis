@@ -20,28 +20,10 @@ angular.module('WebMis20.services').
             deferred.resolve();
             return deferred.promise;
         }
-        function check_event_final_diagnosis(event) {
-            var deferred = $q.defer();
-            if (!WMEventFormState.is_diagnostic()) {
-                var final_diagnosis = event.diagnoses.filter(function (diag) {
-                    return diag.diagnosis_type.code == 1;
-                });
-                if (!final_diagnosis.length) {
-                    return MessageBox.error('Невозможно закрыть обращение', 'Необходимо указать заключительный диагноз');
-                } else if (final_diagnosis.length > 1) {
-                    return MessageBox.error('Невозможно закрыть обращение', 'В обращении не может быть больше одного заключительного диагноза');
-                }
-                if (!final_diagnosis[0].result) {
-                    return MessageBox.error('Невозможно закрыть обращение', 'Необходимо указать результат заключительного диагноза');
-                }
-            }
-            deferred.resolve();
-            return deferred.promise;
-        }
 
         function check_event_diagnoses_results(event){
             var deferred = $q.defer();
-            var diags_without_result = event.diagnoses.filter(function(diag){
+            var diags_without_result = event.diagnoses_all.filter(function(diag){
                 for (var diag_type_code in diag.diagnosis_types){
                     var diag_type = rbDiagnosisType.get_by_code(diag_type_code);
                     if (diag.diagnosis_types[diag_type_code].code != 'associated' && diag_type.require_result && !diag.diagnostic.ache_result){
@@ -63,7 +45,7 @@ angular.module('WebMis20.services').
 
         function check_event_main_diagnoses(event){
             var types_with_main = [];
-            _.each(event.diagnoses, function(diagnosis) {
+            _.each(event.diagnoses_all, function(diagnosis) {
                 _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
                     if (diagnosis_kind.code == 'main') {
                         types_with_main.push(diagnosis_type_code)
@@ -91,7 +73,7 @@ angular.module('WebMis20.services').
         function check_event_oparin_diagnoses (event) {
             // Сделано для удовлетворения тикета TMIS-1085.
             var may_close = false;
-            _.each(event.diagnoses, function(diagnosis) {
+            _.each(event.diagnoses_all, function(diagnosis) {
                 _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
                     may_close = may_close || diagnosis_type_code == 'final' || diagnosis_kind.code == 'main';
                 });
