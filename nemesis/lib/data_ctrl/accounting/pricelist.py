@@ -245,7 +245,6 @@ class PriceListItemSelecter(BaseSelecter):
                     PriceListItem.begDate,
                     PriceListItem.endDate),
             rbTest.deleted == 0,
-            ActionPropertyType.deleted == 0,
             ActionPropertyType.id.in_(apt_id_list)
         ).with_entities(
             ActionPropertyType.id,
