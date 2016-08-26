@@ -5,6 +5,7 @@ import itertools
 from sqlalchemy import Table
 from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
+from nemesis.models.refbooks import RefBookMixin
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
@@ -797,7 +798,7 @@ class rbServiceGroupAssoc(db.Model):
         return self.id
 
 
-class rbRequestType(db.Model):
+class rbRequestType(db.Model, RefBookMixin):
     __tablename__ = u'rbRequestType'
     _table_description = u'Типы обращений'
 

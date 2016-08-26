@@ -153,6 +153,10 @@ class Action(db.Model):
         }
 
 
+def apv_not_empty(value):
+    return bool(value) and value != 0
+
+
 class ActionProperty(db.Model):
     __tablename__ = u'ActionProperty'
 
@@ -258,15 +262,16 @@ class ActionProperty(db.Model):
 
         if not self.type.isVector:
             if len(value_container) == 0:
-                if value is not None:
+                if apv_not_empty(value):
                     value_container.append(make_value(value))
             else:
-                if value is None or value == '':
-                    delete_value(value_container[0])
-                else:
+                if apv_not_empty(value):
                     value_container[0].set_value(value, raw)
+                else:
+                    delete_value(value_container[0])
         else:
             if value:
+                value = filter(apv_not_empty, value)
                 m = min(len(value_container), len(value))
                 for i in xrange(m):
                     value_container[i].set_value(value[i], raw)
