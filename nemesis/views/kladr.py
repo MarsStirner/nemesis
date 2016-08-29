@@ -54,13 +54,13 @@ def clear_cache():
 def api_area_list():
     level1 = {}
     level2 = []
-    organisation = Organisation.query.get(current_user.org_id)
-    risar_regions = [organisation.area[:2].ljust(11, '0')] if organisation else None
+    organisation = Organisation.query.get(current_user.org_id) if current_user.org_id else None
+    risar_regions = [organisation.area[:2].ljust(11, '0')] if organisation and organisation.area else None
     if not risar_regions:
         risar_regions = app.config.get('RISAR_REGIONS', [])
     for region in risar_regions:
         l1 = Vesta.get_kladr_locality(region)
-        l2 = Vesta.get_kladr_locality_list("2", region)
+        l2 = Vesta.get_kladr_locality_list(None, region)
         level1[l1.code] = l1.name
         level2.extend(l2) if l2 else level2.append(l1)
     return level1, sorted(level2, key=lambda x: x.name)

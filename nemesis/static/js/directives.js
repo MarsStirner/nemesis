@@ -1085,7 +1085,12 @@ angular.module('WebMis20.directives')
                 model: '=model'
             },
             link: function (scope, element, attributes) {
-                var typeName = scope.metadata['type'];
+                var typeName = scope.metadata['type'],
+                    extendedTypeName = typeName.split("."),
+                    refBookAttr = extendedTypeName.length == 2 ? extendedTypeName[1] : undefined;
+
+                typeName = _.isUndefined(refBookAttr) || _.isEmpty(refBookAttr) ? typeName : extendedTypeName[0];
+
                 if (["RefBook", "MultiRefBook"].has(typeName)) scope.$refBook = RefBookService.get(scope.metadata['arguments'][0]);
                 if (["Organisation", "MultiOrganisation"].has(typeName)) scope.$refBook = RefBookService.get('Organisation');
                 if (["OrgStructure", "MultiOrgStructure"].has(typeName)) scope.$refBook = RefBookService.get('OrgStructure');
@@ -1343,6 +1348,14 @@ angular.module('WebMis20.directives')
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
                 scope.rbDiagnosisKind = RefBookService.get('rbDiagnosisKind');
+                scope.validData = true;
+                var recalcValidity = function () {
+                    scope.validData = scope.hasAtleastOneMainDiagnosis();
+                    ngModelCrtl.$setValidity('diagnoses_block', scope.validData);
+                };
+                scope.isValidData = function () {
+                    return scope.validData;
+                };
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
@@ -1372,6 +1385,8 @@ angular.module('WebMis20.directives')
 
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, ngModelCrtl.$viewValue).then(function () {
                         ngModelCrtl.$viewValue.push(new_diagnosis);
+                        scope.setMainDiagnKind();
+                        recalcValidity();
                     });
                 };
                 scope.edit_diagnosis = function (diagnosis) {
@@ -1380,7 +1395,6 @@ angular.module('WebMis20.directives')
                 scope.kind_change = function (diag, diag_type_code){
                     diag.kind_changed = true;
                     if (diag.diagnosis_types[diag_type_code].code == 'main'){
-
                         // предыдущий основной исправляем на осложнение
                         ngModelCrtl.$viewValue.forEach(function(diagnosis){
                             if(diagnosis.diagnostic.mkb.code != diag.diagnostic.mkb.code &&
@@ -1390,6 +1404,23 @@ angular.module('WebMis20.directives')
                             }
                         });
                     }
+                    recalcValidity();
+                };
+                scope.hasAtleastOneMainDiagnosis = function () {
+                    var diagnoses = ngModelCrtl.$viewValue,
+                        atleastOneMainDiagnosis = _.any(diagnoses, function(diag) {
+                            return safe_traverse(diag,['diagnosis_types', 'final', 'code']) === 'main';
+                        });
+                    return atleastOneMainDiagnosis;
+                };
+                scope.setCurrentDiagTypeCode = function(diag_type_code) {
+                    scope.currentDiagTypeCode = diag_type_code;
+                };
+                scope.setMainDiagnKind = function() {
+                    var diags = ngModelCrtl.$viewValue;
+                    if ( diags.length === 1 ) {
+                        diags[0].diagnosis_types[scope.currentDiagTypeCode] = scope.rbDiagnosisKind.get_by_code('main');
+                    }
                 };
                 scope.sortByKind = function(type){
                     var kind = {'main': 1, 'complication': 2, 'associated': 3};
@@ -1397,9 +1428,16 @@ angular.module('WebMis20.directives')
                         return kind[diag.diagnosis_types[type].code]
                     }
                 };
-                scope.view_model = function () {
+                scope.view_model = function (){
                     return ngModelCrtl.$viewValue;
                 };
+                scope.$watch('diagTypes', function(n, o){
+                    if (_.isUndefined(scope.currentDiagTypeCode)) {
+                        if (!_.isUndefined(n)) {
+                            scope.currentDiagTypeCode = n[0].code;
+                        }
+                    }
+                });
             }
         }
     }])
@@ -1408,10 +1446,13 @@ angular.module('WebMis20.directives')
         '<div>\
             <ul class="nav nav-tabs">\
                 <li role="presentation" ng-repeat="diag_type in diagTypes" ng-class="{\'active\': $index == 0}">\
-                    <a href="#[[diag_type.code]]" aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
+                    <a ng-click="setCurrentDiagTypeCode(diag_type.code)" href="#[[diag_type.code]]" aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
                 </li>\
             </ul>\
             <div class="tab-content">\
+                <div class="alert alert-warning" ng-show="!isValidData()" role="alert">\
+                    <strong>Не выбран основной диагноз!</strong><div>Выберите один из диагнозов как основной и укажите осложнения.</div>\
+                </div>\
                 <div ng-repeat="diag_type in diagTypes" role="tabpanel" class="tab-pane" id="[[diag_type.code]]"  ng-class="{\'active\': $index == 0}">\
                     <table class="table table-condensed centered-table">\
                         <thead>\
@@ -1561,7 +1602,7 @@ angular.module('WebMis20.directives')
                         <i class="fa fa-exclamation-triangle text-yellow"></i>\
                     </div>\
                     <div class="col-md-11">\
-                        <b>Упациента уже есть такой диагноз.</b></br>\
+                        <b>У пациента уже есть диагноз с таким кодом МКБ.</b></br>\
                         При лечении ранее установленного заболевания, в том числе при обострении хронического, \
                         нужно использовть имеющийся диагноз.\
                     </div>\
