@@ -4,8 +4,8 @@
 'use strict';
 angular.module('hitsl.ui')
 .config([
-    '$interpolateProvider', 'datepickerConfig', 'datepickerPopupConfig', 'paginationConfig', '$provide', '$tooltipProvider',
-    function ($interpolateProvider, datepickerConfig, datepickerPopupConfig, paginationConfig, $provide, $tooltipProvider) {
+    '$interpolateProvider', 'datepickerConfig', 'datepickerPopupConfig', 'paginationConfig', '$provide', '$tooltipProvider', '$httpProvider',
+    function ($interpolateProvider, datepickerConfig, datepickerPopupConfig, paginationConfig, $provide, $tooltipProvider, $httpProvider) {
         $interpolateProvider.startSymbol('[[');
         $interpolateProvider.endSymbol(']]');
         datepickerConfig.showWeek = false;
@@ -25,6 +25,14 @@ angular.module('hitsl.ui')
             'never': 'mouseleave',
             'show_popover': 'hide_popover'
         });
+        // ie fix caching start
+        if (!$httpProvider.defaults.headers.get) {
+            $httpProvider.defaults.headers.get = {};
+        }
+        $httpProvider.defaults.headers.get['If-Modified-Since'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
+        $httpProvider.defaults.headers.get['Cache-Control'] = 'no-cache';
+        $httpProvider.defaults.headers.get['Pragma'] = 'no-cache';
+        // ie fix caching end
         // Workaround for bug #1404
         // https://github.com/angular/angular.js/issues/1404
         // Source: http://plnkr.co/edit/hSMzWC?p=preview
