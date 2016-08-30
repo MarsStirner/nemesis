@@ -495,6 +495,13 @@ def format_date(d):
         return d
 
 
+def format_time(t):
+    if isinstance(t, (datetime.datetime, datetime.time)):
+        return t.strftime('%H:%M')
+    else:
+        return t
+
+
 def parse_json(json_string):
     try:
         result = json.loads(json_string)
