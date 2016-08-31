@@ -225,8 +225,10 @@ class EventMeasure(db.Model):
     _scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
     _measure = db.relationship('Measure')
     source_action = db.relationship('Action', foreign_keys=[sourceAction_id])
-    result_action = db.relationship('Action', foreign_keys=[resultAction_id])
-    appointment_action = db.relationship('Action', foreign_keys=[appointmentAction_id])
+    result_action = db.relationship('Action', foreign_keys=[resultAction_id],
+        backref=db.backref('em_result', uselist=False))
+    appointment_action = db.relationship('Action', foreign_keys=[appointmentAction_id],
+        backref=db.backref('em_appointment', uselist=False))
     create_person = db.relationship('Person', foreign_keys=[createPerson_id])
     modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
 
