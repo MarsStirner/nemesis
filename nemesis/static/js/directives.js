@@ -1520,6 +1520,10 @@ angular.module('WebMis20.directives')
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
                 }
 
+                if ( _.isEmpty($scope.model.set_date) ) {
+                    $scope.model.set_date = new Date();
+                }
+
                 // https://github.com/angular-ui/bootstrap/issues/969
                 // http://stackoverflow.com/questions/19312936/angularjs-modal-dialog-form-object-is-undefined-in-controller
                 $scope.form = {};
