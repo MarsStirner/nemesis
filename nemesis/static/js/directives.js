@@ -1420,6 +1420,7 @@ angular.module('WebMis20.directives')
                     var diags = ngModelCrtl.$viewValue;
                     if ( diags.length === 1 ) {
                         diags[0].diagnosis_types[scope.currentDiagTypeCode] = scope.rbDiagnosisKind.get_by_code('main');
+                        diags[0].kind_changed = true;
                     }
                 };
                 scope.sortByKind = function(type){
@@ -1517,6 +1518,10 @@ angular.module('WebMis20.directives')
 
                 if ($scope.model.id){
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
+                }
+
+                if ( _.isEmpty($scope.model.set_date) ) {
+                    $scope.model.set_date = new Date();
                 }
 
                 // https://github.com/angular-ui/bootstrap/issues/969
