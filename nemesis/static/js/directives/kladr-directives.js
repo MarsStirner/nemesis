@@ -264,7 +264,7 @@ angular.module('WebMis20.directives').
             template:
 '<ui-select theme="bootstrap" reset-search-input="false"\
         ng-required="ngRequired" ng-disabled="disabled">\
-    <ui-select-match placeholder="Введите адрес для поиска" allow-clear>[[$select.selected.fullname]]</ui-select-match>\
+    <ui-select-match allow-clear>[[$select.selected.fullname]]</ui-select-match>\
     <ui-select-choices repeat="locality in locality_list track by $index"\
             refresh="refreshLocalityList($select.search)">\
         <div ng-bind-html="locality.fullname | highlight: $select.search"></div>\
@@ -343,7 +343,7 @@ angular.module('WebMis20.directives').
             template:
 '<ui-select theme="bootstrap" reset-search-input="false"\
         ng-required="ngRequired" ng-disabled="disabled">\
-    <ui-select-match placeholder="Введите улицу для поиска" allow-clear>[[$select.selected.name]]</ui-select-match>\
+    <ui-select-match allow-clear>[[$select.selected.name]]</ui-select-match>\
     <ui-select-choices repeat="street in street_list track by $index"\
             refresh="refreshStreetList($select.search)">\
         <div ng-bind-html="street.name | highlight: $select.search"></div>\
