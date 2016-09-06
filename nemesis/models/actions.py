@@ -404,6 +404,7 @@ class ActionPropertyType(db.Model):
             'unit': self.unit,
             'norm': self.norm,
             'vector': bool(self.isVector),
+            'description': self.descr
         }
         if self.typeName == 'String' and value_domain['subtype']:
             result['type_name'] = 'String/{0}'.format(value_domain['subtype'])
@@ -791,6 +792,10 @@ class ActionProperty_String(ActionProperty__ValueType):
     index = db.Column(db.Integer, primary_key=True, nullable=False, server_default=u"'0'")
     value = db.Column(db.Text, nullable=False)
     property_object = db.relationship('ActionProperty', backref='_value_String')
+
+
+class ActionProperty_URL(ActionProperty_String):
+    property_object = db.relationship('ActionProperty', backref='_value_URL')
 
 
 class ActionProperty_Time(ActionProperty__ValueType):
