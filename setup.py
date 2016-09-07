@@ -44,7 +44,7 @@ setup(
         'Requests',
         'sphinxit',
         'Flask-Beaker',
-        'Flask-Login==0.2.11',
+        'Flask-Login',
         'Flask-Principal',
         'py-xlsx',
     ],
