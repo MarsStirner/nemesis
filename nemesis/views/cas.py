@@ -297,13 +297,13 @@ def chose_role(role_code=None):
         if role_code is not None and role_code != current_user.roles[0]:
             raise ApiException(400, u'У текущего пользователя нет роли с кодом `{0}`'.format(role_code))
         current_user.current_role = current_user.roles[0]
-        current_user.current_role = role_code
     else:
         if role_code is None:
             raise ApiException(400, u'Необходимо передать код роли текущего пользователя')
         role = current_user.find_role(role_code)
         if role is False:
             raise ApiException(400, u'У текущего пользователя нет роли с кодом `{0}`'.format(role_code))
+        current_user.current_role = role
     identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
 
     session_cookie = app.config['BEAKER_SESSION'].get('session.key')
