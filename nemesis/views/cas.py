@@ -109,7 +109,7 @@ def process_api_login(auth_token):
                 raise ApiLoginException(400, u'Ошибка данных сессии пользователя. Переавторизуйтесь.')
 
             user_id = cas_data['user_id']
-            if not current_user.is_authenticated() or current_user.id != user_id:
+            if not current_user.is_authenticated or current_user.id != user_id:
                 # only to pass it to 'chose_role' endpoint
                 session['_user_id'] = user_id
 
@@ -143,7 +143,7 @@ def process_html_login(auth_token):
                 return response
 
             user_id = cas_data['user_id']
-            if not current_user.is_authenticated() or current_user.id != user_id:
+            if not current_user.is_authenticated or current_user.id != user_id:
                 create_user_session(user_id)
                 response = redirect(request.url or UserProfileManager.get_default_url())
                 # Если эту строку раскомментировать, то в домене не будет работать никогда.
