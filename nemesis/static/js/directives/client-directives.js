@@ -109,11 +109,9 @@ angular.module('WebMis20.directives').
     <div class="form-group col-md-12"\
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_insurer.$invalid}">\
         <label for="pol_insurer[[idPostfix]]" class="control-label">Страховая медицинская организация</label>\
-        <div ng-class="form-control" class="validatable" id="pol_insurer[[idPostfix]]" name="pol_insurer"\
-             free-input-select="" freetext="true" items="OrganisationObjects" builder="builder_organisation"\
-             ng-disabled="!edit_mode()" ng-required="policyForm.$dirty" ng-model="modelPolicy.insurer">\
-            [[ item.short_name ]]\
-        </div>\
+        <ui-select ext-select-insurance-org tagging="orgBuilder" ng-model="modelPolicy.insurer" theme="select2"\
+            id="pol_insurer[[idPostfix]]" name="pol_insurer"\
+            ng-disabled="!edit_mode()" ng-required="policyForm.$dirty"></ui-select>\
     </div>\
 </div>\
 '
