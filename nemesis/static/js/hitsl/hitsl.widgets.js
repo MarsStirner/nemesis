@@ -898,6 +898,83 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectInsuranceOrg', ['$http', 'RefBookService', 'WMConfig',
+        function ($http, RefBookService, WMConfig) {
+    return {
+        restrict: 'A',
+        require: ['ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // need to add this attribute to template
+            // set in manually in ui-select tag in templates
+            //tElement.attr('tagging', 'orgBuilder');
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.short_name ]]</ui-select-match>\
+<ui-select-choices repeat="org in flt_orgs | filter: $select.search">\
+    <div ng-bind-html="org.short_name" | highlight: $select.search"></div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {
+                },
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите СМО';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.flt_orgs = [];
+                    var inn_region_codes = WMConfig.local_config.risar.risar_regions ?
+                        WMConfig.local_config.risar.risar_regions.map(function (code) {
+                        return code.substring(0, 2);
+                    }) :
+                        [];
+
+                    scope.Organisation = RefBookService.get('Organisation');
+                    scope.Organisation.loading.then(function () {
+                        // отфильтровать и отсортировать организации. Нужны только СМО, где сначала должны
+                        // идти организации региона - это такие, у которых задан ИНН и первые 2
+                        // цифры соответствуют коду региона кладр из настроек risar_regions - затем все
+                        // остальные. Регионов в которых работает система может быть несколько, поэтому СМО
+                        // группируются по регионам (на основе ИНН).
+                        var flt_orgs = [];
+                        var orgs_by_regions = {
+                            other: []
+                        };
+                        angular.forEach(inn_region_codes, function (code) { orgs_by_regions[code] = []; });
+
+                        angular.forEach(scope.Organisation.objects, function (org) {
+                            var org_reg_code;
+                            if (org.is_insurer) {
+                                org_reg_code = org.inn && org.inn.substring(0, 2);
+                                if (inn_region_codes.has(org_reg_code)) {
+                                    angular.forEach(inn_region_codes, function (code) {
+                                        if (code === org_reg_code) {
+                                            orgs_by_regions[code].push(org);
+                                        }
+                                    });
+                                } else {
+                                    orgs_by_regions['other'].push(org);
+                                }
+                            }
+                        });
+
+                        angular.forEach(inn_region_codes, function (code) {
+                            flt_orgs = flt_orgs.concat(orgs_by_regions[code]);
+                        });
+                        flt_orgs = flt_orgs.concat(orgs_by_regions['other']);
+
+                        scope.flt_orgs = flt_orgs;
+                    });
+                    scope.orgBuilder = function(name) {
+                        return {
+                            'id': null,
+                            'full_name': name,
+                            'short_name': name,
+                            'infis': null,
+                            'title': null
+                        };
+                    };
+                }
+            }
+        }
+    }
+}])
 .controller('InplaceTableCtrl', ['$scope', function($scope) {
     var edited = null,
         self = this,

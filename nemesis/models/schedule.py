@@ -6,6 +6,7 @@ from nemesis.models.client import Client
 from nemesis.systemwide import db
 from exists import Person, rbReasonOfAbsence, Organisation
 from nemesis.models.utils import safe_current_user_id
+from nemesis.models.refbooks import RefBookMixin
 
 
 class rbReceptionType(db.Model):
@@ -26,7 +27,7 @@ class rbReceptionType(db.Model):
         }
 
 
-class rbAttendanceType(db.Model):
+class rbAttendanceType(db.Model, RefBookMixin):
     __tablename__ = 'rbAttendanceType'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

@@ -80,7 +80,7 @@ angular.module('WebMis20.directives').
         <input type="text" class="form-control" id="pol_serial[[idPostfix]]" name="pol_serial"\
                ui-mask="[[modelPolicy.policy_type.masks.serial]]" autocomplete="off" \
                placeholder="[[placeholder_serial]]" validator-regexp="modelPolicy.policy_type.validators.serial"\
-               ng-model="modelPolicy.serial" ng-disabled="!edit_mode()" ng-required="modelPolicy.policy_type.validators.serial && policyForm.$dirty"/>\
+               ng-model="modelPolicy.serial" maxlength="[[modelPolicy.policy_type.lengths.serial]]" ng-disabled="!edit_mode()" ng-required="modelPolicy.policy_type.validators.serial && policyForm.$dirty"/>\
     </div>\
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_number.$invalid}">\
@@ -88,7 +88,7 @@ angular.module('WebMis20.directives').
         <input type="text" class="form-control" id="pol_number[[idPostfix]]" name="pol_number"\
                ui-mask="[[modelPolicy.policy_type.masks.number]]" autocomplete="off"\
                placeholder="[[placeholder_number]]" validator-regexp="modelPolicy.policy_type.validators.number"\
-               ng-model="modelPolicy.number" ng-required="policyForm.$dirty" ng-disabled="!edit_mode()"/>\
+               ng-model="modelPolicy.number" maxlength="[[modelPolicy.policy_type.lengths.number]]" ng-required="policyForm.$dirty" ng-disabled="!edit_mode()"/>\
     </div>\
     <div class="form-group col-md-offset-1 col-md-2"\
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_begdate[[idPostfix]].$invalid}">\
@@ -109,11 +109,9 @@ angular.module('WebMis20.directives').
     <div class="form-group col-md-12"\
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_insurer.$invalid}">\
         <label for="pol_insurer[[idPostfix]]" class="control-label">Страховая медицинская организация</label>\
-        <div ng-class="form-control" class="validatable" id="pol_insurer[[idPostfix]]" name="pol_insurer"\
-             free-input-select="" freetext="true" items="OrganisationObjects" builder="builder_organisation"\
-             ng-disabled="!edit_mode()" ng-required="policyForm.$dirty" ng-model="modelPolicy.insurer">\
-            [[ item.short_name ]]\
-        </div>\
+        <ui-select ext-select-insurance-org tagging="orgBuilder" ng-model="modelPolicy.insurer" theme="select2"\
+            id="pol_insurer[[idPostfix]]" name="pol_insurer"\
+            ng-disabled="!edit_mode()" ng-required="policyForm.$dirty"></ui-select>\
     </div>\
 </div>\
 '

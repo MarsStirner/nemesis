@@ -121,7 +121,8 @@ class Organisation(db.Model):
             'is_stationary': self.is_stationary,
             'address': self.Address,
             'phone': self.phone,
-            'deleted': self.deleted
+            'deleted': self.deleted,
+            'inn': self.INN
         }
 
     def __int__(self):
