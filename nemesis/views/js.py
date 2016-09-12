@@ -3,6 +3,7 @@ from flask import render_template_string
 from flask_login import current_user
 from nemesis.app import app
 from nemesis.lib.apiutils import api_method
+from nemesis.lib.utils import safe_traverse
 
 __author__ = 'viruzzz-kun'
 
@@ -51,3 +52,22 @@ angular.module('hitsl.core')
     )
 
 
+@app.route('/specific_js_config.js')
+def specific_js_config():
+    parts = []
+    new_href_protocols = safe_traverse(app.config, 'system_prefs', 'ui', 'frontend_additional_href_protocols')
+    if new_href_protocols is not None:
+        protocols_regex = '^\s*(https?|ftp|mailto|{0}):'.format(new_href_protocols)
+        parts.append(u"""\
+angular.module('hitsl.ui').config(['$compileProvider',
+    function( $compileProvider )
+    {{
+        $compileProvider.aHrefSanitizationWhitelist(/{0}/);
+    }}
+]);""".format(protocols_regex))
+
+    return (
+        render_template_string(u'\n'.join(parts)),
+        200,
+        [('Content-Type', 'application/ecmascript; charset=utf-8')]
+    )
