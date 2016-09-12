@@ -975,6 +975,38 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectRefBookSearch', ['$http', 'WMConfig', function ($http, WMConfig) {
+    return {
+        restrict: 'A',
+        require: ['uiSelect', 'ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            tElement.append(
+'<ui-select-match>[[ $select.selected.name ]]</ui-select-match>\
+<ui-select-choices repeat="record in records" refresh="refreshRecords($select.search)">\
+    <div>\
+        <small ng-bind-html="record.code | highlight: $select.search" class="rmargin10"></small>\
+        <span ng-bind-html="record.name | highlight: $select.search"></span>\
+    </div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.rbName = iAttrs.extSelectRefBookSearch;
+                    scope.refreshRecords= function (query) {
+                        if (!query) return;
+                        return $http.get(WMConfig.url.rb.rb_search + scope.rbName, {
+                            params: {
+                                query: query
+                            }
+                        }).then(function (res) {
+                            return scope.records = res.data.result;
+                        });
+                    };
+                }
+            }
+        }
+    }
+}])
 .controller('InplaceTableCtrl', ['$scope', function($scope) {
     var edited = null,
         self = this,
