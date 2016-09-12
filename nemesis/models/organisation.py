@@ -122,7 +122,7 @@ class Organisation(db.Model):
             'address': self.Address,
             'phone': self.phone,
             'deleted': self.deleted,
-            'inn': self.INN
+            'area': self.area
         }
 
     def __int__(self):
