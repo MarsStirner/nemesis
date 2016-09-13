@@ -92,6 +92,13 @@ class Measure(db.Model):
     result_at = db.relationship('ActionType', foreign_keys=[resultAt_id])
     template_action = db.relationship('Action')
 
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
 
 class MeasureSchedule_ScheduleTypeAssoc(db.Model):
     __tablename__ = u'MeasureSchedule_ScheduleType'
