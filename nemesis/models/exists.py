@@ -482,8 +482,6 @@ class rbPolicyType(db.Model):
     number_regexp = db.Column(db.Unicode(256))
     serial_mask = db.Column(db.Unicode(256))
     number_mask = db.Column(db.Unicode(256))
-    serial_maxlength = db.Column(db.Integer)
-    number_maxlength = db.Column(db.Integer)
 
     def __json__(self):
         return {
@@ -498,10 +496,6 @@ class rbPolicyType(db.Model):
             'masks': {
                 'serial': self.serial_mask,
                 'number': self.number_mask,
-            },
-            'lengths': {
-                'serial': self.serial_maxlength,
-                'number': self.number_maxlength,
             }
         }
 

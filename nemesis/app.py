@@ -138,6 +138,10 @@ def fc_urls():
             },
             'devourer': {
                 'upload': devourer_url + 'api/0/upload'
+            },
+            'rb': {
+                'rb_root': url_for('api_refbook'),
+                'rb_search': url_for('api_refbook_search')
             }
         }
     }

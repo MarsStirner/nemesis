@@ -1,8 +1,7 @@
 # -*- encoding: utf-8 -*-
 import logging
-
 import requests
-import json
+import urllib
 
 from nemesis.app import app
 from nemesis.systemwide import cache
@@ -138,6 +137,24 @@ class Vesta(object):
             url = u'{0}/v2/rb/{1}/data/code/{2}/'.format(cls.get_url(), name, code)
         else:
             url = u'{0}/v2/rb/{1}/data/'.format(cls.get_url(), name)
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise VestaException(u'Error in Vesta server')
+        j = response.json()
+        if 'result' not in j:
+            raise VestaNotFoundException(u'No result from Vesta')
+        return j['result']
+
+    @classmethod
+    @cache.memoize(60)
+    def search_rb(cls, name, args):
+        url = u'{0}/v2/rb/{1}/data/?{2}'.format(
+            cls.get_url(),
+            name,
+            u'&'.join([u'{0}={1}'.format(urllib.quote_plus(name.encode('utf-8')),
+                                         urllib.quote_plus(val.encode('utf-8')))
+                       for name, val in args.iteritems()])
+        )
         response = requests.get(url)
         if response.status_code != 200:
             raise VestaException(u'Error in Vesta server')

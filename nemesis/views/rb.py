@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from flask import request
+
 from nemesis.app import app
 from nemesis.lib.utils import safe_dict
 from nemesis.lib.vesta import Vesta, VestaNotFoundException
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol, \
     rls, refbooks, risar, accounting, diagnosis
-from nemesis.lib.apiutils import api_method
+from nemesis.lib.apiutils import api_method, ApiException
 from nemesis.systemwide import cache
 
 __author__ = 'viruzzz-kun'
@@ -85,6 +87,17 @@ def api_refbook(name, code=None):
     if code and ('|' in code):
         code = code.split('|')
     return api_refbook_int(name, code)
+
+
+@app.route('/api/rb/search/')
+@app.route('/api/rb/search/<name>')
+@api_method
+def api_refbook_search(name):
+    args = request.args.to_dict()
+    try:
+        return map(Vesta._insert_id, Vesta.search_rb(name, args))
+    except VestaNotFoundException, e:
+        raise ApiException(404, e.message)
 
 
 @cache.memoize(86400)
