@@ -29,7 +29,8 @@ angular.module('WebMis20.directives')
                     autofocus = attrs.autofocus,
                     limitTo = attrs.limitTo || 10,
                     multiple = attrs.multiple,
-                    closeOnSelect = attrs.closeOnSelect !== undefined ? attrs.closeOnSelect : false;
+                    closeOnSelect = attrs.closeOnSelect !== undefined ? attrs.closeOnSelect : false,
+                    withTitle = Boolean(attrs.withTitle);
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
@@ -40,6 +41,9 @@ angular.module('WebMis20.directives')
                         multiple ? '$item' : '$select.selected'
                     )
                 );
+                if (withTitle) {
+                    uiSelectMatch.attr('title', '[[ getName({0}) ]]'.format(multiple ? '$item' : '$select.selected'));
+                }
                 var uiSelectChoices = $(
                     '<ui-select-choices repeat="item in $refBook.objects | {0}filter: $select.search {1} {2} | limitTo:{3} track by item.id">\
                         <div style="text-align: justify" ng-bind-html="getName(item) | highlight: $select.search"></div>\
