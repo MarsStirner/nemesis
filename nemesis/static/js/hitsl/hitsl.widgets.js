@@ -981,7 +981,7 @@ angular.module('WebMis20')
         require: ['uiSelect', 'ngModel'],
         compile: function compile (tElement, tAttrs, transclude) {
             tElement.append(
-'<ui-select-match>[[ $select.selected.name ]]</ui-select-match>\
+'<ui-select-match title="[[ $select.selected.name ]]">[[ $select.selected.name ]]</ui-select-match>\
 <ui-select-choices repeat="record in records" refresh="refreshRecords($select.search)">\
     <div>\
         <small ng-bind-html="record.code | highlight: $select.search" class="rmargin10"></small>\
