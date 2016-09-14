@@ -652,11 +652,11 @@ angular.module('WebMis20.directives')
 
             if (template_code !== undefined) {
                 $scope.select_template(template_code);
+            } else if (fast_print) {
+                $scope.select_all_templates();
             }
+
             if (fast_print) {
-                if (!template_code) {
-                    $scope.select_all_templates();
-                }
                 var dont_need_meta = $scope.instant_print(),
                     no_template_choice = $scope.selected_templates.length === 1;
                 if (dont_need_meta && no_template_choice) {
