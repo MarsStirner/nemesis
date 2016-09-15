@@ -11,7 +11,7 @@ from nemesis.lib.settings import Settings
 from nemesis.models.client import ClientDocument
 from nemesis.models.diagnosis import EventType_rbDiagnosisType
 from nemesis.models.exists import Person, rbPost, rbService
-from nemesis.models.utils import safe_current_user_id
+from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.systemwide import db
 
 
@@ -52,6 +52,7 @@ class Event(db.Model):
     urgent = db.Column(db.Integer, server_default=u"'0'")
     orgStructure_id = db.Column(db.Integer, db.ForeignKey('OrgStructure.id'))
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
+    uuid = db.Column(UUIDColumn(), nullable=False)
     lpu_transfer = db.Column(db.String(100))
     localContract_id = db.Column(db.Integer, db.ForeignKey('Event_LocalContract.id'))
 
@@ -83,7 +84,6 @@ class Event(db.Model):
         primaryjoin="and_(Event.id == ClientQuoting.event_id, ClientQuoting.deleted == 0)",
         uselist=False
     )
-    uuid = db.relationship('UUID')
 
     @property
     def diagnostics(self):

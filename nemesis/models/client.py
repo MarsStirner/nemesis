@@ -3,7 +3,7 @@ import datetime
 import calendar
 from nemesis.lib.agesex import calcAgeTuple, formatDays, formatMonthsWeeks, formatYearsMonths, formatYears
 from nemesis.lib.const import ID_DOC_GROUP_CODE, VOL_POLICY_CODES, COMP_POLICY_CODES
-from nemesis.models.utils import safe_current_user_id
+from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.models.enums import Gender, LocalityType, AllergyPower
 from nemesis.models.exists import rbDocumentTypeGroup, rbDocumentType, rbContactType
 from nemesis.models.kladr_models import Kladr, Street
@@ -39,8 +39,8 @@ class Client(db.Model):
     birthPlace = db.Column(db.String(128), nullable=False, server_default=u"''")
     embryonalPeriodWeek = db.Column(db.String(16), nullable=False, server_default=u"''")
     uuid_id = db.Column(db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
+    uuid = db.Column(UUIDColumn(), nullable=False)
 
-    uuid = db.relationship('UUID')
     documents = db.relationship(
         u'ClientDocument',
         primaryjoin='and_(ClientDocument.clientId==Client.id, ClientDocument.deleted == 0)',
