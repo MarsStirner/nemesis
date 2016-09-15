@@ -5,7 +5,7 @@ import datetime
 from nemesis.models.refbooks import RefBookMixin
 from sqlalchemy import Table
 
-from nemesis.models.utils import safe_current_user_id
+from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.systemwide import db
 
 
@@ -67,6 +67,7 @@ class Person(db.Model):
     academicdegree_id = db.Column(db.Integer, db.ForeignKey('rbAcademicDegree.id'))
     academicTitle_id = db.Column(db.Integer, db.ForeignKey('rbAcademicTitle.id'))
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
+    uuid = db.Column(UUIDColumn(), nullable=False)
 
     post = db.relationship('rbPost', lazy=False)
     speciality = db.relationship('rbSpeciality', lazy=False)
@@ -76,7 +77,6 @@ class Person(db.Model):
     academicTitle = db.relationship('rbAcademicTitle')
     tariffCategory = db.relationship('rbTariffCategory')
     user_profiles = db.relation('rbUserProfile', secondary='Person_Profiles')
-    uuid = db.relationship('UUID')
     curation_levels = db.relationship('rbOrgCurationLevel', secondary='PersonCuration')
 
     @property

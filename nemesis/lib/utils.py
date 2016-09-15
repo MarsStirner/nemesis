@@ -507,23 +507,6 @@ def get_utc_datetime_with_tz(dt=None):
     return dt_with_tz.astimezone(timezone('UTC'))
 
 
-def get_new_uuid():
-    """Сгенерировать новый uuid уникальный в пределах бд.
-    @rtype: application.models.exist.UUID
-    """
-    from nemesis.models.exists import UUID
-
-    uuid_model = UUID()
-    # paranoia mode on
-    unique = False
-    while not unique:
-        new_uuid = str(uuid.uuid4())
-        unique = uuid_model.query.filter_by(uuid=new_uuid).count() == 0
-    uuid_model.uuid = new_uuid
-
-    return uuid_model
-
-
 def get_new_event_ext_id(event_type_id, client_id):
     """Формирование externalId (номер обращения/истории болезни)."""
     from nemesis.models.event import EventType

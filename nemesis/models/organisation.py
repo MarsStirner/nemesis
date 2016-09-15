@@ -4,7 +4,7 @@ import datetime
 
 from sqlalchemy import Table
 
-from nemesis.models.utils import safe_current_user_id
+from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.systemwide import db
 
 
@@ -59,6 +59,7 @@ class Organisation(db.Model):
     miacCode = db.Column(db.String(10), nullable=False)
     isOrganisation = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
+    uuid = db.Column(UUIDColumn(), nullable=False)
     isLPU = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     isStationary = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     TFOMSCode = db.Column(db.String(50))
@@ -66,7 +67,6 @@ class Organisation(db.Model):
     net = db.relationship('rbNet')
     OKPF = db.relationship('rbOKPF')
     OKFS = db.relationship('rbOKFS')
-    uuid = db.relationship('UUID')
     mkbs = db.relationship('MKB', secondary=organisation_mkb_assoc)
     org_obcls = db.relationship('Organisation_OrganisationBCLAssoc', cascade_backrefs=False)
     obcl_list = db.relationship('OrganisationBirthCareLevel', secondary='Organisation_OrganisationBCL')
