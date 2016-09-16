@@ -30,7 +30,8 @@ angular.module('WebMis20.directives')
                     limitTo = attrs.limitTo || 10,
                     multiple = attrs.multiple,
                     closeOnSelect = attrs.closeOnSelect !== undefined ? attrs.closeOnSelect : false,
-                    withTitle = Boolean(attrs.withTitle);
+                    withTitle = Boolean(attrs.withTitle),
+                    addRbData = scope.$eval(attrs.addRbData);
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
@@ -74,6 +75,11 @@ angular.module('WebMis20.directives')
                 uiSelect.append(uiSelectChoices);
                 $(element).replaceWith(uiSelect);
                 $compile(uiSelect)(scope);
+                if (addRbData !== undefined) {
+                    scope.$refBook.loading.then(function () {
+                        scope.$refBook.objects = scope.$refBook.objects.concat(addRbData());
+                    });
+                }
             }
         };
     }])
