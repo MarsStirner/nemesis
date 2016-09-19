@@ -1,8 +1,10 @@
 'use strict';
 
 angular.module('WebMis20.services').
-    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal', '$http', '$q', 'WMConfig',
-            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal, $http, $q, WMConfig) {
+    service('WMClientServices', ['$timeout', 'MessageBox', 'RefBookService', 'CurrentUser', '$modal', '$http', '$q',
+            'WMConfig', 'ApiCalls',
+            function ($timeout, MessageBox, RefBookService, CurrentUser, $modal, $http, $q,
+                      WMConfig, ApiCalls) {
         function get_actual_address (client, entity) {
             var addrs =  client[entity].filter(function (el) {
                 return el.deleted === 0;
@@ -507,14 +509,12 @@ angular.module('WebMis20.services').
                         $scope.coupon_file = {};
                         $scope.coupon = coupon;
                         $scope.parse_xlsx = function() {
-                            $http.post(
-                                WMConfig.url.patients.coupon_parse, {
-                                    coupon: $scope.coupon_file
-                                }
-                            ).success(function(data){
-                                $scope.coupon = data.result;
+                            ApiCalls.wrapper('POST', WMConfig.url.patients.coupon_parse, {}, {
+                                coupon: $scope.coupon_file
+                            }).then(function (coupon) {
+                                $scope.coupon = coupon;
                                 $scope.wrong_client = client.client_id != $scope.coupon.client.id;
-                                $scope.nonunique = client.vmp_coupons.filter(function(coupon){
+                                $scope.nonunique = client.vmp_coupons.filter(function (coupon){
                                     return coupon.number == $scope.coupon.number
                                 }).length > 0;
                             });
@@ -529,6 +529,11 @@ angular.module('WebMis20.services').
                         }
                     ).success(function(data){
                         deferred.resolve(data.result);
+                    }).error(function (data) {
+                        return MessageBox.error(
+                            'Ошибка',
+                            'Произошла ошибка добавления талона'
+                        );
                     });
                 });
                 return deferred.promise;

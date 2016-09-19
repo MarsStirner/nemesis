@@ -121,7 +121,6 @@ angular.module('hitsl.ui')
                         scope.file.binary_b64 = reader.result;
                         scope.file.image = null;
                     }
-                    console.log(scope.file);
                 });
             };
             elem.change(function (event) {

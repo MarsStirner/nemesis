@@ -2,7 +2,7 @@
 import datetime
 
 import itertools
-from sqlalchemy import Table
+from sqlalchemy import Table, between
 from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
 from nemesis.systemwide import db
@@ -1567,6 +1567,10 @@ class VMPCoupon(db.Model):
     quotaType = db.relationship('QuotaType')
     client = db.relationship('Client')
 
+    def __init__(self, *args, **kwargs):
+        super(VMPCoupon, self).__init__(*args, **kwargs)
+        self._parsed = {}
+
     @property
     def MKB(self):
         return self.MKB_object.DiagID
@@ -1574,6 +1578,10 @@ class VMPCoupon(db.Model):
     @MKB.setter
     def MKB(self, value):
         self.MKB_object = MKB.query.filter(MKB.DiagID == value).first()
+
+    @property
+    def parsed(self):
+        return self._parsed
 
     @classmethod
     def from_xlsx(cls, xlsx_file):
@@ -1583,7 +1591,11 @@ class VMPCoupon(db.Model):
         from cStringIO import StringIO
 
         def read_smashed_cells(rown, cells):
-            return u''.join([sheet_0[cell+str(rown)].value for cell in cells])
+            return u''.join([
+                sheet_0[cell+str(rown)].value
+                for cell in cells
+                if sheet_0[cell+str(rown)] is not None
+            ])
 
         xlsx_str = base64.b64decode(xlsx_file)
         f = StringIO(xlsx_str)
@@ -1595,13 +1607,21 @@ class VMPCoupon(db.Model):
         self.number = read_smashed_cells(10, itertools.chain('QRSTUVWXYZ', ['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG']))
         self.MKB = read_smashed_cells(93, 'NOPQR')
 
-        quota_type_code = ''.join((
-            sheet_0['M135'].value, sheet_0['N135'].value, '.',
-            sheet_0['P135'].value, sheet_0['Q135'].value, '.',
-            sheet_0['U135'].value, sheet_0['V135'].value, sheet_0['W135'].value
-        ))
+        quota_type_code = read_smashed_cells(135, 'MNOPQRSTUVWX')
+        quota_date = datetime.date(
+            int(''.join(('20', sheet_0['S133'].value, sheet_0['T133'].value))),
+            int(''.join((sheet_0['P133'].value, sheet_0['Q133'].value))),
+            int(''.join((sheet_0['M133'].value, sheet_0['N133'].value))),
+        )
+        self._parsed.update({
+            'quota_type_code': quota_type_code,
+            'quota_date': quota_date
+        })
 
-        self.quotaType = QuotaType.query.filter(QuotaType.code == quota_type_code).first()
+        self.quotaType = QuotaType.query.join(QuotaCatalog).filter(
+            QuotaType.code == quota_type_code,
+            between(quota_date, QuotaCatalog.begDate, QuotaCatalog.endDate)
+        ).first()
         self.date = datetime.date(
             int(''.join(('20', sheet_0['V137'].value, sheet_0['W137'].value))),
             int(''.join((sheet_0['S137'].value, sheet_0['T137'].value))),
