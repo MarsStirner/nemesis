@@ -30,7 +30,8 @@ angular.module('WebMis20.directives')
                     limitTo = attrs.limitTo || 10,
                     multiple = attrs.multiple,
                     closeOnSelect = attrs.closeOnSelect !== undefined ? attrs.closeOnSelect : false,
-                    withTitle = Boolean(attrs.withTitle);
+                    withTitle = Boolean(attrs.withTitle),
+                    addRbData = scope.$eval(attrs.addRbData);
                 scope.getName = getName;
                 if (!ngModel) throw new Error('<rb-select> must have ng-model attribute');
                 if (!refBook) throw new Error('<rb-select> must have rb attribute');
@@ -74,6 +75,11 @@ angular.module('WebMis20.directives')
                 uiSelect.append(uiSelectChoices);
                 $(element).replaceWith(uiSelect);
                 $compile(uiSelect)(scope);
+                if (addRbData !== undefined) {
+                    scope.$refBook.loading.then(function () {
+                        scope.$refBook.objects = scope.$refBook.objects.concat(addRbData());
+                    });
+                }
             }
         };
     }])
@@ -535,7 +541,8 @@ angular.module('WebMis20.directives')
         }
     }])
     .service('PrintingDialog', ['$modal', function ($modal) {
-        var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender, meta_values, fast_print) {
+        var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender, meta_values,
+                                                   fast_print, template_code) {
             $scope.aux = aux;
             $scope.page = 0;
             $scope.ps = ps;
@@ -564,6 +571,12 @@ angular.module('WebMis20.directives')
                         }
                         return template;
                     })
+                }
+            };
+            $scope.select_template = function (template_code) {
+                var template = _.find(ps.templates, function (t) { return t.code === template_code});
+                if (template) {
+                    $scope.toggle_select_template(template);
                 }
             };
             $scope.btn_next = function () {
@@ -647,8 +660,13 @@ angular.module('WebMis20.directives')
                 return Boolean(template.meta.length);
             };
 
-            if (fast_print) {
+            if (template_code !== undefined) {
+                $scope.select_template(template_code);
+            } else if (fast_print) {
                 $scope.select_all_templates();
+            }
+
+            if (fast_print) {
                 var dont_need_meta = $scope.instant_print(),
                     no_template_choice = $scope.selected_templates.length === 1;
                 if (dont_need_meta && no_template_choice) {
@@ -660,7 +678,7 @@ angular.module('WebMis20.directives')
         };
 
         return {
-            open: function (ps, context_extender, meta_values, fast_print) {
+            open: function (ps, context_extender, meta_values, fast_print, template_code) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
                     backdrop : 'static',
@@ -678,6 +696,9 @@ angular.module('WebMis20.directives')
                         },
                         fast_print: function () {
                             return fast_print;
+                        },
+                        template_code: function () {
+                            return template_code
                         }
                     }
                 });
@@ -746,20 +767,26 @@ angular.module('WebMis20.directives')
                 var btnText = el.html();
                 return '<button class="btn btn-default" ng-click="print_templates()" title="Печать" ng-disabled="disabled()">\
                     <i class="glyphicon glyphicon-print"></i>\
-                    <i class="glyphicon glyphicon-remove text-danger" ng-show="disabled()"></i>' + btnText +'</button>'},
+                    <i class="glyphicon glyphicon-remove text-danger" ng-show="isPrintDisabled()"></i>' + btnText +'</button>'},
             scope: {
                 $ps: '=ps',
                 beforePrint: '&?',
                 lazyLoadContext: '@?',
-                fastPrint: '=?'
+                fastPrint: '=?',
+                templateCode: '@?',
+                extDisabled: '&?'
             },
             link: function (scope, element, attrs) {
                 var resolver_call = attrs.resolve;
                 if (!attrs.beforePrint) {
                     scope.beforePrint = null;
                 }
+                scope.isPrintDisabled = function(){
+                    return !scope.$ps.is_available()
+
+                };
                 scope.disabled = function () {
-                    return !scope.$ps.is_available();
+                    return scope.isPrintDisabled() || scope.extDisabled();
                 };
                 scope.print_templates = function() {
                     if (scope.beforePrint) {
@@ -778,7 +805,7 @@ angular.module('WebMis20.directives')
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
                                 PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint);
+                                    scope.fastPrint, scope.templateCode);
                             }, function () {
                                 MessageBox.error(
                                     'Печать недоступна',
@@ -787,7 +814,7 @@ angular.module('WebMis20.directives')
                             });
                     } else {
                         PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint);
+                            scope.fastPrint, scope.templateCode);
                     }
                 };
             }

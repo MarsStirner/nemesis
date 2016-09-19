@@ -1025,3 +1025,15 @@ li.active>a.cuslom-tab-pills {
     max-height: 64px;
     overflow-y: hidden;
 }
+
+.measure-checkbox-main {
+    margin-left: 10% !important;
+    transform: scale(1.5) !important;
+    vertical-align: top !important;
+}
+
+.measure-checkbox {
+    margin-left: 10% !important;
+    transform: scale(1.3) !important;
+    vertical-align: top !important;
+}
