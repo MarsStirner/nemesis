@@ -42,19 +42,14 @@ angular.module('WebMis20')
                 date_input.attr('ng-disabled', ngDisabled);
                 button.attr('ng-disabled', ngDisabled);
             }
-            if (autofocus){
-                date_input.attr('auto-focus', '');
-            }
-            if (style) {
-                wmdate.attr('style', style);
-                element.removeAttr('style');
-            }
+            if (autofocus) date_input.attr('auto-focus', '');
+            if (style) wmdate.attr('style', style);
             if (ngRequired) date_input.attr('ng-required', ngRequired);
             if (maxDate) date_input.attr('max', maxDate);
 
             button_wrap.append(button);
             wmdate.append(date_input, button_wrap);
-            $(element).append(wmdate);
+            $(element).replaceWith(wmdate);
             $compile(wmdate)(scope);
         }
     };

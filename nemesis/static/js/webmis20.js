@@ -642,7 +642,8 @@ var WebMis20 = angular.module('WebMis20', [
         restrict: 'E',
         scope: {
             selectAll: '=',
-            key: '='
+            key: '=',
+            onChecked: '&?'
         },
         link: function (scope, element, attributes) {
             // Создаём элементы
@@ -657,7 +658,9 @@ var WebMis20 = angular.module('WebMis20', [
                 scope.$apply(angular.bind(this, function () {
                     scope.selectAll.select(scope.key, this.checked);
                 }));
-//                scope.$root.$digest(); // Это может негативно влиять на производительность, но оно нужно.
+                if (scope.onChecked && this.checked) {
+                    scope.onChecked();
+                }
             }
             scope.$watch('selectAll._selected', function (n, o) {
                 inputElement[0].checked = scope.selectAll.selected(scope.key);
