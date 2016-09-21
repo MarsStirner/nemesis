@@ -87,7 +87,7 @@ angular.module('WebMis20.directives')
 
                 var template = '\
     <ui-select {0} {1} theme="{2}" autocomplete="off" ng-model="{3}" {4} {5} {6}>\
-        <ui-select-match placeholder="{7}"><span ng-bind="$select.selected.full_name || $select.selected.short_name"></span></ui-select-match>\
+        <ui-select-match placeholder="{7}" allow-clear="true"><span ng-bind="$select.selected.full_name || $select.selected.short_name"></span></ui-select-match>\
         <ui-select-choices refresh="refresh_choices($select.search)" repeat="person in persons | filter: $select.search">\
             <span ng-bind-html="person.short_name | highlight: $select.search"></span>\
         </ui-select-choices>\

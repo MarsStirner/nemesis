@@ -251,4 +251,9 @@ WebMis20
                 });
         }
     };
+    this.action = {
+        search: function (data) {
+            return wrapper('POST', WMConfig.url.actions.search_actions, {}, data);
+        }
+    }
 }]);

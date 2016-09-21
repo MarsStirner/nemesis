@@ -1441,6 +1441,22 @@ class ActionVisualizer(object):
             'person_id': action.person_id,
         }
 
+    def make_searched_action(self, action):
+        return {
+            'id': action.id,
+            'action_type': action.actionType,
+            'event_id': action.event_id,
+            'beg_date': action.begDate,
+            'end_date': action.endDate,
+            'planned_end_date': action.plannedEndDate,
+            'status': ActionStatus(action.status),
+            'set_person_id': action.setPerson_id,
+            'set_person_short_name': action.setPerson.shortNameText if action.setPerson else u'Нет',
+            'person_id': action.person_id,
+            'person_short_name': action.person.shortNameText if action.person else u'Нет',
+            'event_external_id': action.event.externalId
+        }
+
     def make_action_wo_sensitive_props(self, action):
         action = self.make_action(action, for_template=True)
         for prop in action['properties']:
