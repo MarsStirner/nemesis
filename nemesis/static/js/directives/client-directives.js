@@ -154,7 +154,7 @@ angular.module('WebMis20.directives').
                         };
                     };
                     scope.begDateRequired = function () {
-                        return scope.ssClass !== '3' && scope.ssClass !== '4';
+                        return scope.ssClass !== '4';
                     }
                 },
                 template:

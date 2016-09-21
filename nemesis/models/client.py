@@ -907,7 +907,7 @@ class ClientWork(db.Model):
     org_id = db.Column(db.ForeignKey('Organisation.id'), index=True)
     shortName = db.Column('freeInput', db.String(200), nullable=False)
     post = db.Column(db.String(200), nullable=False)
-    stage = db.Column(db.Integer)
+    stage = db.Column(db.Integer, nullable=False, default=0)
     OKVED = db.Column(db.String(10), nullable=False, server_default=u"''")
     version = db.Column(db.Integer, nullable=False, default=0)
     rank_id = db.Column(db.Integer)
