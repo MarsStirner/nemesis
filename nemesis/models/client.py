@@ -2,7 +2,7 @@
 import datetime
 import calendar
 
-from hippocrates.blueprints.risar.models.vesta_props import VestaProperty
+from nemesis.lib.vesta_props import VestaProperty
 from nemesis.lib.agesex import calcAgeTuple, formatDays, formatMonthsWeeks, formatYearsMonths, formatYears
 from nemesis.lib.const import ID_DOC_GROUP_CODE, VOL_POLICY_CODES, COMP_POLICY_CODES
 from nemesis.models.utils import safe_current_user_id
