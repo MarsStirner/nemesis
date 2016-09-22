@@ -169,6 +169,10 @@ def fc_urls():
                 'area_list': url_for('api_area_list'),
                 'roles': url_for('api_roles'),
                 'doctors_to_assist': url_for('api_doctors_to_assist'),
+            },
+            'rb': {
+                'rb_root': url_for('rb.api_refbook'),
+                'rb_search': url_for('rb.api_refbook_search')
             }
         },
         'ui': {

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
-from copy import copy
-
+import six
 import functools
 
-import six
-from nemesis.lib.apiutils import api_method
+from copy import copy
+from flask import request
+from sqlalchemy import or_
+from sqlalchemy.orm import noload
 
 from .blueprint import module, rb_cache
+from nemesis.lib.apiutils import api_method, ApiException
 
 __author__ = 'viruzzz-kun'
 
@@ -156,3 +158,40 @@ def api_refbook(name, code=None):
     return api_refbook_int(name, code or None)
 
 
+@module.route('/api/rb/search/')
+@module.route('/api/rb/search/<name>')
+@api_method
+def api_refbook_search(name):
+    from nemesis.lib.utils import safe_dict
+    from nemesis.models import event, actions, person, organisation, exists, schedule, client, expert_protocol, \
+        rls, refbooks, risar, accounting, diagnosis
+    from nemesis.lib.vesta import Vesta, VestaException
+
+    args = request.args.to_dict()
+    query = args.get('query')
+    if not query:
+        raise ApiException(422, u'Не передан запрос для поиска')
+
+    for mod in (exists, schedule, actions, client, event, person, organisation, expert_protocol, rls, refbooks, risar,
+                accounting, diagnosis):
+        if hasattr(mod, name):
+            ref_book = getattr(mod, name)
+
+            _order = ref_book.id
+            if hasattr(ref_book, '__mapper_args__') and 'order_by' in ref_book.__mapper_args__:
+                _order = ref_book.__mapper_args__['order_by']
+
+            query = u'%{0}%'.format(query)
+            query = ref_book.query.filter(or_(
+                ref_book.code.like(query),
+                ref_book.name.like(query),
+            )).order_by(_order)
+            if 'deleted' in ref_book.__dict__:
+                query = query.filter_by(deleted=0)
+            query = query.options(noload('*')).limit(100)
+            return [safe_dict(rb) for rb in query]
+
+    try:
+        return map(Vesta._insert_id, Vesta.search_rb(name, args))
+    except VestaException, e:
+        raise ApiException(404, e.message)
