@@ -76,6 +76,11 @@ class Action(db.Model):
     self_finance = db.relationship(u'rbFinance')
     uuid = db.relationship('UUID')
     bbt_response = db.relationship(u'BbtResponse', uselist=False)
+    attach_files = db.relationship(
+        'ActionFileAttach',
+        primaryjoin='and_(ActionFileAttach.action_id == Action.id, ActionFileAttach.deleted == 0)',
+        backref='action'
+    )
 
     @property
     def properties_ordered(self):
@@ -1071,6 +1076,29 @@ class ActionType_User(db.Model):
     actionType = db.relationship(u'ActionType')
     person = db.relationship(u'Person')
     profile = db.relationship(u'rbUserProfile')
+
+
+class ActionFileAttach(db.Model):
+    __tablename__ = u'ActionFileAttach'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), nullable=False)
+    filemeta_id = db.Column(db.Integer, db.ForeignKey('FileMeta.id'), nullable=False)
+    setPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'))
+    attachDate = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
+
+    file_meta = db.relationship('FileMeta')
+    set_person = db.relationship('Person')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'action_id': self.action_id,
+            'filemeta_id': self.filemeta_id,
+            'set_person_id': self.setPerson_id,
+            'attach_date': self.attachDate
+        }
 
 
 class rbUnit(db.Model):

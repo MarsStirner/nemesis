@@ -213,6 +213,7 @@ class CardFillRate(Enum):
 
 class FileAttachType(Enum):
     errand = 1, u'Поручения'
+    action = 2, u'Action'
 
 
 class RadzinskyRiskRate(EnumLoadable):

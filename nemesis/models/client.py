@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import calendar
+
+from hippocrates.blueprints.risar.models.vesta_props import VestaProperty
 from nemesis.lib.agesex import calcAgeTuple, formatDays, formatMonthsWeeks, formatYearsMonths, formatYears
 from nemesis.lib.const import ID_DOC_GROUP_CODE, VOL_POLICY_CODES, COMP_POLICY_CODES
 from nemesis.models.utils import safe_current_user_id
@@ -28,6 +30,7 @@ class Client(db.Model):
     patrName = db.Column(db.Unicode(30), nullable=False)
     birthDate = db.Column(db.Date, nullable=False, index=True)
     sexCode = db.Column("sex", db.Integer, nullable=False)
+    nationality_code = db.Column(db.String(250), nullable=False)
     SNILS = db.Column(db.String(11), nullable=False, index=True)
     bloodType_id = db.Column(db.ForeignKey('rbBloodType.id'), index=True)
     bloodDate = db.Column(db.Date)
@@ -40,6 +43,7 @@ class Client(db.Model):
     embryonalPeriodWeek = db.Column(db.String(16), nullable=False, server_default=u"''")
     uuid_id = db.Column(db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
 
+    nationality = VestaProperty('nationality_code', 'rbOKIN_Nationality')
     uuid = db.relationship('UUID')
     documents = db.relationship(
         u'ClientDocument',
@@ -319,6 +323,7 @@ class Client(db.Model):
             'patr_name': self.patrName,
             'birth_date': self.birthDate,
             'sex': Gender(self.sexCode) if self.sexCode is not None else None,
+            'nationality': self.nationality if self.nationality_code else None,
             'snils': self.SNILS,
             'full_name': self.nameText,
             'notes': self.notes,
@@ -902,7 +907,7 @@ class ClientWork(db.Model):
     org_id = db.Column(db.ForeignKey('Organisation.id'), index=True)
     shortName = db.Column('freeInput', db.String(200), nullable=False)
     post = db.Column(db.String(200), nullable=False)
-    stage = db.Column(db.Integer)
+    stage = db.Column(db.Integer, nullable=False, default=0)
     OKVED = db.Column(db.String(10), nullable=False, server_default=u"''")
     version = db.Column(db.Integer, nullable=False, default=0)
     rank_id = db.Column(db.Integer)
