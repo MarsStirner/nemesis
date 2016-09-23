@@ -166,17 +166,18 @@ def create_or_update_diagnoses(action, diagnoses_data):
             diagnostic_changed = diagnosis_data.get('diagnostic_changed')
             diagnostic_data = diagnosis_data.get('diagnostic')
             diagnosis_types = diagnosis_data.get('diagnosis_types')
+            person_id = safe_traverse(diagnosis_data, 'person', 'id')
+            person = Person.query.get(person_id) if person_id else None
 
             if not diagnosis_id:
                 # Новый диагноза - надо забить данными
                 diagnosis.client = action.event.client
-                diagnosis.person = Person.query.get(safe_traverse(diagnosis_data, 'person', 'id'))
+                diagnosis.person = person
 
             diagnosis.setDate = safe_date(diagnosis_data.get('set_date'))
             diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
-            person_id = safe_traverse(diagnosis_data, 'person', 'id')
             if person_id:
-                diagnosis.person = Person.query.get(person_id)
+                diagnosis.person = person
 
             if not diagnosis_id or diagnostic_changed:
                 # Либо новый диагноз, либо сменилась Диагностика
