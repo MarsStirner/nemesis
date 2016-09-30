@@ -206,7 +206,8 @@ angular.module('WebMis20.directives').
                     idPostfix: '@',
                     groupCode:'@',
                     modelDocument: '=',
-                    edit_mode: '&editMode'
+                    edit_mode: '&editMode',
+                    required: '=?'
                 },
                 link: function(scope, elm, attrs, formCtrl) {
                     scope.docForm = formCtrl;
@@ -246,10 +247,10 @@ angular.module('WebMis20.directives').
                 template:
 '<div class="row">\
     <div class="form-group col-md-4"\
-         ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_type.$invalid}">\
+         ng-class="{\'has-error\': docForm.doc_type.$invalid}">\
         <label for="doc_type[[idPostfix]]" class="control-label">Тип</label>\
         <ui-select class="form-control" id="doc_type[[idPostfix]]" name="doc_type" theme="select2"\
-                   ng-model="modelDocument.doc_type" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
+                   ng-model="modelDocument.doc_type" ng-disabled="!edit_mode()" ng-required="required || docForm.$dirty">\
             <ui-select-match placeholder="Тип документа">[[$select.selected.name]]</ui-select-match>\
             <ui-select-choices repeat="dt in rbDocumentType.objects | filter: filter_document(groupCode) | filter: $select.search">\
                 <div ng-bind-html="dt.name | highlight: $select.search"></div>\
