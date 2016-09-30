@@ -96,7 +96,7 @@ angular.module('WebMis20.directives')
             link: function (scope, element, attrs) {
                 var personKind = PersonSelectKind[attrs.personKind];
                 if (personKind === undefined) {
-                    personKind = PersonSelectKind.onlyDoctors;
+                    personKind = PersonSelectKind.onlyOrgPersons;
                 }
 
                 scope.persons = [];
