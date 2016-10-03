@@ -109,7 +109,7 @@ def process_api_login(auth_token):
                 raise ApiLoginException(400, u'Ошибка данных сессии пользователя. Переавторизуйтесь.')
 
             user_id = cas_data['user_id']
-            if not current_user.is_authenticated() or current_user.id != user_id:
+            if not current_user.is_authenticated or current_user.id != user_id:
                 # only to pass it to 'chose_role' endpoint
                 session['_user_id'] = user_id
 
@@ -143,7 +143,7 @@ def process_html_login(auth_token):
                 return response
 
             user_id = cas_data['user_id']
-            if not current_user.is_authenticated() or current_user.id != user_id:
+            if not current_user.is_authenticated or current_user.id != user_id:
                 create_user_session(user_id)
                 response = redirect(request.url or UserProfileManager.get_default_url())
                 # Если эту строку раскомментировать, то в домене не будет работать никогда.
@@ -297,13 +297,13 @@ def chose_role(role_code=None):
         if role_code is not None and role_code != current_user.roles[0]:
             raise ApiException(400, u'У текущего пользователя нет роли с кодом `{0}`'.format(role_code))
         current_user.current_role = current_user.roles[0]
-        current_user.current_role = role_code
     else:
         if role_code is None:
             raise ApiException(400, u'Необходимо передать код роли текущего пользователя')
         role = current_user.find_role(role_code)
         if role is False:
             raise ApiException(400, u'У текущего пользователя нет роли с кодом `{0}`'.format(role_code))
+        current_user.current_role = role
     identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
 
     session_cookie = app.config['BEAKER_SESSION'].get('session.key')
