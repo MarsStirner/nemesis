@@ -1639,22 +1639,27 @@ class VMPCoupon(db.Model):
             int(''.join((sheet_0['W68'].value, sheet_0['X68'].value))),
         )
 
+        client = None
         # Round one!
         unformatted_snils = read_smashed_cells(39, itertools.chain('STUWXY', ['AA', 'AB', 'AC', 'AE', 'AF']))
-        client = Client.query.filter(Client.SNILS == unformatted_snils).first()
+        if unformatted_snils:
+            client = Client.query.filter(Client.SNILS == unformatted_snils).first()
         if not client:
             # Round two!
-            query = Client.query.filter(
-                Client.firstName == first_name,
-                Client.lastName == last_name,
-                Client.birthDate == birthdate,
-            )
-            count = query.count()
-            if count > 1:
-                raise Exception(u'Слишком много совпадений')
-            elif count < 1:
-                raise Exception(u'Не найдено пациента')
-            client = query.first()
+            if first_name or last_name or birthdate:
+                query = Client.query.filter(
+                    Client.firstName == first_name,
+                    Client.lastName == last_name,
+                    Client.birthDate == birthdate,
+                )
+                count = query.count()
+                if count > 1:
+                    raise Exception(u'Слишком много совпадений по пациенту')
+                elif count < 1:
+                    raise Exception(u'Не найден пациент')
+                client = query.first()
+        if client is None:
+            raise Exception(u'Не найден пациент')
         self.client = client
         return self
 
