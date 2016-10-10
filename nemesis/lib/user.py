@@ -75,7 +75,7 @@ class User(UserMixin):
                 rbUserProfile.code == code
             ))
         ]
-        self.current_rights = self.rights[code]
+        self.current_rights = self.rights.get(code, [])
 
     def is_active(self):
         return self.deleted == 0
@@ -499,6 +499,7 @@ class UserProfileManager(object):
     overseer2 = 'overseer2'
     overseer3 = 'overseer3'
     ambulance = 'ambulance'
+    ouz = 'ouz'
 
     ui_groups = {
         'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist, doctor_otd],
@@ -582,6 +583,11 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_risar(cls):
         return cls._get_user_role() in cls.ui_groups['risar']
+
+    @classmethod
+    def has_ui_risar_reports(cls):
+        r = cls._get_user_role()
+        return r in cls.ui_groups['risar'] or r == cls.ouz
 
     @classmethod
     def get_default_url(cls):
