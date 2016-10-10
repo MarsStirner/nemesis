@@ -1960,6 +1960,36 @@ angular.module('WebMis20.validators', [])
         }
     };
 })
+.directive('validRegexp', function() {
+    return {
+        require: '?ngModel',
+        link: function (scope, element, attrs, ngModelCtrl) {
+            if (!ngModelCtrl) {
+                return;
+            }
+            var regexp;
+            if (attrs.hasOwnProperty('nameRegexp')) {
+                regexp = /[^a-zA-Z\u0400-\u04FF\- ]+/g;
+            } else {
+                regexp = new RegExp(attrs.validRegexp);
+            }
+            if (!regexp) throw 'Error: regexp to remove all forbidden characters required';
+
+            ngModelCtrl.$parsers.push(function (val) {
+                if (val === undefined) {
+                    return val;
+                }
+                var clean = val.replace(regexp, '');
+                if (clean !== val) {
+                    val = clean;
+                    ngModelCtrl.$viewValue = val;
+                    ngModelCtrl.$render();
+                }
+                return val;
+            });
+        }
+    };
+})
 .directive('wmValidate', [function () {
     return {
         restrict: 'A',
@@ -1973,4 +2003,5 @@ angular.module('WebMis20.validators', [])
             });
         }
     };
-}]);
+}])
+;

@@ -22,6 +22,7 @@ angular.module('WebMis20')
                 ngRequired = attrs.ngRequired,
                 ngModel = attrs.ngModel,
                 style = attrs.style,
+                minDate = attrs.minDate,
                 maxDate = attrs.maxDate,
                 autofocus = attrs.autofocus;
             var wmdate = $('<div class="input-group"></div>'),
@@ -50,6 +51,11 @@ angular.module('WebMis20')
                 element.removeAttr('style');
             }
             if (ngRequired) date_input.attr('ng-required', ngRequired);
+            if (!minDate) {
+                scope.__mindate = new Date(1900, 0, 1);
+                minDate = '__mindate';
+            }
+            date_input.attr('min', minDate);
             if (maxDate) date_input.attr('max', maxDate);
 
             button_wrap.append(button);
@@ -66,12 +72,15 @@ angular.module('WebMis20')
         link: function(scope, elm, attrs, ctrl) {
             ctrl.$parsers.unshift(function(_) {
                 var viewValue = ctrl.$viewValue,
-                    maxDate = scope.$eval(attrs.max);
+                    maxDate = scope.$eval(attrs.max),
+                    minDate = scope.$eval(attrs.min);
                 if (!viewValue || viewValue instanceof Date) {
                     return viewValue;
                 }
                 var d = moment(viewValue.replace('_', ''), "DD.MM.YYYY", true);
-                if (moment(d).isValid() && (maxDate ? moment(maxDate).isAfter(d) : true)) {
+                if (moment(d).isValid() &&
+                        (maxDate ? moment(maxDate).isAfter(d) : true) &&
+                        (minDate ? moment(minDate).isBefore(d) || moment(minDate).isSame(d) : true)) {
                     ctrl.$setValidity('date', true);
                     ctrl.$setViewValue(d.toDate());
                     return d;
@@ -134,19 +143,31 @@ angular.module('WebMis20')
         restrict: 'A',
         require: 'ngModel',
         link: function (scope, element, attrs, ngModel) {
+            var re_test= /^([01]\d|2[0-3]):([0-5]\d)$/,
+                re_clean = /[^\d:]+/;
+
             ngModel.$parsers.unshift(function (value) {
                 var oldValue = ngModel.$modelValue;
+                var newValue = new Date(oldValue),
+                    clean;
                 if (value && !(value instanceof Date)) {
-                    if (/^([01]\d|2[0-3]):([0-5]\d)$/.test(value)) {
+                    if (re_test.test(value)) {
                         var parts = value.split(':');
-                        oldValue = oldValue || new Date();
-                        oldValue.setHours(parts[0]);
-                        oldValue.setMinutes(parts[1]);
+                        if (!newValue instanceof Date) {
+                            newValue = new Date();
+                        }
+                        newValue.setHours(parts[0]);
+                        newValue.setMinutes(parts[1]);
                     }
-                    if (moment(oldValue).isValid()) {
-                        ngModel.$setValidity('date', true);
-                        ngModel.$setViewValue(oldValue);
-                        return oldValue;
+                    if (moment(newValue).isValid()) {
+                        if (!moment(newValue).isSame(oldValue)) {
+                            ngModel.$setValidity('date', true);
+                            ngModel.$setViewValue(newValue);
+                        }
+                        clean = value.replace(re_clean, '');
+                        ngModel.$viewValue = clean;
+                        ngModel.$render();
+                        return newValue;
                     } else {
                         ngModel.$setValidity('date', false);
                         return undefined;
@@ -970,6 +991,32 @@ angular.module('WebMis20')
                             'title': null
                         };
                     };
+                }
+            }
+        }
+    }
+}])
+.directive('extSelectUfmsOrg', ['RefBookService', function (RefBookService) {
+    return {
+        restrict: 'A',
+        require: ['ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected ]]</ui-select-match>\
+<ui-select-choices repeat="ufms_name in ufms_list | filter: $select.search">\
+    <div ng-bind-html="ufms_name" | highlight: $select.search"></div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {
+                },
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите или введите организацию';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.ufms_list = [];
+                    scope.rbUFMS = RefBookService.get('rbUFMS');
+                    scope.rbUFMS.loading.then(function () {
+                        scope.ufms_list = scope.rbUFMS.objects.map(function (o) { return o.name; });
+                    });
                 }
             }
         }
