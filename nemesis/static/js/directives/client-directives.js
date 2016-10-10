@@ -20,6 +20,8 @@ angular.module('WebMis20.directives').
                     pType: '@',
                     idPostfix: '@',
                     modelPolicy: '=',
+                    minDate: '=?',
+                    maxDate: '=?',
                     edit_mode: '&editMode'
                 },
                 link: function(scope, elm, attrs, formCtrl) {
@@ -94,14 +96,16 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': (policyForm.$dirty || modelPolicy.id) && policyForm.pol_begdate[[idPostfix]].$invalid}">\
         <label for="pol_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
         <wm-date id="pol_begdate[[idPostfix]]" name="pol_begdate[[idPostfix]]"\
-                 ng-model="modelPolicy.beg_date" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty">\
+                 ng-model="modelPolicy.beg_date" ng-disabled="!edit_mode()" ng-required="policyForm.$dirty"\
+                 min-date="minDate" max-date="maxDate">\
         </wm-date>\
     </div>\
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': policyForm.pol_enddate[[idPostfix]].$invalid }">\
         <label for="pol_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
         <wm-date id="pol_enddate[[idPostfix]]" name="pol_enddate[[idPostfix]]"\
-                 ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()">\
+                 ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()"\
+                 min-date="modelPolicy.beg_date">\
         </wm-date>\
     </div>\
 </div>\
@@ -207,15 +211,13 @@ angular.module('WebMis20.directives').
                     groupCode:'@',
                     modelDocument: '=',
                     edit_mode: '&editMode',
+                    minDate: '=?',
+                    maxDate: '=?',
                     required: '=?'
                 },
                 link: function(scope, elm, attrs, formCtrl) {
                     scope.docForm = formCtrl;
                     scope.rbDocumentType = RefBookService.get('rbDocumentType');
-                    scope.rbUFMS = RefBookService.get('rbUFMS');
-                    scope.ufmsItems = scope.rbUFMS.objects.map(function(o) {
-                        return o.name;
-                    });
                     if (safe_traverse(scope, ['modelDocument', 'doc_type'])) {
                         scope.placeholder_serial = scope.make_placeholder(scope.modelDocument.doc_type.masks.serial);
                         scope.placeholder_number = scope.make_placeholder(scope.modelDocument.doc_type.masks.number);
@@ -223,14 +225,6 @@ angular.module('WebMis20.directives').
                         scope.placeholder_serial = '';
                         scope.placeholder_number = '';
                     }
-
-                    scope.$watch('rbUFMS.objects', function(n, o) {
-                        if (n !== o) {
-                            scope.ufmsItems = n.map(function(o) {
-                                return o.name;
-                            });
-                        }
-                    });
 
                     scope.$watch('docForm.$dirty', function(n, o) {
                         if (n) {
@@ -278,14 +272,16 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_begdate[[idPostfix]].$invalid}">\
         <label for="doc_begdate[[idPostfix]]" class="control-label">Дата выдачи</label>\
         <wm-date id="doc_begdate[[idPostfix]]" name="doc_begdate[[idPostfix]]"\
-                 ng-model="modelDocument.beg_date" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
+                 ng-model="modelDocument.beg_date" ng-disabled="!edit_mode()" ng-required="docForm.$dirty"\
+                 min-date="minDate" max-date="maxDate">\
         </wm-date>\
     </div>\
     <div class="form-group col-md-2"\
          ng-class="{\'has-error\': docForm.doc_enddate[[idPostfix]].$invalid }">\
         <label for="doc_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
         <wm-date id="doc_enddate[[idPostfix]]" name="doc_enddate[[idPostfix]]"\
-                 ng-model="modelDocument.end_date" ng-disabled="!edit_mode()">\
+                 ng-model="modelDocument.end_date" ng-disabled="!edit_mode()"\
+                 min-date="modelDocument.beg_date">\
         </wm-date>\
     </div>\
 </div>\
@@ -293,11 +289,10 @@ angular.module('WebMis20.directives').
     <div class="form-group col-md-12"\
          ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.doc_ufms.$invalid}">\
         <label for="doc_ufms[[idPostfix]]" class="control-label">Выдан</label>\
-        <div ng-class="form-control" class="validatable" id="doc_ufms[[idPostfix]]" name="doc_ufms"\
-             fs-select="" freetext="true" items="ufmsItems"\
-             ng-disabled="!edit_mode()" ng-required="docForm.$dirty" ng-model="modelDocument.origin">\
-            {{item}}\
-        </div>\
+        <ui-select ext-select-ufms-org tagging="" tagging-tokens="ENTER"\
+            ng-model="modelDocument.origin" allow-clear="true"\
+            theme="select2" id="doc_ufms[[idPostfix]]" name="doc_ufms"\
+            ng-disabled="!edit_mode()" ng-required="docForm.$dirty"></ui-select>\
     </div>\
 </div>'
             };
@@ -311,6 +306,8 @@ angular.module('WebMis20.directives').
                 scope: {
                     idPostfix: '@',
                     modelBloodType: '=',
+                    minDate: '=?',
+                    maxDate: '=?',
                     edit_mode: '&editMode'
                 },
                 link: function(scope, elm, attrs, formCtrl) {
@@ -332,7 +329,8 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': (cbtForm.$dirty || modelBloodType.id) && cbtForm.cbt_date[[idPostfix]].$invalid}">\
         <label for="cbt_date[[idPostfix]]" class="control-label">Дата установления</label>\
         <wm-date id="cbt_date[[idPostfix]]" name="cbt_date[[idPostfix]]"\
-                 ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty">\
+                 ng-model="modelBloodType.date" ng-disabled="!edit_mode()" ng-required="cbtForm.$dirty"\
+                 min-date="minDate" max-date="maxDate">\
         </wm-date>\
     </div>\
     <div class="form-group col-md-2"\
@@ -388,6 +386,8 @@ angular.module('WebMis20.directives').
                     idPostfix: '@',
                     type: '@',
                     modelAllergy: '=',
+                    minDate: '=?',
+                    maxDate: '=?',
                     edit_mode: '&editMode'
 
                 },
@@ -423,7 +423,8 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': (algForm.$dirty || modelAllergy.id) && algForm.alg_date[[idPostfix]].$invalid}">\
         <label for="alg_date[[idPostfix]]" class="control-label">Дата установления</label>\
         <wm-date id="alg_date[[idPostfix]]" name="alg_date[[idPostfix]]"\
-                 ng-model="modelAllergy.date" ng-disabled="!edit_mode()" ng-required="algForm.$dirty">\
+                 ng-model="modelAllergy.date" ng-disabled="!edit_mode()" ng-required="algForm.$dirty"\
+                 min-date="minDate" max-date="maxDate">\
         </wm-date>\
     </div>\
 </div>\
