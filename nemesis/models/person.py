@@ -368,3 +368,31 @@ class PersonContact(db.Model):
 
     def __int__(self):
         return self.id
+
+class PersonCertificate(db.Model):
+    __tablename__ = 'PersonCertificate'
+
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.now)
+    start_date = db.Column(db.DateTime, default=datetime.datetime.now)
+    end_date = db.Column(db.DateTime, default=datetime.datetime.now)
+    number = db.Column(db.String(16), nullable=False)
+    deleted = db.Column(db.Integer, default=0)
+    contactType_id = db.Column(db.Integer, db.ForeignKey('rbContactType.id'), nullable=False, index=True)
+    person_id = db.Column(db.ForeignKey('Person.id'), nullable=False, index=True)
+    person = db.relationship('Person', )
+
+    @property
+    def name(self):
+        return self.contactType.name if self.contactType else None
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'deleted': self.deleted,
+            'contact_type': self.contactType,
+            'contact_text': self.value,
+        }
+
+    def __int__(self):
+        return self.id
