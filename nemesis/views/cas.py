@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import urllib2
-
+import logging
+import datetime
 import requests
+
 from requests.exceptions import ConnectionError
 from flask import render_template, abort, request, redirect, url_for, session, current_app, make_response
 from flask_principal import Identity, AnonymousIdentity, identity_changed, identity_loaded, RoleNeed, UserNeed, ActionNeed
@@ -17,6 +19,8 @@ from nemesis.app import app
 
 __author__ = 'viruzzz-kun'
 
+
+logger = logging.getLogger('simple')
 
 semi_public_endpoints = ('config_js', 'current_user_js', 'select_role', 'logout')
 
@@ -268,6 +272,10 @@ def select_role():
         if not UserProfileManager.has_ui_assistant() and current_user.master:
             current_user.set_master(None)
             identity_changed.send(current_app._get_current_object(), identity=Identity(current_user.id))
+        logger.info(u'Пользователь {user_descr} авторизовался {dt:%d.%m.%Y %H:%M:%S}'.format(
+            user_descr=current_user.format_name_for_log(),
+            dt=datetime.datetime.now()
+        ), extra=dict(tags=['AUTH', 'AUTH_IN']))
         return redirect_after_user_change()
     return render_template('user/select_role.html', form=form, errors=errors)
 
@@ -275,6 +283,7 @@ def select_role():
 @app.route('/logout/')
 @public_endpoint
 def logout():
+    user_info = current_user.format_name_for_log()
     _logout_user()
     response = redirect(request.args.get('next') or '/')
     token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
@@ -283,6 +292,10 @@ def logout():
         response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
     if 'BEAKER_SESSION' in app.config:
         response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+    logger.info(u'Пользователь {user_descr} вышел из системы {dt:%d.%m.%Y %H:%M:%S}'.format(
+        user_descr=user_info,
+        dt=datetime.datetime.now()
+    ), extra=dict(tags=['AUTH', 'AUTH_OUT']))
     return response
 
 

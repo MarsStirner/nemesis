@@ -148,6 +148,11 @@ class User(UserMixin):
         else:
             return u'{0} {1}'.format(self.lastName, self.firstName)
 
+    def format_name_for_log(self):
+        return u'{0} {1} ({2})'.format(
+            self.format_name(), self.id, self.regionalCode or self.code
+        )
+
     def export_js(self):
         return {
             'id': self.id,
