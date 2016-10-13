@@ -315,7 +315,7 @@ class MaternalCertificate(db.Model):
     series = db.Column(db.String(64))
     number = db.Column(db.String(64))
     issuing_LPU_free_input = db.Column(db.String(255))
-    deleted = db.Column(db.Integer, default=0)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
 
     issuing_LPU_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), index=True)
     issuing_LPU = db.relationship('Organisation')
