@@ -993,7 +993,6 @@ angular.module('WebMis20')
                 pre: function preLink(scope, iElement, iAttrs, controller) {
                 },
                 post: function postLink(scope, iElement, iAttrs, controller) {
-                    var free_input = iAttrs.freeinput ? scope.$eval(iAttrs.freeinput) : undefined;
                     scope.placeholder = iAttrs.placeholder || 'Выберите Организацию';
                     scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
                     scope.flt_orgs = [];
@@ -1007,15 +1006,12 @@ angular.module('WebMis20')
                     scope.Organisation.loading.then(function () {
                         // выбрать isHospital или isLPU или isStationary, но при этом не поставлен признак isInsurer
                         scope.flt_orgs = _.filter(scope.Organisation.objects, function(org) {
-                            if ( org.is_hospital === true || org.is_lpu === true  || org.is_stationary === true ) {
-                                if ( org.is_insurer !== true ) {
+                            if (org.is_hospital && org.is_lpu && org.is_stationary) {
+                                if (!org.is_insurer) {
                                     return org
                                 }
                             }
                         });
-                        if ( free_input!== undefined ) {
-                            scope.flt_orgs = [].concat(scope.orgBuilder(free_input), scope.flt_orgs);
-                        }
                     });
                 }
             }
