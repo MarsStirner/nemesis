@@ -305,3 +305,35 @@ class rbFisherKTGRate(db.Model):
 
     def __int__(self):
         return self.id
+
+
+class MaternalCertificate(db.Model):
+    __tablename__ = u'MaternalCertificates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime)
+    series = db.Column(db.String(64))
+    number = db.Column(db.String(64))
+    issuing_LPU_free_input = db.Column(db.String(255))
+    deleted = db.Column(db.Integer, default=0)
+
+    issuing_LPU_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), index=True)
+    issuing_LPU = db.relationship('Organisation')
+    event_id = db.Column(db.Integer, db.ForeignKey('Event.id'), nullable=False, index=True)
+    event = db.relationship('Event',  back_populates="maternal_cert")
+
+    @property
+    def lpu(self,):
+        return self.issuing_LPU if self.issuing_LPU else {'id': None, 'short_name': self.issuing_LPU_free_input}
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'date': self.date,
+            'series': self.series,
+            'number': self.number,
+            'issuing_LPU_free_input': self.issuing_LPU_free_input,
+            'issuing_LPU_id': self.issuing_LPU_id,
+            'lpu': self.lpu,
+            'event_id': self.event_id,
+        }

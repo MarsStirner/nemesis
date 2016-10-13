@@ -1022,6 +1022,49 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectHospitalOrg', ['$http', 'RefBookService', 'WMConfig',
+        function ($http, RefBookService, WMConfig) {
+    return {
+        restrict: 'A',
+        require: ['ngModel'],
+        compile: function compile (tElement, tAttrs, transclude) {
+            // need to add this attribute to template
+            // set in manually in ui-select tag in templates
+            //tElement.attr('tagging', 'orgBuilder');
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.short_name ]]</ui-select-match>\
+<ui-select-choices repeat="org in flt_orgs | filter: $select.search">\
+    <div ng-bind-html="org.short_name" | highlight: $select.search"></div>\
+</ui-select-choices> ');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {
+                },
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите Организацию';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.flt_orgs = [];
+                    scope.orgBuilder = function(name) {
+                        return {
+                            'id': null,
+                            'short_name': name
+                        };
+                    };
+                    scope.Organisation = RefBookService.get('Organisation');
+                    scope.Organisation.loading.then(function () {
+                        // выбрать isHospital или isLPU или isStationary, но при этом не поставлен признак isInsurer
+                        scope.flt_orgs = _.filter(scope.Organisation.objects, function(org) {
+                            if (org.is_hospital && org.is_lpu && org.is_stationary) {
+                                if (!org.is_insurer) {
+                                    return org
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    }
+}])
 .directive('extSelectRefBookSearch', ['$http', 'WMConfig', function ($http, WMConfig) {
     return {
         restrict: 'A',
