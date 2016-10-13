@@ -118,6 +118,7 @@ def fc_urls():
                 'cas_check_token': coldstar_url + "cas/api/check/",
                 'cas_prolong_token': coldstar_url + "cas/api/prolong/",
                 'cas_release_token': coldstar_url + "cas/api/release/",
+                'cas_active_users_count': coldstar_url + "cas/api/active_users_count/",
                 'scan_get_device_list': coldstar_url + "scan/list/",
                 'scan_process_scan': coldstar_url + "scan/scan",
                 'ezekiel_acquire_lock': coldstar_url + "ezekiel/acquire/{0}",

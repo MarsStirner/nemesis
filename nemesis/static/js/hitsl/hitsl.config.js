@@ -55,16 +55,16 @@ angular.module('hitsl.ui')
             }];
             return $delegate;
         }]);
-    }]).factory('noCacheInterceptor', function () {
-            return {
-                request: function (config) {
-                     if(config.method=='GET') {
-                         config.headers['If-Modified-Since'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
-                         config.headers['Cache-Control'] = 'no-cache';
-                         config.headers['Pragma'] = 'no-cache';
-                     }
-                    return config;
-               }
-           };
-    });
-;
+}])
+.factory('noCacheInterceptor', function () {
+    return {
+        request: function (config) {
+            if (config.method === 'GET') {
+                config.headers['If-Modified-Since'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
+                config.headers['Cache-Control'] = 'no-cache';
+                config.headers['Pragma'] = 'no-cache';
+            }
+            return config;
+        }
+    };
+});
