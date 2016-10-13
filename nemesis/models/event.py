@@ -86,6 +86,11 @@ class Event(db.Model):
         uselist=False
     )
     uuid = db.relationship('UUID')
+    maternal_cert = db.relationship(
+        u'MaternalCertificate',
+        primaryjoin="and_(Event.id == MaternalCertificate.event_id, MaternalCertificate.deleted == 0)",
+        uselist=False, back_populates='event'
+    )
 
     @property
     def diagnostics(self):
