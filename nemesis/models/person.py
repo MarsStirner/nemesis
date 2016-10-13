@@ -28,6 +28,8 @@ class Person(db.Model):
     patrName = db.Column(db.Unicode(30), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('rbPost.id'), index=True)
     speciality_id = db.Column(db.Integer, db.ForeignKey('rbSpeciality.id'), index=True)
+    qualification_id = db.Column(db.Integer, db.ForeignKey('rbDoctorQualification.id'), index=True)
+    cert_id = db.Column(db.Integer, db.ForeignKey('PersonCertificate.id'), index=True)
     org_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), index=True)
     orgStructure_id = db.Column(db.Integer, db.ForeignKey('OrgStructure.id'), index=True)
     office = db.Column(db.Unicode(8), nullable=False)
@@ -71,6 +73,8 @@ class Person(db.Model):
     speciality = db.relationship('rbSpeciality', lazy=False)
     organisation = db.relationship('Organisation')
     org_structure = db.relationship('OrgStructure')
+    cert = db.relationship('PersonCertificate', uselist=False)
+    qualification = db.relationship('rbDoctorQualification')
     academicDegree = db.relationship('rbAcademicDegree')
     academicTitle = db.relationship('rbAcademicTitle')
     tariffCategory = db.relationship('rbTariffCategory')
@@ -331,6 +335,37 @@ class rbOrgCurationLevel(db.Model):
         }
 
 
+class rbDoctorQualification(db.Model):
+    __tablename__ = u'rbDoctorQualification'
+    _table_description = u'Квалификации врача'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
+class rbDoctorCertificateType(db.Model):
+    __tablename__ = u'rbDoctorCertificateType'
+    _table_description = u'Справочник типов сертификатов врачей'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
 class PersonCurationAssoc(db.Model):
     __tablename__ = u'PersonCuration'
 
@@ -340,6 +375,7 @@ class PersonCurationAssoc(db.Model):
 
     person = db.relationship('Person')
     org_curation_level = db.relationship('rbOrgCurationLevel')
+
 
 class PersonContact(db.Model):
     __tablename__ = 'PersonContact'
@@ -368,3 +404,28 @@ class PersonContact(db.Model):
 
     def __int__(self):
         return self.id
+
+
+class PersonCertificate(db.Model):
+    __tablename__ = 'PersonCertificate'
+
+    id = db.Column(db.Integer, primary_key=True)
+    deleted = db.Column(db.Integer, default=0)
+    created = db.Column(db.DateTime, default=datetime.datetime.now)
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
+    number = db.Column(db.String(16))
+
+    cert_type_id = db.Column(db.Integer, db.ForeignKey('rbDoctorCertificateType.id'), nullable=False, index=True)
+    cert_type = db.relationship('rbDoctorCertificateType')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'deleted': self.deleted,
+            'number': self.number,
+            'start_date': self.start_date,
+            'end_date': self.end_date,
+            'cert_type': self.cert_type
+        }
+
