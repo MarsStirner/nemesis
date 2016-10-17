@@ -87,7 +87,7 @@ def create_action(action_type, event, src_action=None, assigned=None, properties
         event = Event.query.get(int(event))
     if event is None:
         raise ValueError('Event neither refer to existing Event nor newly created model')
-    main_user_p = Person.query.get(current_user.get_main_user().id)
+    main_user_p = Person.query.get(current_user.get_main_user().id) if current_user else None
 
     action = Action()
     action.actionType = action_type
