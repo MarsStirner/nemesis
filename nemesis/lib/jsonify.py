@@ -1454,7 +1454,10 @@ class ActionVisualizer(object):
             'set_person_short_name': action.setPerson.shortNameText if action.setPerson else u'Нет',
             'person_id': action.person_id,
             'person_short_name': action.person.shortNameText if action.person else u'Нет',
-            'event_external_id': action.event.externalId
+            'event_external_id': action.event.externalId,
+            'client_short_name': action.event.client.shortNameText,
+            'client_id': action.event.client.id,
+            'finance_name': action.event.eventType.finance.name
         }
 
     def make_action_wo_sensitive_props(self, action):
