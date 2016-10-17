@@ -8,6 +8,7 @@ from nemesis.models.utils import safe_current_user_id
 from nemesis.systemwide import db
 
 
+
 class Person(db.Model):
     __tablename__ = 'Person'
     __table_args__ = (
@@ -122,6 +123,16 @@ class Person(db.Model):
     def __unicode__(self):
         return self.nameText
 
+    @property
+    def phones(self,):
+        phones = []
+        for x in self.contacts:
+            ct = x.contactType
+            if ct:
+                if ct.code in [u"01", u"02", u"03", u"13"]:
+                    phones.append(x)
+        return phones
+
     def __json__(self):
         return {
             'id': self.id,
@@ -136,7 +147,8 @@ class Person(db.Model):
             'full_name': self.full_name,
             'snils': self.SNILS,
             'inn': self.INN,
-            'short_name': self.shortNameText
+            'short_name': self.shortNameText,
+            'phones': self.phones,
         }
 
     def __int__(self):
