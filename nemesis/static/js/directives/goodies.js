@@ -282,4 +282,22 @@ angular.module('WebMis20.directives.goodies', [])
             }, 500);
         }
     };
-});
+})
+.directive('noUndefinedValue', [function () {
+    return {
+        restrict: 'A',
+        require: 'ngModel',
+        // lower than default priority so that this will not interfere with
+        // other libs $modelValue watchers, i.e. angular-ui-select
+        priority: -1,
+        link: function (scope, element, attrs, ngModelCtrl) {
+            scope.$watch(function () {
+                return ngModelCtrl.$modelValue;
+            }, function (newVal, oldVal) {
+                if (newVal !== oldVal && newVal === undefined) {
+                    ngModelCtrl.$setViewValue(null);
+                }
+            });
+        }
+    }
+}]);
