@@ -1097,6 +1097,39 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectMkb', ['$compile', 'RefBookService', function ($compile, RefBookService) {
+    return {
+        restrict: 'A',
+        priority: 50000,
+        terminal: true,
+        compile: function compile (tElement, tAttrs, transclude) {
+            tElement.attr('theme', 'select2');
+            tElement.append(
+'<ui-select-match placeholder="[[placeholder]]"\
+    allow-clear="[[allowClear]]"><b>[[ $select.selected.code ]]</b> <span title="[[$select.selected.name]]"\
+    >[[ $select.selected.name ]]</span></ui-select-match>\
+<ui-select-choices repeat="mkb in MKB.objects | filter: $select.search | limitTo: 100 track by mkb.id">\
+    <div ng-bind-html="mkb.code | highlight: $select.search"></div>\
+    <small style="font-style: italic" ng-bind-html="mkb.name"></small>\
+</ui-select-choices>');
+
+            tElement.removeAttr('ext-select-mkb');
+            tElement.removeAttr('data-ext-select-mkb');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {
+                    console.log(controller);
+                },
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Выберите МКБ';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.MKB = RefBookService.get('MKB');
+
+                    $compile(iElement)(scope);
+                }
+            }
+        }
+    }
+}])
 .controller('InplaceTableCtrl', ['$scope', function($scope) {
     var edited = null,
         self = this,
