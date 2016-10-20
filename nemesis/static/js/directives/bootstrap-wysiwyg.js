@@ -122,7 +122,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         }
     }
 }])
-.directive('wysiwyg', ['$q', '$compile', '$templateCache', function ($q, $compile, $templateCache) {
+.directive('wysiwyg', ['$q', '$compile', '$templateCache', 'HtmlCleaner',
+        function ($q, $compile, $templateCache, HtmlCleaner) {
     var regexp_cleanHtml = new RegExp('(<br>|<div><br><\/div>|&nbsp;)', 'g'),
         regexp_emptyHtml = new RegExp('(<br>|\\s|<div><br><\/div>|&nbsp;)', 'g');
     var readFileIntoDataUrl = function (fileInfo) {
@@ -323,6 +324,70 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 });
             });
 
+            function handlePaste (e) {
+                // http://stackoverflow.com/a/6804718
+                var types, pastedData, savedContent;
+                var _editor = editor[0];
+
+                // Browsers that support the 'text/html' type in the Clipboard API (Chrome, Firefox 22+)
+                var clipboardData = e && (e.originalEvent || e).clipboardData;
+                if (clipboardData && clipboardData.types && clipboardData.getData) {
+                    // Check for 'text/html' in types list. DOMStringList bit is needed by FF.
+                    // We cannot fall back to 'text/plain' as Safari/Edge don't advertise HTML
+                    // data even if it is available
+                    types = clipboardData.types;
+                    if (((types instanceof DOMStringList) && types.contains("text/html")) ||
+                        (types.indexOf && types.indexOf('text/html') !== -1)) {
+
+                        // Extract data and pass it to callback
+                        pastedData = clipboardData.getData('text/html');
+                        processPaste(pastedData);
+
+                        // Stop the data from actually being pasted
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                // Everything else: Move existing element contents to a DocumentFragment for safekeeping
+                savedContent = document.createDocumentFragment();
+                while (_editor.childNodes.length > 0) {
+                    savedContent.appendChild(_editor.childNodes[0]);
+                }
+                // Then wait for browser to paste content into it and cleanup
+                waitForPastedData(_editor, savedContent);
+                return true;
+            }
+            function waitForPastedData (elem, savedContent) {
+                // If data has been processes by browser, process it
+                if (elem.childNodes && elem.childNodes.length > 0) {
+                    // Retrieve pasted content via innerHTML
+                    // (Alternatively loop through elem.childNodes or elem.getElementsByTagName here)
+                    var pastedData = elem.innerHTML;
+                    // Restore saved content
+                    elem.innerHTML = "";
+                    elem.appendChild(savedContent);
+                    processPaste(pastedData);
+                }
+                // Else wait 20ms and try again
+                else {
+                    setTimeout(function () {
+                        waitForPastedData(elem, savedContent)
+                    }, 20);
+                }
+            }
+            function processPaste (pastedData) {
+                var cleaned = HtmlCleaner.clean(pastedData);
+                editor.focus();
+                restoreSelection();
+                execCommand('insertHTML', cleaned);
+                saveSelection();
+                updateModel();
+            }
+
+            editor.on('paste', handlePaste);
+
             scope.insertText = function (myValue) {
                 editor.focus();
                 restoreSelection();
@@ -368,10 +433,112 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                     updateToolbar();
                 }
             });
+
             replace.append(toolbar);
             replace.append(editor);
             $(element).replaceWith(replace);
             $compile(replace)(scope);
+        }
+    };
+}])
+.service('HtmlCleaner', [function () {
+    this.clean = function (val) {
+        return cleanPaste(val);
+    };
+
+    // from https://github.com/yabwe/medium-editor : src/js/extensions/paste.js : version 5.22.1
+    var _replacements = [
+        // Remove anything but the contents within the BODY element
+        [new RegExp(/^[\s\S]*<body[^>]*>\s*|\s*<\/body[^>]*>[\s\S]*$/g), ''],
+
+        // cleanup comments added by Chrome when pasting html
+        [new RegExp(/<!--StartFragment-->|<!--EndFragment-->/g), ''],
+
+        // Trailing BR elements
+        [new RegExp(/<br>$/i), ''],
+
+        // replace two bogus tags that begin pastes from google docs
+        [new RegExp(/<[^>]*docs-internal-guid[^>]*>/gi), ''],
+        [new RegExp(/<\/b>(<br[^>]*>)?$/gi), ''],
+
+         // un-html spaces and newlines inserted by OS X
+        [new RegExp(/<span class="Apple-converted-space">\s*<\/span>/gi), ' '],
+        [new RegExp(/<span class="Apple-converted-space"><span style=""><\/span><\/span>/gi), ' '],
+        [new RegExp(/<br class="Apple-interchange-newline">/g), '<br>'],
+
+        // replace google docs italics+bold with a span to be replaced once the html is inserted
+        [new RegExp(/<span[^>]*(font-style:italic;font-weight:(bold|700)|font-weight:(bold|700);font-style:italic)[^>]*>/gi), '<span class="replace-with italic bold">'],
+
+        // replace google docs italics with a span to be replaced once the html is inserted
+        [new RegExp(/<span[^>]*font-style:italic[^>]*>/gi), '<span class="replace-with italic">'],
+
+        //[replace google docs bolds with a span to be replaced once the html is inserted
+        [new RegExp(/<span[^>]*font-weight:(bold|700)[^>]*>/gi), '<span class="replace-with bold">'],
+
+         // replace manually entered b/i/a tags with real ones
+        [new RegExp(/&lt;(\/?)(i|b|a)&gt;/gi), '<$1$2>'],
+
+         // replace manually a tags with real ones, converting smart-quotes from google docs
+        [new RegExp(/&lt;a(?:(?!href).)+href=(?:&quot;|&rdquo;|&ldquo;|"|“|”)(((?!&quot;|&rdquo;|&ldquo;|"|“|”).)*)(?:&quot;|&rdquo;|&ldquo;|"|“|”)(?:(?!&gt;).)*&gt;/gi), '<a href="$1">'],
+
+        // Newlines between paragraphs in html have no syntactic value,
+        // but then have a tendency to accidentally become additional paragraphs down the line
+        [new RegExp(/<\/p>\n+/gi), '</p>'],
+        [new RegExp(/\n+<p/gi), '<p'],
+
+        // Microsoft Word makes these odd tags, like <o:p></o:p>
+        [new RegExp(/<\/?o:[a-z]*>/gi), ''],
+
+        // Microsoft Word adds some special elements around list items
+        [new RegExp(/<!\[if !supportLists\]>(((?!<!).)*)<!\[endif]\>/gi), '$1']
+    ];
+    var cleanPaste = function (text) {
+        var i, elList, tmp, workEl,
+            multiline = /<p|<br|<div/.test(text),
+            replacements = _replacements;
+        var html_text;
+
+        for (i = 0; i < replacements.length; i += 1) {
+            text = text.replace(replacements[i][0], replacements[i][1]);
+        }
+
+        if (multiline) {
+            // create a temporary div to cleanup block elements
+            tmp = document.createElement('div');
+
+            // double br's aren't converted to p tags, but we want paragraphs.
+            tmp.innerHTML = '<p>' + text.split('<br><br>').join('</p><p>') + '</p>';
+
+            // block element cleanup
+            elList = tmp.querySelectorAll('a,p,div,br');
+            for (i = 0; i < elList.length; i += 1) {
+                workEl = elList[i];
+
+                // Microsoft Word replaces some spaces with newlines.
+                // While newlines between block elements are meaningless, newlines within
+                // elements are sometimes actually spaces.
+                workEl.innerHTML = workEl.innerHTML.replace(/\n/gi, ' ');
+
+                switch (workEl.nodeName.toLowerCase()) {
+                    case 'p':
+                    case 'div':
+                        filterCommonBlocks(workEl);
+                        break;
+                    //case 'br':
+                    //    this.filterLineBreak(workEl);
+                    //    break;
+                }
+            }
+            html_text = tmp.innerHTML;
+        } else {
+            html_text = text;
+        }
+        html_text = html_text.replace(/&nbsp;/g, ' ');
+        return html_text;
+    };
+    var filterCommonBlocks = function (el) {
+        if (/^\s*$/.test(el.textContent) && el.parentNode) {
+            el.parentNode.removeChild(el);
         }
     };
 }])
