@@ -10,18 +10,37 @@ from nemesis.systemwide import db
 __author__ = 'viruzzz-kun'
 
 
+def get_mkb(data, attr):
+    mkb = None
+    mkb_id = safe_traverse(data, attr, 'id')
+    if mkb_id:
+        mkb = MKB.query.get(mkb_id)
+    else:
+        mkb_code = safe_traverse(data, attr, 'code')
+        if mkb_code:
+            mkb = MKB.query.filter(MKB.DiagID == mkb_code).first()
+    return mkb
+
+
 def create_diagnostic(diagnostic_data, action):
     """
     создание Diagnositc
     :type diagnostic_data: данные диагностики
     :type action: действие, в контексте которого создаётся диагностика
     """
-
-    mkb_id = safe_traverse(diagnostic_data, 'mkb', 'id')
-    mkb2_id = safe_traverse(diagnostic_data, 'mkb2', 'id')
+    mkb = get_mkb(diagnostic_data, 'mkb')
+    mkb2 = get_mkb(diagnostic_data, 'mkb2')
+    create_datetime = safe_datetime(safe_traverse(diagnostic_data, 'create_datetime'))
     diagnostic = Diagnostic()
-    diagnostic.mkb = MKB.query.get(mkb_id) if mkb_id else None
-    diagnostic.mkb_ex = MKB.query.get(mkb2_id) if mkb2_id else None
+    if create_datetime:
+        # this date is used in diag query logic
+        diagnostic.createDatetime = create_datetime
+    person_id = safe_traverse(diagnostic_data, 'person', 'id')
+    if person_id:
+        person = Person.query.get(person_id)
+        diagnostic.person = diagnostic.createPerson = diagnostic.modifyPerson = person
+    diagnostic.mkb = mkb
+    diagnostic.mkb_ex = mkb2
     diagnostic.traumaType_id = safe_traverse(diagnostic_data, 'trauma', 'id')
     diagnostic.diagnosis_description = safe_traverse(diagnostic_data, 'diagnosis_description')
     diagnostic.character_id = safe_traverse(diagnostic_data, 'character', 'id')
@@ -139,17 +158,23 @@ def create_or_update_diagnoses(action, diagnoses_data):
             diagnostic_changed = diagnosis_data.get('diagnostic_changed')
             diagnostic_data = diagnosis_data.get('diagnostic')
             diagnosis_types = diagnosis_data.get('diagnosis_types')
+            person_id = safe_traverse(diagnosis_data, 'person', 'id')
+            person = Person.query.get(person_id) if person_id else None
+            if 'person' not in diagnostic_data:
+                diagnostic_data['person'] = {'id': person_id}
 
             if not diagnosis_id:
                 # Новый диагноза - надо забить данными
                 diagnosis.client = action.event.client
-                diagnosis.person = Person.query.get(safe_traverse(diagnosis_data, 'person', 'id'))
+                diagnosis.person = person
+
+            diagnosis.setDate = safe_date(diagnosis_data.get('set_date'))
+            diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
+            if person_id:
+                diagnosis.person = person
 
             if not diagnosis_id or diagnostic_changed:
                 # Либо новый диагноз, либо сменилась Диагностика
-                diagnosis.setDate = safe_datetime(diagnosis_data.get('set_date'))
-                diagnosis.endDate = safe_datetime(diagnosis_data.get('end_date'))
-
                 diagnostic = create_diagnostic(diagnostic_data, action)
                 diagnostic.diagnosis = diagnosis
 

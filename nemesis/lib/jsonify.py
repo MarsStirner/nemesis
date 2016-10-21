@@ -1711,6 +1711,7 @@ class DiagnosisVisualizer(object):
             'set_date': diagnostic.setDate,
             'end_date': diagnostic.endDate,
             'createDatetime': diagnostic.createDatetime,
+            'modifyDatetime': diagnostic.modifyDatetime,
             'mkb': diagnostic.mkb,
             'mkbex': diagnostic.mkb_ex,
             'deleted': diagnostic.deleted,

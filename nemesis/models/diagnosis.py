@@ -66,7 +66,7 @@ class Diagnosis(db.Model):
     client_id = db.Column(db.ForeignKey('Client.id'), index=True, nullable=False)
     person_id = db.Column(db.ForeignKey('Person.id'), index=True)
     setDate = db.Column(db.Date, default=datetime.date.today)
-    endDate = db.Column(db.Date)
+    endDate = db.Column(db.DateTime)
 
     client = db.relationship('Client')
     person = db.relationship('Person', foreign_keys=[person_id], lazy=False)
@@ -131,13 +131,13 @@ class Diagnostic(db.Model):
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
 
     # Basic data
-    MKB = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
+    MKB = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), nullable=False, index=True)
     MKB2 = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
     MKBEx = db.Column(db.String(8), db.ForeignKey('MKB.DiagID'), index=True)
-    notes = db.Column(db.Text, nullable=False, default='')
+    notes = db.Column(db.Text, server_default="''")
     diagnosis_description = db.Column(db.Text)
-    setDate = db.Column(db.Date, default=datetime.date.today)
-    endDate = db.Column(db.Date)
+    setDate = db.Column(db.DateTime, nullable=False, default=datetime.datetime.today)
+    endDate = db.Column(db.DateTime)
 
     # Extended data
     character_id = db.Column(db.ForeignKey('rbDiseaseCharacter.id'), index=True)
@@ -150,9 +150,9 @@ class Diagnostic(db.Model):
     person_id = db.Column(db.ForeignKey('Person.id'), index=True)
     dispanser_id = db.Column(db.ForeignKey('rbDispanser.id'), index=True)
     healthGroup_id = db.Column(db.ForeignKey('rbHealthGroup.id'), nullable=False)
-    sanatorium = db.Column(db.Integer, nullable=False, default=0)
-    hospital = db.Column(db.Integer, nullable=False, default=0)
-    version = db.Column(db.Integer, nullable=False, default=0)
+    sanatorium = db.Column(db.Integer, server_default="'0'")
+    hospital = db.Column(db.Integer, server_default="'0'")
+    version = db.Column(db.Integer, nullable=False, server_default="'0'")
 
     action = db.relationship('Action', backref='diagnostics')
     diagnosis = db.relationship('Diagnosis', backref='diagnostics')

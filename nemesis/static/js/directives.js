@@ -1393,11 +1393,12 @@ angular.module('WebMis20.directives')
                         <thead>\
                             <tr>\
                                 <th class="col-md-2">Тип диагноза</th>\
-                                <th class="col-md-3">Заболевание</th>\
-                                <th class="col-md-2">Характер</th>\
-                                <th class="col-md-2">Стадия</th>\
+                                <th class="col-md-4">Заболевание</th>\
+                                <th class="col-md-1">Характер</th>\
+                                <th class="col-md-1">Стадия</th>\
                                 <th class="col-md-1">Установлен</th>\
-                                <th class="col-md-1">Изменен/Закрыт</th>\
+                                <th class="col-md-1">Изменен</th>\
+                                <th class="col-md-1">Закрыт</th>\
                                 <th class="col-md-1" ng-if="canEdit"></th>\
                             </tr>\
                         </thead>\
@@ -1428,8 +1429,10 @@ angular.module('WebMis20.directives')
                                     [[diag.set_date | asDate ]]\
                                 </td>\
                                 <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
-                                    <span ng-if="diag.end_date">[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
-                                    <span ng-if="!diag.end_date">[[diag.diagnostic.createDatetime | asDate ]]</span>\
+                                    <span>[[diag.diagnostic.modifyDatetime | asDate ]]</span>\
+                                </td>\
+                                <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
+                                    <span>[[diag.diagnostic.ache_result.name ]] [[diag.end_date | asDate ]]</span>\
                                 </td>\
                                 <td ng-if="canEdit">\
                                     <button type="button" class="btn btn-sm btn-primary" title="Редактировать"\
@@ -1438,7 +1441,7 @@ angular.module('WebMis20.directives')
                                 </td>\
                             </tr>\
                             <tr ng-if="canAddNew && canEdit">\
-                                <td colspan="6">\
+                                <td colspan="7">\
                                     <div class="pull-right">\
                                         <button class="btn btn-primary" ng-click="add_new_diagnosis(diag_type)">Добавить новое заболевание</button>\
                                     </div>\
@@ -1514,23 +1517,26 @@ angular.module('WebMis20.directives')
         </div>\
         <div class="modal-body">\
             <ng-form name="form.DiagnosisForm">\
-                <div class="row marginal">\
-                    <div class="col-md-8">\
-                        <label for="MKB" class="control-label">МКБ</label>\
-                    </div>\
-                </div>\
                 <div class="row">\
                     <div class="col-md-8">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid || edit_mkb.same_mkb}">\
+                            <label for="MKB" class="control-label">МКБ</label>\
                             <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
                                     ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
                         </div>\
                     </div>\
-                    <div class="col-md-4" ng-if="edit_mkb.ui_mkb_disabled">\
-                        <button type="button" class="btn btn-warning" ng-click="edit_mkb.ui_mkb_disabled=false">Изменить код МКБ</button>\
-                    </div>\
-                    <div class="col-md-4" ng-if="edit_mkb.mkb_changed">\
-                        <button type="button" class="btn btn-default" ng-click="reverse_mkb_change()">Отменить изменение</button>\
+                    <div class="col-md-4">\
+                        <div class="form-group">\
+                            <label class="control-label">&nbsp;</label>\
+                            <div class="form-control-static" style="padding-top: 0px" ng-if="edit_mkb.ui_mkb_disabled">\
+                                <button type="button" class="btn btn-warning" ng-click="edit_mkb.ui_mkb_disabled=false"\
+                                    >Изменить код МКБ</button>\
+                            </div>\
+                            <div class="form-control-static" style="padding-top: 0px" ng-if="edit_mkb.mkb_changed">\
+                                <button type="button" class="btn btn-default" ng-click="reverse_mkb_change()"\
+                                    >Отменить изменение</button>\
+                            </div>\
+                        </div>\
                     </div>\
                 </div>\
                 <div class="row marginal" ng-if="edit_mkb.mkb_changed">\
@@ -1553,7 +1559,7 @@ angular.module('WebMis20.directives')
                         нужно использовть имеющийся диагноз.\
                     </div>\
                 </div>\
-                <div class="row marginal">\
+                <div class="row">\
                     <div class="col-md-8">\
                         <div class="form-group">\
                             <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
@@ -1571,7 +1577,7 @@ angular.module('WebMis20.directives')
                         </ui-select>\
                     </div>\
                 </div>\
-                <div class="row marginal">\
+                <div class="row">\
                     <div class="col-md-11">\
                         <label for="diagnosis_description" class="control-label">Описание диагноза</label>\
                         <wysiwyg ng-model="model.diagnostic.diagnosis_description" thesaurus-code="[[params.thesaurus_code]]"/>\
@@ -1609,7 +1615,7 @@ angular.module('WebMis20.directives')
                         </ui-select>\
                     </div>\
                 </div>\
-                <div class="row marginal">\
+                <div class="row">\
                     <div class="col-md-6">\
                         <div class="form-group"\
                         ng-class="{\'has-error\': model.person == null}">\
@@ -1617,6 +1623,8 @@ angular.module('WebMis20.directives')
                             <wm-person-select ng-model="model.person" name="diagnosis_person" ng-required="true"></wm-person-select>\
                         </div>\
                     </div>\
+                </div>\
+                <div class="row marginal">\
                     <div class="col-md-3">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.set_date.$invalid}">\
                             <label for="diagnosis_date" class="control-label">Диагноз установлен</label>\
@@ -1626,9 +1634,14 @@ angular.module('WebMis20.directives')
                     </div>\
                     <div class="col-md-3">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.end_date.$invalid}">\
-                            <label for="diagnosis_date" class="control-label">Дата окончания</label>\
-                            <wm-date name="end_date" ng-model="model.end_date">\
-                            </wm-date>\
+                            <label for="end_date" class="control-label">Дата окончания</label>\
+                            <wm-date id="end_date" ng-model="model.end_date"></wm-date>\
+                        </div>\
+                    </div>\
+                    <div class="col-md-2">\
+                        <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.end_date.$invalid}">\
+                            <label for="end_time" class="control-label">&nbsp;</label>\
+                            <wm-time id="end_time" ng-model="model.end_date"></wm-time>\
                         </div>\
                     </div>\
                 </div>\
