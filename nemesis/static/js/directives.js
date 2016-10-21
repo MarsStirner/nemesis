@@ -1041,7 +1041,7 @@ angular.module('WebMis20.directives')
             OrgStructure: ui_select_template,
             Person:  ui_select_template,
             Service: ui_select_template,
-            MKB: '<ui-mkb ng-model="model"></ui-mkb>',
+            MKB: '<ui-select ext-select-mkb ng-required="true" ng-model="model"></ui-select>',
             SpecialVariable: 'Special Variable',
             Area: '<ui-select ext-select-area theme="select2" ng-model="$parent.model"></ui-select>'
         };
@@ -1521,8 +1521,8 @@ angular.module('WebMis20.directives')
                     <div class="col-md-8">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid || edit_mkb.same_mkb}">\
                             <label for="MKB" class="control-label">МКБ</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
-                                    ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
+                            <ui-select ext-select-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
+                                ng-disabled="edit_mkb.ui_mkb_disabled"></ui-select>\
                         </div>\
                     </div>\
                     <div class="col-md-4">\
@@ -1563,7 +1563,7 @@ angular.module('WebMis20.directives')
                     <div class="col-md-8">\
                         <div class="form-group">\
                             <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkbex" name="mkb"></ui-mkb>\
+                            <ui-select ext-select-mkb allow-clear="true" ng-model="model.diagnostic.mkbex" name="mkb"></ui-select>\
                         </div>\
                     </div>\
                     <div class="col-md-3">\
