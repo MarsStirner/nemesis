@@ -1390,7 +1390,7 @@ angular.module('WebMis20.directives')
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
-                        'set_date': null,
+                        'set_date': scope.$parent.checkup.beg_date,
                         'end_date': null,
                         'deleted': 0,
                         'person': CurrentUser.get_main_user().info,
@@ -1549,10 +1549,6 @@ angular.module('WebMis20.directives')
 
                 if ($scope.model.id){
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
-                }
-
-                if ( _.isEmpty($scope.model.set_date) ) {
-                    $scope.model.set_date = new Date();
                 }
 
                 // https://github.com/angular-ui/bootstrap/issues/969
