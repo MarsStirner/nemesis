@@ -1102,6 +1102,7 @@ angular.module('WebMis20')
         restrict: 'A',
         priority: 50000,
         terminal: true,
+        scope: true,
         compile: function compile (tElement, tAttrs, transclude) {
             tElement.attr('theme', 'select2');
             tElement.append(
@@ -1116,9 +1117,7 @@ angular.module('WebMis20')
             tElement.removeAttr('ext-select-mkb');
             tElement.removeAttr('data-ext-select-mkb');
             return {
-                pre: function preLink(scope, iElement, iAttrs, controller) {
-                    console.log(controller);
-                },
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
                     scope.placeholder = iAttrs.placeholder || 'Выберите МКБ';
                     scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
