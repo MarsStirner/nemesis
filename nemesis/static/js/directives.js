@@ -1097,7 +1097,7 @@ angular.module('WebMis20.directives')
             MultiPerson:  ui_select_multiple_template,
             Service: ui_select_template,
             MultiService: ui_select_multiple_template,
-            MKB: '<ui-mkb ng-required=is_required ng-model="model"></ui-mkb>',
+            MKB: '<ui-select ext-select-mkb ng-required="is_required" ng-model="model"></ui-select>',
             MultiMKB: '<ui-select multiple ng-model="$parent.model" theme="select2" ref-book="MKB" close-on-select="false">\
                            <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
                            <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
@@ -1374,7 +1374,8 @@ angular.module('WebMis20.directives')
             scope: {
                 diagTypes: '=',
                 canAddNew: '=',
-                canEdit: '='
+                canEdit: '=',
+                checkupBegDate: '=?'
             },
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
@@ -1390,7 +1391,7 @@ angular.module('WebMis20.directives')
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
-                        'set_date': null,
+                        'set_date': scope.checkupBegDate,
                         'end_date': null,
                         'deleted': 0,
                         'person': CurrentUser.get_main_user().info,
@@ -1551,10 +1552,6 @@ angular.module('WebMis20.directives')
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
                 }
 
-                if ( _.isEmpty($scope.model.set_date) ) {
-                    $scope.model.set_date = new Date();
-                }
-
                 // https://github.com/angular-ui/bootstrap/issues/969
                 // http://stackoverflow.com/questions/19312936/angularjs-modal-dialog-form-object-is-undefined-in-controller
                 $scope.form = {};
@@ -1612,8 +1609,8 @@ angular.module('WebMis20.directives')
                 <div class="row">\
                     <div class="col-md-8">\
                         <div class="form-group" ng-class="{\'has-error\': form.DiagnosisForm.mkb.$invalid || edit_mkb.same_mkb}">\
-                            <ui-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
-                                    ng-disabled="edit_mkb.ui_mkb_disabled"></ui-mkb>\
+                            <ui-select ext-select-mkb ng-model="model.diagnostic.mkb" name="mkb" ng-required="true" \
+                                ng-disabled="edit_mkb.ui_mkb_disabled"></ui-select>\
                         </div>\
                     </div>\
                     <div class="col-md-4" ng-if="edit_mkb.ui_mkb_disabled">\
@@ -1647,7 +1644,7 @@ angular.module('WebMis20.directives')
                     <div class="col-md-8">\
                         <div class="form-group">\
                             <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkb2" name="mkb"></ui-mkb>\
+                            <ui-select ext-select-mkb allow-clear="true" ng-model="model.diagnostic.mkb2" name="mkb"></ui-select>\
                         </div>\
                     </div>\
                     <div class="col-md-3">\
