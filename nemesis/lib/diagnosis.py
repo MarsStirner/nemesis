@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import six
+
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN, \
     rbDiagnosisKind

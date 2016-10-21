@@ -3,7 +3,7 @@
 import datetime
 import itertools
 import logging
-
+import copy
 import os
 import base64
 import re
@@ -17,7 +17,8 @@ from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
     get_client_diagnostics
-from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions
+from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
+    get_prev_inspection_with_diags
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
@@ -1420,6 +1421,9 @@ class ActionVisualizer(object):
                 for prop in action.properties
             ],
             'ro': not UserUtils.can_edit_action(action, self.ignore_status),
+            'event_info': {
+                'external_id': action.event.externalId
+            },
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions if not for_template else [],
             'diagnoses': self.make_action_diagnoses_info(action) if not for_template else []
@@ -1659,41 +1663,88 @@ class ActionVisualizer(object):
         service_payment['sum'] = format_money(service_payment['sum'])
         return service_payment
 
-    def make_diagnosis_types_info(self, diagnosis, action):
-        associated = rbDiagnosisKind.cache().by_code().get('associated')
+    def make_action_diagnoses_info(self, action):
+        associated_kind = rbDiagnosisKind.cache().by_code().get('associated')
+        main_kind = rbDiagnosisKind.cache().by_code().get('main')
+        dvis = DiagnosisVisualizer()
+        is_new_action = action.id is None
 
-        action_diagnoses = Action_Diagnosis.query.filter(
-            Action_Diagnosis.deleted == 0,
-            Action_Diagnosis.action == action,
-            Action_Diagnosis.diagnosis == diagnosis,
-        )
+        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate)
+        diagnosis_ids = [diagnostic.diagnosis_id for diagnostic in diagnostics]
 
+        # выборка ассоциаций - типов диагнозов
+        associations = defaultdict(set)
+        if is_new_action:
+            # Для нового осмотра для существующегося диагноза тип (точнее вид) будет браться
+            #  1) из привязки этого диагноза к обращению, если тип является основным
+            #  2) или из предыдущего осмотра (такого экшена, у которого могут быть диагнозы),
+            #     если тип является основным
+            event_diagnoses = Event_Diagnosis.query.filter(
+                Event_Diagnosis.deleted == 0,
+                Event_Diagnosis.event == action.event,
+                Event_Diagnosis.diagnosis_id.in_(diagnosis_ids),
+                Event_Diagnosis.diagnosisKind == main_kind
+            )
+            for e_d in event_diagnoses:
+                associations[e_d.diagnosis_id].add(Action_Diagnosis(
+                    diagnosis_id=e_d.diagnosis_id,
+                    diagnosisType_id=e_d.diagnosisType_id,
+                    diagnosisKind_id=e_d.diagnosisKind_id,
+                    diagnosis=e_d.diagnosis,
+                    diagnosisType=e_d.diagnosisType,
+                    diagnosisKind=e_d.diagnosisKind
+                ))
+
+            prev_action = get_prev_inspection_with_diags(action).first()
+            action_diagnoses = Action_Diagnosis.query.filter(
+                Action_Diagnosis.deleted == 0,
+                Action_Diagnosis.action == prev_action,
+                Action_Diagnosis.diagnosis_id.in_(diagnosis_ids),
+                Action_Diagnosis.diagnosisKind == main_kind
+            ) if prev_action is not None else []
+            for a_d in action_diagnoses:
+                # если тип уже взят из привязки к обращению, то ничего не делать
+                if a_d.diagnosis_id not in associations:
+                    associations[a_d.diagnosis_id].add(Action_Diagnosis(
+                        diagnosis_id=a_d.diagnosis_id,
+                        diagnosisType_id=a_d.diagnosisType_id,
+                        diagnosisKind_id=a_d.diagnosisKind_id,
+                        diagnosis=a_d.diagnosis,
+                        diagnosisType=a_d.diagnosisType,
+                        diagnosisKind=a_d.diagnosisKind
+                    ))
+        else:
+            # Для созданного осмотра ассоциации берутся из A_D
+            action_diagnoses = Action_Diagnosis.query.filter(
+                Action_Diagnosis.deleted == 0,
+                Action_Diagnosis.action == action,
+                Action_Diagnosis.diagnosis_id.in_(diagnosis_ids),
+            )
+            for a_d in action_diagnoses:
+                associations[a_d.diagnosis_id].add(a_d)
+
+        # Итого: взять диагнозы и проставить типы (виды)
+        result = []
+        # По умолчанию все диагнозы сопутствующие, если не указано иного
         types_info = {
-            diag_type.code: associated
+            diag_type.code: associated_kind
             for diag_type in action.actionType.diagnosis_types
         }
-        types_info.update({
-            action_diagnosis.diagnosisType.code: action_diagnosis.diagnosisKind
-            for action_diagnosis in action_diagnoses
-        })
-        return types_info
-
-    def make_diagnosis_info(self, diagnosis, action):
-        dvis = DiagnosisVisualizer()
-        diagnosis_info = dvis.make_diagnosis_record(diagnosis)
-        diagnosis_info['diagnosis_types'] = self.make_diagnosis_types_info(diagnosis, action)
-        return diagnosis_info
-
-    def make_action_diagnoses_info(self, action):
-        dvis = DiagnosisVisualizer()
-        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate)
-        return [
-            dict(
+        for diagnostic in diagnostics:
+            # Основа типов. Как минимум диагноз будет сопутствующим
+            types = copy.copy(types_info)
+            # Если есть установленный тип (основной, осложнение), переписать его
+            types.update({
+                action_diagnosis.diagnosisType.code: action_diagnosis.diagnosisKind
+                for action_diagnosis in associations.get(diagnostic.diagnosis_id, ())
+            })
+            result.append(dict(
                 dvis.make_diagnosis_record(diagnostic.diagnosis, diagnostic),
-                diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, action),
-            )
-            for diagnostic in diagnostics
-        ]
+                diagnosis_types=types,
+                kind_changed=is_new_action,
+                diagnostic_changed=is_new_action,
+            ))
+        return result
 
 
 class DiagnosisVisualizer(object):

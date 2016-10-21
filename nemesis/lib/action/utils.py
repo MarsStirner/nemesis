@@ -2,10 +2,10 @@
 
 import datetime
 
-from sqlalchemy import exists, join
+from sqlalchemy import exists, join, and_, or_
 from sqlalchemy.sql.expression import func, between
 
-from nemesis.models.actions import Action, ActionType, ActionType_Service
+from nemesis.models.actions import Action, ActionType, ActionType_Service, ActionType_rbDiagnosisType
 from nemesis.models.accounting import PriceListItem
 from nemesis.systemwide import db
 
@@ -111,3 +111,17 @@ def check_action_service_requirements(action_type_id, price_list_item_id=None):
             else:
                 result['result'] = True
     return result
+
+
+def get_prev_inspection_with_diags(action):
+    return db.session.query(Action).join(ActionType).join(
+        ActionType.diagnosis_types
+    ).filter(
+        Action.deleted == 0,
+        Action.event_id == action.event_id,
+        or_(Action.begDate < action.begDate,
+            and_(Action.begDate == action.begDate,
+                 Action.id < action.id if action.id else True)
+            ),
+        Action.id != action.id
+    ).order_by(Action.begDate.desc()).limit(1)

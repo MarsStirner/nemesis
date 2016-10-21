@@ -1319,6 +1319,9 @@ angular.module('WebMis20.directives')
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
                 scope.rbDiagnosisKind = RefBookService.get('rbDiagnosisKind');
+                // текущая выбранная вкладка (тип диагноза клинический, заключительный, направительный и пр.)
+                scope.currentDiagTypeCode = undefined;
+
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
@@ -1348,6 +1351,7 @@ angular.module('WebMis20.directives')
 
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, ngModelCrtl.$viewValue).then(function () {
                         ngModelCrtl.$viewValue.push(new_diagnosis);
+                        scope.setMainDiagnKind(new_diagnosis);
                     });
                 };
                 scope.edit_diagnosis = function (diagnosis) {
@@ -1373,6 +1377,28 @@ angular.module('WebMis20.directives')
                         return kind[diag.diagnosis_types[type].code]
                     }
                 };
+                scope.hasAtleastOneMainDiagnosis = function () {
+                    var diagnoses = ngModelCrtl.$viewValue;
+                    return _.any(diagnoses, function(diag) {
+                        return safe_traverse(diag, ['diagnosis_types', scope.currentDiagTypeCode, 'code']) === 'main';
+                    });
+                };
+                scope.setMainDiagnKind = function (new_diagnosis) {
+                    if (!scope.hasAtleastOneMainDiagnosis()) {
+                        new_diagnosis.diagnosis_types[scope.currentDiagTypeCode] = scope.rbDiagnosisKind.get_by_code('main');
+                        new_diagnosis.kind_changed = true;
+                    }
+                };
+                scope.setCurrentDiagTypeCode = function(diag_type_code) {
+                    scope.currentDiagTypeCode = diag_type_code;
+                };
+                scope.$watch('diagTypes', function(n, o) {
+                    if (_.isUndefined(scope.currentDiagTypeCode)) {
+                        if (!_.isUndefined(n)) {
+                            scope.setCurrentDiagTypeCode(n[0].code);
+                        }
+                    }
+                });
                 scope.view_model = function () {
                     return ngModelCrtl.$viewValue;
                 };
@@ -1384,7 +1410,8 @@ angular.module('WebMis20.directives')
         '<div>\
             <ul class="nav nav-tabs">\
                 <li role="presentation" ng-repeat="diag_type in diagTypes" ng-class="{\'active\': $index == 0}">\
-                    <a href="#[[diag_type.code]]" aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
+                    <a href="#[[diag_type.code]]" ng-click="setCurrentDiagTypeCode(diag_type.code)"\
+                        aria-controls="[[diag_type.code]]" role="tab" data-toggle="tab">[[diag_type.name]]</a>\
                 </li>\
             </ul>\
             <div class="tab-content">\
