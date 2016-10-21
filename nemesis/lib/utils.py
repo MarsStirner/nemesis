@@ -3,6 +3,7 @@ import datetime
 import functools
 import logging
 import uuid
+import time
 
 from functools import wraps
 from decimal import Decimal
@@ -390,6 +391,20 @@ def safe_time(val):
         return val.time()
     else:
         return None
+
+def safe_timestamp(val, for_date=False, to_int=False, wo_time=False):
+    if isinstance(val, basestring):
+        val = safe_date(val) if for_date else safe_datetime(val)
+    if not isinstance(val, (datetime.date, datetime.datetime)) or not val:
+        return None
+    if for_date and not isinstance(val, datetime.date):
+        val = val.date()
+    ts = time.mktime(val.timetuple())
+    if to_int:
+        ts = int(ts)
+    if wo_time:
+        ts /= 86400
+    return ts
 
 
 def safe_traverse(obj, *args, **kwargs):
