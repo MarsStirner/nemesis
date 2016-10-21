@@ -1374,7 +1374,8 @@ angular.module('WebMis20.directives')
             scope: {
                 diagTypes: '=',
                 canAddNew: '=',
-                canEdit: '='
+                canEdit: '=',
+                checkupBegDate: '=?'
             },
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
@@ -1390,7 +1391,7 @@ angular.module('WebMis20.directives')
                 scope.add_new_diagnosis = function () {
                     var new_diagnosis = {
                         'id': null,
-                        'set_date': scope.$parent.checkup.beg_date,
+                        'set_date': scope.checkupBegDate,
                         'end_date': null,
                         'deleted': 0,
                         'person': CurrentUser.get_main_user().info,
