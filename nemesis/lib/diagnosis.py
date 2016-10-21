@@ -29,7 +29,7 @@ def create_diagnostic(diagnostic_data, action):
     :type action: действие, в контексте которого создаётся диагностика
     """
     mkb = get_mkb(diagnostic_data, 'mkb')
-    mkb2 = get_mkb(diagnostic_data, 'mkb2')
+    mkbex = get_mkb(diagnostic_data, 'mkbex')
     create_datetime = safe_datetime(safe_traverse(diagnostic_data, 'create_datetime'))
     diagnostic = Diagnostic()
     if create_datetime:
@@ -40,7 +40,7 @@ def create_diagnostic(diagnostic_data, action):
         person = Person.query.get(person_id)
         diagnostic.person = diagnostic.createPerson = diagnostic.modifyPerson = person
     diagnostic.mkb = mkb
-    diagnostic.mkb_ex = mkb2
+    diagnostic.mkb_ex = mkbex
     diagnostic.traumaType_id = safe_traverse(diagnostic_data, 'trauma', 'id')
     diagnostic.diagnosis_description = safe_traverse(diagnostic_data, 'diagnosis_description')
     diagnostic.character_id = safe_traverse(diagnostic_data, 'character', 'id')

@@ -1329,7 +1329,7 @@ angular.module('WebMis20.directives')
                         'diagnostic': {
                             'id': null,
                             'mkb': null,
-                            'mkb2': null,
+                            'mkbex': null,
                             'character': null,
                             'dispanser': null,
                             'trauma': null,
@@ -1416,7 +1416,7 @@ angular.module('WebMis20.directives')
                                           ng-bind="diag.diagnosis_types.[[diag_type.code]].name"></span>\
                                 </td>\
                                 <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
-                                    <span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkb2.name]]">[[diag.diagnostic.mkb2.code]]</span>\
+                                    <span class="pull-left bottom_dashed" tooltip="[[diag.diagnostic.mkbex.name]]">[[diag.diagnostic.mkbex.code]]</span>\
                                     [[diag.diagnostic.mkb.code]] <em>[[diag.diagnostic.mkb.name]]</em>\
                                 </td>\
                                 <td ng-class="{\'text-bold\': diag.diagnosis_types.[[diag_type.code]].code == \'main\'}">\
@@ -1563,7 +1563,7 @@ angular.module('WebMis20.directives')
                     <div class="col-md-8">\
                         <div class="form-group">\
                             <label for="MKB" class="control-label">МКБ дополнительный код (причина травмы, инфекционный агент)</label>\
-                            <ui-mkb ng-model="model.diagnostic.mkb2" name="mkb"></ui-mkb>\
+                            <ui-mkb ng-model="model.diagnostic.mkbex" name="mkb"></ui-mkb>\
                         </div>\
                     </div>\
                     <div class="col-md-3">\

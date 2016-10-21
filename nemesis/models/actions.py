@@ -743,6 +743,11 @@ class ActionProperty_MKB(ActionProperty__ValueType):
     value = db.relationship('MKB')
     property_object = db.relationship('ActionProperty', backref='_value_MKB')
 
+    @classmethod
+    def objectify(cls, prop, json_data):
+        from nemesis.models.exists import MKB
+        return MKB.query.get(json_data['id']) if json_data and 'id' in json_data else json_data
+
 
 class ActionProperty_OrgStructure(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_OrgStructure'
