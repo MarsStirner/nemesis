@@ -516,6 +516,7 @@ class UserProfileManager(object):
         'risar': [admin, obstetrician, overseer1, overseer2, overseer3, ambulance],
         'overseers': [admin, overseer1, overseer2, overseer3],
         'overseers_low': [admin, overseer1, overseer2],
+        'overseers_23': [admin, overseer2, overseer3],
         'overseers_high': [admin, overseer3],
         'nurse': [admin, nurse]
     }
@@ -584,6 +585,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_overseer_high(cls):
         return cls._get_user_role() in cls.ui_groups['overseers_high']
+
+    @classmethod
+    def has_ui_overseers23(cls):
+        return cls._get_user_role() in cls.ui_groups['overseers_23']
 
     @classmethod
     def has_ui_risar(cls):

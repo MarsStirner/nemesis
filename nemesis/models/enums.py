@@ -115,6 +115,15 @@ class MeasureStatus(EnumLoadable):
     cancelled_invalid = 10, u'Отмененное, как недействительное'
 
 
+class MeasureType(Enum):
+    lab_test = 1, u'Лабораторные исследования'
+    func_test = 2, u'Функциональные исследования'
+    checkup = 3, u'Осмотр врачами'
+    healthcare = 4, u'Лечебно-оздоровительные'
+    hospitalization = 5, u'Госпитализация'
+    social_preventiv = 6, u'Социально-профилактические'
+
+
 class MeasureScheduleType(EnumLoadable):
     __tablename__ = 'rbMeasureScheduleType'
 
