@@ -1072,7 +1072,7 @@ class ClientPolicy(db.Model):
         return bool(self.begDate and self.begDate <= moment and (not self.endDate or moment <= self.endDate))
 
     def __unicode__(self):
-        return (' '.join([self.policyType.name,
+        return (' '.join([self.policyType.name if self.policyType else '',
                           unicode(self.insurer) if self.insurer else '',
                           self.serial,
                           self.number])).strip()
