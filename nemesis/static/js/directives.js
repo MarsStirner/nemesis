@@ -1394,7 +1394,7 @@ angular.module('WebMis20.directives')
                 };
                 scope.$watch('diagTypes', function(n, o) {
                     if (_.isUndefined(scope.currentDiagTypeCode)) {
-                        if (!_.isUndefined(n)) {
+                        if (!_.isUndefined(n) && n.length) {
                             scope.setCurrentDiagTypeCode(n[0].code);
                         }
                     }
