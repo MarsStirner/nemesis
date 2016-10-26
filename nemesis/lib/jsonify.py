@@ -1423,7 +1423,7 @@ class ActionVisualizer(object):
             'ro': not UserUtils.can_edit_action(action, self.ignore_status),
             'event_info': {
                 'external_id': action.event.externalId
-            },
+            } if not for_template else None,
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions if not for_template else [],
             'diagnoses': self.make_action_diagnoses_info(action) if not for_template else []
