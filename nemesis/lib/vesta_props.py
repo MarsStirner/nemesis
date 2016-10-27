@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from weakref import WeakKeyDictionary
 
-from nemesis.lib.vesta import Vesta
-
 __author__ = 'viruzzz-kun'
 
 
@@ -19,6 +17,7 @@ class VestaProperty(object):
             self.cache[instance] = {}
 
     def __pull_vesta(self, value):
+        from nemesis.lib.vesta import Vesta
         if value:
             return Vesta.get_rb(self.rb, value)
 
