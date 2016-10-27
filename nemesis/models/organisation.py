@@ -31,7 +31,7 @@ class Organisation(db.Model):
     shortName = db.Column(db.String(255), nullable=False)
     title = db.Column(db.String(255), nullable=False, index=True)
     net_id = db.Column(db.Integer, db.ForeignKey('rbNet.id'), index=True)
-    infisCode = db.Column(db.String(12), nullable=False, index=True)
+    infisCode = db.Column(db.String(12), index=True)
     obsoleteInfisCode = db.Column(db.String(60), nullable=False)
     OKVED = db.Column(db.String(64), nullable=False, index=True)
     INN = db.Column(db.String(15), nullable=False, index=True)
