@@ -300,6 +300,12 @@ class UserUtils(object):
         return False
 
     @staticmethod
+    def can_read_event(event):
+        return event and (
+            current_user.has_right('adm') or event.deleted == 0
+        )
+
+    @staticmethod
     def can_edit_event(event):
         return event and (
             current_user.has_right('adm') or ((
@@ -335,16 +341,21 @@ class UserUtils(object):
         if not event:
             out_msg['message'] = u'Обращение еще не создано'
             return False
-        if current_user.has_right('adm', 'evtDelAll'):
+        if current_user.has_right('adm'):
+            return True
+
+        if not current_user.has_right('evtDelWithInvoices'):
+            from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+            invoice_ctrl = InvoiceController()
+            has_invoice = invoice_ctrl.check_event_has_invoice(event.id)
+            if has_invoice:
+                out_msg['message'] = u'В обращении есть выставленные счета'
+                return False
+
+        if current_user.has_right('evtDelAll'):
             return True
         elif current_user.has_right('evtDelOwn') and not event.is_closed:
             if current_user.id_any_in(event.execPerson_id, event.createPerson_id):
-                from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
-                invoice_ctrl = InvoiceController()
-                has_invoice = invoice_ctrl.check_event_has_invoice(event.id)
-                if has_invoice:
-                    out_msg['message'] = u'В обращении есть выставленные счета'
-                    return False
                 for action in event.actions:
                     # Проверка, что все действия не были изменены после создания обращения
                     # или, что не появилось новых действий
