@@ -769,6 +769,8 @@ class ActionProperty_MKB(ActionProperty__ValueType):
     @classmethod
     def objectify(cls, prop, json_data):
         from nemesis.models.exists import MKB
+        if isinstance(json_data, MKB):
+            return json_data
         return MKB.query.get(json_data['id']) if json_data and 'id' in json_data else json_data
 
 
