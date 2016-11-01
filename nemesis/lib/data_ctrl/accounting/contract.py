@@ -469,6 +469,7 @@ class ContractSelecter(BaseSelecter):
                     Contract.begDate,
                     func.coalesce(Contract.endDate, func.curdate())
                 ),
+                Client.id == client_id,
                 Contract.deleted == 0, Contract.draft == 0,
                 # policy date range intersects contract date range
                 and_(ClientPolicy.begDate <= func.coalesce(Contract.endDate, func.curdate()),
