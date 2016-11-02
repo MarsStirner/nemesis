@@ -63,6 +63,9 @@ WebMis20
         },
         get_client: function (client_id) {
             return wrapper('GET', WMConfig.url.accounting.api_contragent_client_get + client_id);
+        },
+        check_duplicate: function (data) {
+            return wrapper('POST', WMConfig.url.accounting.api_contragent_check_duplicate, {}, data);
         }
     };
     this.contingent = {

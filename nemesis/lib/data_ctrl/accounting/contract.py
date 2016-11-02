@@ -269,6 +269,20 @@ class ContragentController(BaseModelController):
         ca = sel.get_one()
         return ca
 
+    def check_duplicate(self, new_ca_data):
+        ca_type_id = ContragentType.getId(new_ca_data['ca_type_code'])
+        if ca_type_id == ContragentType.legal[0]:
+            existing = self.get_existing_contragent(org_id=new_ca_data['org']['id'])
+        elif ca_type_id == ContragentType.individual[0]:
+            existing = self.get_existing_contragent(client_id=new_ca_data['client']['id'])
+        else:
+            raise ApiException(400, 'unknown `cy_type_code`')
+        return {
+            'duplicate': bool(existing),
+            'existing': existing
+        }
+
+
     def update_contragent(self, contragent, json_data):
         json_data = self._format_contragent_data(json_data)
         contragent.client = json_data['client']

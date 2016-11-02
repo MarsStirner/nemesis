@@ -81,7 +81,7 @@ class ContractCounter(Counter):
             number = number.decode('utf-8')
         elif not isinstance(number, unicode):
             number = unicode(number)
-        return Contract.query.filter(Contract.number == number).count() > 0
+        return Contract.query.filter(Contract.number == number, Contract.deleted == 0).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
@@ -91,7 +91,7 @@ class ContractCounter(Counter):
 
 class InvoiceCounter(Counter):
     def check_number_used(self, number):
-        return Invoice.query.filter(Invoice.number == unicode(number)).count() > 0
+        return Invoice.query.filter(Invoice.number == unicode(number), Invoice.deleted == 0).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
