@@ -19,7 +19,8 @@ from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STA
 from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
-                                    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer)
+                                    OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
+                                    ActionType_TissueType)
 from nemesis.models.client import Client
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.event import Event, EventType_Action
@@ -214,7 +215,7 @@ def update_action_prescriptions(action, prescriptions):
 
 
 def create_new_action(action_type_id, event_id, src_action=None, assigned=None, properties=None, data=None,
-                      service_data=None):
+                      service_data=None, ttj_data=None):
     """
     Создание действия для сохранения в бд.
 
@@ -229,7 +230,7 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     action = create_action(action_type_id, event_id, src_action, assigned, properties, data)
     update_action_prescriptions(action, data.get('prescriptions'))
 
-    create_new_action_ttjs(action)
+    create_new_action_ttjs(action, ttj_data)
 
     # Service
     if action_needs_service(action):
@@ -245,10 +246,10 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
     return action
 
 
-def create_new_action_ttjs(action):
+def create_new_action_ttjs(action, ttj_data=None):
     org_structure = action.event.current_org_structure
     if action.actionType.isRequiredTissue and org_structure:
-        create_TTJ_record(action)
+        create_TTJ_record(action, ttj_data)
 
 
 def update_action(action, **kwargs):
@@ -361,7 +362,7 @@ def check_action_dates(action):
             ))
 
 
-def create_TTJ_record(action):
+def create_TTJ_record(action, ttj_data=None):
     """
     @type action: nemesis.models.actions.Action
     @param action:
@@ -379,10 +380,21 @@ def create_TTJ_record(action):
             u'Действие "%s" требует забор биоматериала, но не указан ни один необходимый тип биоматериала (ActionType.id = %s)' % (
                 action.actionType.name,
                 action.actionType_id))
-
+    if ttj_data:
+        sel_tt = ttj_data.get('selected_tissue_type') or []
+        if not isinstance(sel_tt, list):
+            sel_tt = [sel_tt]
+        tissue_type_ids = {tt['id'] for tt in sel_tt}
+    else:
+        tissue_type_ids = None
     client = action.event.client
+
     ttj_ids = set()
+    ttj_cnt = 0
     for attt in at_tissue_types:
+        if tissue_type_ids and attt.tissueType_id not in tissue_type_ids:
+            continue
+
         ttj = TakenTissueJournal.query.filter(
             TakenTissueJournal.client == client,
             TakenTissueJournal.tissueType == attt.tissueType,
@@ -411,6 +423,15 @@ def create_TTJ_record(action):
                 ttj_ids.add(ttj.id)
         action.tissues.append(ttj)
         db.session.add(ttj)
+        ttj_cnt += 1
+
+    if ttj_cnt == 0:
+        raise ActionException(
+            u'Действие "{0}" требует забор биоматериала, но при создании не был выбран подходящий тип биоматериала '
+            u'(ActionType.id = {1})'.format(
+                action.actionType.name,
+                action.actionType_id))
+
     blinker.signal('Core.Notify.TakenTissueJournal').send(None, ids=ttj_ids)
 
 
@@ -509,17 +530,18 @@ def _split_to_integers(string):
 
 at_tuple = collections.namedtuple(
     'at_tuple',
-    'id name code flat_code gid age sex at_os required_tissue at_apt class_ at_et children'
+    'id name code flat_code gid age sex at_os required_tissue at_apt class_ at_et '
+    'children tissue_types'
 )
 
 at_flat_tuple = collections.namedtuple(
     'at_flat_tuple',
-    'id name code flat_code gid age sex at_os required_tissue at_apt'
+    'id name code flat_code gid age sex at_os required_tissue at_apt tissue_types'
 )
 
 
 def at_tuple_2_flat_tuple_convert(item):
-    return at_flat_tuple(*item[:10])
+    return at_flat_tuple(*[i for idx, i in enumerate(item) if idx < 10 or idx == 13])
 
 
 @cache.memoize(3600)
@@ -566,6 +588,15 @@ def select_all_at():
             group_concat(EventType_Action.eventType_id, ' ')
         )
     }
+    at_tt_dict = {
+        at_id: _split_to_integers(tt_ids)
+        for at_id, tt_ids in ActionType_TissueType.query.group_by(
+            ActionType_TissueType.master_id
+        ).with_entities(
+            ActionType_TissueType.master_id,
+            group_concat(ActionType_TissueType.tissueType_id, ' ', ActionType_TissueType.idx)
+        )
+    }
     l = ActionType.query.filter(
         ActionType.deleted == 0,
         ActionType.hidden == 0,
@@ -596,6 +627,7 @@ def select_all_at():
             class_,
             at_et_dict.get(id_, []),
             set(),
+            at_tt_dict.get(id_, []),
         )
         for id_, name, code, flat_code, gid, age, sex, required_tissue, class_ in l
     }
@@ -811,6 +843,17 @@ def get_assignable_apts(at_id, client_id=None):
         apt_data_list = []
 
     return apt_data_list
+
+
+def get_at_tissue_type_ids(at_id):
+    all_at_data = int_get_atl_dict_all()
+    at_data = all_at_data.get(at_id)
+    if at_data is not None:
+        tissue_type_ids = at_data[10]
+    else:
+        tissue_type_ids = []
+
+    return tissue_type_ids
 
 
 def get_client_diagnostics(client, beg_date, end_date=None, including_closed=False):

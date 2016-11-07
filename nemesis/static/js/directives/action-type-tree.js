@@ -19,6 +19,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.osids = [];
                 this.tissue_required = false;
                 this.assignable = [];
+                this.tissue_types = [];
             } else if (angular.isArray(source)) {
                 this.id = source[0];
                 this.name = source[1];
@@ -30,6 +31,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.osids = source[7];
                 this.tissue_required = source[8];
                 this.assignable = source[9];
+                this.tissue_types = source[10];
             } else {
                 angular.extend(this, source)
             }
@@ -194,8 +196,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
     }
 }])
 .service('ActionTypeTreeModal', [
-        '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService', 'MessageBox', 'WMConfig',
-        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService, MessageBox, WMConfig) {
+        '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService',
+        'MessageBox', 'WMConfig', 'RefBookService',
+        function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService,
+                  MessageBox, WMConfig, RefBookService) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -237,6 +241,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     os_check: true,
                     person_check: true
                 };
+                $scope.rbTissueType = RefBookService.get('rbTissueType');
                 $scope.query = '';
                 $scope.os_check_enabled = true;
                 $scope.personal_check_enabled = true;
@@ -275,7 +280,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         assignable: node.assignable,
                         planned_end_date: new Date(),
                         service: null,
-                        urgent: false
+                        urgent: false,
+                        ttj: {
+                            available_tissue_types: node.tissue_types,
+                            selected_tissue_type: $scope.rbTissueType.get(node.tissue_types[0])
+                        }
                     };
                     if ($scope.at_service_data.hasOwnProperty(node.id)) {
                         var service_data = $scope.at_service_data[node.id];
@@ -344,7 +353,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                     assigned: action.assigned,
                                     planned_end_date: action.planned_end_date,
                                     service: action.service,
-                                    urgent: action.urgent
+                                    urgent: action.urgent,
+                                    ttj: {
+                                        selected_tissue_type: action.ttj.selected_tissue_type
+                                    }
                                 }
                             })
                         }
@@ -394,6 +406,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
                 $scope.get_action_price = function (action) {
                     return safe_traverse(action, ['service', 'sum']);
+                };
+                $scope.filterItemLabTissueType = function (action) {
+                    return function (item) {
+                        return action.ttj.available_tissue_types.has(item.id);
+                    }
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)
@@ -445,8 +462,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         },
         openAppointmentModal: function (model, date_required) {
             var assigned = {},
-                ped = {
-                    planned_end_date: model.planned_end_date
+                t_model = {
+                    planned_end_date: model.planned_end_date,
+                    ped_disabled: model.ped_disabled,
+                    available_tissue_types: model.available_tissue_types,
+                    selected_tissue_type: model.selected_tissue_type,
+                    tissue_type_visible: model.tissue_type_visible
                 };
             model.assignable.forEach(function (prop) {
                 assigned[prop[0]] = model.assigned.has(prop[0]);
@@ -455,8 +476,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.model = model;
                 $scope.assigned = assigned;
                 $scope.date_required = date_required;
-                $scope.ped = ped;
-                $scope.ped_disabled = Boolean(model.ped_disabled);
+                $scope.t_model = t_model;
                 $scope.assignable = model.assignable.map(function (item) {
                     return item[0];
                 });
@@ -477,6 +497,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.get_price = function (prop) {
                     return prop[2];
                 };
+                $scope.filterItemLabTissueType = function () {
+                    return function (item) {
+                        return t_model.available_tissue_types.has(item.id);
+                    }
+                };
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
@@ -491,7 +516,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     if (assigned[key]) result.push(parseInt(key));
                 }
                 model.assigned = result;
-                model.planned_end_date = ped.planned_end_date;
+                model.planned_end_date = t_model.planned_end_date;
+                model.selected_tissue_type = t_model.selected_tissue_type;
             });
         }
     }
@@ -591,16 +617,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     <ul class="list-group">\
                         <li ng-repeat="action in prepared2create" class="list-group-item">\
                             <div class="row">\
-                            <div class="col-md-12">\
+                            <div class="col-md-8">\
                                 <span ng-if="!action.assignable.length"><span ng-bind="action.type_name" class="rmargin10"></span></span>\
                                 <span ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name" class="rmargin10"></a></span>\
                                 <span ng-if="action_has_price(action)">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
-                            </div>\
-                            </div>\
-                            <div class="row">\
-                            <div class="col-md-8">\
-                                <div fs-datetime ng-model="action.planned_end_date" class="validatable"\
-                                     wm-validate="validate_direction_date"></div>\
                             </div>\
                             <div class="col-md-4">\
                                 <div class="pull-right">\
@@ -609,6 +629,18 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                         <i class="glyphicon glyphicon-trash"></i>\
                                     </button>\
                                 </div>\
+                            </div>\
+                            </div>\
+                            <hr style="margin-top: 7px; margin-bottom: 7px">\
+                            <div class="row">\
+                            <div class="col-md-7">\
+                                <div fs-datetime ng-model="action.planned_end_date" class="validatable"\
+                                     wm-validate="validate_direction_date"></div>\
+                            </div>\
+                            <div class="col-md-5">\
+                                <rb-select ref-book="rbTissueType" ng-model="action.ttj.selected_tissue_type"\
+                                    custom-filter="filterItemLabTissueType(action)">\
+                                </rb-select>\
                             </div>\
                             </div>\
                         </li>\
@@ -633,10 +665,16 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <h4 class="modal-title">Назначаемые исследования</h4>\
         </div>\
         <div class="modal-body">\
-            <div class="row" ng-if="date_required">\
-                <div class="col-md-6">\
+            <div class="row">\
+                <div class="col-md-6" ng-if="date_required">\
                     <label for="ped">Дата/время назначения</label>\
-                    <div fs-datetime id="ped" ng-model="ped.planned_end_date" ng-disabled="ped_disabled"></div>\
+                    <div fs-datetime id="ped" ng-model="t_model.planned_end_date" ng-disabled="t_model.ped_disabled"></div>\
+                </div>\
+                <div class="col-md-6" ng-if="t_model.tissue_type_visible">\
+                    <label for="tissue_type">Тип биоматериала</label>\
+                    <rb-select id="tissue_type" ref-book="rbTissueType" ng-model="t_model.selected_tissue_type"\
+                        custom-filter="filterItemLabTissueType()">\
+                    </rb-select>\
                 </div>\
             </div>\
             <div class="checkbox">\

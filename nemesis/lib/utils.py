@@ -607,19 +607,24 @@ from sqlalchemy.ext import compiler
 class group_concat(expression.FunctionElement):
     name = "group_concat"
 
+    def __init__(self, col, sep=',', order_col=None, order_type='ASC'):
+        super(group_concat, self).__init__()
+        self.col = col
+        self.sep = sep
+        self.order_col = order_col
+        self.order_type = order_type
 
-@compiler.compiles(group_concat) # , 'mysql'
+
+# mysql group_concat <col> [order by <col> [asc|desc]] separator <sep>
+@compiler.compiles(group_concat)
 def _group_concat_mysql(element, cmplr, **kw):
-    if len(element.clauses) == 2:
-        separator = cmplr.process(element.clauses.clauses[1])
-    elif len(element.clauses) == 1:
-        separator = ','
-    else:
-        raise SyntaxError(u'group_concat must have 1 or 2 arguments!')
-
-    return 'GROUP_CONCAT({0} SEPARATOR {1})'.format(
-        cmplr.process(element.clauses.clauses[0]),
-        separator,
+    return 'GROUP_CONCAT({0}{1} SEPARATOR \'{2}\')'.format(
+        cmplr.process(element.col),
+        ' ORDER BY {0} {1}'.format(
+            cmplr.process(element.order_col),
+            element.order_type
+        ) if element.order_col else '',
+        element.sep,
     )
 
 

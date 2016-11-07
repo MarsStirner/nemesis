@@ -15,7 +15,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignable_apts, get_planned_end_datetime,
-    update_action, delete_action, fit_planned_end_date, create_new_action_ttjs)
+    update_action, delete_action, fit_planned_end_date, create_new_action_ttjs, get_at_tissue_type_ids)
 from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind, calc_service_total_sum
@@ -391,8 +391,12 @@ class ServiceController(BaseModelController):
                         apt_data.append(None)
                         flt_assignable.append(apt_data)
                 assignable = flt_assignable
-
             assigned = [apt_data[0] for apt_data in assignable]  # apt.id list
+
+            tissue_type_ids = get_at_tissue_type_ids(at_id)
+            selected_tissue_type = tissue_type_ids[0] if tissue_type_ids else None
+            tissue_type_visible = True
+
             if 'event' in kwargs:
                 event = kwargs['event']
                 planned_end_date = get_planned_end_datetime(at_id)
@@ -409,7 +413,11 @@ class ServiceController(BaseModelController):
                     'assignable': assignable,
                     'assigned': assigned,
                     'planned_end_date': planned_end_date,
-                    'ped_disabled': ped_disabled
+                    'ped_disabled': ped_disabled,
+
+                    'available_tissue_types': tissue_type_ids,
+                    'selected_tissue_type': selected_tissue_type,
+                    'tissue_type_visible': tissue_type_visible
                 }
             }
         elif service_kind_id == ServiceKind.lab_test[0]:
@@ -479,8 +487,13 @@ class ServiceController(BaseModelController):
             pass
 
     def update_new_service(self, service, service_data):
-        if service.serviceKind_id in (ServiceKind.lab_action[0], ServiceKind.simple_action[0]):
+        if service.serviceKind_id == ServiceKind.simple_action[0]:
             create_new_action_ttjs(service.serviced_entity)
+        elif service.serviceKind_id == ServiceKind.lab_action[0]:
+            ttj_data = {
+                'selected_tissue_type': service_data['serviced_entity']['tests_data']['selected_tissue_type']
+            }
+            create_new_action_ttjs(service.serviced_entity, ttj_data=ttj_data)
         elif service.serviceKind_id == ServiceKind.group[0]:
             for subservice in service.subservice_list:
                 self.update_new_service(subservice, service_data)
