@@ -48,6 +48,7 @@ class ServiceController(BaseModelController):
 
         service.subservice_list = []
         ss_list_params = params.get('subservice_list')
+        no_subservices = params.get('no_subservices', False)
         if ss_list_params is not None:
             for subservice_params in ss_list_params:
                 subservice_params.update({
@@ -55,7 +56,7 @@ class ServiceController(BaseModelController):
                 })
                 subservice = self.get_new_service(subservice_params)
                 service.subservice_list.append(subservice)
-        else:
+        elif not no_subservices:
             service.subservice_list = self.get_new_subservices_from_pricelist(service)
 
         service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
@@ -72,7 +73,8 @@ class ServiceController(BaseModelController):
                 at_id=search_item.get('action_type_id'),
                 client_id=safe_traverse_attrs(service, 'event', 'client_id'),
                 contract_id=safe_traverse_attrs(service, 'event', 'contract_id'),
-                event=safe_traverse_attrs(service, 'event')
+                event=safe_traverse_attrs(service, 'event'),
+                no_subservices=search_item.get('no_subservices')
             )
             self.set_new_service_serviced_entity(service, se_data)
         elif 'serviced_entity_from_action' in params:
@@ -254,6 +256,9 @@ class ServiceController(BaseModelController):
         if 'subservice_list' in data:
             # дефолтное должно быть None для корректного поведения в get_new_service
             result['subservice_list'] = data.get('subservice_list')
+
+        if 'no_subservices' in data:
+            result['no_subservices'] = safe_bool(data['no_subservices'])
         return result
 
     def _format_serviced_entity_data(self, service_kind_id, data):
@@ -391,7 +396,10 @@ class ServiceController(BaseModelController):
                         apt_data.append(None)
                         flt_assignable.append(apt_data)
                 assignable = flt_assignable
-            assigned = [apt_data[0] for apt_data in assignable]  # apt.id list
+
+            no_subservices = kwargs.get('no_subservices', False)
+            # apt.id list
+            assigned = [apt_data[0] for apt_data in assignable] if not no_subservices else []
 
             tissue_type_ids = get_at_tissue_type_ids(at_id)
             selected_tissue_type = tissue_type_ids[0] if tissue_type_ids else None

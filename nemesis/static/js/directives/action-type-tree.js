@@ -292,7 +292,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             service_kind_id: safe_traverse(service_data, ['service_kind', 'id']),
                             price_list_item_id: service_data.price_list_item_id,
                             event_id: $scope.event_id,
-                            serviced_entity_from_search: service_data
+                            serviced_entity_from_search: angular.extend({}, service_data, {no_subservices: true}),
+                            no_subservices: true
                         })
                             .then(function (new_service) {
                                 newAction.service = new_service;
@@ -411,6 +412,14 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     return function (item) {
                         return action.ttj.available_tissue_types.has(item.id);
                     }
+                };
+                $scope.labTestsServiceErrorVisible = function (action) {
+                    return !action.service || !action.service.subservice_list.length;
+                };
+                $scope.labTestsServicesSelected = function () {
+                    return $scope.prepared2create.every(function (action) {
+                        return action.service && action.service.subservice_list.length > 0;
+                    });
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)
@@ -616,11 +625,16 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 <div class="col-md-6">\
                     <ul class="list-group">\
                         <li ng-repeat="action in prepared2create" class="list-group-item">\
+                            <div class="row" ng-if="labTestsServiceErrorVisible(action)">\
+                            <div class="col-md-12">\
+                                <span class="text-danger">Не выбрано ни одного показателя исследования</span>\
+                            </div>\
+                            </div>\
                             <div class="row">\
                             <div class="col-md-8">\
                                 <span ng-if="!action.assignable.length"><span ng-bind="action.type_name" class="rmargin10"></span></span>\
                                 <span ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name" class="rmargin10"></a></span>\
-                                <span ng-if="action_has_price(action)">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
+                                <span ng-if="action_has_price(action)" class="nowrap">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
                             </div>\
                             <div class="col-md-4">\
                                 <div class="pull-right">\
@@ -656,7 +670,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
             <button type="button" class="btn btn-success" ng-click="create_actions()"\
-                ng-disabled="labDirectionsForm.$invalid">Создать направления</button>\
+                ng-disabled="labDirectionsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
         </div>'
     );
     $templateCache.put('/WebMis20/modal-action-assignments.html',
