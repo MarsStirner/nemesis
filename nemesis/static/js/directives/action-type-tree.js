@@ -242,6 +242,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     person_check: true
                 };
                 $scope.rbTissueType = RefBookService.get('rbTissueType');
+                var ServiceKind = RefBookService.get('ServiceKind');
+                var sk_lab_action_id;
+                ServiceKind.get_by_code_async('lab_action').then(function (res) {
+                    sk_lab_action_id = res.id;
+                });
                 $scope.query = '';
                 $scope.os_check_enabled = true;
                 $scope.personal_check_enabled = true;
@@ -297,8 +302,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         })
                             .then(function (new_service) {
                                 newAction.service = new_service;
-                                newAction.assignable = _.deepCopy(new_service.serviced_entity.tests_data.assignable);
-                                newAction.assigned = _.deepCopy(new_service.serviced_entity.tests_data.assigned);
+                                if (new_service.service_kind.id == sk_lab_action_id) {
+                                    newAction.assignable = _.deepCopy(new_service.serviced_entity.tests_data.assignable);
+                                    newAction.assigned = _.deepCopy(new_service.serviced_entity.tests_data.assigned);
+                                }
                             });
                     }
                     $scope.prepared2create.push(newAction);
@@ -414,11 +421,14 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     }
                 };
                 $scope.labTestsServiceErrorVisible = function (action) {
-                    return !action.service || !action.service.subservice_list.length;
+                    return !action.service || (action.service.service_kind.id === sk_lab_action_id &&
+                        !action.service.subservice_list.length);
                 };
                 $scope.labTestsServicesSelected = function () {
-                    return $scope.prepared2create.every(function (action) {
-                        return action.service && action.service.subservice_list.length > 0;
+                    return $scope.prepared2create.filter(function (action) {
+                        return action.service && action.service.service_kind.id === sk_lab_action_id;
+                    }).every(function (action) {
+                        return action.service.subservice_list.length > 0;
                     });
                 };
 
