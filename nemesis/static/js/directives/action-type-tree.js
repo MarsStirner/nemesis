@@ -422,11 +422,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
                 $scope.labTestsServiceErrorVisible = function (action) {
                     return !action.service || (action.service.service_kind.id === sk_lab_action_id &&
-                        !action.service.subservice_list.length);
+                        action.service.is_complex_service && !action.service.subservice_list.length);
                 };
                 $scope.labTestsServicesSelected = function () {
                     return $scope.prepared2create.filter(function (action) {
-                        return action.service && action.service.service_kind.id === sk_lab_action_id;
+                        return action.service && action.service.service_kind.id === sk_lab_action_id &&
+                            action.service.is_complex_service;
                     }).every(function (action) {
                         return action.service.subservice_list.length > 0;
                     });
