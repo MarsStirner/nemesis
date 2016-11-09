@@ -292,13 +292,15 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         }
                     };
                     if ($scope.at_service_data.hasOwnProperty(node.id)) {
-                        var service_data = $scope.at_service_data[node.id];
+                        var service_data = $scope.at_service_data[node.id],
+                            no_ss = safe_traverse(service_data, ['service_kind', 'id']) === sk_lab_action_id &&
+                                service_data.is_complex_service;
                         AccountingService.get_service(undefined, {
                             service_kind_id: safe_traverse(service_data, ['service_kind', 'id']),
                             price_list_item_id: service_data.price_list_item_id,
                             event_id: $scope.event_id,
-                            serviced_entity_from_search: angular.extend({}, service_data, {no_subservices: true}),
-                            no_subservices: true
+                            serviced_entity_from_search: angular.extend({}, service_data, {no_subservices: no_ss}),
+                            no_subservices: no_ss
                         })
                             .then(function (new_service) {
                                 newAction.service = new_service;
@@ -420,14 +422,17 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         return action.ttj.available_tissue_types.has(item.id);
                     }
                 };
+                $scope.labHasTestsWithPrices = function (action) {
+                    return action.service.service_kind.id === sk_lab_action_id &&
+                        action.service.is_complex_service;
+                };
                 $scope.labTestsServiceErrorVisible = function (action) {
-                    return !action.service || (action.service.service_kind.id === sk_lab_action_id &&
-                        action.service.is_complex_service && !action.service.subservice_list.length);
+                    return !action.service || ($scope.labHasTestsWithPrices(action) &&
+                        !action.service.subservice_list.length);
                 };
                 $scope.labTestsServicesSelected = function () {
                     return $scope.prepared2create.filter(function (action) {
-                        return action.service && action.service.service_kind.id === sk_lab_action_id &&
-                            action.service.is_complex_service;
+                        return action.service && $scope.labHasTestsWithPrices(action);
                     }).every(function (action) {
                         return action.service.subservice_list.length > 0;
                     });
