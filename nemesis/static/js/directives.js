@@ -1424,6 +1424,12 @@ angular.module('WebMis20.directives')
                 scope.edit_diagnosis = function (diagnosis) {
                     DiagnosisModal.openDiagnosisModal(diagnosis, ngModelCrtl.$viewValue);
                 };
+                scope.canDeleteDiagnosis = function (diagnosis) {
+                    return !diagnosis.id;
+                };
+                scope.deleteDiagnosis = function (idx) {
+                    scope.view_model().splice(idx, 1);
+                };
                 scope.kind_change = function (diag, diag_type_code){
                     diag.kind_changed = true;
                     if (diag.diagnosis_types[diag_type_code].code == 'main'){
@@ -1521,6 +1527,9 @@ angular.module('WebMis20.directives')
                                 <td ng-if="canEdit">\
                                     <button type="button" class="btn btn-sm btn-primary" title="Редактировать"\
                                             ng-click="edit_diagnosis(diag)"><span class="glyphicon glyphicon-pencil"></span>\
+                                    </button>\
+                                    <button type="button" class="btn btn-sm btn-danger" title="Удалить" ng-if="canDeleteDiagnosis(diag)"\
+                                            ng-click="deleteDiagnosis($index)"><span class="glyphicon glyphicon-trash"></span>\
                                     </button>\
                                 </td>\
                             </tr>\
