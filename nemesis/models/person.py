@@ -123,16 +123,6 @@ class Person(db.Model):
     def __unicode__(self):
         return self.nameText
 
-    @property
-    def phones(self,):
-        phones = []
-        for x in self.contacts:
-            ct = x.contactType
-            if ct:
-                if ct.code in [u"01", u"02", u"03", u"13"]:
-                    phones.append(x)
-        return phones
-
     def __json__(self):
         return {
             'id': self.id,
@@ -148,7 +138,6 @@ class Person(db.Model):
             'snils': self.SNILS,
             'inn': self.INN,
             'short_name': self.shortNameText,
-            'phones': self.phones,
         }
 
     def __int__(self):
