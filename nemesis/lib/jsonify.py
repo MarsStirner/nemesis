@@ -1134,9 +1134,7 @@ class EventVisualizer(object):
         from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
         from blueprints.accounting.lib.represent import InvoiceRepr
         invoice_ctrl = InvoiceController()
-        invoice_list = invoice_ctrl.get_listed_data({
-            'event_id': event_id
-        })
+        invoice_list = invoice_ctrl.get_invoices_in_event(event_id)
         invoice_repr = InvoiceRepr()
         return invoice_repr.represent_listed_invoices_for_event(invoice_list)
 

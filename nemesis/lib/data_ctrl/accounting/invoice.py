@@ -18,6 +18,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 from .service import ServiceController
 from .finance_trx import FinanceTrxController
+from .integration import send_invoice_edit_message
 from .utils import calc_invoice_total_sum, calc_invoice_item_total_sum
 
 
@@ -208,9 +209,19 @@ class InvoiceController(BaseModelController):
         if same_number:
             raise ApiException(409, u'Невозможно сохранить счет: счет с таким номером уже существует')
 
-    def get_invoice_event(self, invoice):
+    def get_invoice_event(self, invoice, with_deleted=False):
         sel = self.get_selecter()
-        return sel.get_invoice_event(invoice.id)
+        return sel.get_invoice_event(invoice.id, with_deleted)
+
+    def get_invoices_in_event(self, event_id):
+        sel = self.get_selecter()
+        return sel.get_invoices_in_event(event_id)
+
+    def notify_invoice_changed(self, invoice):
+        try:
+            send_invoice_edit_message(invoice)
+        except Exception, e:
+            logger.exception(e.message)
 
 
 class InvoiceSelecter(BaseSelecter):
@@ -228,6 +239,10 @@ class InvoiceSelecter(BaseSelecter):
         Contract_Contragent = self.model_provider.get('Contract_Contragent')
         Client = self.model_provider.get('Client')
         Organisation = self.model_provider.get('Organisation')
+
+        if 'id_list' in flt_args:
+            id_list = [safe_int(id_) for id_ in flt_args['id_list']]
+            self.query = self.query.filter(Invoice.id.in_(id_list))
 
         if 'event_id' in flt_args:
             event_id = safe_int(flt_args['event_id'])
@@ -306,7 +321,7 @@ class InvoiceSelecter(BaseSelecter):
         )
         return self.get_all()
 
-    def get_invoice_event(self, invoice_id):
+    def get_invoice_event(self, invoice_id, with_deleted=False):
         Event = self.model_provider.get('Event')
         InvoiceItem = self.model_provider.get('InvoiceItem')
         Service = self.model_provider.get('Service')
@@ -314,14 +329,27 @@ class InvoiceSelecter(BaseSelecter):
         event_id_q = self.model_provider.get_query('Event').join(
             Service, InvoiceItem
         ).filter(
-            Service.deleted == 0,
-            InvoiceItem.deleted == 0,
             InvoiceItem.invoice_id == invoice_id
         ).with_entities(Event.id.label('event_id')).subquery()
+        if not with_deleted:
+            event_id_q = event_id_q.filter(
+                Service.deleted == 0,
+                InvoiceItem.deleted == 0
+            )
         self.query = self.model_provider.get_query('Event').join(
             event_id_q, Event.id == event_id_q.c.event_id
         )
         return self.get_one()
+
+    def get_invoices_in_event(self, event_id):
+        self.query = self.query.join(
+            InvoiceItem, InvoiceItem.invoice_id == Invoice.id
+        ).join(Service).filter(
+            Service.event_id == event_id,
+            Service.deleted == 0,
+            Invoice.deleted == 0
+        )
+        return self.get_all()
 
 
 class InvoiceItemController(BaseModelController):
