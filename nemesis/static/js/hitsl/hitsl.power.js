@@ -206,7 +206,7 @@ if (!String.prototype.format) {
 if (!String.prototype.formatNonEmpty) {
     String.prototype.formatNonEmpty = function() {
         var args = arguments;
-        return this.replace(/{([\w\u0400-\u04FF\s\.,</>()]*)\|?(\d+)\|?([\w\u0400-\u04FF\s\.,</>()]*)}/g, function(match, prefix, number, suffix) {
+        return this.replace(/{([\w\u0400-\u04FF\s\.,</>()\-]*)\|?(\d+)\|?([\w\u0400-\u04FF\s\.,</>()]*)}/g, function(match, prefix, number, suffix) {
             return typeof args[number] != 'undefined'
                 ? (args[number] ? (prefix + args[number] + suffix): '')
                 : ''
