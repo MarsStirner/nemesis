@@ -330,12 +330,13 @@ class InvoiceSelecter(BaseSelecter):
             Service, InvoiceItem
         ).filter(
             InvoiceItem.invoice_id == invoice_id
-        ).with_entities(Event.id.label('event_id')).subquery()
+        ).with_entities(Event.id.label('event_id'))
         if not with_deleted:
             event_id_q = event_id_q.filter(
                 Service.deleted == 0,
                 InvoiceItem.deleted == 0
             )
+        event_id_q = event_id_q.subquery()
         self.query = self.model_provider.get_query('Event').join(
             event_id_q, Event.id == event_id_q.c.event_id
         )
