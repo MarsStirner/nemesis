@@ -283,19 +283,20 @@ def select_role():
 @app.route('/logout/')
 @public_endpoint
 def logout():
-    user_info = current_user.format_name_for_log()
-    _logout_user()
     response = redirect(request.args.get('next') or '/')
-    token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
-    if token:
-        requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
-        response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
-    if 'BEAKER_SESSION' in app.config:
-        response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
-    logger.info(u'Пользователь {user_descr} вышел из системы {dt:%d.%m.%Y %H:%M:%S}'.format(
-        user_descr=user_info,
-        dt=datetime.datetime.now()
-    ), extra=dict(tags=['AUTH', 'AUTH_OUT']))
+    if current_user.is_authenticated:
+        user_info = current_user.format_name_for_log()
+        _logout_user()
+        token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
+        if token:
+            requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
+            response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
+        if 'BEAKER_SESSION' in app.config:
+            response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
+        logger.info(u'Пользователь {user_descr} вышел из системы {dt:%d.%m.%Y %H:%M:%S}'.format(
+            user_descr=user_info,
+            dt=datetime.datetime.now()
+        ), extra=dict(tags=['AUTH', 'AUTH_OUT']))
     return response
 
 

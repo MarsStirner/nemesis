@@ -101,6 +101,10 @@ class Action(db.Model):
             for prop in self.properties
         )
 
+    def get_prop(self, prop_name, default=None):
+        prop = self.propsByCode.get(prop_name)
+        return prop.value if prop else default
+
     def setPropValue(self, pt_id, value, raw=False):
         if pt_id not in self.propsByTypeId:
             new_p = ActionProperty()

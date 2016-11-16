@@ -206,6 +206,22 @@ class rbMeasureStatus(db.Model):
         }
 
 
+class rbMeasureCancelReason(db.Model):
+    __tablename__ = u'rbMeasureCancelReason'
+    _table_description = u'Причина отказа от мероприятия'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(16), index=True, nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
 class EventMeasure(db.Model):
     __tablename__ = u'EventMeasure'
 
@@ -227,6 +243,7 @@ class EventMeasure(db.Model):
     appointmentAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     resultAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
     is_actual = db.Column(db.Integer, server_default="'1'")
+    cancelReason_id = db.Column(db.Integer, db.ForeignKey('rbMeasureCancelReason.id'))
 
     event = db.relationship('Event')
     _scheme_measure = db.relationship('ExpertSchemeMeasureAssoc')
@@ -238,6 +255,7 @@ class EventMeasure(db.Model):
         backref=db.backref('em_appointment', uselist=False))
     create_person = db.relationship('Person', foreign_keys=[createPerson_id])
     modify_person = db.relationship('Person', foreign_keys=[modifyPerson_id])
+    cancel_reason = db.relationship('rbMeasureCancelReason')
 
     @property
     def scheme_measure(self):
@@ -277,5 +295,6 @@ class EventMeasure(db.Model):
             'result_action_id': self.resultAction_id,
             'is_actual': self.is_actual,
             'scheme_measure_id': self.schemeMeasure_id,
-            'measure_id': self.measure_id
+            'measure_id': self.measure_id,
+            'cancel_reason_id': self.cancelReason_id,
         }
