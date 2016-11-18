@@ -101,7 +101,7 @@ class Action(db.Model):
             for prop in self.properties
         )
 
-    def get_prop(self, prop_name, default=None):
+    def get_prop_value(self, prop_name, default=None):
         prop = self.propsByCode.get(prop_name)
         return prop.value if prop else default
 
