@@ -749,7 +749,7 @@ angular.module('WebMis20.directives')
             replace: true,
             template: function(el, attributes) {
                 var btnText = el.html();
-                return '<button class="btn btn-default" ng-click="print_templates()" title="Печать" ng-disabled="disabled()">\
+                return '<button class="btn btn-{{size}}" ng-click="print_templates()" title="Печать" ng-disabled="disabled()">\
                     <i class="glyphicon glyphicon-print"></i>\
                     <i class="glyphicon glyphicon-remove text-danger" ng-show="disabled()"></i>' + btnText +'</button>'},
             scope: {
@@ -763,6 +763,7 @@ angular.module('WebMis20.directives')
                 if (!attrs.beforePrint) {
                     scope.beforePrint = null;
                 }
+                scope.size = attrs.size || 'default';
                 scope.disabled = function () {
                     return !scope.$ps.is_available();
                 };
