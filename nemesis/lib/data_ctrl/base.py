@@ -105,6 +105,13 @@ class BaseSelecter(object):
 
         return Pagination(self, page, per_page, total, items)
 
+    @staticmethod
+    def is_joined(q, model_class):
+        for mapper in q._join_entities:
+            if mapper.class_ == model_class or mapper.entity == model_class:
+                return True
+        return False
+
 
 class BaseSphinxSearchSelecter(object):
 
