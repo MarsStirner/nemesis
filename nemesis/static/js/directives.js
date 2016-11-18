@@ -1097,7 +1097,7 @@ angular.module('WebMis20.directives')
             MultiPerson:  ui_select_multiple_template,
             Service: ui_select_template,
             MultiService: ui_select_multiple_template,
-            MKB: '<ui-select ext-select-mkb ng-required="is_required" ng-model="model"></ui-select>',
+            MKB: '<ui-select ext-select-mkb ng-required="is_required" ng-model="$parent.$parent.model"></ui-select>',
             MultiMKB: '<ui-select multiple ng-model="$parent.model" theme="select2" ref-book="MKB" close-on-select="false">\
                            <ui-select-match placeholder="[[placeholder]]"><span title="[[$item.name]]" ng-bind="$item.code"></span></ui-select-match>\
                            <ui-select-choices repeat="mkb in $refBook.objects | filter: $select.search | limitTo: 100 | filter:filterMkbChoices track by mkb.id">\
