@@ -70,6 +70,7 @@ class Person(db.Model):
     academicTitle_id = db.Column(db.Integer, db.ForeignKey('rbAcademicTitle.id'))
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
 
+    events_under_control = db.relationship('ControlledEvents', back_populates='person', lazy='dynamic')
     post = db.relationship('rbPost')
     speciality = db.relationship('rbSpeciality', lazy=False)
     organisation = db.relationship('Organisation')
