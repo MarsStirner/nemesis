@@ -62,7 +62,7 @@ class Event(db.Model):
     curator = db.relationship(u'Person', foreign_keys='Event.curator_id')
     assistant = db.relationship(u'Person', foreign_keys='Event.assistant_id')
     manager = db.relationship(u'Person', foreign_keys='Event.manager_id')
-    controlled_by_persons = db.relationship(u'ControlledEvents', back_populates='event', lazy='dynamic')
+    controlled_by_persons = db.relationship(u'EventPersonsControl', back_populates='event', lazy='dynamic')
     contract = db.relationship(u'Contract')
     organisation = db.relationship(u'Organisation')
     orgStructure = db.relationship('OrgStructure')
@@ -573,8 +573,8 @@ class Event_Persons(db.Model):
     person = db.relationship('Person')
 
 
-class ControlledEvents(db.Model):
-    __tablename__ = u'Event_under_Persons_control'
+class EventPersonsControl(db.Model):
+    __tablename__ = u'EventPersonsControl'
 
     id = db.Column(db.Integer, primary_key=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)

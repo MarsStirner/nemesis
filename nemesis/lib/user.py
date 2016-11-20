@@ -591,6 +591,10 @@ class UserProfileManager(object):
         return cls._get_user_role() in cls.ui_groups['overseers_23']
 
     @classmethod
+    def has_ui_overseers(cls):
+        return cls._get_user_role() in cls.ui_groups['overseers']
+
+    @classmethod
     def has_ui_risar(cls):
         return cls._get_user_role() in cls.ui_groups['risar']
 
