@@ -337,3 +337,39 @@ class MaternalCertificate(db.Model):
             'lpu': self.lpu,
             'event_id': self.event_id,
         }
+
+
+class rbProfMedHelp(db.Model):
+    __tablename__ = "rbProfMedHelp"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+
+class rbConditionMedHelp(db.Model):
+    __tablename__ = "rbConditionMedHelp"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
