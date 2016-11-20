@@ -1027,7 +1027,6 @@ li.active>a.cuslom-tab-pills {
 }
 
 .measure-checkbox-main {
-    margin-left: 10% !important;
     transform: scale(1.5) !important;
     vertical-align: top !important;
 }
