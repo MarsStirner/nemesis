@@ -62,6 +62,7 @@ class Event(db.Model):
     curator = db.relationship(u'Person', foreign_keys='Event.curator_id')
     assistant = db.relationship(u'Person', foreign_keys='Event.assistant_id')
     manager = db.relationship(u'Person', foreign_keys='Event.manager_id')
+    controlled_by_persons = db.relationship(u'EventPersonsControl', back_populates='event', lazy='dynamic')
     contract = db.relationship(u'Contract')
     organisation = db.relationship(u'Organisation')
     orgStructure = db.relationship('OrgStructure')
@@ -570,3 +571,19 @@ class Event_Persons(db.Model):
 
     event = db.relationship('Event')
     person = db.relationship('Person')
+
+
+class EventPersonsControl(db.Model):
+    __tablename__ = u'EventPersonsControl'
+
+    id = db.Column(db.Integer, primary_key=True)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
+
+    event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)
+    person_id = db.Column(db.ForeignKey('Person.id'), nullable=False, index=True)
+    begDate = db.Column(db.DateTime, nullable=False)
+    endDate = db.Column(db.DateTime)
+
+    event = db.relationship('Event', backref="events")
+    person = db.relationship('Person', backref="persons")
