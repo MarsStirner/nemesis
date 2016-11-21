@@ -413,6 +413,18 @@ angular.module('WebMis20.services').
                     self.delete_record(client, 'nationalities', nationality);
                 });
             },
+            add_new_privilige: function(client) {
+                this.push_soc_status(client, 'priviliges', '5')
+            },
+            delete_privilige: function(client, privilige) {
+                var self = this;
+                MessageBox.question(
+                    'Удаление категорию',
+                    'Вы действительно хотите удалить эту запись о категории?'
+                ).then(function (){
+                    self.delete_record(client, 'priviliges', privilige);
+                });
+            },
             add_relation: function (client) {
                 client.relations.push({
                     id: null,
