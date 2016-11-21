@@ -47,6 +47,7 @@ angular.module('WebMis20.services.models').
                     self.invalidities = data.client_data.invalidities;
                     self.works = data.client_data.works;
                     self.nationalities = data.client_data.nationalities;
+                    self.priviliges = data.client_data.priviliges;
                 }
                 function add_relations() {
                     var relations = data.client_data.relations;
@@ -170,6 +171,7 @@ angular.module('WebMis20.services.models').
                 data.invalidities = this._get_entity_changes('invalidities');
                 data.works = this._get_entity_changes('works');
                 data.nationalities = this._get_entity_changes('nationalities');
+                data.priviliges = this._get_entity_changes('priviliges');
                 data.relations = this._get_entity_changes('relations');
                 data.contacts = this._get_entity_changes('contacts');
                 data.vmp_coupons = this._get_entity_changes('vmp_coupons');

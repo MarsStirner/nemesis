@@ -541,6 +541,7 @@ class ClientVisualizer(object):
         works = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '3']
         invalidities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '2']
         nationalities = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '4']
+        priviliges = [soc_status for soc_status in client.soc_statuses if soc_status.soc_status_class.code == '5']
         vmp_coupons = client.VMP_coupons
         return {
             'info': client,
@@ -555,6 +556,7 @@ class ClientVisualizer(object):
             'works': works,
             'invalidities': invalidities,
             'nationalities': nationalities,
+            'priviliges': priviliges,
             'relations': relations,
             'contacts': self.make_contacts_info(client),
             'document_history': document_history,
