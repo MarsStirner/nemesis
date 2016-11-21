@@ -407,7 +407,7 @@ def safe_timestamp(val, for_date=False, to_int=False, wo_time=False):
         val = safe_date(val) if for_date else safe_datetime(val)
     if not isinstance(val, (datetime.date, datetime.datetime)) or not val:
         return None
-    if for_date and not isinstance(val, datetime.date):
+    if for_date and not type(val) == datetime.date:
         val = val.date()
     ts = time.mktime(val.timetuple())
     if to_int:
