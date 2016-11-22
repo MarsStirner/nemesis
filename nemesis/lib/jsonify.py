@@ -1089,6 +1089,7 @@ class EventVisualizer(object):
             'status': ActionStatus(action.status),
             'begDate': action.begDate,
             'endDate': action.endDate,
+            'plannedEndDate': action.plannedEndDate,
             'person_text': safe_unicode(action.person),
             'person_id': action.person_id,
             'set_person_id': action.setPerson_id,
