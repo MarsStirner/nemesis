@@ -855,8 +855,8 @@ class ActionProperty_JSON(ActionProperty_String_Base):
 
     @value.setter
     def value(self, value):
-        import json
-        self.value_ = json.dumps(value)
+        from nemesis.lib.apiutils import json_dumps
+        self.value_ = json_dumps(value)
 
 
 class ActionProperty_Time(ActionProperty__ValueType):
