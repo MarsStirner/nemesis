@@ -566,6 +566,8 @@ class Event_Persons(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.ForeignKey('Event.id'), nullable=False, index=True)
     person_id = db.Column(db.ForeignKey('Person.id'), nullable=False, index=True)
+    createPerson_id = db.Column(db.Integer, nullable=False, index=True, default=safe_current_user_id)
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     begDate = db.Column(db.DateTime, nullable=False)
     endDate = db.Column(db.DateTime)
 
