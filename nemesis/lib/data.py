@@ -10,7 +10,7 @@ from datetime import datetime, time, timedelta, date
 
 from flask_login import current_user
 
-from nemesis.lib.action.utils import action_needs_service
+from nemesis.lib.action.utils import action_needs_service, get_action_type_class
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.calendar import calendar
@@ -22,7 +22,7 @@ from nemesis.models.actions import (Action, ActionType, ActionPropertyType, Acti
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
                                     ActionType_TissueType)
 from nemesis.models.client import Client
-from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
+from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus, ActionTypeClass, ATClass
 from nemesis.models.event import Event, EventType_Action
 from nemesis.models.exists import Person, OrgStructure
 from nemesis.models.prescriptions import MedicalPrescription
@@ -539,9 +539,23 @@ at_flat_tuple = collections.namedtuple(
     'id name code flat_code gid age sex at_os required_tissue at_apt tissue_types'
 )
 
+at_actions_flat_tuple = collections.namedtuple(
+    'at_actions_flat_tuple',
+    'id name code flat_code gid class_code'
+)
+
 
 def at_tuple_2_flat_tuple_convert(item):
     return at_flat_tuple(*[i for idx, i in enumerate(item) if idx < 10 or idx == 13])
+
+
+def at_tuple_2_actions_flat_tuple_convert(item):
+    class_ = item[10]
+    tissue_required = item[8]
+    at_class = get_action_type_class(class_, tissue_required)
+    class_code = unicode(at_class)
+    fields = item[:5] + (class_code,)
+    return at_actions_flat_tuple(*fields)
 
 
 @cache.memoize(3600)
@@ -679,6 +693,34 @@ def int_get_atl_dict_all():
         for item in six.itervalues(d):
             result[item.id] = at_tuple_2_flat_tuple_convert(item)
     return result
+
+
+def int_get_atl_actions_flat(at_id_list):
+    if not isinstance(at_id_list, set):
+        at_id_list = set(at_id_list)
+
+    all_ats = select_all_at()
+    d = {}
+    for ats in all_ats.itervalues():
+        d.update(ats)
+
+    filtered = {
+        item.id: at_tuple_2_actions_flat_tuple_convert(item)
+        for item in six.itervalues(d)
+        if item.id in at_id_list
+    }
+
+    def upstairs(item):
+        gid = item.gid
+        if gid and gid in d and gid not in filtered:
+            super_item = at_tuple_2_actions_flat_tuple_convert(d[gid])
+            upstairs(super_item)
+            filtered[gid] = super_item
+
+    for item in filtered.values():
+        upstairs(item)
+
+    return filtered
 
 
 def get_patient_location(event, dt=None):

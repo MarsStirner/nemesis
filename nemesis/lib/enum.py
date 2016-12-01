@@ -64,6 +64,10 @@ class EnumBase(object):
         return item[1] if item else None
 
     @classmethod
+    def get_values(cls):
+        return cls.codes.keys()
+
+    @classmethod
     def rb(cls):
         return {
             'objects': [{

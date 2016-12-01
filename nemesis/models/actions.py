@@ -949,6 +949,7 @@ class ActionType(db.Model):
         return self.property_types.filter(ActionPropertyType.code == code).first()
 
     def __json__(self):
+        from nemesis.lib.action.utils import get_action_type_class
         return {
             'id': self.id,
             'code': self.code,
@@ -958,7 +959,8 @@ class ActionType(db.Model):
             'title': self.title,
             'context_name': self.context,
             'diagnosis_types': self.diagnosis_types,
-            'hidden': self.hidden
+            'hidden': self.hidden,
+            'action_type_class': get_action_type_class(self.class_, self.isRequiredTissue).__json__()
         }
 
 

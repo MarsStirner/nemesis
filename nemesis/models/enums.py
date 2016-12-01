@@ -27,6 +27,21 @@ class ActionStatus(Enum):
     no_result = 4, u'Без результата'
 
 
+class ATClass(Enum):
+    medical_documents = 0, u'Медицинские документы'
+    diagno_labs = 1, u'Инструментальные исследования/Лабораторные исследования'
+    treatments = 2, u'Манипуляции и операции'
+    movings = 3, u'Движения'
+
+
+class ActionTypeClass(Enum):
+    medical_documents = 0, u'Медицинские документы'
+    diagnostics = 1, u'Инструментальные исследования'
+    treatments = 2, u'Манипуляции и операции'
+    movings = 3, u'Движения'
+    lab = 4, u'Лабораторные исследования'
+
+
 class RequestTypeKind(Enum):
     stationary = 0, u'Стационар'  # rbRequestType.code - clinic, hospital
     policlinic = 1, u'Поликлиника'  # rbRequestType.code - policlinic, diagnostic
