@@ -696,14 +696,23 @@ class ActionProperty_ReferenceRb(ActionProperty_Integer_Base):
     @property
     def value(self):
         if not hasattr(self, 'table_name'):
-            domain = ActionProperty.query.get(self.id).type.valueDomain
+            domain = self.property_object.type.valueDomain
             self.table_name = domain.split(';')[0]
         model = get_model_by_name(self.table_name)
         return model.query.get(self.value_)
 
     @value.setter
     def value(self, val):
-        self.value_ = val['id'] if val is not None else None
+        val = val if val is not None else None
+        if val:
+            if isinstance(val, dict):
+                self.value_ = val['id']
+            elif hasattr(val, 'id'):
+                self.value_ = val.id
+            else:
+                self.value_ = val
+        else:
+            self.value_ = val
 
     property_object = db.relationship('ActionProperty', backref='_value_ReferenceRb')
 
