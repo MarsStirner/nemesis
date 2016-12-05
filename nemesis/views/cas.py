@@ -11,7 +11,7 @@ from flask_login import login_user, logout_user, current_user
 from itsdangerous import json
 
 from nemesis.systemwide import login_manager
-from nemesis.lib.utils import public_endpoint
+from nemesis.lib.utils import public_endpoint, safe_traverse
 from nemesis.lib.apiutils import json_dumps, api_method, ApiException
 from nemesis.lib.user import UserAuth, AnonymousUser, UserProfileManager
 from nemesis.forms import LoginForm, RoleForm
@@ -78,10 +78,15 @@ def check_valid_login():
 def check_cas_token(auth_token):
     if not auth_token:
         return None
+    ext_cas = safe_traverse(app.config, 'external_cas', 'enabled', default=False)
+    ext_cas_cookie_name = safe_traverse(app.config, 'external_cas', 'ext_cookie_name')
+    data = {'token': auth_token, 'prolong': True}
+    if ext_cas:
+        data['ext_cookie'] = request.cookies.get(ext_cas_cookie_name)
     try:
         result = requests.post(
             app.config['COLDSTAR_URL'] + 'cas/api/check',
-            data=json.dumps({'token': auth_token, 'prolong': True}),
+            data=json.dumps(data),
             headers={'Referer': request.url.encode('utf-8')}
         )
     except ConnectionError:
@@ -289,8 +294,16 @@ def logout():
         _logout_user()
         token = request.cookies.get(app.config['CASTIEL_AUTH_TOKEN'])
         if token:
-            requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps({'token': token}))
+            ext_cas = safe_traverse(app.config, 'external_cas', 'enabled', default=False)
+            ext_cas_cookie_name = safe_traverse(app.config, 'external_cas', 'ext_cookie_name')
+            data = {'token': token}
+            if ext_cas:
+                data['ext_cookie'] = request.cookies.get(ext_cas_cookie_name)
+
+            requests.post(app.config['COLDSTAR_URL'] + 'cas/api/release', data=json.dumps(data))
             response.delete_cookie(app.config['CASTIEL_AUTH_TOKEN'])
+            if ext_cas:
+                response.delete_cookie(ext_cas_cookie_name)
         if 'BEAKER_SESSION' in app.config:
             response.delete_cookie(app.config['BEAKER_SESSION'].get('session.key'))
         logger.info(u'Пользователь {user_descr} вышел из системы {dt:%d.%m.%Y %H:%M:%S}'.format(

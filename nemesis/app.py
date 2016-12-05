@@ -159,6 +159,7 @@ def fc_settings():
 
     settings = Settings()
     default_org = get_default_org()
+    ext_cas = app.config.get('external_cas', {})
     return {
         'settings': {
             'user_idle_timeout': settings.getInt('Auth.UserIdleTimeout', 15 * 60),
@@ -166,6 +167,10 @@ def fc_settings():
         },
         'local_config': {
             'cas_token_name': app.config['CASTIEL_AUTH_TOKEN'],
+            'external_cas': {
+                'enabled': ext_cas.get('enabled', False),
+                'ext_cookie_name': ext_cas.get('ext_cookie_name', '')
+            },
             'default_org_id': default_org.id if default_org else None,
             'pharmexpert': {
                 'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),

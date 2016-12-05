@@ -253,9 +253,13 @@ angular.module('hitsl.core', [])
     var user_activity_events = 'mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove scroll',
         on_user_activity = _.throttle(postpone_everything, 10000),
         debounced_logout_warning = _.debounce(show_logout_warning, WMConfig.settings.user_idle_timeout * 1000),
-        token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.local_config.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
+        token_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.local_config.cas_token_name + '\\s*\\=\\s*([^;]*).*$)|^.*$'),
+        ext_cookie_regex = new RegExp('(?:(?:^|.*;\\s*)' + WMConfig.local_config.external_cas.ext_cookie_name + '\\s*\\=\\s*([^;]*).*$)|^.*$');
     var get_token = function () {
         return $window.document.cookie.replace(token_regex, "$1");
+    },
+        get_ext_cookie = function () {
+        return $window.document.cookie.replace(ext_cookie_regex, "$1");
     },
         latest_token_deadline;
 
@@ -264,10 +268,14 @@ angular.module('hitsl.core', [])
         $window.location.reload(true);
     }
     function cas(url) {
+        var data = { token: get_token() };
+        if (WMConfig.local_config.external_cas.enabled) {
+            data.ext_cookie = get_ext_cookie();
+        }
         return ApiCalls.coldstar(
             'POST',
             url,
-            { token: get_token() },
+            data,
             undefined,
             { silent: true }
         )
