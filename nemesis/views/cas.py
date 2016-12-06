@@ -83,6 +83,8 @@ def check_cas_token(auth_token):
     data = {'token': auth_token, 'prolong': True}
     if ext_cas:
         data['ext_cookie'] = request.cookies.get(ext_cas_cookie_name)
+        if 'dont_check_tgt' in request.args:
+            data['dont_check_tgt'] = request.args['dont_check_tgt']
     try:
         result = requests.post(
             app.config['COLDSTAR_URL'] + 'cas/api/check',
