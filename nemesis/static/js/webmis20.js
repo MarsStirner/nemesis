@@ -435,8 +435,8 @@ var WebMis20 = angular.module('WebMis20', [
         return this.rb_dict[val] || default_val;
     };
 }])
-.factory('PrintingService', ['$http', '$rootScope', '$timeout', '$modal', 'CurrentUser', 'WMConfig',
-        function ($http, $rootScope, $timeout, $modal, CurrentUser, WMConfig) {
+.factory('PrintingService', ['$http', '$rootScope', '$timeout', '$modal', '$q', 'CurrentUser', 'WMConfig',
+        function ($http, $rootScope, $timeout, $modal, $q, CurrentUser, WMConfig) {
     var PrintingService = function (context_type) {
         if (arguments.length >= 3) {
             this.target = arguments[2]
@@ -448,7 +448,7 @@ var WebMis20 = angular.module('WebMis20', [
         this.templates = [];
     };
     PrintingService.prototype.set_context = function (context) {
-        if (context === this.context) return;
+        if (context === this.context) return $q.when(true);
         this.context = context;
         var t = this;
         return $http.get(WMConfig.url.nemesis.print_subsystem.templates + context + '.json')

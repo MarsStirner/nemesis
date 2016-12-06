@@ -7,6 +7,7 @@ from sqlalchemy.sql.expression import func, between
 
 from nemesis.models.actions import Action, ActionType, ActionType_Service, ActionType_rbDiagnosisType
 from nemesis.models.accounting import PriceListItem
+from nemesis.models.enums import ActionTypeClass, ATClass
 from nemesis.systemwide import db
 
 
@@ -125,3 +126,11 @@ def get_prev_inspection_with_diags(action):
             ),
         Action.id != action.id
     ).order_by(Action.begDate.desc()).limit(1)
+
+
+def get_action_type_class(at_class, tissue_required):
+    return ActionTypeClass(
+        ActionTypeClass.diagnostics[0] if at_class == ATClass.diagno_labs[0] and not tissue_required else
+        ActionTypeClass.lab[0] if at_class == ATClass.diagno_labs[0] and at_class else
+        at_class
+    )

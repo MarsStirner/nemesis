@@ -257,6 +257,9 @@ WebMis20
     this.action = {
         search: function (data) {
             return wrapper('POST', WMConfig.url.actions.search_actions, {}, data);
+        },
+        get_patient_actions: function (client_id) {
+            return wrapper('GET', WMConfig.url.actions.patient_actions + client_id);
         }
-    }
+    };
 }]);
