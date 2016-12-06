@@ -348,6 +348,18 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                         e.preventDefault();
                         return false;
                     }
+                    else if (types.indexOf && types.indexOf('text/plain') !== -1) {
+                        pastedData = clipboardData.getData('text/plain');
+                        editor.focus();
+                        restoreSelection();
+                        execCommand('insertText', pastedData);
+                        saveSelection();
+                        updateModel();
+                        // Stop the data from actually being pasted
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return false;
+                    }
                 }
 
                 // Everything else: Move existing element contents to a DocumentFragment for safekeeping
