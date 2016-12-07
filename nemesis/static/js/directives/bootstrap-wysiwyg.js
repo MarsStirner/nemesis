@@ -123,6 +123,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
     }
 }])
 .directive('wysiwyg', ['$q', '$compile', '$templateCache', function ($q, $compile, $templateCache) {
+    var regexp_cleanHtml = new RegExp('(<br>|<div><br><\/div>|&nbsp;)', 'g'),
+        regexp_emptyHtml = new RegExp('(<br>|\\s|<div><br><\/div>|&nbsp;)', 'g');
     var readFileIntoDataUrl = function (fileInfo) {
         var loader = $q.defer(),
             fReader = new FileReader();
@@ -135,8 +137,11 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         return loader.promise;
     };
     var cleanHtml = function (html) {
-        return html && html.replace(new RegExp('(<br>|\s|<div><br><\/div>|&nbsp;)', 'g'), '');
-    };
+        return html && html.replace(regexp_cleanHtml, '');
+    },
+        isEmptyHtml = function (html) {
+            return !Boolean(html && html.replace(regexp_emptyHtml, ''));
+        };
     var defaults = {
         toolbarSelector: '[data-role=editor-toolbar]',
         commandRole: 'edit',
@@ -292,7 +297,10 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             var updateModelLock = false; // Этот костыль предотвращает нежелательный апдейт вида данными модели
             function updateModel() {
                 updateModelLock = true;
-                ngModel.$setViewValue(cleanHtml(editor.html()));
+                var view_value = !isEmptyHtml(editor.html())
+                    ? cleanHtml(editor.html())
+                    : '';
+                ngModel.$setViewValue(view_value);
                 ngModel.$render();
             }
 
