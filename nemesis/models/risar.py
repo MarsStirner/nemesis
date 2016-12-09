@@ -202,6 +202,7 @@ class rbRadzinskyRiskRate(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(16), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    name_masc = db.Column(db.Unicode(45), nullable=False)
     value = db.Column(db.Integer, nullable=False)
 
     def __json__(self):
@@ -209,6 +210,7 @@ class rbRadzinskyRiskRate(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'name_masc': self.name_masc,
             'value': self.value
         }
 
