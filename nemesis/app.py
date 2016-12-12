@@ -176,9 +176,7 @@ def fc_settings():
                 'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),
                 'security_key': app.config.get('PHARMEXPERT_SECURITY_KEY', ''),
             },
-            'devourer': {
-                'max_file_size': None
-            }
+            'files_upload': app.config.get('files_upload', {}),
         }
     }
 
