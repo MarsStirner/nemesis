@@ -142,44 +142,37 @@ class InvoiceIntegrationNotifier(object):
         payer = invoice.contract.payer
 
         if get_contragent_type(payer).value == ContragentType.individual[0]:
-            res = {
-                'event': {
-                    'id': event.id,
-                    'setDate': event.setDate,
-                    'externalId': event.externalId
-                },
-                'client': {
-                    'id': client.id,
-                    'firstName': client.firstName,
-                    'lastName': client.lastName,
-                    'patrName': client.patrName,
-                },
-                'payer': {
-                    'id': payer.id,
-                    'firstName': payer.client.firstName,
-                    'lastName': payer.client.lastName,
-                    'patrName': payer.client.patrName,
-                }
-            }
             if not is_refund:
-                res.update({
-                    'invoice_data': {
-                        'number': initial_invoice.number,
-                        'deleted': initial_invoice.deleted != 0,
-                        'sum': initial_invoice.total_sum
-                    }
-                })
+                res = self._make_invoice(initial_invoice, event, client, payer)
             else:
-                res.update({
-                    'invoice_data': {
-                        'number': refund_invoice.number,
-                        'deleted': refund_invoice.deleted != 0,
-                        'sum': refund_invoice.refund_sum
-                    },
-                    'parent': {
-                        'number': initial_invoice.number,
-                        'deleted': initial_invoice.deleted != 0,
-                        'sum': initial_invoice.total_sum
-                    }
-                })
+                res = self._make_invoice(refund_invoice, event, client, payer, parent_invoice=initial_invoice)
             return res
+
+    def _make_invoice(self, invoice, event, client, payer, parent_invoice=None):
+        res = {
+            'event': {
+                'id': event.id,
+                'setDate': event.setDate,
+                'externalId': event.externalId
+            },
+            'client': {
+                'id': client.id,
+                'firstName': client.firstName,
+                'lastName': client.lastName,
+                'patrName': client.patrName,
+            },
+            'payer': {
+                'id': payer.id,
+                'firstName': payer.client.firstName,
+                'lastName': payer.client.lastName,
+                'patrName': payer.client.patrName,
+            },
+            'invoice_data': {
+                'number': invoice.number,
+                'deleted': invoice.deleted != 0,
+                'sum': invoice.total_sum if invoice.parent_id is None else invoice.refund_sum
+            }
+        }
+        if parent_invoice is not None:
+            res['parent'] = self._make_invoice(parent_invoice, event, client, payer)
+        return res
