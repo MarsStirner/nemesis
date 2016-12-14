@@ -62,6 +62,7 @@ class Organisation(db.Model):
     isLPU = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     isStationary = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     TFOMSCode = db.Column(db.String(50))
+    FFOMSCode = db.Column(db.String(50))
     LPUcode = db.Column(db.String(50))
     Departmentcode = db.Column(db.String(50))
 
