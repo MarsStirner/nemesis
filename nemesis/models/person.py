@@ -299,6 +299,7 @@ class vrbPersonWithSpeciality(db.Model):
     code = db.Column(db.String(12), nullable=False, index=True)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     name = db.Column(db.String(101), nullable=False, index=True)
+    full_name = db.Column(db.String(101), nullable=False, index=True)
     orgStructure_id = db.Column(db.ForeignKey('OrgStructure.id'))
     speciality_id = db.Column(db.ForeignKey('rbSpeciality.id'))
     org_id = db.Column(db.ForeignKey('Organisation.id'))
@@ -314,7 +315,8 @@ class vrbPersonWithSpeciality(db.Model):
             'name': self.name,
             'org_structure': self.orgStructure,
             'speciality': self.speciality,
-            'short_name': self.name
+            'short_name': self.name,
+            'full_name': self.full_name,
         }
 
     def __int__(self):

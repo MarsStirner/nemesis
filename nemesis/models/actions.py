@@ -81,6 +81,7 @@ class Action(db.Model):
         primaryjoin='and_(ActionFileAttach.action_id == Action.id, ActionFileAttach.deleted == 0)',
         backref='action'
     )
+    action_number = db.relationship('ActionNumbers', backref='action', uselist=False)
 
     @property
     def properties_ordered(self):
@@ -1118,6 +1119,28 @@ class ActionFileAttach(db.Model):
             'filemeta_id': self.filemeta_id,
             'set_person_id': self.setPerson_id,
             'attach_date': self.attachDate
+        }
+
+
+class ActionNumbers(db.Model):
+    __tablename__ = u'ActionNumbers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), nullable=False)
+    entity_type = db.Column(db.Enum('HOSP_APNT_TU'), nullable=False)
+    number = db.Column(db.String(191), nullable=False)
+    prefix = db.Column(db.String(32))
+    postfix = db.Column(db.String(32))
+    date = db.Column(db.Date)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'action_id': self.action_id,
+            'entity_type': self.entity_type,
+            'prefix': self.prefix,
+            'postfix': self.postfix,
+            'date': self.date
         }
 
 

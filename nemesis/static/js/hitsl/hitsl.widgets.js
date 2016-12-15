@@ -1161,9 +1161,9 @@ angular.module('WebMis20')
             index: index
         }
     };
-    this.$add = function () {
+    this.$add = function (get_data) {
         edited = self.$model.length;
-        self.$tmp = {};
+        self.$tmp = get_data ? get_data() : {};
         self.$model.push(self.$tmp);
     };
     this.$edited = function (index) {

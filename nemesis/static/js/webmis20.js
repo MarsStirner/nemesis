@@ -645,9 +645,10 @@ var WebMis20 = angular.module('WebMis20', [
             return onsuccess();
         }}
     };
-    JasperPrintingService.prototype.print_template = function(template_data_list, separated) { // [ {template_id, context}, ... ]
+    JasperPrintingService.prototype.print_template = function(template_data_list, separated, response_type) { // [ {template_id, context}, ... ]
         var self = this;
         var send_data = {
+            response_type: response_type,
             separate: separated,
             documents: template_data_list.map(function (item) {
                 return {

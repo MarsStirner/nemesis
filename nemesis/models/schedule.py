@@ -193,7 +193,7 @@ class ScheduleClientTicket(db.Model):
     event_id = db.Column(db.ForeignKey('Event.id'))
     
     client = db.relationship('Client', lazy='joined', uselist=False)
-    appointmentType = db.relationship('rbAppointmentType', lazy=False, innerjoin=True)
+    appointmentType = db.relationship('rbAppointmentType', lazy=False)
     createPerson = db.relationship('Person', foreign_keys=[createPerson_id])
     event = db.relationship('Event')
 
