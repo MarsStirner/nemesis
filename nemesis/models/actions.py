@@ -1127,20 +1127,56 @@ class ActionNumbers(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), nullable=False)
-    entity_type = db.Column(db.Enum('HOSP_APNT_TU'), nullable=False)
+    numberType_id = db.Column(db.Integer, db.ForeignKey('rbActionNumberType.id'), nullable=False)
     number = db.Column(db.String(191), nullable=False)
     prefix = db.Column(db.String(32))
     postfix = db.Column(db.String(32))
     date = db.Column(db.Date)
 
+    number_type = db.relationship('rbActionNumberType')
+
     def __json__(self):
         return {
             'id': self.id,
             'action_id': self.action_id,
-            'entity_type': self.entity_type,
+            'number_type_id': self.numberType_id,
             'prefix': self.prefix,
             'postfix': self.postfix,
             'date': self.date
+        }
+
+
+class rbActionNumberKind(db.Model):
+    __tablename__ = u'rbActionNumberKind'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(64), nullable=False)
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+        }
+
+
+class rbActionNumberType(db.Model):
+    __tablename__ = u'rbActionNumberType'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16), nullable=False)
+    name = db.Column(db.String(64), nullable=False)
+    kind_id = db.Column(db.Integer, db.ForeignKey('rbActionNumberKind.id'), nullable=False)
+
+    kind = db.relationship('rbActionNumberKind')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'kind_id': self.kind_id
         }
 
 
