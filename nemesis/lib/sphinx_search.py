@@ -17,10 +17,12 @@ class SearchConfig(BaseSearchConfig):
 class SearchPerson():
 
     @staticmethod
-    def search(name):
+    def search(name, **kwargs):
         search = Search(indexes=['person'], config=SearchConfig)
-        search = search.match(name).limit(0, 100)
-        result = search.ask()
+        search = search.match(name)
+        if 'org_id' in kwargs:
+            search = search.filter(org_id__eq=kwargs['org_id'])
+        result = search.limit(0, 100).ask()
         return result
 
 

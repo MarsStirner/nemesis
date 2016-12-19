@@ -98,15 +98,23 @@ angular.module('WebMis20.directives')
                 if (personKind === undefined) {
                     personKind = PersonSelectKind.onlyOrgPersons;
                 }
+                scope.getAdditionalFilter = scope.$eval(attrs.filterBy) || angular.noop;
+                scope.$watch(scope.getAdditionalFilter, function (n, o) {
+                    if (n !== o) {
+                        scope.persons = [];
+                    }
+                }, true);
 
                 scope.persons = [];
                 scope.refresh_choices = function (query) {
                     if (!query) { return }
+                    var params = angular.extend({
+                        q: query,
+                        person_kind: personKind
+                    }, scope.getAdditionalFilter());
+
                     $http.get(url_api_search_persons, {
-                        params: {
-                            q: query,
-                            person_kind: personKind
-                        }
+                        params: params
                     }).success(function (data) {
                         scope.persons = data.result;
                     });
