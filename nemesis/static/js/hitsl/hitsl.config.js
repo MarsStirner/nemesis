@@ -59,7 +59,7 @@ angular.module('hitsl.ui')
 .factory('noCacheInterceptor', function () {
     return {
         request: function (config) {
-            if (config.method === 'GET') {
+            if (config.method === 'GET' && aux.detectIE() && config.url.indexOf('/api/rb/') === -1) {
                 config.headers['If-Modified-Since'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
                 config.headers['Cache-Control'] = 'no-cache';
                 config.headers['Pragma'] = 'no-cache';
