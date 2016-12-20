@@ -61,7 +61,9 @@ class Organisation(db.Model):
     uuid_id = db.Column(db.Integer, db.ForeignKey('UUID.id'), nullable=False, index=True, server_default=u"'0'")
     isLPU = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     isStationary = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    regionalCode = db.Column(db.String(50))
     TFOMSCode = db.Column(db.String(50))
+    FFOMSCode = db.Column(db.String(50))
 
     net = db.relationship('rbNet')
     OKPF = db.relationship('rbOKPF')
