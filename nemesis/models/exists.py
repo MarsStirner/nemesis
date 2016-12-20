@@ -300,6 +300,7 @@ class OrgStructure(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'org_id': self.organisation_id
         }
 
 
