@@ -421,6 +421,14 @@ class ActionPropertyType(db.Model):
                 }
         return None
 
+    @property
+    def description(self):
+        return {
+            'name': self.name,
+            'mandatory': self.mandatory,
+            'read_only': self.readOnly,
+        }
+
     def __json__(self):
         value_domain = self.parse_value_domain()
         result = {

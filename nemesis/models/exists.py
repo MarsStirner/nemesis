@@ -241,6 +241,8 @@ class OrgStructure(db.Model):
     inheritGaps = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     uuid_id = db.Column(db.Integer, nullable=False, index=True, server_default=u"'0'")
     show = db.Column(db.Integer, nullable=False, server_default=u"'1'")
+    regionalCode = db.Column(db.String(50))
+    TFOMSCode = db.Column(db.String(50))
 
     parent = db.relationship('OrgStructure', remote_side=[id])
     organisation = db.relationship('Organisation')
@@ -298,6 +300,7 @@ class OrgStructure(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
+            'org_id': self.organisation_id
         }
 
 
