@@ -297,6 +297,10 @@ class ActionProperty(db.Model):
                 for val in value_container:
                     delete_value(val)
 
+    def get_default_value(self):
+        value_container_class = self.get_value_container_class()
+        return value_container_class.get_default_val(self.type)
+
     @orm.reconstructor
     def init_on_load(self):
         self._has_pricelist_service = None
@@ -456,6 +460,10 @@ class ActionProperty__ValueType(db.Model):
     @classmethod
     def objectify(cls, prop, json_data):
         return json_data
+
+    @classmethod
+    def get_default_val(cls, prop_type):
+        return prop_type.defaultValue
 
     @classmethod
     def mark_as_deleted(cls, prop):
@@ -692,6 +700,11 @@ class ActionProperty_Boolean(ActionProperty_Integer_Base):
     def value(self, val):
         self.value_ = 1 if val else 0
 
+    @classmethod
+    def get_default_val(cls, prop_type):
+        from nemesis.lib.utils import safe_bool, safe_int
+        return safe_int(safe_bool(prop_type.defaultValue))
+
 
 class ActionProperty_RLS(ActionProperty_Integer_Base):
 
@@ -723,7 +736,25 @@ class ActionProperty_ReferenceRb(ActionProperty_Integer_Base):
         else:
             self.value_ = val
 
+    @classmethod
+    def get_default_val(cls, prop_type):
+        if not prop_type.defaultValue:
+            return None
+
+        from nemesis.lib.utils import safe_dict
+
+        domain = prop_type.valueDomain
+        table_name = domain.split(';')[0]
+        model = get_model_by_name(table_name)
+        return safe_dict(model.query.filter_by(code=prop_type.defaultValue).first())
+
     property_object = db.relationship('ActionProperty', backref='_value_ReferenceRb')
+
+
+class ActionProperty_Action2(ActionProperty_Integer_Base):
+    value = db.relationship('Action', foreign_keys='ActionProperty_Integer.value_',
+                            primaryjoin='ActionProperty_Integer.value_ == Action.id')
+    property_object = db.relationship('ActionProperty', backref='_value_Action2')
 
 
 class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
@@ -755,6 +786,17 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
     @value.setter
     def value(self, val):
         self.value_ = val['code'] if val is not None else None
+
+    @classmethod
+    def get_default_val(cls, prop_type):
+        if not prop_type.defaultValue:
+            return None
+
+        from nemesis.lib.vesta import Vesta
+
+        domain = prop_type.valueDomain
+        table_name = domain.split(';')[0]
+        return Vesta.get_rb(table_name, prop_type.defaultValue)
 
     property_object = db.relationship('ActionProperty', backref='_value_ExtReferenceRb')
 
