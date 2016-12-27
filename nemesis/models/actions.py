@@ -304,25 +304,24 @@ class ActionProperty(db.Model):
             return None
 
         value_container_class = self.get_value_container_class()
-        table_name = self.type.valueDomain.split(';')[0]
-        if not self.type.isVector:
-            return value_container_class.get_default_val(self.type.defaultValue, table_name)
+        if self.type.isVector:
+            try:
+                default_values = json.loads(self.type.defaultValue)
+            except ValueError, e:
+                logger.error(u'Ошибка парсинга JSON из defaultValue')
+                return None
 
-        try:
-            default_values = json.loads(self.type.defaultValue)
-        except ValueError, e:
-            logger.error(u'Ошибка парсинга JSON из defaultValue')
-            return None
+            if not isinstance(default_values, list):
+                logger.error(u'JSON из defaultValue не является списком')
+                return None
 
-        if not isinstance(default_values, list):
-            logger.error(u'JSON из defaultValue не является списком')
-            return None
-
-        result = []
-        for value in default_values:
-            tmp = value_container_class.get_default_val(value, table_name)
-            tmp and result.append(tmp)
-        return result
+            result = []
+            for value in default_values:
+                tmp = value_container_class.get_default_val(value, self.type)
+                tmp and result.append(tmp)
+            return result
+        else:
+            return value_container_class.get_default_val(self.type.defaultValue, self.type)
 
     @orm.reconstructor
     def init_on_load(self):
@@ -485,7 +484,7 @@ class ActionProperty__ValueType(db.Model):
         return json_data
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         return default_value
 
     @classmethod
@@ -533,7 +532,7 @@ class ActionProperty_Date(ActionProperty__ValueType):
         return safe_date(json_data)
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_date
         return safe_date(default_value)
 
@@ -547,7 +546,7 @@ class ActionProperty_Double(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Double')
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_double
         return safe_double(default_value)
 
@@ -698,7 +697,7 @@ class ActionProperty_Integer(ActionProperty_Integer_Base):
         self.value_ = val
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_int
         return safe_int(default_value)
 
@@ -739,7 +738,7 @@ class ActionProperty_Boolean(ActionProperty_Integer_Base):
         self.value_ = 1 if val else 0
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_bool, safe_int
         return safe_int(safe_bool(default_value))
 
@@ -775,8 +774,9 @@ class ActionProperty_ReferenceRb(ActionProperty_Integer_Base):
             self.value_ = val
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_dict
+        table_name = property_type.valueDomain.split(';')[0]
         model = get_model_by_name(table_name)
         return safe_dict(model.query.filter_by(code=default_value).first())
 
@@ -820,7 +820,8 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
         self.value_ = val['code'] if val is not None else None
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
+        table_name = property_type.valueDomain.split(';')[0]
         try:
             return Vesta.get_rb(table_name, default_value)
         except VestaNotFoundException:
@@ -866,7 +867,7 @@ class ActionProperty_MKB(ActionProperty__ValueType):
         return MKB.query.get(json_data['id']) if json_data and 'id' in json_data else json_data
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         """Заглушка"""
         return None
 
@@ -893,7 +894,7 @@ class ActionProperty_Organisation(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Organisation')
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         """Заглушка"""
         return None
 
@@ -917,7 +918,7 @@ class ActionProperty_Person(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_Person')
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         """Заглушка"""
         return None
 
@@ -962,7 +963,7 @@ class ActionProperty_JSON(ActionProperty_String_Base):
         self.value_ = json_dumps(value)
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         """Заглушка"""
         return None
 
@@ -981,7 +982,7 @@ class ActionProperty_Time(ActionProperty__ValueType):
         return safe_time(json_data)
 
     @classmethod
-    def get_default_val(cls, default_value, table_name=None):
+    def get_default_val(cls, default_value, property_type):
         from nemesis.lib.utils import safe_time
         return safe_time(default_value)
 
