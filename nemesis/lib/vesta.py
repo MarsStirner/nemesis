@@ -143,6 +143,8 @@ class Vesta(object):
         j = response.json()
         if 'result' not in j:
             raise VestaNotFoundException(u'No result from Vesta')
+        if '_id' in j['result'] and j['result']['_id'] == 'None':
+            raise VestaNotFoundException(u'Empty result from Vesta')
         return j['result']
 
     @classmethod

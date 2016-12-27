@@ -724,3 +724,12 @@ def get_max_item_attribute_value(model, attr):
 def bail_out(exc):
     # TODO: DELETE ME, когда я буду в nemesis
     raise exc
+
+
+def db_non_flushable(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        from nemesis.systemwide import db
+        with db.session.no_autoflush:
+            return func(*args, **kwargs)
+    return wrapper

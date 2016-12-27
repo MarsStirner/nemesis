@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import datetime
+import json
+import logging
 import re
 import six
 
 from sqlalchemy import orm
 
 from nemesis.models.diagnosis import ActionType_rbDiagnosisType
-from nemesis.lib.vesta import Vesta
+from nemesis.lib.vesta import Vesta, VestaNotFoundException
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.app import app
@@ -15,7 +17,7 @@ from nemesis.models.utils import safe_current_user_id, get_model_by_name
 
 __author__ = 'mmalkov'
 
-
+logger = logging.getLogger('simple')
 apt_valueDomain_String_re = re.compile(ur"'(.*?)'")
 
 
@@ -297,6 +299,30 @@ class ActionProperty(db.Model):
                 for val in value_container:
                     delete_value(val)
 
+    def get_default_value(self):
+        if self.type.defaultValue == '':
+            return None
+
+        value_container_class = self.get_value_container_class()
+        if self.type.isVector:
+            try:
+                default_values = json.loads(self.type.defaultValue)
+            except ValueError, e:
+                logger.error(u'Ошибка парсинга JSON из defaultValue')
+                return None
+
+            if not isinstance(default_values, list):
+                logger.error(u'JSON из defaultValue не является списком')
+                return None
+
+            result = []
+            for value in default_values:
+                tmp = value_container_class.get_default_val(value, self.type)
+                tmp and result.append(tmp)
+            return result
+        else:
+            return value_container_class.get_default_val(self.type.defaultValue, self.type)
+
     @orm.reconstructor
     def init_on_load(self):
         self._has_pricelist_service = None
@@ -458,6 +484,10 @@ class ActionProperty__ValueType(db.Model):
         return json_data
 
     @classmethod
+    def get_default_val(cls, default_value, property_type):
+        return default_value
+
+    @classmethod
     def mark_as_deleted(cls, prop):
         pass
 
@@ -476,7 +506,7 @@ class ActionProperty__ValueType(db.Model):
             self.value = value
 
 
-class ActionProperty_Action(ActionProperty__ValueType):
+class ActionProperty_ActionOld(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_Action'
 
     id = db.Column(db.Integer, db.ForeignKey('ActionProperty.id'), primary_key=True, nullable=False)
@@ -484,7 +514,7 @@ class ActionProperty_Action(ActionProperty__ValueType):
     value_ = db.Column('value', db.ForeignKey('Action.id'), index=True)
 
     value = db.relationship('Action')
-    property_object = db.relationship('ActionProperty', backref='_value_Action')
+    property_object = db.relationship('ActionProperty', backref='_value_ActionOld')
 
 
 class ActionProperty_Date(ActionProperty__ValueType):
@@ -501,6 +531,11 @@ class ActionProperty_Date(ActionProperty__ValueType):
         from nemesis.lib.utils import safe_date  # fixme: reorganize utils module
         return safe_date(json_data)
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_date
+        return safe_date(default_value)
+
 
 class ActionProperty_Double(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_Double'
@@ -509,6 +544,11 @@ class ActionProperty_Double(ActionProperty__ValueType):
     index = db.Column(db.Integer, primary_key=True, nullable=False, server_default=u"'0'")
     value = db.Column(db.Float(asdecimal=True), nullable=False)
     property_object = db.relationship('ActionProperty', backref='_value_Double')
+
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_double
+        return safe_double(default_value)
 
 
 class ActionProperty_FDRecord(ActionProperty__ValueType):
@@ -656,6 +696,11 @@ class ActionProperty_Integer(ActionProperty_Integer_Base):
     def value(self, val):
         self.value_ = val
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_int
+        return safe_int(default_value)
+
 
 class ActionProperty_AnalysisStatus(ActionProperty_Integer_Base):
     property_object = db.relationship('ActionProperty', backref='_value_AnalysisStatus')
@@ -692,6 +737,11 @@ class ActionProperty_Boolean(ActionProperty_Integer_Base):
     def value(self, val):
         self.value_ = 1 if val else 0
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_bool, safe_int
+        return safe_int(safe_bool(default_value))
+
 
 class ActionProperty_RLS(ActionProperty_Integer_Base):
 
@@ -723,7 +773,20 @@ class ActionProperty_ReferenceRb(ActionProperty_Integer_Base):
         else:
             self.value_ = val
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_dict
+        table_name = property_type.valueDomain.split(';')[0]
+        model = get_model_by_name(table_name)
+        return safe_dict(model.query.filter_by(code=default_value).first())
+
     property_object = db.relationship('ActionProperty', backref='_value_ReferenceRb')
+
+
+class ActionProperty_Action(ActionProperty_Integer_Base):
+    value = db.relationship('Action', foreign_keys='ActionProperty_Integer.value_',
+                            primaryjoin='ActionProperty_Integer.value_ == Action.id')
+    property_object = db.relationship('ActionProperty', backref='_value_Action')
 
 
 class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
@@ -755,6 +818,14 @@ class ActionProperty_ExtReferenceRb(ActionProperty__ValueType):
     @value.setter
     def value(self, val):
         self.value_ = val['code'] if val is not None else None
+
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        table_name = property_type.valueDomain.split(';')[0]
+        try:
+            return Vesta.get_rb(table_name, default_value)
+        except VestaNotFoundException:
+            return None
 
     property_object = db.relationship('ActionProperty', backref='_value_ExtReferenceRb')
 
@@ -795,6 +866,11 @@ class ActionProperty_MKB(ActionProperty__ValueType):
             return json_data
         return MKB.query.get(json_data['id']) if json_data and 'id' in json_data else json_data
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        """Заглушка"""
+        return None
+
 
 class ActionProperty_OrgStructure(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_OrgStructure'
@@ -817,6 +893,11 @@ class ActionProperty_Organisation(ActionProperty__ValueType):
     value = db.relationship('Organisation')
     property_object = db.relationship('ActionProperty', backref='_value_Organisation')
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        """Заглушка"""
+        return None
+
 
 class ActionProperty_OtherLPURecord(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_OtherLPURecord'
@@ -835,6 +916,11 @@ class ActionProperty_Person(ActionProperty__ValueType):
 
     value = db.relationship(u'Person')
     property_object = db.relationship('ActionProperty', backref='_value_Person')
+
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        """Заглушка"""
+        return None
 
 
 class ActionProperty_String_Base(ActionProperty__ValueType):
@@ -876,6 +962,11 @@ class ActionProperty_JSON(ActionProperty_String_Base):
         from nemesis.lib.apiutils import json_dumps
         self.value_ = json_dumps(value)
 
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        """Заглушка"""
+        return None
+
 
 class ActionProperty_Time(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_Time'
@@ -889,6 +980,11 @@ class ActionProperty_Time(ActionProperty__ValueType):
     def objectify(cls, prop, json_data):
         from nemesis.lib.utils import safe_time  # fixme: reorganize utils module
         return safe_time(json_data)
+
+    @classmethod
+    def get_default_val(cls, default_value, property_type):
+        from nemesis.lib.utils import safe_time
+        return safe_time(default_value)
 
 
 class ActionProperty_rbBloodComponentType(ActionProperty__ValueType):
