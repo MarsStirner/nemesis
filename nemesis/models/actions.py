@@ -1128,6 +1128,7 @@ class TakenTissueJournal(db.Model):
             'datetime_planned': self.datetimePlanned,
             'client': self.client,
             'execPerson': self.execPerson,
+            'barcode': self.barcode,
             'tissueType': self.tissueType,
             'testTubeType': self.testTubeType,
             'amount': self.amount,

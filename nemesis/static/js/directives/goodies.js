@@ -135,7 +135,9 @@ angular.module('WebMis20.directives.goodies', [])
         // директивы ngModel. С другой стороны, трансклюд скрывает скоуп этой директивы, из-за чегоприходится его
         // передавать дочерним элементам через контроллер. Все события же передаются через $scope.$broadcast
         transclude: true, 
-        scope: {},
+        scope: {
+            disabled:'=ngDisabled'
+        },
         controller: function ($scope) {
             this.$scope = $scope;
         },
@@ -143,8 +145,8 @@ angular.module('WebMis20.directives.goodies', [])
 '<div style="display: inline">\
     <div id="control" class="input-group">\
         <span class="input-group-addon"><i class="glyphicon glyphicon-search"></i></span>\
-        <input id="input" type="text" ng-model="$query" class="form-control">\
-        <span class="input-group-btn"><button class="btn btn-default" ng-click="clear()"><i class="glyphicon glyphicon-remove"></i></button></span>\
+        <input id="input" type="text" ng-model="$query" class="form-control" ng-disabled="disabled">\
+        <span class="input-group-btn"><button class="btn btn-default" ng-click="clear()" ng-disabled="disabled"><i class="glyphicon glyphicon-remove"></i></button></span>\
     </div>\
     <div id="wm-popup" class="wm-popup well well-sm" ng-transclude></div>\
 </div>',

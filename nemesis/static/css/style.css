@@ -1035,3 +1035,38 @@ li.active>a.cuslom-tab-pills {
 .text-striked {
     text-decoration: line-through;
 }
+/* styled checkboxes */
+.styled input[type="checkbox"] {
+    display: none;
+}
+.styled input[type="checkbox"] + label {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    background: url('/static/theme/plugins/iCheck/square/blue.png') no-repeat;
+    background-position: 0 0;
+    border: none;
+    cursor: pointer;
+}
+.styled input[type="checkbox"] + label:hover {
+    background-position: -24px 0;
+}
+.styled input[type="checkbox"]:checked + label {
+    background-position: -48px 0;
+}
+.styled input[type="checkbox"][disabled] + label {
+    background-position: -72px 0;
+    cursor: default;
+}
+.styled input[type="checkbox"][disabled]:checked + label {
+    background-position: -96px 0;
+}
+
+tbody td.th {
+    padding: 5px 15px;
+    font-style: italic;
+    font-weight: bold;
+}
