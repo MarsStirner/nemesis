@@ -85,15 +85,20 @@ def check_cas_token(auth_token):
         data['ext_cookie'] = request.cookies.get(ext_cas_cookie_name)
         if 'dont_check_tgt' in request.args:
             data['dont_check_tgt'] = request.args['dont_check_tgt']
-    try:
-        result = requests.post(
-            app.config['COLDSTAR_URL'] + 'cas/api/check',
-            data=json.dumps(data),
-            headers={'Referer': request.url.encode('utf-8')}
-        )
-    except ConnectionError:
-        raise CasNotAvailable
-    return result
+    with requests.Session() as ses:
+        ses.mount(app.config['COLDSTAR_URL'] + 'cas/api/check', requests.adapters.HTTPAdapter(max_retries=3))
+        try:
+            result = ses.post(
+                app.config['COLDSTAR_URL'] + 'cas/api/check',
+                data=json.dumps(data),
+                headers={'Referer': request.url.encode('utf-8')},
+                timeout=15
+            )
+        except ConnectionError:
+            raise CasNotAvailable
+        except requests.exceptions.Timeout:
+            raise CasTimeoutError
+        return result
 
 
 def process_public_api_login(auth_token):
@@ -345,9 +350,26 @@ class CasNotAvailable(Exception):
     pass
 
 
+class CasTimeoutError(Exception):
+    pass
+
+
 @app.errorhandler(CasNotAvailable)
 def cas_not_found(e):
-    return u'Нет связи с подсистемой централизованной аутентификации'
+    return make_response(
+        u'Нет связи с подсистемой централизованной аутентификации',
+        500,
+        {'content-type': 'text/html; charset=utf-8'}
+    )
+
+
+@app.errorhandler(CasTimeoutError)
+def cas_timeout(e):
+    return make_response(
+        u'Превышено время ожидания ответа от подсистемы централизованной аутентификации',
+        500,
+        {'content-type': 'text/html; charset=utf-8'}
+    )
 
 
 class ApiLoginException(Exception):
