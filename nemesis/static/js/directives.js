@@ -759,13 +759,6 @@ angular.module('WebMis20.directives')
                 fastPrint: '=?'
             },
             link: function (scope, element, attrs) {
-                var resolver_call2;
-
-                scope.$on('print_templates', function(e, data) {
-                    resolver_call2 = data;
-                    scope.print_templates();
-                });
-
                 var resolver_call = attrs.resolve;
                 if (!attrs.beforePrint) {
                     scope.beforePrint = null;
@@ -792,7 +785,7 @@ angular.module('WebMis20.directives')
                     if (!scope.$ps.is_loaded() || (scope.forceReloadContext)) {
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
-                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call2 ? resolver_call2 :resolver_call), undefined,
+                                PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
                                     scope.fastPrint);
                             }, function () {
                                 MessageBox.error(
@@ -801,7 +794,7 @@ angular.module('WebMis20.directives')
                                 );
                             });
                     } else {
-                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call2 ? resolver_call2 : resolver_call), undefined,
+                        PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
                                     scope.fastPrint);
                     }
                 };

@@ -1065,8 +1065,18 @@ li.active>a.cuslom-tab-pills {
     background-position: -96px 0;
 }
 
-tbody td.th {
+table.table-grouped tbody {
+    font-size: 1.5em;
+}
+table.table-grouped td.th {
     padding: 5px 15px;
-    font-style: italic;
     font-weight: bold;
+}
+table.table-grouped td:first-child {
+    padding-left: 20px;
+    text-align: center;
+}
+table.table-grouped tr.group-header td {
+    padding-left: 5px;
+    text-align: left;
 }
