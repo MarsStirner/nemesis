@@ -647,10 +647,13 @@ var WebMis20 = angular.module('WebMis20', [
         },
         link: function (scope, element, attributes) {
             // Создаём элементы
-            var inputElement = $('<input type="checkbox" class="rmargin10"></input>');
-            var replace = $('<label></label>');
+            var id = Math.random().toString(36).substring(7);
+            var inputElement = $('<input type="checkbox" id="'+id+'" class="rmargin10"></input>');
+            var replace = $('<span class="styled"></span>');
+            var label = $('<label for="'+id+'"></label>');
             // Формируем элеменент для замены
             replace.append(inputElement);
+            replace.append(label);
             replace.append(element.html());
 
             // 2-way binding

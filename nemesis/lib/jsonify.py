@@ -1442,6 +1442,7 @@ class ActionVisualizer(object):
             'status': ActionStatus(action.status),
             'set_person_id': action.setPerson_id,
             'person_id': action.person_id,
+            'payment': self.make_action_payment_info(action),
         }
 
     def make_searched_action(self, action):
