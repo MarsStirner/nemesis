@@ -9,6 +9,7 @@ import sqlalchemy
 from datetime import datetime, time, timedelta, date
 
 from flask_login import current_user
+from sqlalchemy.orm import joinedload
 
 from nemesis.lib.action.utils import action_needs_service, get_action_type_class
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
@@ -937,3 +938,99 @@ def get_client_diagnostics(client, beg_date, end_date=None, including_closed=Fal
     query = query.with_entities(sqlalchemy.func.max(Diagnostic.id).label('zid')).subquery()
     query = db.session.query(Diagnostic).join(query, query.c.zid == Diagnostic.id)
     return query
+
+
+def get_action(event, flat_code, create=False):
+    """
+    Поиск и создание действия внутри обращения
+    :param event: Обращение
+    :param flat_code: flat code типа действия
+    :param create: создавать ли, если нет?
+    :type event: application.models.event.Event
+    :type flat_code: list|tuple|basestring|None
+    :type create: bool
+    :return: действие
+    :rtype: Action | None
+    """
+    query = Action.query.join(ActionType).filter(Action.event == event, Action.deleted == 0)
+    if isinstance(flat_code, (list, tuple)):
+        query = query.filter(ActionType.flatCode.in_(flat_code))
+    elif isinstance(flat_code, basestring):
+        query = query.filter(ActionType.flatCode == flat_code)
+    elif flat_code is None:
+        return
+    else:
+        raise TypeError('flat_code must be list|tuple|basestring|None')
+    action = query.first()
+    if action is None and create:
+        action = create_action(get_action_type_id(flat_code), event)
+    return action
+
+
+def get_action_list(event, flat_code, all=False):
+    """
+    Поиск действий внутри обращения
+    :param event: Обращение
+    :param flat_code: flat code типа действия
+    :type event: application.models.event.Event
+    :type flat_code: list|tuple|basestring|None
+    :return: действие
+    :rtype: sqlalchemy.orm.Query
+    """
+    query = Action.query.join(ActionType).filter(
+        Action.event == event, Action.deleted == 0
+    ).options(
+        joinedload(Action.actionType, innerjoin=True)
+    )
+    if isinstance(flat_code, (list, tuple)):
+        query = query.filter(ActionType.flatCode.in_(flat_code))
+    elif isinstance(flat_code, basestring):
+        query = query.filter(ActionType.flatCode == flat_code)
+    elif flat_code is None:
+        return
+    else:
+        raise TypeError('flat_code must be list|tuple|basestring|None')
+    if all:
+        query = query.order_by(Action.begDate.asc())
+        return query.all()
+    return query
+
+
+def get_action_by_id(action_id, event=None, flat_code=None, create=False):
+    """
+    :param action_id: id действия
+    :param event: обращение, в котором действие может быть создано
+    :param flat_code: flat code, с которым действие может быть создано
+    :param create: создавать ли действие, если оно не найдено?
+    :type action_id: int | None
+    :type event: application.models.event.Event
+    :type flat_code: str
+    :type create: bool
+    :return: Действие
+    :rtype: Action | None
+    """
+    action = None
+    if action_id:
+        query = Action.query.filter(Action.id == action_id, Action.deleted == 0).options(
+            joinedload(Action.actionType, innerjoin=True)
+        )
+        action = query.first()
+    elif create:
+        action = create_action(get_action_type_id(flat_code), event)
+    return action
+
+
+@cache.memoize(3600)
+def get_action_type_id(flat_code):
+    """
+    Получение ActionType.id по его flat code
+    :param flat_code: flat code
+    :type flat_code: str
+    :rtype: int | None
+    :return: ActionType.id или None
+    """
+    selectable = db.select((ActionType.id, ), whereclause=ActionType.flatCode == flat_code, from_obj=ActionType)
+    row = db.session.execute(selectable).first()
+    if not row:
+        return None
+    return row[0]
