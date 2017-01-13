@@ -290,6 +290,25 @@ class ActionProperty(db.Model):
     def pl_price(self, value):
         self._pl_price = value
 
+    def check_value_norm(self):
+        """Попадает ли значение свойства в заданные нормы.
+
+        -1: меньше нормы, 0: в норме, 1: больше нормы
+        """
+        if self.type.norm:
+            min_, max_ = self.type.parse_norm()
+            if (min_ is not None or max_ is not None) and self.value is not None:
+                try:
+                    val = float(self.value)
+                except ValueError:
+                    return 0
+                if min_ is not None and val < min_:
+                    return -1
+                elif max_ is not None and val > max_:
+                    return 1
+                else:
+                    return 0
+
     def __json__(self):
         return {
             'id': self.id,
@@ -297,6 +316,7 @@ class ActionProperty(db.Model):
             'type': self.type,
             'is_assigned': self.isAssigned,
             'value': self.value,
+            'value_in_norm': self.check_value_norm()
         }
 
 
@@ -389,8 +409,25 @@ class ActionPropertyType(db.Model):
                 }
         return None
 
+    def parse_norm(self):
+        try:
+            # "0 - 100.0"
+            min_, max_ = [float(v.strip().replace(',', '.')) for v in self.norm.split('-')]
+        except:
+            try:
+                # "< 100"
+                min_, max_ = None, float(self.norm.split('<')[1].strip().replace(',', '.'))
+            except:
+                try:
+                    # "> 100"
+                    min_, max_ = float(self.norm.split('>')[1].strip().replace(',', '.')), None
+                except:
+                    return None, None
+        return min_, max_
+
     def __json__(self):
         value_domain = self.parse_value_domain()
+        norm_min, norm_max = self.parse_norm()
         result = {
             'id': self.id,
             'name': self.name,
@@ -403,6 +440,8 @@ class ActionPropertyType(db.Model):
             'type_name': self.typeName,
             'unit': self.unit,
             'norm': self.norm,
+            'norm_min': norm_min,
+            'norm_max': norm_max,
             'vector': bool(self.isVector),
             'description': self.descr
         }

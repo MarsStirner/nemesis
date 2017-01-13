@@ -1573,6 +1573,7 @@ class ActionVisualizer(object):
             'value': value,
             'unit': prop.unit,
             'norm': prop.norm,
+            'value_in_norm': prop.check_value_norm(),
             'has_pricelist_service': prop.has_pricelist_service if not for_template else None
         }
 
