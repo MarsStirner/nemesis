@@ -576,7 +576,7 @@ var WebMis20 = angular.module('WebMis20', [
     };
     SelectAll.prototype.setSource = function (source) {
         this._source = source;
-        // this._selected = source.clone();
+        this._selected = source.clone();
     };
     SelectAll.prototype.selected = function () {
         var item = arguments[0];
