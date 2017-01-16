@@ -105,6 +105,10 @@ class Action(db.Model):
             new_p = self.propsByTypeId[pt_id]
         new_p.set_value(value, raw)
 
+    def get_prop_value(self, apt_code):
+        if apt_code in self.propsByCode:
+            return self.propsByCode[apt_code].value
+
     def delete(self):
         self.deleted = 1
         for prop in self.properties:

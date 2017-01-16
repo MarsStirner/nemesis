@@ -18,7 +18,6 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
 from .service import ServiceController
 from .finance_trx import FinanceTrxController
-from .integration import InvoiceIntegrationNotifier
 from .utils import calc_invoice_total_sum, calc_invoice_item_total_sum
 
 
@@ -216,13 +215,6 @@ class InvoiceController(BaseModelController):
     def get_invoices_in_event(self, event_id):
         sel = self.get_selecter()
         return sel.get_invoices_in_event(event_id)
-
-    def notify_invoice_changed(self, invoice, op):
-        notifier = InvoiceIntegrationNotifier()
-        try:
-            notifier.notify(op, invoice)
-        except Exception, e:
-            logger.exception(e.message)
 
 
 class InvoiceSelecter(BaseSelecter):

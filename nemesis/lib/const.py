@@ -22,10 +22,12 @@ STATIONARY_EVENT_CODES = ('clinic', 'hospital', 'stationary')
 DAY_HOSPITAL_CODE = 'clinic'
 DIAGNOSTIC_EVENT_CODES = ('4', 'diagnosis', 'diagnostic')
 
+STATIONARY_RECEIVED_CODE = 'received'
 STATIONARY_MOVING_CODE = 'moving'
 STATIONARY_LEAVED_CODE = 'leaved'
 STATIONARY_ORG_STRUCT_STAY_CODE = 'orgStructStay'
 STATIONARY_ORG_STRUCT_TRANSFER_CODE = 'orgStructTransfer'
+STATIONARY_ORG_STRUCT_RECEIVED_CODE = 'orgStructReceived'
 STATIONARY_HOSP_BED_CODE = 'hospitalBed'
 STATIONARY_HOSP_LENGTH_CODE = 'hospLength'
 

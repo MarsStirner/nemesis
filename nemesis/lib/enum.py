@@ -68,6 +68,10 @@ class EnumBase(object):
         return cls.codes.keys()
 
     @classmethod
+    def get_codes(cls):
+        return cls.codes.values()
+
+    @classmethod
     def rb(cls):
         return {
             'objects': [{
