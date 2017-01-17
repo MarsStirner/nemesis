@@ -166,7 +166,7 @@ class Action(db.Model):
 
 
 def apv_not_empty(value):
-    return bool(value) and value != 0
+    return value == 0 or bool(value)
 
 
 class ActionProperty(db.Model):
