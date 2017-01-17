@@ -882,6 +882,36 @@ class ActionProperty_rbFinance(ActionProperty__ValueType):
     property_object = db.relationship('ActionProperty', backref='_value_rbFinance')
 
 
+typeName_Value_map = {
+    'String': ActionProperty_String,
+    'Text': ActionProperty_String,
+    'Constructor': ActionProperty_String,
+    'Html': ActionProperty_String,
+    'Integer': ActionProperty_Integer,
+    'Double': ActionProperty_Double,
+    'Date': ActionProperty_Date,
+    'Time': ActionProperty_Time,
+    'ReferenceRb': ActionProperty_Integer,
+    'ExtReferenceRb': ActionProperty_ExtReferenceRb,
+    'Person': ActionProperty_Person,
+    'MKB': ActionProperty_MKB,
+    'Organisation': ActionProperty_Organisation,
+    'OrgStructure': ActionProperty_OrgStructure,
+    'HospitalBed': ActionProperty_HospitalBed,
+    'HospitalBedProfile': ActionProperty_HospitalBedProfile,
+    'URL': ActionProperty_String,
+    'Table': ActionProperty_Table,
+
+    # not welcome
+    'Diagnosis': ActionProperty_Diagnosis,
+    'AnalysisStatus': ActionProperty_AnalysisStatus,
+    'Image': ActionProperty_Image,
+    'OperationType': ActionProperty_OperationType,
+    'RLS': ActionProperty_RLS,
+    'JobTicket': ActionProperty_JobTicket,
+}
+
+
 class ActionProperty_rbReasonOfAbsence(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_rbReasonOfAbsence'
 
