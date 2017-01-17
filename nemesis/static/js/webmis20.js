@@ -315,8 +315,8 @@ var WebMis20 = angular.module('WebMis20', [
         var out = [];
         if(items) {
             items.forEach(function(item){
-                if (!item.hasOwnProperty('is_hospital') ||
-                    (item.hasOwnProperty('is_hospital') && item.is_hospital)) {
+                if (!item.hasOwnProperty('is_lpu') ||
+                    (item.hasOwnProperty('is_lpu') && item.is_lpu)) {
                     out.push(item);
                 }
             });
