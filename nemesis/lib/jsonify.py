@@ -27,13 +27,13 @@ from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
-from nemesis.models.diagnosis import Diagnosis, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
+from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
 from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
-    Organisation, rbContactType, FileGroupDocument)
+    Organisation, rbContactType, FileGroupDocument, MKB)
 
 
 __author__ = 'mmalkov'
@@ -959,6 +959,7 @@ class EventVisualizer(object):
             'contract': {
                 'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft'))
             },
+            'diagnoses': self.make_small_diagnoses(event, True)
         }
 
     def make_short_event_type(self, event_type):
@@ -1012,6 +1013,21 @@ class EventVisualizer(object):
                 diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, event),
             )
             for diagnostic in diagnostics
+        ]
+
+    def make_small_diagnoses(self, event, including_closed=False):
+        diags = get_client_diagnostics(
+            event.client, event.setDate, event.execDate, including_closed
+        ).join(
+            MKB, Diagnostic.MKB == MKB.DiagID
+        ).with_entities(MKB).all()
+        return [
+            {
+                'id': mkb.id,
+                'code': mkb.DiagID,
+                'name': mkb.DiagName
+            }
+            for mkb in diags
         ]
 
     def make_diagnose_row(self, diagnostic, diagnosis):
