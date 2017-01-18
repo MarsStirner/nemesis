@@ -489,6 +489,15 @@ def format_date(d):
         return d
 
 
+def format_datetime(d):
+    if type(d) == datetime.date:
+        return d.strftime('%d.%m.%Y')
+    elif type(d) == datetime.datetime:
+        return d.strftime('%d.%m.%Y %H:%M')
+    else:
+        return d
+
+
 def parse_json(json_string):
     try:
         result = json.loads(json_string)
