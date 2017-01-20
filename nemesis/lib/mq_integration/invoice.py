@@ -5,6 +5,7 @@ from nemesis.lib.data_ctrl.accounting.utils import get_contragent_type
 from nemesis.lib.enum import Enum
 from nemesis.models.enums import ContragentType
 from nemesis.lib.apiutils import json_dumps
+from nemesis.lib.const import PAID_EVENT_CODE
 from .base import MQIntegrationNotifier
 
 
@@ -20,8 +21,10 @@ class MQOpsInvoice(Enum):
 
 def notify_invoice_changed(op, invoice):
     payer = invoice.contract.payer
+    finance_code = invoice.contract.finance.code
 
-    if get_contragent_type(payer).value == ContragentType.individual[0]:
+    if finance_code == PAID_EVENT_CODE and\
+            get_contragent_type(payer).value == ContragentType.individual[0]:
         notifier = InvoiceIntegrationNotifier()
 
         try:
