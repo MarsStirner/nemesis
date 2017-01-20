@@ -16,7 +16,7 @@ from flask import json
 from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
-    get_client_diagnostics
+    get_client_diagnostics, get_action_type_class
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
     get_prev_inspection_with_diags
 from nemesis.lib.agesex import recordAcceptableEx
@@ -1465,7 +1465,8 @@ class ActionVisualizer(object):
             'id': at.id,
             'code': at.code,
             'name': at.name,
-            'title': at.title
+            'title': at.title,
+            'action_type_class': get_action_type_class(at.class_, at.isRequiredTissue).__json__()
         }
 
     def make_searched_action(self, action):
