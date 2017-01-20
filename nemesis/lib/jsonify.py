@@ -1449,7 +1449,7 @@ class ActionVisualizer(object):
     def make_small_action_info(self, action, pay_data=None):
         return {
             'id': action.id,
-            'action_type': self.make_small_at(action.actionType),
+            'action_type': self.make_at(action.actionType),
             'event_id': action.event_id,
             'beg_date': action.begDate,
             'end_date': action.endDate,
@@ -1460,11 +1460,15 @@ class ActionVisualizer(object):
             'payment': pay_data
         }
 
-    def make_small_at(self, at):
+    def make_at(self, at):
         return {
             'id': at.id,
             'code': at.code,
             'name': at.name,
+            'class': at.class_,
+            'flat_code': at.flatCode,
+            'context_name': at.context,
+            'hidden': at.hidden,
             'title': at.title,
             'action_type_class': get_action_type_class(at.class_, at.isRequiredTissue).__json__()
         }
