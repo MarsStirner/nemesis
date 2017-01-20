@@ -213,3 +213,9 @@ class CardFillRate(Enum):
     waiting = 1, u'Ожидается'
     filled = 2, u'Заполнено'
     not_filled = 3, u'Не заполнено'
+
+
+class ActionPayStatus(Enum):
+    not_paid = 0, u'Не оплачено'
+    paid = 1, u'Оплачено'
+    refunded = 2, u'Совершен возврат'

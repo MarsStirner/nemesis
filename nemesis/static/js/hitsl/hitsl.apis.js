@@ -5,8 +5,8 @@
 
 angular.module('hitsl.core')
 .service('ApiCalls', ['$q','$http', 'NotificationService', 'Deferred', function ($q, $http, NotificationService, Deferred) {
-    this.wrapper = function (method, url, params, data, config) {
-        if (config === undefined) config = {};
+    this.wrapper = function (method, url, params, data, options) {
+        if (options === undefined) options = {};
         var defer = $q.defer();
         function process(response) {
             var data_meta_status = safe_traverse(response.data, ['meta', 'code'], response.status),
@@ -30,16 +30,15 @@ angular.module('hitsl.core')
             return response;
         }
         if (!angular.isString(url)) { throw 'Неверное значение URL запроса: {0}'.format(url) }
-        $http({
+        $http(angular.extend({}, options, {
             method: method,
             url: url,
             params: params,
             data: data,
-            cache: safe_traverse(config, ['cache'], false),
             headers: {
                 'X-Requested-With' :'XMLHttpRequest'
             }
-        })
+        }))
         .then(process, process);
         return defer.promise;
     };

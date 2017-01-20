@@ -1093,11 +1093,10 @@ class EventVisualizer(object):
             'context': action_type.context
         }
 
-    def make_action(self, action):
+    def make_action(self, action, pay_info=None):
         """
         @type action: Action
         """
-        aviz = ActionVisualizer()
         return {
             'id': action.id,
             'name': action.actionType.name,
@@ -1113,7 +1112,7 @@ class EventVisualizer(object):
             'can_read': UserUtils.can_read_action(action),
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
-            'payment': aviz.make_action_payment_info(action),
+            'payment': pay_info,
             'urgent': action.isUrgent,
         }
 
@@ -1447,10 +1446,10 @@ class ActionVisualizer(object):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
         return result
 
-    def make_small_action_info(self, action):
+    def make_small_action_info(self, action, pay_data=None):
         return {
             'id': action.id,
-            'action_type': action.actionType,
+            'action_type': self.make_small_at(action.actionType),
             'event_id': action.event_id,
             'beg_date': action.begDate,
             'end_date': action.endDate,
@@ -1458,7 +1457,15 @@ class ActionVisualizer(object):
             'status': ActionStatus(action.status),
             'set_person_id': action.setPerson_id,
             'person_id': action.person_id,
-            'payment': self.make_action_payment_info(action),
+            'payment': pay_data
+        }
+
+    def make_small_at(self, at):
+        return {
+            'id': at.id,
+            'code': at.code,
+            'name': at.name,
+            'title': at.title
         }
 
     def make_searched_action(self, action):
@@ -1669,16 +1676,6 @@ class ActionVisualizer(object):
             'comments': comments
         }
         return result
-
-    def make_action_payment_info(self, action):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        service_ctrl = ServiceController()
-        service = service_ctrl.get_action_service(action)
-        if service is None:
-            return None
-        service_payment = service_ctrl.get_service_payment_info(service)
-        service_payment['sum'] = format_money(service_payment['sum'])
-        return service_payment
 
     def make_action_diagnoses_info(self, action):
         associated_kind = rbDiagnosisKind.cache().by_code().get('associated')
