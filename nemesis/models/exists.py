@@ -372,8 +372,8 @@ class rbDocumentType(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
-    regionalCode = db.Column(db.String(16), nullable=False)
-    name = db.Column(db.String(64), nullable=False, index=True)
+    regionalCode = db.Column(db.String(32), nullable=False)
+    name = db.Column(db.String(128), nullable=False, index=True)
     group_id = db.Column(db.Integer, db.ForeignKey('rbDocumentTypeGroup.id'), nullable=False, index=True)
     serial_format = db.Column(db.Integer, nullable=False)
     number_format = db.Column(db.Integer, nullable=False)
