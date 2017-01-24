@@ -12,6 +12,7 @@ class rbPerinatalRiskRate(db.Model):
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
     value = db.Column(db.Integer, nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     prr_mkbs = db.relationship('rbPerinatalRiskRateMkbAssoc', backref='rbPerinatalRiskRate', cascade_backrefs=False)
     mkbs = db.relationship('MKB', secondary='rbPerinatalRiskRateMkb')
@@ -72,6 +73,7 @@ class rbPregnancyPathology(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     pp_mkbs = db.relationship('rbPregnancyPathologyMkbAssoc')
     mkbs = db.relationship('MKB', secondary='rbPregnancyPathologyMkb')
@@ -171,6 +173,7 @@ class rbErrandStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -187,6 +190,7 @@ class rbPreEclampsiaRate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(16), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -204,6 +208,7 @@ class rbRadzinskyRiskRate(db.Model):
     name = db.Column(db.Unicode(64), nullable=False)
     name_masc = db.Column(db.Unicode(45), nullable=False)
     value = db.Column(db.Integer, nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -347,6 +352,7 @@ class rbProfMedHelp(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False)
     name = db.Column(db.String(255), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __unicode__(self):
         return self.name
@@ -365,6 +371,7 @@ class rbConditionMedHelp(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False)
     name = db.Column(db.String(255), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __unicode__(self):
         return self.name

@@ -164,6 +164,7 @@ class rbBloodType(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -564,6 +565,7 @@ class rbSocStatusClass(db.Model):
     group_id = db.Column(db.ForeignKey('rbSocStatusClass.id'), index=True)
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
+    regionalCode = db.Column(db.String(64), nullable=False)
 
     group = db.relationship(u'rbSocStatusClass', remote_side=[id])
 
@@ -594,7 +596,7 @@ class rbSocStatusType(db.Model):
     name = db.Column(db.String(250), nullable=False, index=True)
     socCode = db.Column(db.String(8), nullable=False, index=True)
     TFOMSCode = db.Column(db.Integer)
-    regionalCode = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False)
 
     classes = db.relationship(u'rbSocStatusClass', secondary=rbSocStatusClassTypeAssoc, lazy='joined')
 
@@ -833,7 +835,7 @@ class rbResult(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     continued = db.Column(db.Integer, nullable=False)
-    regionalCode = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
@@ -861,6 +863,7 @@ class rbAcheResult(db.Model):
     eventPurpose_id = db.Column(db.ForeignKey('rbEventTypePurpose.id'), nullable=False, index=True)
     code = db.Column(db.String(3, u'utf8_unicode_ci'), nullable=False)
     name = db.Column(db.String(64, u'utf8_unicode_ci'), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
 
@@ -995,6 +998,7 @@ class rbDiseaseCharacter(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
     replaceInDiagnosis = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -1052,6 +1056,7 @@ class rbDispanser(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
     observed = db.Column(db.Integer, nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
@@ -1207,6 +1212,7 @@ class MKB(db.Model):
     service_id = db.Column(db.Integer, index=True)
     MKBSubclass_id = db.Column(db.Integer)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     __mapper_args__ = {'order_by': DiagID}
 

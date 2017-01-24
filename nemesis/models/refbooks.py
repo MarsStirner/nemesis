@@ -81,6 +81,7 @@ class rbFinance(db.Model):
     code = db.Column(db.Unicode(8), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
+    regionalCode = db.Column(db.String(64), nullable=True)
 
     def __json__(self):
         return {
