@@ -21,7 +21,7 @@ from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
-                                    ActionType_TissueType)
+                                    ActionType_TissueType, typeName_Value_map)
 from nemesis.models.client import Client
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus, ActionTypeClass, ATClass
 from nemesis.models.event import Event, EventType_Action
@@ -1034,3 +1034,18 @@ def get_action_type_id(flat_code):
     if not row:
         return None
     return row[0]
+
+
+def get_properties_values(props):
+    # only scalar
+    prop_map = {}
+    for p in props:
+        prop_map.setdefault(p.type.typeName, []).append(p.id)
+
+    res = {}
+    for typename, ap_ids in prop_map.iteritems():
+        value_class = typeName_Value_map[typename]
+        vals = value_class.query.filter(value_class.id.in_(ap_ids)).values(value_class.id, value_class.value)
+        for item in vals:
+            res.update({item[0]: item[1]})
+    return res

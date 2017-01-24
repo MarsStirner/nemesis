@@ -665,7 +665,7 @@ var WebMis20 = angular.module('WebMis20', [
                     scope.onChecked();
                 }
             }
-            scope.$watch('selectAll._selected', function (n, o) {
+            scope.$watchCollection('selectAll._selected', function (n, o) {
                 inputElement[0].checked = scope.selectAll.selected(scope.key);
                 return n;
             });

@@ -16,7 +16,7 @@ from flask import json
 from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
-    get_client_diagnostics
+    get_client_diagnostics, get_action_type_class
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
     get_prev_inspection_with_diags
 from nemesis.lib.agesex import recordAcceptableEx
@@ -27,13 +27,13 @@ from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
-from nemesis.models.diagnosis import Diagnosis, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
+from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
 from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
 from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
-    Organisation, rbContactType, FileGroupDocument)
+    Organisation, rbContactType, FileGroupDocument, MKB)
 
 
 __author__ = 'mmalkov'
@@ -959,6 +959,7 @@ class EventVisualizer(object):
             'contract': {
                 'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft'))
             },
+            'diagnoses': self.make_small_diagnoses(event, True)
         }
 
     def make_short_event_type(self, event_type):
@@ -1012,6 +1013,21 @@ class EventVisualizer(object):
                 diagnosis_types=self.make_diagnosis_types_info(diagnostic.diagnosis, event),
             )
             for diagnostic in diagnostics
+        ]
+
+    def make_small_diagnoses(self, event, including_closed=False):
+        diags = get_client_diagnostics(
+            event.client, event.setDate, event.execDate, including_closed
+        ).join(
+            MKB, Diagnostic.MKB == MKB.DiagID
+        ).with_entities(MKB).all()
+        return [
+            {
+                'id': mkb.id,
+                'code': mkb.DiagID,
+                'name': mkb.DiagName
+            }
+            for mkb in diags
         ]
 
     def make_diagnose_row(self, diagnostic, diagnosis):
@@ -1077,11 +1093,10 @@ class EventVisualizer(object):
             'context': action_type.context
         }
 
-    def make_action(self, action):
+    def make_action(self, action, pay_info=None):
         """
         @type action: Action
         """
-        aviz = ActionVisualizer()
         return {
             'id': action.id,
             'name': action.actionType.name,
@@ -1097,7 +1112,7 @@ class EventVisualizer(object):
             'can_read': UserUtils.can_read_action(action),
             'can_edit': UserUtils.can_edit_action(action),
             'can_delete': UserUtils.can_delete_action(action),
-            'payment': aviz.make_action_payment_info(action),
+            'payment': pay_info,
             'urgent': action.isUrgent,
         }
 
@@ -1431,10 +1446,10 @@ class ActionVisualizer(object):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
         return result
 
-    def make_small_action_info(self, action):
+    def make_small_action_info(self, action, pay_data=None):
         return {
             'id': action.id,
-            'action_type': action.actionType,
+            'action_type': self.make_at(action.actionType),
             'event_id': action.event_id,
             'beg_date': action.begDate,
             'end_date': action.endDate,
@@ -1442,7 +1457,20 @@ class ActionVisualizer(object):
             'status': ActionStatus(action.status),
             'set_person_id': action.setPerson_id,
             'person_id': action.person_id,
-            'payment': self.make_action_payment_info(action),
+            'payment': pay_data
+        }
+
+    def make_at(self, at):
+        return {
+            'id': at.id,
+            'code': at.code,
+            'name': at.name,
+            'class': at.class_,
+            'flat_code': at.flatCode,
+            'context_name': at.context,
+            'hidden': at.hidden,
+            'title': at.title,
+            'action_type_class': get_action_type_class(at.class_, at.isRequiredTissue).__json__()
         }
 
     def make_searched_action(self, action):
@@ -1653,16 +1681,6 @@ class ActionVisualizer(object):
             'comments': comments
         }
         return result
-
-    def make_action_payment_info(self, action):
-        from nemesis.lib.data_ctrl.accounting.service import ServiceController
-        service_ctrl = ServiceController()
-        service = service_ctrl.get_action_service(action)
-        if service is None:
-            return None
-        service_payment = service_ctrl.get_service_payment_info(service)
-        service_payment['sum'] = format_money(service_payment['sum'])
-        return service_payment
 
     def make_action_diagnoses_info(self, action):
         associated_kind = rbDiagnosisKind.cache().by_code().get('associated')

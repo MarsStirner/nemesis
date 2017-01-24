@@ -2,13 +2,15 @@
 
 import datetime
 
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy import and_, exists, func
+from sqlalchemy.sql.expression import label
 
 from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount, rbServiceKind
 from nemesis.models.client import Client
 from nemesis.models.actions import Action
 from nemesis.models.event import Event
-from nemesis.models.enums import ServiceKind
+from nemesis.models.enums import ServiceKind, FinanceOperationType, ActionPayStatus
 from nemesis.lib.utils import (safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict,
     safe_traverse_attrs, safe_datetime)
 from nemesis.lib.apiutils import ApiException
@@ -20,6 +22,7 @@ from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind, calc_service_total_sum
 from nemesis.lib.action.utils import at_is_lab
+from nemesis.lib.const import PAID_EVENT_CODE
 
 
 class ServiceController(BaseModelController):
@@ -670,16 +673,31 @@ class ServiceController(BaseModelController):
             Service.id == service.id
         ).count() > 0
 
-    def check_service_is_paid(self, service):
-        if not service.id:
-            return False
-        invoice = service.invoice
-        if invoice is None:
-            return False
-        from .invoice import InvoiceController
-        invoice_ctrl = InvoiceController()
-        invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
-        return invoice_payment['paid']
+    def get_actions_pay_info(self, action_id_list):
+        if not action_id_list:
+            return {}
+        sel = self.get_selecter()
+        pay_info = sel.get_action_service_pay_info(action_id_list)
+        res = {}
+        for item in pay_info:
+            res[item.action_id] = {
+                'sum': item.sum,
+                'pay_status': ActionPayStatus(item.pay_status)
+            }
+        return res
+
+    def get_services_pay_info(self, service_id_list):
+        if not service_id_list:
+            return {}
+        sel = self.get_selecter()
+        pay_info = sel.get_action_service_pay_info(service_id_list=service_id_list)
+        res = {}
+        for item in pay_info:
+            res[item.service_id] = {
+                'sum': item.sum,
+                'pay_status': ActionPayStatus(item.pay_status)
+            }
+        return res
 
     def check_can_edit_service(self, service):
         return not service.in_invoice
@@ -690,17 +708,12 @@ class ServiceController(BaseModelController):
     def get_service_payment_info(self, service):
         if not service.id:
             return False
-        invoice = service.invoice
-        if invoice is not None:
-            from .invoice import InvoiceController
-            invoice_ctrl = InvoiceController()
-            invoice_payment = invoice_ctrl.get_invoice_payment_info(invoice)
-            is_paid = invoice_payment['paid']
-        else:
-            is_paid = False
+        pay_data = self.get_services_pay_info([service.id])
+        pay_status = pay_data[service.id]['pay_status'] if service.id in pay_data else None
         return {
             'sum': service.sum,
-            'is_paid': is_paid
+            'pay_status': pay_status,
+            'is_paid': pay_status and pay_status.value == ActionPayStatus.paid[0]
         }
 
     def calc_service_sum(self, service, params):
@@ -805,6 +818,82 @@ class ServiceSelecter(BaseSelecter):
             joinedload(Service.action).joinedload('actionType'),
             joinedload(Service.action_property).joinedload('type'),
             joinedload(Service.discount)
+        )
+        return self.get_all()
+
+    def get_action_service_pay_info(self, action_id_list=None, service_id_list=None):
+        if not action_id_list and not service_id_list:
+            raise ValueError('Both `action_id_list` and `service_id_list` cannot be empty')
+        Action = self.model_provider.get('Action')
+        Event = self.model_provider.get('Event')
+        EventType = self.model_provider.get('EventType')
+        rbFinance = self.model_provider.get('rbFinance')
+        Service = self.model_provider.get('Service')
+        Invoice = self.model_provider.get('Invoice')
+        InvoiceRefund = aliased(Invoice, name='InvoiceRefund')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+        FinanceTransaction = self.model_provider.get('FinanceTransaction')
+
+        refund_trx_q = self.model_provider.get_query('FinanceTransaction').filter(
+            FinanceTransaction.financeOperationType_id == FinanceOperationType.invoice_cancel[0],
+            FinanceTransaction.invoice_id == InvoiceRefund.id
+        ).limit(1)
+
+        invoice_trx_q = self.model_provider.get_query('FinanceTransaction').filter(
+            FinanceTransaction.financeOperationType_id == FinanceOperationType.invoice_pay[0]
+        ).group_by(
+            FinanceTransaction.invoice_id
+        ).with_entities(
+            FinanceTransaction.invoice_id.label('invoice_id'),
+            func.sum(FinanceTransaction.sum).label('trx_sum')
+        ).subquery('InvoiceTrx')
+
+        invoice_q = self.model_provider.get_query('Invoice').join(
+            InvoiceItem, and_(InvoiceItem.invoice_id == Invoice.id,
+                              InvoiceItem.parent_id.is_(None),
+                              Invoice.parent_id.is_(None))
+        ).outerjoin(
+            invoice_trx_q, invoice_trx_q.c.invoice_id == Invoice.id
+        ).filter(
+            Invoice.deleted == 0, InvoiceItem.deleted == 0
+        ).group_by(
+            Invoice.id
+        ).with_entities(
+            Invoice.id.label('invoice_id'),
+            label('invoice_paid', invoice_trx_q.c.trx_sum >= func.sum(InvoiceItem.sum))
+        ).subquery('MainInvoice')
+
+        if action_id_list:
+            self.query = self.model_provider.get_query('Action').join(
+                Service, Service.action_id == Action.id
+            ).filter(Action.id.in_(action_id_list))
+        else:
+            self.query = self.model_provider.get_query('Service').join(
+                Action, Service.action_id == Action.id
+            ).filter(Service.id.in_(service_id_list))
+        self.query = self.query.join(
+            Event, EventType, rbFinance
+        ).outerjoin(
+            InvoiceItem, and_(InvoiceItem.concreteService_id == Service.id,
+                              InvoiceItem.deleted == 0)
+        ).outerjoin(
+            InvoiceRefund, and_(InvoiceRefund.id == InvoiceItem.refund_id,
+                                refund_trx_q.exists())
+        ).outerjoin(
+            invoice_q, and_(InvoiceRefund.id.is_(None),
+                            invoice_q.c.invoice_id == InvoiceItem.invoice_id)
+        ).filter(
+            rbFinance.code == PAID_EVENT_CODE,
+        ).with_entities(
+            Action.id.label('action_id'),
+            Service.id.label('service_id'),
+            Service.sum.label('sum'),
+            func.IF(InvoiceRefund.id.isnot(None),
+                    ActionPayStatus.refunded[0],
+                    func.IF(invoice_q.c.invoice_paid,
+                            ActionPayStatus.paid[0],
+                            ActionPayStatus.not_paid[0])
+                    ).label('pay_status')
         )
         return self.get_all()
 
