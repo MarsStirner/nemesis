@@ -265,7 +265,6 @@ class ActionProperty(db.Model):
             value_container = value_container_class()
             value_container.set_value(value, raw)
             value_container.index = index
-            value_container.property_object = self
             db.session.add(value_container)
             return value_container
 
