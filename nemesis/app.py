@@ -174,9 +174,6 @@ def fc_urls():
                 'rb_root': url_for('rb.api_refbook'),
                 'rb_search': url_for('rb.api_refbook_search')
             }
-        },
-        'ui': {
-            'defaultHideTimeout': 400
         }
     }
 
@@ -189,6 +186,7 @@ def fc_settings():
     """
     from nemesis.lib.settings import Settings
     from nemesis.lib.data_ctrl.utils import get_default_org
+    from nemesis.lib.utils import safe_traverse, safe_int
 
     settings = Settings()
     default_org = get_default_org()
@@ -204,6 +202,10 @@ def fc_settings():
                 'enabled': bool(app.config.get('PHARMEXPERT_URL', False)),
                 'security_key': app.config.get('PHARMEXPERT_SECURITY_KEY', ''),
             },
+            'ui': {
+                'defaultHideTimeout': 400,
+                'ttj_barcode_len': safe_int(safe_traverse(app.config, 'system_prefs', 'ui', 'ttj_barcode_len'))
+            }
         }
     }
 

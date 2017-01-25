@@ -155,7 +155,7 @@ angular.module('WebMis20.directives.goodies', [])
                 element_popup = element.find('#wm-popup'),
                 element_input = element.find('#input'),
                 element_control = element.find('#control'),
-                wmTimeout = WMConfig.ui.defaultHideTimeout || 600,
+                wmTimeout = WMConfig.local_config.ui.defaultHideTimeout || 600,
                 popupTimeoutObject = new TimeoutCallback(hide_popup, wmTimeout);
 
             function hide_popup () {
