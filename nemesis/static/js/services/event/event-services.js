@@ -60,9 +60,7 @@ angular.module('WebMis20.services').
             if (types_without_main.length) {
                 return MessageBox.error(
                     'Невозможно закрыть обращение',
-                    'Необходимо указать основной диагноз на вкладках:<br> * {0}<br><br>'.format(
-                        '<br/> * '.join(_.pluck(types_without_main, 'name'))
-                    )
+                    'В обращении отсутствует основной диагноз'
                 );
             }
             var deferred = $q.defer();

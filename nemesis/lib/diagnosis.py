@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import six
 
+from sqlalchemy import and_, func
+from copy import copy
+
 from nemesis.lib.utils import safe_traverse, safe_datetime, safe_date
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisTypeN, \
     rbDiagnosisKind
 from nemesis.models.exists import MKB
 from nemesis.models.person import Person
+from nemesis.models.event import Event, EventType
 from nemesis.systemwide import db
 
 __author__ = 'viruzzz-kun'
@@ -295,3 +299,96 @@ def delete_diagnosis(diagnostic, diagnostic_id=None):
     for ds in diagnostic.diagnoses:
         ds.deleted = 1
     db.session.add(diagnostic)
+
+
+def get_events_diagnoses(event_id_list):
+    if not event_id_list:
+        return {}
+
+    et_diag_types = {}
+    et_diag_types_q = db.session.query(Event).join(EventType).outerjoin(EventType.diagnosis_types).filter(
+        Event.id.in_(event_id_list)
+    ).distinct().with_entities(
+        EventType.id.label('et_id'),
+        rbDiagnosisTypeN.code.label('dg_type_code')
+    )
+    for et_id, dg_type_code in et_diag_types_q:
+        if dg_type_code:
+            et_diag_types.setdefault(et_id, set()).add(dg_type_code)
+
+    diagd_q = db.session.query(Event).join(
+        Diagnosis, and_(Diagnosis.client_id == Event.client_id,
+                        Diagnosis.setDate <= func.coalesce(Event.execDate, func.curdate()),
+                        func.coalesce(Diagnosis.endDate, func.curdate()) >= Event.setDate)
+    ).join(Diagnostic).outerjoin(
+        Event_Diagnosis, and_(Event_Diagnosis.diagnosis_id == Diagnosis.id,
+                              Event_Diagnosis.event_id == Event.id,
+                              Event_Diagnosis.deleted == 0)
+    ).outerjoin(
+        rbDiagnosisTypeN, Event_Diagnosis.diagnosisType_id == rbDiagnosisTypeN.id
+    ).outerjoin(
+        rbDiagnosisKind, Event_Diagnosis.diagnosisKind_id == rbDiagnosisKind.id
+    ).filter(
+        Event.id.in_(event_id_list),
+        Diagnostic.setDate <= func.coalesce(Event.execDate, func.curdate()),
+        Diagnostic.setDate >= Event.setDate,
+        Diagnostic.deleted == 0, Diagnosis.deleted == 0
+    ).distinct().with_entities(
+        Event.id.label('event_id'),
+        Event.eventType_id.label('et_id'),
+        Diagnostic.MKB.label('mkb'),
+        rbDiagnosisTypeN.code.label('dg_type_code'),
+        rbDiagnosisKind.code.label('dg_kind_code')
+    )
+
+    def default_types(et_id):
+        return dict((dg_type_code, 'associated') for dg_type_code in et_diag_types.get(et_id, []))
+
+    event_diags = {}
+    for item in diagd_q:
+        e_diags = event_diags.setdefault(item.event_id, {})
+        mkb_types = e_diags.setdefault(item.mkb, default_types(item.et_id))
+        t_code = item.dg_type_code
+        k_code = item.dg_kind_code
+        if t_code and k_code:
+            mkb_types[t_code] = k_code
+
+    return event_diags
+
+
+def format_diagnoses(diags, diag_types=None):
+    d_kinds = rbDiagnosisKind.cache().by_code()
+    d_types = rbDiagnosisTypeN.cache().by_code()
+    all_mkb = set()
+    for e_id, mkbs in diags.iteritems():
+        for mkb, types in mkbs.iteritems():
+            all_mkb.add(mkb)
+    mkb_texts = dict(db.session.query(MKB.DiagID, MKB.DiagName).filter(MKB.DiagID.in_(all_mkb)).all())
+
+    res = {}
+    for e_id, mkbs in diags.iteritems():
+        res[e_id] = []
+        main_mkbs = []
+        compl_mkbs = []
+        assoc_mkbs = []
+        for mkb, types in mkbs.iteritems():
+            title = mkb_texts[mkb]
+            titles = []
+            for dg_type, dg_kind in types.iteritems():
+                if diag_types is None or dg_type in diag_types:
+                    titles.append(u'{0} {1}'.format(d_kinds[dg_kind], d_types[dg_type]))
+            if titles:
+                title += u' - {0}'.format(u', '.join(titles))
+
+            kinds = set(types.values())
+            if 'main' in kinds:
+                main_mkbs.append((mkb, title))
+            elif 'complication' in kinds:
+                compl_mkbs.append((mkb, title))
+            elif 'associated' in kinds:
+                assoc_mkbs.append((mkb, title))
+
+        res[e_id] = main_mkbs + compl_mkbs + assoc_mkbs
+
+    return res
+

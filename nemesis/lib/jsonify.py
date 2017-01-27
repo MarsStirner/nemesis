@@ -934,7 +934,7 @@ class EventVisualizer(object):
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data
 
-    def make_short_event(self, event):
+    def make_short_event(self, event, diag_data=None):
         event_type = event.eventType
         et_name = safe_traverse_attrs(event_type, 'name', default=u'')
         return {
@@ -959,7 +959,7 @@ class EventVisualizer(object):
             'contract': {
                 'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft'))
             },
-            'diagnoses': self.make_small_diagnoses(event, True)
+            'diagnoses': diag_data
         }
 
     def make_short_event_type(self, event_type):
