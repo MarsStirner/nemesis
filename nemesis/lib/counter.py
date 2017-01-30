@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'plakrisenko'
 import datetime
+from sqlalchemy import func
 
 from nemesis.lib.utils import safe_int
 from nemesis.models.client import ClientIdentification
@@ -91,7 +92,11 @@ class ContractCounter(Counter):
 
 class InvoiceCounter(Counter):
     def check_number_used(self, number):
-        return Invoice.query.filter(Invoice.number == unicode(number), Invoice.deleted == 0).count() > 0
+        return Invoice.query.filter(
+            Invoice.number == unicode(number),
+            Invoice.deleted == 0,
+            func.year(Invoice.setDate) == func.year(func.curdate())
+        ).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
