@@ -316,10 +316,10 @@ def get_events_diagnoses(event_id_list):
         if dg_type_code:
             et_diag_types.setdefault(et_id, set()).add(dg_type_code)
 
-    diagd_q = db.session.query(Event).join(
+    diags_q = db.session.query(Event).join(
         Diagnosis, and_(Diagnosis.client_id == Event.client_id,
-                        Diagnosis.setDate <= func.coalesce(Event.execDate, func.curdate()),
-                        func.coalesce(Diagnosis.endDate, func.curdate()) >= Event.setDate)
+                        Diagnosis.setDate <= func.coalesce(Event.execDate, func.current_timestamp()),
+                        func.coalesce(Diagnosis.endDate, func.current_timestamp()) >= Event.setDate)
     ).join(Diagnostic).outerjoin(
         Event_Diagnosis, and_(Event_Diagnosis.diagnosis_id == Diagnosis.id,
                               Event_Diagnosis.event_id == Event.id,
@@ -330,7 +330,7 @@ def get_events_diagnoses(event_id_list):
         rbDiagnosisKind, Event_Diagnosis.diagnosisKind_id == rbDiagnosisKind.id
     ).filter(
         Event.id.in_(event_id_list),
-        Diagnostic.setDate <= func.coalesce(Event.execDate, func.curdate()),
+        Diagnostic.setDate <= func.coalesce(Event.execDate, func.current_timestamp()),
         Diagnostic.setDate >= Event.setDate,
         Diagnostic.deleted == 0, Diagnosis.deleted == 0
     ).distinct().with_entities(
@@ -345,7 +345,7 @@ def get_events_diagnoses(event_id_list):
         return dict((dg_type_code, 'associated') for dg_type_code in et_diag_types.get(et_id, []))
 
     event_diags = {}
-    for item in diagd_q:
+    for item in diags_q:
         e_diags = event_diags.setdefault(item.event_id, {})
         mkb_types = e_diags.setdefault(item.mkb, default_types(item.et_id))
         t_code = item.dg_type_code
@@ -385,7 +385,7 @@ def format_diagnoses(diags, diag_types=None):
                 main_mkbs.append((mkb, title))
             elif 'complication' in kinds:
                 compl_mkbs.append((mkb, title))
-            elif 'associated' in kinds:
+            elif 'associated' in kinds or not kinds:
                 assoc_mkbs.append((mkb, title))
 
         res[e_id] = main_mkbs + compl_mkbs + assoc_mkbs

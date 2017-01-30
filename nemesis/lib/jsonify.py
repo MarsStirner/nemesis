@@ -927,10 +927,10 @@ class EventVisualizer(object):
         }
 
         if UserProfileManager.has_ui_admin():
-            data['diagnoses'] = self.make_diagnoses(event, True)
+            data['diagnoses'] = self.make_diagnoses(event)
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         elif UserProfileManager.has_ui_doctor():
-            data['diagnoses'] = self.make_diagnoses(event, True)
+            data['diagnoses'] = self.make_diagnoses(event)
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data
 

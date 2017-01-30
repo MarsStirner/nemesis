@@ -919,18 +919,19 @@ def get_client_diagnostics(client, beg_date, end_date=None, including_closed=Fal
         Diagnosis.client == client,
         Diagnosis.deleted == 0,
         Diagnostic.deleted == 0,
-        )
+        Diagnostic.setDate >= beg_date
+    )
     if end_date is not None:
         query = query.filter(
             Diagnostic.createDatetime <= end_date,
             Diagnosis.setDate <= end_date,
-            )
+        )
     if not including_closed:
         query = query.filter(
             db.or_(
                 Diagnosis.endDate.is_(None),
                 Diagnosis.endDate >= beg_date,
-                )
+            )
         )
     query = query.group_by(
         Diagnostic.diagnosis_id
