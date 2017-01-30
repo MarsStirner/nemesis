@@ -68,12 +68,15 @@ class ScheduleVisualizer(object):
         client_id = client_ticket.client_id if client_ticket else None
         return {
             'id': ticket.id,
+            'schedule_id': ticket.schedule.id,
             'begDateTime': ticket.begDateTime,
             'status': 'busy' if client_id else 'free',
             'client': ticket.client.shortNameText if client_id else None,
             'attendance_type': ticket.attendanceType,
             'office': ticket.schedule.office.code if ticket.schedule.office else None,
-            'finance': ticket.schedule.finance.code if ticket.schedule.finance else None,
+            # 'finance': ticket.schedule.finance.code if ticket.schedule.finance else None,
+            'reserve_type': ticket.schedule.reserve_type,
+            'appointment_permitted': ticket.schedule.appointment_permitted,
             'record': self.make_client_ticket_record(client_ticket) if client_ticket else None
         }
 
@@ -219,7 +222,9 @@ class ScheduleVisualizer(object):
             'endTime': schedule.endTime,
             'roa': schedule.reasonOfAbsence,
             'reception_type': safe_dict(schedule.receptionType),
-            'finance': safe_dict(schedule.finance),
+            # 'finance': safe_dict(schedule.finance),
+            'reserve_type': safe_dict(schedule.reserve_type),
+            'appointment_permitted': schedule.appointment_permitted,
             'tickets': CITO_tickets + planned_tickets + extra_tickets
         }
 

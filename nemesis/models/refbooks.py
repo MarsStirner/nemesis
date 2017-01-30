@@ -111,7 +111,8 @@ class rbReserveType(db.Model):
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'deleted': self.deleted
+            'deleted': self.deleted,
+            'color': self.color,
         }
 
     def __int__(self):

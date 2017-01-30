@@ -893,20 +893,40 @@ var WebMis20 = angular.module('WebMis20', [
         scope: {
             day: '=day',
             showName: '=showName',
+            prevTicket: '=prevTicket',
             ticket: '=uiScheduleTicket'
         },
         link: function (scope, element, attributes) {
             var elem = $(element);
+            var now = moment();
             elem.addClass('btn btn-block text-left');
             scope.$watch('ticket.status', function (n, o) {
                 if (!scope.ticket) {
-                    elem.addClass('disabled');
-                    elem.html('&nbsp');
-                    return
+                    if (scope.prevTicket) {
+                        elem.text('extra');
+                        if(moment(scope.day.date) < now.startOf('day')){
+                            elem.addClass('disabled');
+                        }
+                        scope.ticket = {
+                            'schedule_id': scope.prevTicket.schedule_id,
+                            'reserve_type': scope.prevTicket.reserve_type,
+                            'attendance_type': {'code': 'extra'}
+                        }
+                    } else {
+                        elem.addClass('disabled');
+                        elem.html('&nbsp');
+                        return
+                    }
                 }
                 var text = '';
                 switch (scope.ticket.attendance_type.code) {
-                    case 'planned': text = moment(scope.ticket.begDateTime).format('HH:mm'); break;
+                    case 'planned':
+                        if(scope.ticket.begDateTime > '') {
+                            text = moment(scope.ticket.begDateTime).format('HH:mm');
+                        } else {
+                            text = scope.ticket.reserve_type && scope.ticket.reserve_type.name || 'Undefined';
+                        }
+                        break;
                     case 'CITO': text = 'CITO'; break;
                     case 'extra': text = 'Сверх плана'; break;
                 }
@@ -923,8 +943,7 @@ var WebMis20 = angular.module('WebMis20', [
                         case 'CITO': elem.addClass('btn-warning'); break;
                         case 'extra': elem.addClass('btn-gray'); break;
                     }
-                    var now = moment();
-                    scope.ticket.disabled = scope.day.roa ||
+                    scope.ticket.disabled = scope.day.roa || scope.ticket.appointment_permitted == '0' ||
                         scope.ticket.begDateTime && (moment(scope.ticket.begDateTime) < now) ||
                                                      moment(scope.day.date) < now.startOf('day');
                     if (scope.ticket.disabled) {
