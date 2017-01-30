@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'plakrisenko'
 import datetime
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from nemesis.lib.utils import safe_int
 from nemesis.models.client import ClientIdentification
@@ -10,11 +10,16 @@ from nemesis.models.accounting import Contract, Invoice
 
 
 class Counter(object):
-    def __init__(self, code):
-        self.counter = rbCounter.query.filter(rbCounter.code == code).first()
+    code = None
+
+    def __init__(self):
+        self.counter = rbCounter.query.filter(rbCounter.code == self.code).first()
 
     def increment_value(self):
         self.counter.value = self.get_next_value()
+
+    def set_value(self, val):
+        self.counter.value = val
 
     def check_number_used(self, number):
         return False
@@ -77,6 +82,8 @@ class Counter(object):
 
 
 class ContractCounter(Counter):
+    code = 'contract'
+
     def check_number_used(self, number):
         if isinstance(number, str):
             number = number.decode('utf-8')
@@ -91,11 +98,14 @@ class ContractCounter(Counter):
 
 
 class InvoiceCounter(Counter):
+    code = 'invoice'
+
     def check_number_used(self, number):
-        return Invoice.query.filter(
+        return Invoice.query.join(rbCounter, rbCounter.code == self.code).filter(
             Invoice.number == unicode(number),
             Invoice.deleted == 0,
-            func.year(Invoice.setDate) == func.year(func.curdate())
+            or_(rbCounter.resetDate.is_(None),
+                Invoice.setDate >= rbCounter.resetDate)
         ).count() > 0
 
     def get_next_number(self):

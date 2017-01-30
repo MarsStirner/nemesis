@@ -81,11 +81,14 @@ class InvoiceController(BaseModelController):
 
     def update_invoice_number(self, invoice, number):
         if not invoice.id or invoice.number != number:
-            invoice_counter = InvoiceCounter("invoice")
+            invoice_counter = InvoiceCounter()
             self.check_number_used(number, invoice_counter)
             setattr(invoice, 'number', number)
-            if number.isdigit() and int(number) == invoice_counter.counter.value + 1:
-                invoice_counter.increment_value()
+            if number.isdigit():
+                if int(number) == invoice_counter.counter.value + 1:
+                    invoice_counter.increment_value()
+                elif invoice_counter.counter.value < int(number):
+                    invoice_counter.set_value(number)
                 self.session.add(invoice_counter.counter)
 
     def update_invoice_items(self, invoice, item_list_data):
@@ -126,7 +129,7 @@ class InvoiceController(BaseModelController):
                 for service_id in data['service_list']
             ]
         if safe_bool(data.get('generate_number', False)):
-            inv_counter = InvoiceCounter('invoice')
+            inv_counter = InvoiceCounter()
             data['number'] = inv_counter.get_next_number()
         elif 'number' in data:
             data['number'] = safe_unicode(data['number'])

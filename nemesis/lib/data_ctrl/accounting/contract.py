@@ -53,7 +53,7 @@ class ContractController(BaseModelController):
                 contract.endDate = now.replace(month=12, day=31)
 
         if generate_number:
-            contract_counter = ContractCounter('contract')
+            contract_counter = ContractCounter()
             contract.number = contract_counter.get_next_number()
 
         contract.deleted = 0
@@ -84,7 +84,7 @@ class ContractController(BaseModelController):
             params = {}
         contract = self.get_selecter().get_by_id(contract_id)
         if safe_bool(params.get('undraft', False)):
-            contract_counter = ContractCounter('contract')
+            contract_counter = ContractCounter()
             contract.number = contract_counter.get_next_number()
             contract.draft = 0
         return contract
@@ -108,7 +108,7 @@ class ContractController(BaseModelController):
 
     def update_contract_number(self, contract, number):
         if not contract.id or contract.number != number:
-            contract_counter = ContractCounter("contract")
+            contract_counter = ContractCounter()
             next_value = contract_counter.get_next_value()
             if not contract.draft:
                 self.check_number_used(number, contract_counter)
