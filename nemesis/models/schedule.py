@@ -116,16 +116,19 @@ class Schedule(db.Model):
     reasonOfAbsence_id = db.Column(db.Integer, db.ForeignKey('rbReasonOfAbsence.id'))
     receptionType_id = db.Column(db.Integer, db.ForeignKey('rbReceptionType.id'))
     finance_id = db.Column(db.Integer, db.ForeignKey('rbFinance.id'), index=True)
+    reserve_type_id = db.Column(db.Integer, db.ForeignKey('rbReserveType.id'), index=True)
     createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
     createPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0', default=0)
+    appointment_permitted = db.Column(db.SmallInteger, nullable=False, server_default='1', default=1)
 
     person = db.relationship('Person', foreign_keys=person_id)
     reasonOfAbsence = db.relationship('rbReasonOfAbsence', lazy='joined')
     receptionType = db.relationship('rbReceptionType', lazy='joined')
     finance = db.relationship('rbFinance', lazy='joined')
+    reserve_type = db.relationship('rbReserveType', lazy='joined')
     tickets = db.relationship(
         'ScheduleTicket', lazy=False, primaryjoin=
         "and_(ScheduleTicket.schedule_id == Schedule.id, ScheduleTicket.deleted == 0)",
