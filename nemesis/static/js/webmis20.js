@@ -921,7 +921,7 @@ var WebMis20 = angular.module('WebMis20', [
                 var text = '';
                 switch (scope.ticket.attendance_type.code) {
                     case 'planned':
-                        if(scope.ticket.begDateTime > '') {
+                        if(scope.ticket.appointment_permitted == '1') {
                             text = moment(scope.ticket.begDateTime).format('HH:mm');
                         } else {
                             text = scope.ticket.reserve_type && scope.ticket.reserve_type.name || 'Undefined';
