@@ -1870,6 +1870,10 @@ angular.module('WebMis20.validators', [])
             }
 
             function format_view_value(val, clean_val) {
+                if(allowNegative && val === '-') {
+                    return val;
+                }
+
                 if (allowFloat) {
                     return (val.endswith('.') &&  val.indexOf('.') === val.length - 1) ?
                         (clean_val + '.') :
@@ -1891,7 +1895,16 @@ angular.module('WebMis20.validators', [])
                 }
             }
 
+            function replaceOnComma (value) {
+                return (isNaN(value) && value !== '-') || value === null ? '' : String(value).replace('.', ',');
+            }
+
+            function replaceOnDot (value) {
+                return String(value).replace(',', '.');
+            }
+
             ngModelCtrl.$parsers.push(function (val) {
+                val = replaceOnDot(val);
                 if (val === undefined) {
                     return val;
                 } else if (angular.isNumber(val)) {
@@ -1907,10 +1920,14 @@ angular.module('WebMis20.validators', [])
                     clean = Math.min(clean, max_val);
                 }
                 if (val !== clean) {
-                    ngModelCtrl.$viewValue = format_view_value(val, clean);
+                    ngModelCtrl.$viewValue = replaceOnComma(format_view_value(val, clean));
                     ngModelCtrl.$render();
                 }
                 return clean;
+            });
+
+            ngModelCtrl.$formatters.push(function (val) {
+                return replaceOnComma(val);
             });
 
             element.bind('keypress', function (event) {
@@ -1920,11 +1937,11 @@ angular.module('WebMis20.validators', [])
             });
 
             element.bind('blur', function (event) {
-                var value = parseFloat(this.value);
+                var value = parseFloat(replaceOnDot(this.value));
                 if (isNaN(value)) {
-                    this.value = null;
+                    this.value = replaceOnComma(null);
                 } else {
-                    this.value = value;
+                    this.value = replaceOnComma(value);
                 }
             });
         }
