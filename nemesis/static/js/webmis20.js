@@ -903,7 +903,6 @@ var WebMis20 = angular.module('WebMis20', [
             scope.$watch('ticket.status', function (n, o) {
                 if (!scope.ticket) {
                     if (scope.prevTicket) {
-                        elem.text('extra');
                         if(moment(scope.day.date) < now.startOf('day')){
                             elem.addClass('disabled');
                         }
