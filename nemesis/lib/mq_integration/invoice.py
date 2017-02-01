@@ -119,6 +119,7 @@ class InvoiceIntegrationNotifier(MQIntegrationNotifier):
 
     def _make_invoice(self, invoice, parent_invoice=None):
         return {
+            'id': invoice.id,
             'number': invoice.number,
             'deleted': invoice.deleted != 0,
             'contract': self._make_contract(invoice.contract),
