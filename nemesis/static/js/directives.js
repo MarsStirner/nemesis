@@ -1870,6 +1870,10 @@ angular.module('WebMis20.validators', [])
             }
 
             function format_view_value(val, clean_val) {
+                if(allowNegative && val === '-') {
+                    return val;
+                }
+
                 if (allowFloat) {
                     return (val.endswith('.') &&  val.indexOf('.') === val.length - 1) ?
                         (clean_val + '.') :
@@ -1892,7 +1896,7 @@ angular.module('WebMis20.validators', [])
             }
 
             function replaceOnComma (value) {
-                return isNaN(value) ? '' : String(value).replace('.', ',');
+                return (isNaN(value) && value !== '-') || value === null ? '' : String(value).replace('.', ',');
             }
 
             function replaceOnDot (value) {
@@ -1933,11 +1937,11 @@ angular.module('WebMis20.validators', [])
             });
 
             element.bind('blur', function (event) {
-                var value = parseFloat(this.value);
+                var value = parseFloat(replaceOnDot(this.value));
                 if (isNaN(value)) {
-                    this.value = null;
+                    this.value = replaceOnComma(null);
                 } else {
-                    this.value = value;
+                    this.value = replaceOnComma(value);
                 }
             });
         }
