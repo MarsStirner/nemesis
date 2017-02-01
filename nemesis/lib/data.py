@@ -899,7 +899,7 @@ def get_at_tissue_type_ids(at_id):
     return tissue_type_ids
 
 
-def get_client_diagnostics(client, beg_date, end_date=None, including_closed=False):
+def get_client_diagnostics(client, beg_date, end_date=None, including_closed=False, confirmed=True):
     """
     :type client: nemesis.models.client.Client
     :type beg_date: datetime.date
@@ -919,8 +919,9 @@ def get_client_diagnostics(client, beg_date, end_date=None, including_closed=Fal
         Diagnosis.client == client,
         Diagnosis.deleted == 0,
         Diagnostic.deleted == 0,
-        Diagnostic.setDate >= beg_date
     )
+    if confirmed:
+        query = query.filter(Diagnostic.setDate >= beg_date)
     if end_date is not None:
         query = query.filter(
             Diagnostic.createDatetime <= end_date,

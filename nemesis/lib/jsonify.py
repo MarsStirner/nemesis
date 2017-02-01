@@ -1015,21 +1015,6 @@ class EventVisualizer(object):
             for diagnostic in diagnostics
         ]
 
-    def make_small_diagnoses(self, event, including_closed=False):
-        diags = get_client_diagnostics(
-            event.client, event.setDate, event.execDate, including_closed
-        ).join(
-            MKB, Diagnostic.MKB == MKB.DiagID
-        ).with_entities(MKB).all()
-        return [
-            {
-                'id': mkb.id,
-                'code': mkb.DiagID,
-                'name': mkb.DiagName
-            }
-            for mkb in diags
-        ]
-
     def make_diagnose_row(self, diagnostic, diagnosis):
         """
         @type diagnostic: application.models.event.Diagnostic
@@ -1688,7 +1673,7 @@ class ActionVisualizer(object):
         dvis = DiagnosisVisualizer()
         is_new_action = action.id is None
 
-        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate)
+        diagnostics = get_client_diagnostics(action.event.client, action.begDate, action.endDate, confirmed=not is_new_action)
         diagnosis_ids = [diagnostic.diagnosis_id for diagnostic in diagnostics]
 
         # выборка ассоциаций - типов диагнозов
