@@ -137,6 +137,15 @@ class MQIntegrationNotifier(object):
             'value': unicode(addr)
         }
 
+    def _make_organisation(self, org):
+        if org is None:
+            return None
+        return {
+            'id': org.id,
+            'uuid': str(org.uuid),
+            'shortName': org.shortName
+        }
+
     def _make_org_struct(self, os):
         if os is None:
             return None
@@ -193,12 +202,23 @@ class MQIntegrationNotifier(object):
             return None
         return {
             'id': contract.id,
-            'payer': self._make_client(contract.payer and contract.payer.client),
+            'payer': self._make_contragent(contract.payer),
             'number': contract.number,
             'signDate': contract.date,
             'begDate': contract.begDate,
             'endDate': contract.endDate,
             'finance': self._make_rb(contract.finance)
+        }
+
+    def _make_contragent(self, ca):
+        if ca is None:
+            return None
+        ca_type = 'JURIDICAL' if ca.org else 'PHYSICAL'
+        return {
+            'id': ca.id,
+            'type': ca_type,
+            'person': self._make_client(ca.client),
+            'organisation': self._make_organisation(ca.org)
         }
 
     def _make_basic_action(self, action):
