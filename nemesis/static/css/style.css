@@ -497,6 +497,35 @@ tr.row-clickable {
 .ui-treeview div.tree-label.collapsed {
     background-position: 0 -32px;
 }
+.treeview-striped li a {
+    display:block;
+}
+.treeview-striped li a:after{
+     visibility: hidden;
+     display: block;
+     font-size: 0;
+     content: " ";
+     clear: both;
+     height: 0;
+}
+.treeview-striped li a span {
+    float:right;
+}
+.treeview-striped > ul:nth-of-type(odd) a{
+    background-color: #e8edf0;
+}
+.treeview-striped li li:nth-of-type(odd) a{
+    background-color: #FFF;
+}
+.treeview-striped li li:nth-of-type(even) a{
+    background-color: #e8edf0;
+}
+.treeview-striped li li li:nth-of-type(odd) a{
+    background-color: #e8edf0;
+}
+.treeview-striped  li li li:nth-of-type(even) a{
+    background-color: #FFF;
+}
 .wm-popup {
     display: none;
     position: absolute;
