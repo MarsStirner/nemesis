@@ -999,6 +999,7 @@ class EventVisualizer(object):
             'note': event.note,
             'actions': self.make_ultra_small_actions(event),
             'prescriptions': event.prescriptions,
+            'is_adm_permission': event.is_adm_permission,
         }
 
     def make_diagnoses(self, event, including_closed=False):
