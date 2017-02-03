@@ -452,6 +452,7 @@ class ActionPropertyType(db.Model):
             'name': self.name,
             'mandatory': self.mandatory,
             'read_only': self.readOnly,
+            'is_vector': self.isVector,
         }
 
     def __json__(self):
