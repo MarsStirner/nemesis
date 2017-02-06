@@ -225,6 +225,11 @@ class FileAttachType(Enum):
     action = 2, u'Action'
 
 
+class KtgInput(Enum):
+    fisher = 1, u'oценка по Фишеру'
+    stv = 2, u'oценка по STV'
+
+
 class RadzinskyRiskRate(EnumLoadable):
     __tablename__ = 'rbRadzinskyRiskRate'
 

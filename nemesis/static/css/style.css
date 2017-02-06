@@ -1036,3 +1036,8 @@ li.active>a.cuslom-tab-pills {
     transform: scale(1.3) !important;
     vertical-align: top !important;
 }
+
+.normal_label {
+    font-weight: normal!important;
+    cursor: pointer!important;
+}
