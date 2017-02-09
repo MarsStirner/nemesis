@@ -13,12 +13,12 @@ from nemesis.models.utils import safe_current_user_id, UUIDColumn
 
 
 # temp TODO: fix imports in projects
-from .organisation import Organisation, OrganisationAccount, organisation_mkb_assoc
-from .person import Person, rbAcademicDegree, rbAcademicTitle, PersonProfiles, \
+from nemesis.models.organisation import Organisation, OrganisationAccount, organisation_mkb_assoc
+from nemesis.models.person import Person, rbAcademicDegree, rbAcademicTitle, PersonProfiles, \
     rbUserProfile, rbUserProfileRight, rbUserRight, vrbPersonWithSpeciality, rbPost, \
     rbSpeciality
-from .refbooks import rbFinance
-from .accounting import Contract, ContractTariff
+from nemesis.models.refbooks import rbFinance
+from nemesis.models.accounting import Contract, ContractTariff
 
 
 class rbThesaurus(db.Model):

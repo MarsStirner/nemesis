@@ -15,8 +15,6 @@ from sqlalchemy import func
 
 from nemesis.systemwide import db
 from nemesis.app import app
-from nemesis.models.exists import rbUserProfile, UUID, rbCounter, rbAccountingSystem
-from nemesis.models.client import Client, ClientIdentification
 
 
 logger = logging.getLogger('simple')
@@ -33,6 +31,7 @@ def public_api(func):
 
 
 def breadcrumb(view_title):
+    from nemesis.models.client import Client
     def decorator(f):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
@@ -101,6 +100,7 @@ _permissions = dict()
 
 @app.before_first_request
 def init_roles():
+    from nemesis.models.exists import rbUserProfile
     user_roles = db.session.query(rbUserProfile).all()
     if user_roles:
         for role in user_roles:
@@ -549,6 +549,7 @@ def get_new_uuid():
     """Сгенерировать новый uuid уникальный в пределах бд.
     @rtype: application.models.exist.UUID
     """
+    from nemesis.models.exists import UUID
     uuid_model = UUID()
     # paranoia mode on
     unique = False
@@ -563,6 +564,7 @@ def get_new_uuid():
 def get_new_event_ext_id(event_type_id, client_id):
     """Формирование externalId (номер обращения/истории болезни)."""
     from nemesis.models.event import EventType
+    from nemesis.models.exists import rbCounter
     et = EventType.query.get(event_type_id)
     if not et.counter_id:
         return ''
@@ -580,6 +582,9 @@ def get_new_event_ext_id(event_type_id, client_id):
 
 
 def _get_external_id_from_counter(prefix, value, separator, client_id):
+    from nemesis.models.client import ClientIdentification
+    from nemesis.models.exists import rbAccountingSystem
+
     def get_date_prefix(val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')
         if val.count('y') not in [0, 2, 4] or val.count('M') > 2 or val.count('d') > 2:
