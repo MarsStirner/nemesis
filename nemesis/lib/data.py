@@ -13,7 +13,8 @@ from nemesis.lib.calendar import calendar
 from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_HOSP_BED_CODE,
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
-from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime
+from nemesis.lib.utils import get_new_uuid, group_concat, safe_date, safe_traverse, safe_datetime, bail_out
+from nemesis.lib.apiutils import ApiException
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, Job, JobTicket,
                                     TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer, Action_TakenTissueJournalAssoc)
@@ -172,19 +173,10 @@ def create_action(action_type, event, src_action=None, assigned=None, properties
                     prop.set_value(val, True)
             else:
                 prop.value = None
-            action.properties.append(prop)
+            action.add_property(prop, False)
+    action.refresh_property_dicts()
 
     return action
-
-
-def create_action_property(action, prop_type):
-    prop = ActionProperty()
-    prop.type = prop_type
-    prop.type_id = prop_type.id
-    prop.action = action
-    prop.action_id = action.id
-    action.properties.append(prop)
-    return prop
 
 
 def update_action_prescriptions(action, prescriptions):
