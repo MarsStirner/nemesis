@@ -1383,7 +1383,8 @@ angular.module('WebMis20.directives')
                 diagTypes: '=',
                 canAddNew: '=',
                 canEdit: '=',
-                checkupBegDate: '=?'
+                checkupBegDate: '=?',
+                changedDiagTypes: '=?'
             },
             templateUrl: '/WebMis20/wm-diagnosis-new.html',
             link: function (scope, elm, attrs, ngModelCrtl) {
@@ -1419,9 +1420,16 @@ angular.module('WebMis20.directives')
                         'diagnosis_types': {}
                     };
                     var associated = this.rbDiagnosisKind.get_by_code('associated');
-                    scope.diagTypes.forEach(function(diagnosis_type){
+                    scope.diagTypes.forEach(function(diagnosis_type) {
                         new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
                     });
+                    
+                    if (scope.changedDiagTypes) {
+                        scope.changedDiagTypes.forEach(function(diagnosis_type) {
+                            new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
+                        });  
+                    }
+                    
 
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, ngModelCrtl.$viewValue).then(function () {
                         ngModelCrtl.$viewValue.push(new_diagnosis);
@@ -1469,10 +1477,13 @@ angular.module('WebMis20.directives')
                         diags[0].kind_changed = true;
                     }
                 };
-                scope.sortByKind = function(type){
+                scope.sortByKind = function(type) {
                     var kind = {'main': 1, 'complication': 2, 'associated': 3};
-                    return function(diag){
-                        return kind[diag.diagnosis_types[type].code]
+                    return function(diag) {
+                        var tp = diag.diagnosis_types[type];
+                        if (tp !== undefined) {
+                            return kind[diag.diagnosis_types[type].code]
+                        }
                     }
                 };
                 scope.view_model = function (){

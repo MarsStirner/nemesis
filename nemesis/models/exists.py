@@ -13,12 +13,12 @@ from nemesis.models.utils import safe_current_user_id, UUIDColumn
 
 
 # temp TODO: fix imports in projects
-from .organisation import Organisation, OrganisationAccount, organisation_mkb_assoc
-from .person import Person, rbAcademicDegree, rbAcademicTitle, PersonProfiles, \
+from nemesis.models.organisation import Organisation, OrganisationAccount, organisation_mkb_assoc
+from nemesis.models.person import Person, rbAcademicDegree, rbAcademicTitle, PersonProfiles, \
     rbUserProfile, rbUserProfileRight, rbUserRight, vrbPersonWithSpeciality, rbPost, \
     rbSpeciality
-from .refbooks import rbFinance
-from .accounting import Contract, ContractTariff
+from nemesis.models.refbooks import rbFinance
+from nemesis.models.accounting import Contract, ContractTariff
 
 
 class rbThesaurus(db.Model):
@@ -164,6 +164,7 @@ class rbBloodType(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(32), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -241,7 +242,7 @@ class OrgStructure(db.Model):
     inheritGaps = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     uuid_id = db.Column(db.Integer, nullable=False, index=True, server_default=u"'0'")
     show = db.Column(db.Integer, nullable=False, server_default=u"'1'")
-    regionalCode = db.Column(db.String(50))
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
     TFOMSCode = db.Column(db.String(50))
 
     parent = db.relationship('OrgStructure', remote_side=[id])
@@ -372,8 +373,8 @@ class rbDocumentType(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), nullable=False, index=True)
-    regionalCode = db.Column(db.String(16), nullable=False)
-    name = db.Column(db.String(64), nullable=False, index=True)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
+    name = db.Column(db.String(128), nullable=False, index=True)
     group_id = db.Column(db.Integer, db.ForeignKey('rbDocumentTypeGroup.id'), nullable=False, index=True)
     serial_format = db.Column(db.Integer, nullable=False)
     number_format = db.Column(db.Integer, nullable=False)
@@ -485,6 +486,7 @@ class rbPolicyType(db.Model):
     number_regexp = db.Column(db.Unicode(256))
     serial_mask = db.Column(db.Unicode(256))
     number_mask = db.Column(db.Unicode(256))
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -540,8 +542,8 @@ class rbRelationType(db.Model):
     isBackwardDonation = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     leftSex = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     rightSex = db.Column(db.Integer, nullable=False, server_default=u"'0'")
-    regionalCode = db.Column(db.String(64), nullable=False)
-    regionalReverseCode = db.Column(db.String(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
+    regionalReverseCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -564,6 +566,7 @@ class rbSocStatusClass(db.Model):
     group_id = db.Column(db.ForeignKey('rbSocStatusClass.id'), index=True)
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     group = db.relationship(u'rbSocStatusClass', remote_side=[id])
 
@@ -594,7 +597,7 @@ class rbSocStatusType(db.Model):
     name = db.Column(db.String(250), nullable=False, index=True)
     socCode = db.Column(db.String(8), nullable=False, index=True)
     TFOMSCode = db.Column(db.Integer)
-    regionalCode = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     classes = db.relationship(u'rbSocStatusClass', secondary=rbSocStatusClassTypeAssoc, lazy='joined')
 
@@ -833,7 +836,7 @@ class rbResult(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.Unicode(64), nullable=False, index=True)
     continued = db.Column(db.Integer, nullable=False)
-    regionalCode = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
@@ -861,6 +864,7 @@ class rbAcheResult(db.Model):
     eventPurpose_id = db.Column(db.ForeignKey('rbEventTypePurpose.id'), nullable=False, index=True)
     code = db.Column(db.String(3, u'utf8_unicode_ci'), nullable=False)
     name = db.Column(db.String(64, u'utf8_unicode_ci'), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     eventPurpose = db.relationship(u'rbEventTypePurpose')
 
@@ -910,7 +914,7 @@ class rbMesSpecification(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False, index=True)
-    regionalCode = db.Column(db.String(16), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
     name = db.Column(db.Unicode(64), nullable=False)
     done = db.Column(db.Integer, nullable=False)
 
@@ -952,7 +956,7 @@ class rbMedicalAidProfile(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16), nullable=False, index=True)
-    regionalCode = db.Column(db.String(16), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
     name = db.Column(db.String(64), nullable=False)
 
     def __json__(self):
@@ -995,6 +999,7 @@ class rbDiseaseCharacter(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
     replaceInDiagnosis = db.Column(db.String(8), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -1052,6 +1057,7 @@ class rbDispanser(db.Model):
     code = db.Column(db.String(8), nullable=False, index=True)
     name = db.Column(db.String(64), nullable=False, index=True)
     observed = db.Column(db.Integer, nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -1207,6 +1213,7 @@ class MKB(db.Model):
     service_id = db.Column(db.Integer, index=True)
     MKBSubclass_id = db.Column(db.Integer)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     __mapper_args__ = {'order_by': DiagID}
 

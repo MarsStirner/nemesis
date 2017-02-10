@@ -81,6 +81,7 @@ class rbFinance(db.Model):
     code = db.Column(db.Unicode(8), nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
     deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
@@ -88,6 +89,30 @@ class rbFinance(db.Model):
             'code': self.code,
             'name': self.name,
             'deleted': self.deleted
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbReserveType(db.Model):
+    __tablename__ = 'rbReserveType'
+    _table_description = u'Тип резерва'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(8), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+    color = db.Column(db.String(16), nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default='0')
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'deleted': self.deleted,
+            'color': self.color,
         }
 
     def __int__(self):

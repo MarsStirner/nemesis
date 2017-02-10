@@ -7,6 +7,7 @@ angular.module('WebMis20.services', []).
                 return $http.post(url_schedule_api_appointment, {
                     client_id: client_id,
                     ticket_id: ticket.id,
+                    schedule_id: ticket.schedule_id,
                     appointment_type_id: appointment_type_id,
                     event_id: associated_event_id,
                     note: note

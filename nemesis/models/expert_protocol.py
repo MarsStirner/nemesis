@@ -86,6 +86,7 @@ class Measure(db.Model):
     appointmentAt_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
     resultAt_id = db.Column(db.Integer, db.ForeignKey('ActionType.id'), index=True)
     templateAction_id = db.Column(db.Integer, db.ForeignKey('Action.id'), index=True)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     measure_type = db.relationship('rbMeasureType')
     appointment_at = db.relationship('ActionType', foreign_keys=[appointmentAt_id])
@@ -197,6 +198,7 @@ class rbMeasureStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Unicode(32), index=True, nullable=False)
     name = db.Column(db.Unicode(64), nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
 
     def __json__(self):
         return {
