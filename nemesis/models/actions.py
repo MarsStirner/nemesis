@@ -250,6 +250,10 @@ class Action(db.Model):
                 prop = self.create_property(prop_type)
                 self.add_property(prop)
 
+    def get_lock(self):
+        if self.id:
+            self.__class__.query.filter(Action.id == self.id).with_for_update().first()
+
     def __getitem__(self, code):
         """
         Получить ActionProperty по коду.
