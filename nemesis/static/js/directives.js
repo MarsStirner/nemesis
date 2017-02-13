@@ -643,16 +643,6 @@ angular.module('WebMis20.directives')
                     }
                 );
             };
-            $scope.print_compact = function () {
-                ps.print_template(prepare_data(), false).then(
-                    function () {
-                        angular.noop();
-                    },
-                    function () {
-                        $scope.$close();
-                    }
-                );
-            };
             $scope.cancel = function () {
                 $modalInstance.dismiss('cancel');
             };
@@ -762,8 +752,6 @@ angular.module('WebMis20.directives')
         &lt;&lt; Назад</button>\
     <button type="button" class="btn btn-primary" ng-click="print_separated()" ng-if="page == 1 || instant_print()"\
         ng-disabled="printing_meta.$invalid">Печать</button>\
-    <button type="button" class="btn btn-primary" ng-click="print_compact()" ng-if="page == 1 || instant_print()"\
-        ng-disabled="printing_meta.$invalid">Печать компактно</button>\
     <button type="button" class="btn btn-default" ng-click="cancel()">Отмена</button>\
 </div>')
     }])
