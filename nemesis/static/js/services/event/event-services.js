@@ -183,7 +183,7 @@ angular.module('WebMis20.services').
                 return fin.code === '3';
             },
             has_commitment_letter: function () {
-                return ['3', '5'].has(fin.code);
+                return ['2', '3', '5'].has(fin.code);
             }
         };
     }]);
