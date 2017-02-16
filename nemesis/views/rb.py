@@ -93,9 +93,9 @@ def api_refbook(name, code=None):
 @app.route('/api/rb/search/<name>')
 @api_method
 def api_refbook_search(name):
-    args = request.args.to_dict()
+    kwargs = request.args.to_dict()
     try:
-        return map(Vesta._insert_id, Vesta.search_rb(name, args))
+        return map(Vesta._insert_id, Vesta.search_rb(name, kwargs))
     except VestaNotFoundException, e:
         raise ApiException(404, e.message)
 
