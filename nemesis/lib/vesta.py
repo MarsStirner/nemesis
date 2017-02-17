@@ -3,6 +3,7 @@ import logging
 import requests
 import urllib
 
+from hippocrates.blueprints.risar.lib.specific import SpecificsManager
 from nemesis.app import app
 from nemesis.systemwide import cache
 from nemesis.models.kladr_models import KladrLocality, KladrStreet
@@ -149,13 +150,14 @@ class Vesta(object):
 
     @classmethod
     @cache.memoize(60)
-    def search_rb(cls, name, args):
+    def search_rb(cls, collection_name, kwargs):
+        SpecificsManager.update_vesta_search_kwargs(collection_name, kwargs)
         url = u'{0}/v2/rb/{1}/data/?{2}'.format(
             cls.get_url(),
-            name,
+            collection_name,
             u'&'.join([u'{0}={1}'.format(urllib.quote_plus(name.encode('utf-8')),
                                          urllib.quote_plus(val.encode('utf-8')))
-                       for name, val in args.iteritems()])
+                       for name, val in kwargs.iteritems()])
         )
         response = requests.get(url)
         if response.status_code != 200:

@@ -933,7 +933,7 @@ var WebMis20 = angular.module('WebMis20', [
                     elem.removeClass('btn-success btn-warning btn-gray disabled');
                     elem.addClass('btn-primary');
                     if (scope.showName) {
-                        text += ' - ' + scope.ticket.client + ' (' + scope.ticket.record.client_id + ')';
+                        text += ' - ' + scope.ticket.client;
                     }
                 } else {
                     elem.removeClass('btn-danger');

@@ -2,6 +2,7 @@
 import functools
 import json
 import traceback
+import logging
 
 import sys
 
@@ -11,6 +12,9 @@ from nemesis.app import app
 from nemesis.lib.utils import WebMisJsonEncoder
 
 __author__ = 'viruzzz-kun'
+
+
+logger = logging.getLogger('simple')
 
 
 class ApiException(Exception):
@@ -124,6 +128,14 @@ def jsonify_exception(exc, tb):
     )
 
 
+def _log_exception(e, caught=False):
+    traceback.print_exc()
+    tags = ['API_EXC']
+    if caught:
+        tags.append('API_EXC_CAUGHT')
+    logger.error(u'Исключение в api методе: {0}'.format(e.message), exc_info=True, extra=dict(tags=tags))
+
+
 def api_method(func=None, hook=None):
     """Декоратор API-функции. Автомагически оборачивает результат или исключение в jsonify-ответ
     :param func: декорируемая функция
@@ -139,12 +151,12 @@ def api_method(func=None, hook=None):
             try:
                 result = func(*args, **kwargs)
             except ApiException, e:
-                traceback.print_exc()
+                _log_exception(e, True)
                 j, code, headers = jsonify_api_exception(e, traceback.extract_tb(sys.exc_info()[2]))
                 if hook:
                     hook(code, j, e)
             except Exception, e:
-                traceback.print_exc()
+                _log_exception(e)
                 j, code, headers = jsonify_exception(e, traceback.extract_tb(sys.exc_info()[2]))
                 if hook:
                     hook(code, j, e)
