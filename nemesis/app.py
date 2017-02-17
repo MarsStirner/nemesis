@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytz
+import logging
 
 from flask import Flask, url_for
 from werkzeug.contrib.profiler import ProfilerMiddleware
@@ -8,7 +9,17 @@ from werkzeug.contrib.profiler import ProfilerMiddleware
 from nemesis.lib.frontend import frontend_config
 
 
-app = Flask(__name__)
+class MisFlask(Flask):
+    def handle_user_exception(self, e):
+        handler = self._find_error_handler(e)
+        if handler is None:
+            logger = logging.getLogger('simple')
+            logger.error(u'Необработанное исключение в приложении: {0}'.format(e.message),
+                         exc_info=True, extra=dict(tags=['UNCAUGHT_EXC']))
+        return super(MisFlask, self).handle_user_exception(e)
+
+
+app = MisFlask(__name__)
 
 
 # noinspection PyUnresolvedReferences
@@ -49,7 +60,6 @@ def init_logger():
     except ImportError:
         nemesis_version = 'Unversioned Nemesis'
     app_version = app.config.get('APP_VERSION', 'Unversioned App')
-    import logging
     from pysimplelogs2 import SimplelogHandler
 
     debug_mode = app.config['DEBUG']
