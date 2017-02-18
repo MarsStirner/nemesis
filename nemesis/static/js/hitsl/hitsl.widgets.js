@@ -16,6 +16,12 @@ angular.module('WebMis20')
                     }
                 });
             };
+            scope.switch_prev_date = function () {
+                ngModelCtrl.$setViewValue(moment(ngModelCtrl.$modelValue).subtract('days', 1).toDate());
+            };
+            scope.switch_next_date = function () {
+                ngModelCtrl.$setViewValue(moment(ngModelCtrl.$modelValue).add('days', 1).toDate());
+            };
             var _id = attrs.id,
                 name = attrs.name,
                 ngDisabled = attrs.ngDisabled,
@@ -24,7 +30,8 @@ angular.module('WebMis20')
                 style = attrs.style,
                 minDate = attrs.minDate,
                 maxDate = attrs.maxDate,
-                autofocus = attrs.autofocus;
+                autofocus = attrs.autofocus,
+                easySwitch = attrs.easySwitch;
             var wmdate = $('<div class="input-group"></div>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
@@ -35,7 +42,21 @@ angular.module('WebMis20')
                         <i class="glyphicon glyphicon-calendar"></i>\
                     </button>'
                 ),
-                button_wrap = $('<span class="input-group-btn"></span>');
+                button_wrap = $('<span class="input-group-btn"></span>'),
+                prev_date = $('\
+                <span class="input-group-btn">\
+                    <button type="button" class="btn btn-default" ng-click="switch_prev_date()">\
+                        <i class="glyphicon glyphicon-arrow-left"></i>\
+                    </button>\
+                </span>'
+                ),
+                next_date = $('\
+                <span class="input-group-btn">\
+                    <button type="button" class="btn btn-default" ng-click="switch_next_date()">\
+                        <i class="glyphicon glyphicon-arrow-right"></i>\
+                    </button>\
+                </span>'
+                );
             if (_id) date_input.attr('id', _id);
             if (name) date_input.attr('name', name);
             date_input.attr('ng-model', ngModel);
@@ -60,6 +81,10 @@ angular.module('WebMis20')
 
             button_wrap.append(button);
             wmdate.append(date_input, button_wrap);
+            if (easySwitch) {
+                wmdate.prepend(prev_date);
+                wmdate.append(next_date);
+            }
             $(element).append(wmdate);
             $compile(wmdate)(scope);
         }

@@ -464,6 +464,40 @@ class ScheduleVisualizer(object):
             qbd[d] = tickets.get('CITO', []) + tickets.get('planned', []) + tickets.get('extra', [])
         return qbd
 
+    def get_ticket_data(self, ticket):
+        return {
+            'id': ticket.id,
+            'client_id': ticket.client and ticket.client.id,
+            'client_ticket_id': ticket.client_ticket and ticket.client_ticket.id,
+            'client_fio': ticket.client and ticket.client.nameText,
+            'begDateTime': ticket.begDateTime,
+            'schedule_id': ticket.schedule_id,
+        }
+
+    def get_schedule_on_date(self, person_id, schedule_date):
+        """Возвращает данные по расписанию для виджета работчего стола АГ"""
+        schedules = Schedule.query.join(Schedule.tickets).filter(
+            Schedule.person_id == person_id,
+            Schedule.date == schedule_date,
+            Schedule.deleted == 0
+        ).order_by(Schedule.date).options(db.contains_eager(Schedule.tickets).contains_eager('schedule'))
+        result = []
+
+        for schedule in schedules:
+            tickets_plan = filter(lambda x: x.begDateTime, schedule.tickets)
+            tickets_overplan = filter(lambda x: not x.begDateTime, schedule.tickets)
+
+            tickets_plan and result.append({
+                'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
+                'tickets': map(self.get_ticket_data, tickets_plan),
+            })
+            tickets_overplan and result.append({
+                'reserve_type': u'Сверхплана',
+                'tickets': map(self.get_ticket_data, tickets_overplan),
+            })
+
+        return result
+
 
 class ClientVisualizer(object):
     def __init__(self, mode=Format.JSON):
