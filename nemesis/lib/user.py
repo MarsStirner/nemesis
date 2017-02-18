@@ -447,8 +447,8 @@ class UserUtils(object):
             current_user.has_right('adm') or (
                 # действие является шаблоном действия
                 not action.event) or (
-                # действие не "Отменено" и не "Без результата", но если это автосейв, то пофигу
-                (ignore_status or action.status < 3) and
+                # действие не закрыто, но если это автосейв, то пофигу
+                (ignore_status or action.status < 2) and
                 # остальным - только если обращение не закрыто
                 not action.event.is_closed and (
                     # либо есть право редактировать любые действия
