@@ -468,7 +468,6 @@ class ScheduleVisualizer(object):
         return {
             'id': ticket.id,
             'client_id': ticket.client and ticket.client.id,
-            'client_ticket_id': ticket.client_ticket and ticket.client_ticket.id,
             'client_fio': ticket.client and ticket.client.nameText,
             'begDateTime': ticket.begDateTime,
             'schedule_id': ticket.schedule_id,
@@ -484,8 +483,16 @@ class ScheduleVisualizer(object):
         result = []
         tickets_overplan = []
         schedule_id = None
+        current_datetime = datetime.datetime.now()
+
+        def filter_plan_tickets(ticket):
+            if ticket.client and ticket.client.id:
+                return ticket.begDateTime
+            else:
+                return ticket.begDateTime and ticket.begDateTime > current_datetime
+
         for schedule in schedules:
-            tickets_plan = filter(lambda x: x.begDateTime, schedule.tickets)
+            tickets_plan = filter(filter_plan_tickets, schedule.tickets)
             tickets_overplan += filter(lambda x: not x.begDateTime, schedule.tickets)
             tickets_plan and result.append({
                 'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
@@ -493,19 +500,20 @@ class ScheduleVisualizer(object):
             })
             schedule_id = schedule.id
 
-        if schedule_id:
-            overplan_ticket = {
+        tickets_overplan_data = map(self.get_ticket_data, tickets_overplan)
+        if schedule_id and current_datetime.date() <= schedule_date:
+            tickets_overplan_data.append({
                 'id': None,
                 'client_id': None,
-                'client_ticket_id': None,
                 'client_fio': None,
                 'begDateTime': None,
                 'schedule_id': schedule_id,
-            }
-            result.append({
-                'reserve_type': u'Сверхплана',
-                'tickets': map(self.get_ticket_data, tickets_overplan) + [overplan_ticket],
             })
+
+        tickets_overplan_data and result.append({
+            'reserve_type': u'Сверхплана',
+            'tickets': tickets_overplan_data,
+        })
         return result
 
 
