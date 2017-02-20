@@ -482,20 +482,30 @@ class ScheduleVisualizer(object):
             Schedule.deleted == 0
         ).order_by(Schedule.date).options(db.contains_eager(Schedule.tickets).contains_eager('schedule'))
         result = []
-
+        tickets_overplan = []
+        schedule_id = None
         for schedule in schedules:
             tickets_plan = filter(lambda x: x.begDateTime, schedule.tickets)
-            tickets_overplan = filter(lambda x: not x.begDateTime, schedule.tickets)
-
+            tickets_overplan += filter(lambda x: not x.begDateTime, schedule.tickets)
             tickets_plan and result.append({
                 'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
                 'tickets': map(self.get_ticket_data, tickets_plan),
             })
-            tickets_overplan and result.append({
-                'reserve_type': u'Сверхплана',
-                'tickets': map(self.get_ticket_data, tickets_overplan),
-            })
+            schedule_id = schedule.id
 
+        if schedule_id:
+            overplan_ticket = {
+                'id': None,
+                'client_id': None,
+                'client_ticket_id': None,
+                'client_fio': None,
+                'begDateTime': None,
+                'schedule_id': schedule_id,
+            }
+            result.append({
+                'reserve_type': u'Сверхплана',
+                'tickets': map(self.get_ticket_data, tickets_overplan) + [overplan_ticket],
+            })
         return result
 
 
