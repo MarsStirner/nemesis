@@ -11,11 +11,13 @@ from nemesis.lib.frontend import frontend_config
 
 class MisFlask(Flask):
     def handle_user_exception(self, e):
-        handler = self._find_error_handler(e)
-        if handler is None:
-            logger = logging.getLogger('simple')
-            logger.error(u'Необработанное исключение в приложении: {0}'.format(e.message),
-                         exc_info=True, extra=dict(tags=['UNCAUGHT_EXC']))
+        from werkzeug.exceptions import HTTPException
+        if isinstance(e, HTTPException) and e.code >= 400:
+            handler = self._find_error_handler(e)
+            if handler is None:
+                logger = logging.getLogger('simple')
+                logger.error(u'Необработанное исключение в приложении: {0}'.format(e.message),
+                             exc_info=True, extra=dict(tags=['UNCAUGHT_EXC']))
         return super(MisFlask, self).handle_user_exception(e)
 
 

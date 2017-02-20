@@ -464,6 +464,58 @@ class ScheduleVisualizer(object):
             qbd[d] = tickets.get('CITO', []) + tickets.get('planned', []) + tickets.get('extra', [])
         return qbd
 
+    def get_ticket_data(self, ticket):
+        return {
+            'id': ticket.id,
+            'client_id': ticket.client and ticket.client.id,
+            'client_fio': ticket.client and ticket.client.nameText,
+            'begDateTime': ticket.begDateTime,
+            'schedule_id': ticket.schedule_id,
+        }
+
+    def get_schedule_on_date(self, person_id, schedule_date):
+        """Возвращает данные по расписанию для виджета работчего стола АГ"""
+        schedules = Schedule.query.join(Schedule.tickets).filter(
+            Schedule.person_id == person_id,
+            Schedule.date == schedule_date,
+            Schedule.deleted == 0
+        ).order_by(Schedule.date).options(db.contains_eager(Schedule.tickets).contains_eager('schedule'))
+        result = []
+        tickets_overplan = []
+        schedule_id = None
+        current_datetime = datetime.datetime.now()
+
+        def filter_plan_tickets(ticket):
+            if ticket.client and ticket.client.id:
+                return ticket.begDateTime
+            else:
+                return ticket.begDateTime and ticket.begDateTime > current_datetime
+
+        for schedule in schedules:
+            tickets_plan = filter(filter_plan_tickets, schedule.tickets)
+            tickets_overplan += filter(lambda x: not x.begDateTime, schedule.tickets)
+            tickets_plan and result.append({
+                'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
+                'tickets': map(self.get_ticket_data, tickets_plan),
+            })
+            schedule_id = schedule.id
+
+        tickets_overplan_data = map(self.get_ticket_data, tickets_overplan)
+        if schedule_id and current_datetime.date() <= schedule_date:
+            tickets_overplan_data.append({
+                'id': None,
+                'client_id': None,
+                'client_fio': None,
+                'begDateTime': None,
+                'schedule_id': schedule_id,
+            })
+
+        tickets_overplan_data and result.append({
+            'reserve_type': u'Сверхплана',
+            'tickets': tickets_overplan_data,
+        })
+        return result
+
 
 class ClientVisualizer(object):
     def __init__(self, mode=Format.JSON):
