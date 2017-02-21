@@ -1107,12 +1107,12 @@ angular.module('WebMis20')
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
                     scope.rbName = iAttrs.extSelectRefBookSearch;
+                    scope.specSearchParams = scope.$eval(iAttrs.specSearchParams);
+
                     scope.refreshRecords= function (query) {
                         if (!query) return;
                         return $http.get(WMConfig.url.rb.rb_search + scope.rbName, {
-                            params: {
-                                query: query
-                            }
+                            params: _.extendOwn({query: query}, scope.specSearchParams)
                         }).then(function (res) {
                             return scope.records = res.data.result;
                         });
