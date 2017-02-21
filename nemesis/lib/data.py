@@ -19,6 +19,7 @@ from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STA
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
+from nemesis.lib.mq_integration.biomaterial import notify_biomaterials_changed, MQOpsBiomaterial
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
                                     ActionType_TissueType, typeName_Value_map)
@@ -388,7 +389,7 @@ def create_TTJ_record(action, ttj_data=None):
         tissue_type_ids = {tt['id'] for tt in sel_tt}
     else:
         tissue_type_ids = None
-    client = action.event.client
+    event = action.event
 
     ttj_ids = set()
     ttj_cnt = 0
@@ -397,19 +398,18 @@ def create_TTJ_record(action, ttj_data=None):
             continue
 
         ttj = TakenTissueJournal.query.filter(
-            TakenTissueJournal.client == client,
+            TakenTissueJournal.event == event,
             TakenTissueJournal.tissueType == attt.tissueType,
             TakenTissueJournal.testTubeType == attt.testTubeType,
             TakenTissueJournal.datetimePlanned == planned_end_date,
         ).first()
         if not ttj:
             ttj = TakenTissueJournal()
-            ttj.client = client
+            ttj.event = event
             ttj.tissueType = attt.tissueType
             ttj.amount = attt.amount
             ttj.unit = attt.unit
             ttj.datetimePlanned = planned_end_date
-            ttj.externalId = action.event.externalId
             ttj.testTubeType = attt.testTubeType
         else:
             if ttj.statusCode == 0:
@@ -433,7 +433,9 @@ def create_TTJ_record(action, ttj_data=None):
                 action.actionType.name,
                 action.actionType_id))
 
-    blinker.signal('Core.Notify.TakenTissueJournal').send(None, ids=ttj_ids)
+    if ttj_ids:
+        notify_biomaterials_changed(MQOpsBiomaterial.send, ttj_ids)
+        blinker.signal('Core.Notify.TakenTissueJournal').send(None, ids=ttj_ids)
 
 
 def isRedDay(date):

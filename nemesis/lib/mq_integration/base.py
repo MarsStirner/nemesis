@@ -6,7 +6,7 @@ import time
 from kombu import Connection
 from kombu.pools import producers
 
-from nemesis.lib.utils import safe_traverse
+from nemesis.lib.utils import safe_traverse, safe_double
 from nemesis.models.enums import Gender, AddressType, ActionStatus
 from nemesis.lib.const import STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_ORG_STRUCT_RECEIVED_CODE
 from nemesis.app import app
@@ -92,12 +92,12 @@ class MQIntegrationNotifier(object):
             'id': rb.id,
             'code': rb.code,
             'name': rb.name,
-            'shortName': rb.shortname
+            'shortName': rb.shortname if hasattr(rb, 'shortname') else rb.name
         }
 
     def _make_value_and_unit(self, value, unit):
         return {
-            'value': value,
+            'value': safe_double(value),
             'unit': self._make_rb_units(unit)
         }
 
@@ -197,6 +197,18 @@ class MQIntegrationNotifier(object):
             'vmpTicket': self._make_vmp_ticket(event.VMP_quoting)
         }
 
+    def _make_person(self, person):
+        if person is None:
+            return None
+        return {
+            'id': person.id,
+            'lastName': person.lastName,
+            'firstName': person.firstName,
+            'patrName': person.patrName,
+            'sex': self._make_gender(person.sex),
+            'birthDate': person.birthDate
+        }
+
     def _make_contract(self, contract):
         if contract is None:
             return None
@@ -229,6 +241,17 @@ class MQIntegrationNotifier(object):
             'status': self._make_action_status(action.status),
             'begDate': action.begDate,
             'endDate': action.endDate,
+        }
+
+    def _make_action_type(self, at):
+        if at is None:
+            return None
+        return {
+            'id': at.id,
+            'code': at.code,
+            'name': at.name,
+            'flatCode': at.flatCode,
+            'mnemonic': at.mnem,
         }
 
     def _make_moving_action(self, action):
