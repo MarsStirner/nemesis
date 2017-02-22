@@ -197,9 +197,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
 }])
 .service('ActionTypeTreeModal', [
         '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService',
-        'MessageBox', 'WMConfig', 'RefBookService',
+        'MessageBox', 'WMConfig', 'RefBookService', '$timeout',
         function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService,
-                  MessageBox, WMConfig, RefBookService) {
+                  MessageBox, WMConfig, RefBookService, $timeout) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -477,13 +477,41 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     }
                 })
             };
-            return $modal.open({
+            var modalInstance = $modal.open({
                 templateUrl: templateUrl,
                 backdrop : 'static',
                 size: 'lg',
                 controller: Controller,
                 windowClass: 'modal-scrollable'
-            })
+            });
+
+            modalInstance.opened.then(function () {
+                var lastScrollTop = 0;
+                $timeout(function(){
+                    $(".affix-container").on("scroll", function(e){
+                        var $box=$(e.target);
+                        var $ad=$(e.target).find(".modal-affix");
+
+                        var scrollTop=$box.scrollTop();
+                        var adHeight=$ad.height();
+                        var boxHeight=$box.height();
+                        var adTop = parseInt($ad.css("top"));
+                            if(isNaN(adTop)) adTop = 0;
+
+                        if (scrollTop > lastScrollTop){
+                           // downscroll code
+                           $ad.css("position","relative").css("top", adTop < (scrollTop + boxHeight - adHeight) ? adTop + Math.abs(scrollTop-lastScrollTop) : adTop + "px");
+                        } else {
+                          // upscroll code
+                          $ad.css("position","relative").css("top", adTop > (scrollTop) ? adTop - Math.abs(scrollTop-lastScrollTop) : adTop + "px");
+                        }
+
+                        lastScrollTop = scrollTop;
+                    });
+                }, 200);
+            });
+
+            return modalInstance;
         },
         openAppointmentModal: function (model, date_required) {
             var assigned = {},
@@ -599,7 +627,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <button type="button" class="close" ng-click="cancel()">&times;</button>\
             <h4 class="modal-title" id="myModalLabel">Новое направление на лаб. исследование</h4>\
         </div>\
-        <div class="modal-body modal-scrollable">\
+        <div class="modal-body modal-scrollable affix-container">\
             <div class="row">\
                 <div class="col-md-6">\
                     <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()" />\
@@ -638,7 +666,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     </div>\
                 </div>\
                 <ng-form name="labDirectionsForm">\
-                <div class="col-md-6">\
+                <div class="col-md-6 modal-affix">\
                     <ul class="list-group">\
                         <li ng-repeat="action in prepared2create" class="list-group-item">\
                             <div class="row" ng-if="labTestsServiceErrorVisible(action)">\

@@ -2048,7 +2048,7 @@
 /* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var v1="<div class=\"fs-date fs-widget-root\"> <input fs-input fs-focus-when=\"active\" fs-blur-when=\"!active\" fs-on-focus=\"active = true\" fs-on-blur=\"active = false\" fs-hold-focus fs-esc=\"active = false\" type=\"text\" ng-disabled=\"disabled\" class=\"form-control\" ng-model=\"selectedDate.date\" fs-date-format=\"{{format}}\" placeholder=\"{{placeholder}}\" fs-null-form/>\n<span class=\"glyphicon glyphicon-calendar\" ng-click=\"active = !disabled\"></span> <div ng-if=\"!disabled && active\" class=\"open fs-calendar-wrapper\"> <div class=\"dropdown-menu\"> <fs-calendar ng-model=\"selectedDate.date\" on-select=\"close()\"/> </div> </div> </div>";
+	var v1="<div class=\"fs-date fs-widget-root\"> <input fs-input fs-focus-when=\"active\" fs-blur-when=\"!active\" fs-on-focus=\"active = true\" fs-on-blur=\"active = false\" fs-hold-focus fs-esc=\"active = false\" type=\"text\" ng-disabled=\"disabled\" class=\"form-control\" ng-model=\"selectedDate.date\" fs-date-format=\"{{format}}\" placeholder=\"{{placeholder}}\" fs-null-form/>\n<span class=\"glyphicon glyphicon-calendar\" ng-click=\"active = !disabled\"></span> <div ng-if=\"!disabled && active\" class=\"open fs-calendar-wrapper\"> <div class=\"dropdown-menu\"> <fs-calendar ng-model=\"selectedDate.date\" on-select=\"close()\" first-day-of-week=\"1\"/> </div> </div> </div>";
 	angular.module(["ng"]).run(["$templateCache",function(c){c.put("templates/fs/date.html", v1)}]);
 	module.exports=v1;
 

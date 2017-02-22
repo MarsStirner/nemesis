@@ -93,7 +93,7 @@ angular.module('WebMis20.services').
             });
             if (unclosed_actions.length) {
                 var msg = ('Следующие действия не завершены:<br> * {0}<br><br>' +
-                    'Продолжить процесс закрытия обращения?').format(unclosed_actions.join('<br> * '));
+                    'Продолжить процесс закрытия обращения и запретить редактирование всех незакрытых документов?').format(unclosed_actions.join('<br> * '));
                 return MessageBox.question('Имеются незакрытые действия', msg);
             } else {
                 deferred.resolve();
