@@ -84,6 +84,30 @@ angular.module('WebMis20.services').
             return deferred.promise;
         }
 
+        function check_event_unclosed_movings(event) {
+            var deferred = $q.defer();
+
+            if(!event.movings.length) {
+                return MessageBox.error('Невозможно закрыть обращение', 'Необходимо наличие минимум одного движения пациента');
+            }
+            var unclosed_movings = event.movings.filter(function (moving) {
+                return moving.status == 0;
+            });
+
+            var without_bed_movings = event.movings.filter(function (moving) {
+                return !moving.hospitalBed.value;
+            });
+
+            if (without_bed_movings.length) {
+                return MessageBox.error('Имеются незакрытые движения', 'Разместите пациента на койке и закройте движение пациента в отделении');
+            }
+            else if (unclosed_movings.length) {
+                return MessageBox.error('Имеются незакрытые движения', 'Закройте движение пациента в отделении');
+            }
+
+            return deferred.resolve().promise;
+        }
+
         function check_event_unclosed_actions(event) {
             var deferred = $q.defer();
             var unclosed_actions = event.info.actions.filter(function (action) {
@@ -133,7 +157,9 @@ angular.module('WebMis20.services').
                             : check_event_main_diagnoses(event);
                         dfrd.then(function () {
                             check_event_unclosed_actions(event).then(function () {
-                                deferred.resolve();
+                                check_event_unclosed_movings(event).then(function () {
+                                    deferred.resolve();
+                                });
                             });
                         });
                     });
