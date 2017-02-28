@@ -270,16 +270,19 @@ class rbRadzRiskFactor(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.Unicode(64), nullable=False)
     name = db.Column(db.Unicode(128), nullable=False)
-    group_id = db.Column(db.ForeignKey('rbRadzRiskFactorGroup.id'), nullable=False)
+    group_id = db.Column(db.ForeignKey('rbRadzRiskFactorGroup.id'))
+    regional_group_id = db.Column(db.ForeignKey('rbRadzRiskFactorGroup.id'))
 
-    group = db.relationship('rbRadzRiskFactorGroup')
+    group = db.relationship('rbRadzRiskFactorGroup', foreign_keys=[group_id])
+    regional_group = db.relationship('rbRadzRiskFactorGroup', foreign_keys=[regional_group_id])
 
     def __json__(self):
         return {
             'id': self.id,
             'code': self.code,
             'name': self.name,
-            'group_id': self.group_id
+            'group_id': self.group_id,
+            'regional_group_id': self.regional_group_id
         }
 
     def __int__(self):
@@ -291,6 +294,57 @@ class rbRadzRiskFactor_StageAssoc(db.Model):
 
     factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
     stage_id = db.Column(db.ForeignKey('rbRadzStage.id'), primary_key=True)
+    points = db.Column(db.Integer, nullable=False)
+
+    factor = db.relationship('rbRadzRiskFactor')
+
+
+class rbRisarRegionalRiskRate(db.Model):
+    __tablename__ = 'rbRisarRegionalRiskRate'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(16), nullable=False)
+    name = db.Column(db.Unicode(64), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
+    regionalCode = db.Column(db.String(64), nullable=False, server_default='')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'value': self.value
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRegionalRiskStage(db.Model):
+    __tablename__ = 'rbRegionalRiskStage'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.Unicode(32), nullable=False)
+    name = db.Column(db.Unicode(128), nullable=False)
+
+    stage_factor_assoc = db.relationship('rbRadzRiskFactor_RegionalStageAssoc')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name
+        }
+
+    def __int__(self):
+        return self.id
+
+
+class rbRadzRiskFactor_RegionalStageAssoc(db.Model):
+    __tablename__ = u'rbRadzRiskFactor_RegionalStage'
+
+    factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
+    stage_id = db.Column(db.ForeignKey('rbRegionalRiskStage.id'), primary_key=True)
     points = db.Column(db.Integer, nullable=False)
 
     factor = db.relationship('rbRadzRiskFactor')

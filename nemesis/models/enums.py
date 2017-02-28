@@ -252,6 +252,19 @@ class RadzinskyStage(EnumLoadable):
     intranatal = 4, u'Интранатальные факторы'
 
 
+class TomskRegionalRiskStage(Enum):
+    initial = 1, u'Постановка на учет'
+    before21 = 2, u'До 21 недели'
+    from21to30 = 3, u'С 21 по 30 неделю'
+    from31to36 = 4, u'С 31 по 36 неделю'
+
+
+class TomskRegionalRiskRate(EnumLoadable):
+    low = 1, u'Низкая'
+    medium = 2, u'Средняя'
+    high = 3, u'Высокая'
+
+
 class FisherKTGRate(EnumLoadable):
     __tablename__ = 'rbFisherKTGRate'
 
