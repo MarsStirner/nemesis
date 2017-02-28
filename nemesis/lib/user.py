@@ -518,7 +518,8 @@ class UserProfileManager(object):
         'overseers_low': [admin, overseer1, overseer2],
         'overseers_23': [admin, overseer2, overseer3],
         'overseers_high': [admin, overseer3],
-        'nurse': [admin, nurse]
+        'obstetrician_and_overseers': [admin, obstetrician, overseer1, overseer2, overseer3],
+        'nurse': [admin, nurse],
     }
 
     @classmethod
@@ -602,6 +603,10 @@ class UserProfileManager(object):
     def has_ui_risar_reports(cls):
         r = cls._get_user_role()
         return r in cls.ui_groups['risar'] or r == cls.ouz
+
+    @classmethod
+    def has_ui_obstetrician_and_overseers(cls):
+        return cls._get_user_role() in cls.ui_groups['obstetrician_and_overseers']
 
     @classmethod
     def get_default_url(cls):

@@ -3,7 +3,6 @@
 from flask import request
 
 from nemesis.app import app
-from nemesis.lib.specific import NemesisSpecificsManager
 from nemesis.lib.utils import safe_dict
 from nemesis.lib.vesta import Vesta, VestaNotFoundException
 from nemesis.models import enums, event, actions, person, organisation, exists, schedule, client, expert_protocol, \
@@ -95,7 +94,6 @@ def api_refbook(name, code=None):
 @api_method
 def api_refbook_search(name):
     kwargs = request.args.to_dict()
-    NemesisSpecificsManager.update_vesta_search_kwargs(name, kwargs)
     try:
         return map(Vesta._insert_id, Vesta.search_rb(name, kwargs))
     except VestaNotFoundException, e:
