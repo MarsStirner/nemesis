@@ -385,6 +385,7 @@ class ActionPropertyType(db.Model):
     createPerson_id = db.Column(db.Integer)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
+    notLoadableWithTemplate = db.Column(db.SmallInteger)
 
     unit = db.relationship('rbUnit')
     template = db.relationship('ActionPropertyTemplate')
@@ -447,7 +448,8 @@ class ActionPropertyType(db.Model):
             'norm_min': norm_min,
             'norm_max': norm_max,
             'vector': bool(self.isVector),
-            'description': self.descr
+            'description': self.descr,
+            'not_loadable_with_template': bool(self.notLoadableWithTemplate)
         }
         if self.typeName == 'String' and value_domain['subtype']:
             result['type_name'] = 'String/{0}'.format(value_domain['subtype'])
