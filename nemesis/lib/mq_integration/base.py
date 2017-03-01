@@ -152,7 +152,8 @@ class MQIntegrationNotifier(object):
         return {
             'id': os.id,
             'code': os.code,
-            'name': os.name
+            'name': os.name,
+            'uuid': str(os.uuid)
         }
 
     def _make_vmp_ticket(self, client_quoting):
