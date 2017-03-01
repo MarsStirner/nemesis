@@ -59,12 +59,17 @@ class BiomaterialIntegrationNotifier(MQIntegrationNotifier):
         }
 
     def _make_biomaterial(self, ttj):
+        class DefaultUnit(object):
+            id = 0
+            code = u'Шт'
+            name = u'Шт'
+
         return {
             'id': ttj.id,
             'event': self._make_event(ttj.event),
             'biomaterialType': self._make_rb_tissue_type(ttj.tissueType),
             'testTubeType': self._make_rb_testtube_type(ttj.testTubeType),
-            'amount': self._make_value_and_unit(ttj.amount, ttj.unit),
+            'amount': self._make_value_and_unit(ttj.amount or 1, ttj.unit or DefaultUnit()),
             'datetimePlanned': ttj.datetimePlanned,
             'datetimeTaken': ttj.datetimeTaken,
             'status': self._make_ttj_status(ttj.statusCode),
