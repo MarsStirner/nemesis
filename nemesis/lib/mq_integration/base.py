@@ -195,7 +195,8 @@ class MQIntegrationNotifier(object):
             'endDate': event.execDate,
             'client': self._make_client(event.client),
             'contract': self._make_contract(event.contract),
-            'vmpTicket': self._make_vmp_ticket(event.VMP_quoting)
+            'vmpTicket': self._make_vmp_ticket(event.VMP_quoting),
+            'orgStructure': self._make_org_struct(event.current_org_structure)
         }
 
     def _make_person(self, person):
