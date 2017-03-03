@@ -1319,7 +1319,16 @@ class StationaryEventVisualizer(EventVisualizer):
         movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
                                                                    Action.deleted == 0,
                                                                    ActionType.flatCode == 'moving').all() if event.id else []
-        return [self.make_moving_info(moving) for moving in movings]
+        movings = [self.make_moving_info(moving) for moving in movings]
+
+        for k, v in enumerate(movings):
+            if v['orgStructStay']['value']['id'] == 27 and k > 0:
+                last = filter(lambda x: x['orgStructStay']['value']['id'] != 27, reversed(movings[:k]))    # last movings different from reanimatology
+
+                if last and v['hb_days'] is not None:
+                    last[0]['hb_days'] += v['hb_days']
+
+        return movings
 
     def make_event_stationary_info(self, event):
         pviz = PersonTreeVisualizer()
