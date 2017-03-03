@@ -464,13 +464,22 @@ class ScheduleVisualizer(object):
             qbd[d] = tickets.get('CITO', []) + tickets.get('planned', []) + tickets.get('extra', [])
         return qbd
 
-    def get_ticket_data(self, ticket):
+    @staticmethod
+    def get_ticket_data(ticket, current_datetime, schedule_date):
+        if not ticket.client:
+            can_canceled = False
+        elif ticket.begDateTime:
+            can_canceled = ticket.begDateTime >= current_datetime
+        else:
+            can_canceled = current_datetime.date() <= schedule_date
+
         return {
             'id': ticket.id,
             'client_id': ticket.client and ticket.client.id,
             'client_fio': ticket.client and ticket.client.nameText,
             'begDateTime': ticket.begDateTime,
             'schedule_id': ticket.schedule_id,
+            'can_canceled': can_canceled,
         }
 
     def get_schedule_on_date(self, person_id, schedule_date):
@@ -499,11 +508,11 @@ class ScheduleVisualizer(object):
             tickets_overplan += filter(lambda x: not x.begDateTime and x.client, schedule.tickets)
             tickets_plan and result.append({
                 'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
-                'tickets': map(self.get_ticket_data, tickets_plan),
+                'tickets': [self.get_ticket_data(t, current_datetime, schedule_date) for t in tickets_plan],
             })
             schedule_id = schedule.id
 
-        tickets_overplan_data = map(self.get_ticket_data, tickets_overplan)
+        tickets_overplan_data = [self.get_ticket_data(t, current_datetime, schedule_date) for t in tickets_overplan]
         # Добавляем пустой тикет для записи "Сверхплана".
         if schedule_id and current_datetime.date() <= schedule_date:
             tickets_overplan_data.append({
@@ -512,6 +521,7 @@ class ScheduleVisualizer(object):
                 'client_fio': None,
                 'begDateTime': None,
                 'schedule_id': schedule_id,
+                'can_canceled': False,
             })
 
         tickets_overplan_data and result.append({
