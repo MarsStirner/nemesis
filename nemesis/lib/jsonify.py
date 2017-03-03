@@ -1489,7 +1489,8 @@ class ActionVisualizer(object):
     def make_action_wo_sensitive_props(self, action):
         action = self.make_action(action, for_template=True)
         for prop in action['properties']:
-            if prop['type'].typeName in NOT_COPYABLE_VALUE_TYPES:
+            if prop['type'].typeName in NOT_COPYABLE_VALUE_TYPES or \
+                    prop['type'].notLoadableWithTemplate:
                 prop['value'] = [] if prop['type'].isVector else None
         return action
 

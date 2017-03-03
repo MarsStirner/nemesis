@@ -168,9 +168,16 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             scope.$model = ngModel;
             var toolbar = $($templateCache.get('/WebMis20/wysiwyg-toolbar.html'));
             var editor = $('<div style="padding: 10px; overflow: auto; min-height: 40px; max-height: 500px" class="wysiwyg-panel long-words" contenteditable="[[contenteditable]]"></div>');
+            var editor_id;
             if (attributes.id) {
-                editor.attr('id', attributes.id);
+                editor_id = attributes.id;
+            } else {
+                editor_id = 'editor' + Math.random().toString(36);
             }
+            editor.attr('id', editor_id);
+            var getEditor = function () {
+                return $('#' + editor_id);
+            };
             var replace = $('<div class="panel panel-default" style="padding: 0"></div>');
             toolbar.find('.dropdown-menu input')
                 .click(function() {return false;})
@@ -298,9 +305,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             }
             bindToolbar(toolbar, options);
 
-            var updateModelLock = false; // Этот костыль предотвращает нежелательный апдейт вида данными модели
             function updateModel() {
-                updateModelLock = true;
                 var view_value = !isEmptyHtml(editor.html())
                     ? cleanHtml(editor.html())
                     : '';
@@ -423,10 +428,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             }
 
             scope.$watch('$model.$modelValue', function (n, o) {
-                if (updateModelLock) {
-                    updateModelLock = false
-                } else {
-                    editor.html(n);
+                if (cleanHtml(editor.html()) !== n) {
+                    getEditor().html(n);
                 }
                 return n;
             });
