@@ -480,6 +480,7 @@ class ScheduleVisualizer(object):
             'begDateTime': ticket.begDateTime,
             'schedule_id': ticket.schedule_id,
             'can_canceled': can_canceled,
+            'appointment_permitted': bool(ticket.schedule and ticket.schedule.appointment_permitted),
         }
 
     def get_schedule_on_date(self, person_id, schedule_date):
@@ -522,6 +523,7 @@ class ScheduleVisualizer(object):
                 'begDateTime': None,
                 'schedule_id': schedule_id,
                 'can_canceled': False,
+                'appointment_permitted': True,
             })
 
         tickets_overplan_data and result.append({
