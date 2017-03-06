@@ -506,6 +506,7 @@ class ScheduleVisualizer(object):
 
         for schedule in schedules:
             tickets_plan = filter(filter_plan_tickets, schedule.tickets)
+            tickets_plan.sort(key=lambda t: t.begDateTime)
             tickets_overplan += filter(lambda x: not x.begDateTime and x.client, schedule.tickets)
             tickets_plan and result.append({
                 'reserve_type': schedule.reserve_type and schedule.reserve_type.name,
