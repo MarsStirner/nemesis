@@ -1898,12 +1898,8 @@ class DiagnosisVisualizer(object):
             'action': aviz.make_small_action_info(diagnostic.action) if diagnostic.action else None,
             'notes': diagnostic.notes,
             'ache_result': diagnostic.rbAcheResult,
-            # 'person': pvis.make_person_ws(diagnostic.person) if diagnostic.person else None,
-            # 'result': diagnostic.result,
-
-            # 'event_id': diagnostic.event_id,
-            'modify_person': pvis.make_person_ws(diagnostic.modifyPerson) if diagnostic.modifyPerson else None
-
+            'modify_person': pvis.make_person_ws(diagnostic.modifyPerson) if diagnostic.modifyPerson else None,
+            'mkb_details': diagnostic.mkb_details
         } if diagnostic else None
 
     def make_diagnosis_record(self, diagnosis, diagnostic=None):

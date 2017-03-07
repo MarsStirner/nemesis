@@ -1403,7 +1403,8 @@ angular.module('WebMis20.directives')
                             'stage': null,
                             'health_group': null,
                             'diagnosis_description': null,
-                            'notes': null
+                            'notes': null,
+                            'mkb_details': null
                         },
                         'diagnosis_types': {}
                     };
@@ -1552,7 +1553,8 @@ angular.module('WebMis20.directives')
             </div>\
         </div>')
     }])
-.service('DiagnosisModal', ['$modal', '$http', 'RefBookService', function ($modal, $http, RefBookService) {
+.service('DiagnosisModal', ['$modal', '$http', 'RefBookService', 'WMConfig',
+        function ($modal, $http, RefBookService, WMConfig) {
     return {
         openDiagnosisModal: function (model, diagnoses) {
             var locModel = angular.copy(model);
@@ -1566,20 +1568,31 @@ angular.module('WebMis20.directives')
                 if ($scope.model.id){
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
                 }
+                /* MKB details */
                 $scope.MKB_details = {};
-                $http.get('/api/rb/mkb_details/')
+                $http.get(WMConfig.url.rb.rb_mkb_details)
                     .success(function (response) {
                         response.result.forEach(function (detail) {
                             $scope.MKB_details[detail.mkb_code] = detail;
+                            refreshDetailsRb(safe_traverse($scope.model, ['diagnostic', 'mkb', 'code']));
                         });
                     });
-                $scope.details_rb;
-                var changeDetailsRb = function (mkb_code) {
+                $scope.details_rb = {};
+                var refreshDetailsRb = function (mkb_code, clear) {
+                    var cur_details = $scope.MKB_details[mkb_code];
                     $scope.details_rb = _.extend(
                         {},
-                        $scope.MKB_details[mkb_code],
-                        {refbook: RefBookService.get($scope.MKB_details[mkb_code].refbook_name)}
+                        cur_details,
+                        {
+                            refbook: cur_details ? RefBookService.get(cur_details.refbook_name) : undefined
+                        }
                     );
+                    if (clear) {
+                        $scope.model.diagnostic.mkb_details = null;
+                    }
+                };
+                $scope.isMKBDetailsVisible = function () {
+                    return $scope.details_rb.refbook;
                 };
 
                 // https://github.com/angular-ui/bootstrap/issues/969
@@ -1607,7 +1620,7 @@ angular.module('WebMis20.directives')
                                 $scope.edit_mkb.mkb_changed = false;
                             }
                         }
-                        changeDetailsRb(n.code);
+                        refreshDetailsRb(n.code, true);
                     }
                 });
             };
@@ -1651,6 +1664,17 @@ angular.module('WebMis20.directives')
                         <button type="button" class="btn btn-default" ng-click="reverse_mkb_change()">Отменить изменение</button>\
                     </div>\
                 </div>\
+                <div class="row marginal" ng-if="isMKBDetailsVisible()">\
+                    <div class="col-md-6">\
+                        <label for="mkb_details" class="control-label">[[ details_rb.refbook_text ]]</label>\
+                        <ui-select ng-model="model.diagnostic.mkb_details" class="form-control" theme="select2">\
+                            <ui-select-match allow-clear=true>[[$select.selected.name]]</ui-select-match>\
+                            <ui-select-choices repeat="item in details_rb.refbook.objects | filter: $select.search | limitTo:50 track by item.id">\
+                                <div style="text-align: justify" ng-bind-html="item.name | highlight: $select.search"></div>\
+                            </ui-select-choices>\
+                        </ui-select>\
+                    </div>\
+                </div>\
                 <div class="row marginal" ng-if="edit_mkb.mkb_changed">\
                     <div class="col-md-1" style="text-align: center; font-size:200%;">\
                         <i class="fa fa-exclamation-triangle text-yellow"></i>\
@@ -1685,17 +1709,6 @@ angular.module('WebMis20.directives')
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="tt in ($refBook.objects | filter: $select.search) track by tt.id">\
                                 <span ng-bind-html="tt.name | highlight: $select.search"></span>\
-                            </ui-select-choices>\
-                        </ui-select>\
-                    </div>\
-                </div>\
-                <div class="row marginal">\
-                    <div class="col-md-6">\
-                        <label for="mkb_details" class="control-label">[[ details_rb.refbook_text ]]</label>\
-                        <ui-select ng-model="model.diagnostic.mkb_details" class="form-control" theme="select2">\
-                            <ui-select-match allow-clear=true>[[$select.selected.name]]</ui-select-match>\
-                            <ui-select-choices repeat="item in details_rb.refbook.objects | filter: $select.search | limitTo:50 track by item.id">\
-                                <div style="text-align: justify" ng-bind-html="item.name | highlight: $select.search"></div>\
                             </ui-select-choices>\
                         </ui-select>\
                     </div>\

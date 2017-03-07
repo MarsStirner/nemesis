@@ -56,6 +56,7 @@ def create_diagnostic(diagnostic_data, action):
     diagnostic.rbAcheResult_id = safe_traverse(diagnostic_data, 'ache_result', 'id')
     # diagnostic.sanatorium = 0  # todo
     diagnostic.notes = safe_traverse(diagnostic_data, 'notes')
+    diagnostic.mkb_details = diagnostic_data.get('mkb_details')
     return diagnostic
 
 

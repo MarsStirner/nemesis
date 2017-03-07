@@ -1234,8 +1234,7 @@ class MKB(db.Model):
 class MKB_details(db.Model):
     __tablename__ = 'MKB_details'
 
-    id = db.Column(db.Integer, primary_key=True)
-    mkb_id = db.Column(db.ForeignKey('MKB.id'))
+    mkb_id = db.Column(db.ForeignKey('MKB.id'), primary_key=True)
     refbookName = db.Column(db.String(250), nullable=False)
     refbookText = db.Column(db.String(255))
 
@@ -1243,7 +1242,6 @@ class MKB_details(db.Model):
 
     def __json__(self):
         return {
-            'id': self.id,
             'mkb_id': self.mkb_id,
             'refbook_name': self.refbookName,
             'refbook_text': self.refbookText,
