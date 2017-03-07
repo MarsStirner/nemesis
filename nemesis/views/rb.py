@@ -100,6 +100,18 @@ def api_refbook_search(name):
         raise ApiException(404, e.message)
 
 
+@app.route('/api/rb/mkb_details/')
+@api_method
+def api_refbook_mkb_details():
+    from nemesis.models.exists import MKB_details
+    res = []
+    for m in MKB_details.query.join(MKB_details.mkb):
+        r = safe_dict(m)
+        r.update({'mkb_code': m.mkb.DiagID})
+        res.append(r)
+    return res
+
+
 @cache.memoize(86400)
 def int_api_thesaurus(code):
     from nemesis.models.exists import rbThesaurus

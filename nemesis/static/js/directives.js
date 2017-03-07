@@ -1417,7 +1417,6 @@ angular.module('WebMis20.directives')
                             new_diagnosis['diagnosis_types'][diagnosis_type.code] = associated;
                         });  
                     }
-                    
 
                     DiagnosisModal.openDiagnosisModal(new_diagnosis, ngModelCrtl.$viewValue).then(function () {
                         ngModelCrtl.$viewValue.push(new_diagnosis);
@@ -1553,7 +1552,7 @@ angular.module('WebMis20.directives')
             </div>\
         </div>')
     }])
-.service('DiagnosisModal', ['$modal', function ($modal) {
+.service('DiagnosisModal', ['$modal', '$http', 'RefBookService', function ($modal, $http, RefBookService) {
     return {
         openDiagnosisModal: function (model, diagnoses) {
             var locModel = angular.copy(model);
@@ -1567,6 +1566,21 @@ angular.module('WebMis20.directives')
                 if ($scope.model.id){
                     $scope.edit_mkb.old_mkb = $scope.model.diagnostic.mkb;
                 }
+                $scope.MKB_details = {};
+                $http.get('/api/rb/mkb_details/')
+                    .success(function (response) {
+                        response.result.forEach(function (detail) {
+                            $scope.MKB_details[detail.mkb_code] = detail;
+                        });
+                    });
+                $scope.details_rb;
+                var changeDetailsRb = function (mkb_code) {
+                    $scope.details_rb = _.extend(
+                        {},
+                        $scope.MKB_details[mkb_code],
+                        {refbook: RefBookService.get($scope.MKB_details[mkb_code].refbook_name)}
+                    );
+                };
 
                 // https://github.com/angular-ui/bootstrap/issues/969
                 // http://stackoverflow.com/questions/19312936/angularjs-modal-dialog-form-object-is-undefined-in-controller
@@ -1593,6 +1607,7 @@ angular.module('WebMis20.directives')
                                 $scope.edit_mkb.mkb_changed = false;
                             }
                         }
+                        changeDetailsRb(n.code);
                     }
                 });
             };
@@ -1670,6 +1685,17 @@ angular.module('WebMis20.directives')
                             <ui-select-match placeholder="не выбрано">[[ $select.selected.name ]]</ui-select-match>\
                             <ui-select-choices repeat="tt in ($refBook.objects | filter: $select.search) track by tt.id">\
                                 <span ng-bind-html="tt.name | highlight: $select.search"></span>\
+                            </ui-select-choices>\
+                        </ui-select>\
+                    </div>\
+                </div>\
+                <div class="row marginal">\
+                    <div class="col-md-6">\
+                        <label for="mkb_details" class="control-label">[[ details_rb.refbook_text ]]</label>\
+                        <ui-select ng-model="model.diagnostic.mkb_details" class="form-control" theme="select2">\
+                            <ui-select-match allow-clear=true>[[$select.selected.name]]</ui-select-match>\
+                            <ui-select-choices repeat="item in details_rb.refbook.objects | filter: $select.search | limitTo:50 track by item.id">\
+                                <div style="text-align: justify" ng-bind-html="item.name | highlight: $select.search"></div>\
                             </ui-select-choices>\
                         </ui-select>\
                     </div>\

@@ -1231,6 +1231,25 @@ class MKB(db.Model):
         return self.id
 
 
+class MKB_details(db.Model):
+    __tablename__ = 'MKB_details'
+
+    id = db.Column(db.Integer, primary_key=True)
+    mkb_id = db.Column(db.ForeignKey('MKB.id'))
+    refbookName = db.Column(db.String(250), nullable=False)
+    refbookText = db.Column(db.String(255))
+
+    mkb = db.relationship('MKB', backref='details')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'mkb_id': self.mkb_id,
+            'refbook_name': self.refbookName,
+            'refbook_text': self.refbookText,
+        }
+
+
 class rbBloodComponentType(db.Model):
     __tablename__ = u'rbTrfuBloodComponentType'
 
