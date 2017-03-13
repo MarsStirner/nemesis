@@ -265,6 +265,19 @@ class TomskRegionalRiskRate(EnumLoadable):
     high = 3, u'Высокая'
 
 
+class SaratovRegionalRiskStage(Enum):
+    anamnestic = 1, u'Анамнестические факторы'
+    before35 = 2, u'Факторы до 35 недель'
+    after36 = 3, u'Факторы после 36 недель'
+    intranatal = 4, u'Интранатальные факторы'
+
+
+class SaratovRegionalRiskRate(EnumLoadable):
+    low = 1, u'Низкая'
+    medium = 2, u'Средняя'
+    high = 3, u'Высокая'
+
+
 class FisherKTGRate(EnumLoadable):
     __tablename__ = 'rbFisherKTGRate'
 
