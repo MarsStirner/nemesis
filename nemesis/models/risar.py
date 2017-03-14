@@ -295,6 +295,7 @@ class rbRadzRiskFactor_StageAssoc(db.Model):
     factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
     stage_id = db.Column(db.ForeignKey('rbRadzStage.id'), primary_key=True)
     points = db.Column(db.Integer, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
 
     factor = db.relationship('rbRadzRiskFactor')
 
@@ -346,6 +347,7 @@ class rbRadzRiskFactor_RegionalStageAssoc(db.Model):
     factor_id = db.Column(db.ForeignKey('rbRadzRiskFactor.id'), primary_key=True)
     stage_id = db.Column(db.ForeignKey('rbRegionalRiskStage.id'), primary_key=True)
     points = db.Column(db.Integer, nullable=False)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
 
     factor = db.relationship('rbRadzRiskFactor')
 
