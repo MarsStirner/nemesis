@@ -157,6 +157,7 @@ class ErrandStatus(EnumLoadable):
     executed = 2, u'выполнено'
     expired = 3, u'просрочено'
     late_execution = 4, u'выполнено с опозданием'
+    request = 5, u'запрос данных'
 
 
 class MedicationPrescriptionStatus(Enum):
