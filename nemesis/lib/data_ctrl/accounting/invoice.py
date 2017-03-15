@@ -432,7 +432,8 @@ class InvoiceItemController(BaseModelController):
         service_ctrl = ServiceController()
         if invoice_item.service:
             service = service_ctrl.update_service(invoice_item.service, dict(
-                discount_id=item_data.get('discount_id')
+                discount_id=item_data.get('discount_id'),
+                amount=item_data.get('amount')
             ))
             invoice_item.service = service
 
