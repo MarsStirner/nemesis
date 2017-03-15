@@ -293,8 +293,10 @@ var WebMis20 = angular.module('WebMis20', [
         );
         out.push(item);
         if (is_expandable) {
+            var local_idx = 0;
             for (var i = 0; i < item[subAttrName].length; i++) {
-                traverse(item[subAttrName][i], subAttrName, out, level + 1, idx, idx);
+                traverse(item[subAttrName][i], subAttrName, out, level + 1, local_idx, idx);
+                local_idx++;
             }
         }
     }
