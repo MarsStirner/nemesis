@@ -592,7 +592,7 @@ class ServiceController(BaseModelController):
         service_id = service_data.get('id')
         if service_id:
             service = self.get_service(service_id, full_load=True)
-            # service = self.update_service(service, service_data)
+            service = self.update_service(service, service_data)
         else:
             service = self.get_new_service(service_data)
 
@@ -613,7 +613,7 @@ class ServiceController(BaseModelController):
             )
             existing_ss_map = dict(
                 (s.serviced_entity.type_id, s)
-                for s in service.subservice_list if s.id
+                for s in service.subservice_list
             )
             for apt_id in service_data['serviced_entity']['tests_data']['assigned']:
                 if apt_id in ref_ss_map:
