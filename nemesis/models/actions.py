@@ -1167,9 +1167,10 @@ class TakenTissueJournal(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
+    event_id = db.Column(db.ForeignKey('Event.id'))
+    client_id = db.Column(db.ForeignKey('Client.id'))
     tissueType_id = db.Column(db.ForeignKey('rbTissueType.id'), nullable=False, index=True)
-    externalId = db.Column(db.String(30), nullable=False)
+    externalId = db.Column(db.String(30))
     amount = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     unit_id = db.Column(db.ForeignKey('rbUnit.id'), index=True)
     datetimePlanned = db.Column(db.DateTime, nullable=False)
@@ -1181,6 +1182,7 @@ class TakenTissueJournal(db.Model):
     testTubeType_id = db.Column(db.ForeignKey('rbTestTubeType.id'), index=True)
     statusCode = db.Column("status", db.Integer, nullable=False, server_default=u"'0'")
 
+    event = db.relationship(u'Event')
     client = db.relationship(u'Client')
     execPerson = db.relationship(u'Person')
     tissueType = db.relationship(u'rbTissueType')
@@ -1201,7 +1203,7 @@ class TakenTissueJournal(db.Model):
             'id': self.id,
             'datetime_taken': self.datetimeTaken,
             'datetime_planned': self.datetimePlanned,
-            'client': self.client,
+            'event_id': self.event_id,
             'execPerson': self.execPerson,
             'barcode': self.barcode,
             'tissueType': self.tissueType,

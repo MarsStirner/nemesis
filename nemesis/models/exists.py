@@ -7,7 +7,7 @@ from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
-from nemesis.models.utils import safe_current_user_id
+from nemesis.models.utils import safe_current_user_id, UUIDColumn
 
 
 
@@ -240,6 +240,7 @@ class OrgStructure(db.Model):
     inheritGaps = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     uuid_id = db.Column(db.Integer, nullable=False, index=True, server_default=u"'0'")
     show = db.Column(db.Integer, nullable=False, server_default=u"'1'")
+    uuid = db.Column(UUIDColumn(), nullable=False)
 
     parent = db.relationship('OrgStructure', remote_side=[id])
     organisation = db.relationship('Organisation')
