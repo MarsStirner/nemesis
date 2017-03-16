@@ -2,7 +2,6 @@
 import logging
 import uuid
 import collections
-import blinker
 import six
 import sqlalchemy
 
@@ -19,12 +18,11 @@ from nemesis.lib.const import (STATIONARY_MOVING_CODE, STATIONARY_ORG_STRUCT_STA
     STATIONARY_LEAVED_CODE, STATIONARY_HOSP_LENGTH_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE)
 from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
-from nemesis.lib.mq_integration.biomaterial import notify_biomaterials_changed, MQOpsBiomaterial
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
                                     ActionType_TissueType, typeName_Value_map)
 from nemesis.models.client import Client
-from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus, ActionTypeClass, ATClass
+from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.event import Event, EventType_Action
 from nemesis.models.exists import Person, OrgStructure
 from nemesis.models.prescriptions import MedicalPrescription
@@ -391,7 +389,6 @@ def create_TTJ_record(action, ttj_data=None):
         tissue_type_ids = None
     event = action.event
 
-    ttj_ids = set()
     ttj_cnt = 0
     for attt in at_tissue_types:
         if tissue_type_ids and attt.tissueType_id not in tissue_type_ids:
@@ -415,13 +412,9 @@ def create_TTJ_record(action, ttj_data=None):
             if ttj.statusCode == 0:
                 ttj.amount += attt.amount
             else:
-                # Если забор уже произведён, то надо уведомить врача о возможных проблемах
-                action.note = u'Биозабор уже %s. Возможны проблемы с нехваткой биоматериала для новых анализов' % (
-                    {1: u'начат', 2: u'закончен'}.get(ttj.statusCode, u'отправлен в ЛИС')
-                )
-            if ttj.statusCode in (3, 4):
-                # Отправка в ЛИС уже произведена. Надо переотправить
-                ttj_ids.add(ttj.id)
+                raise ActionException(
+                    u'Невозможно создать исследование "{0}", т.к. биозабор на выбранное '
+                    u'время уже выполнен'.format(action.actionType.name))
         action.tissues.append(ttj)
         db.session.add(ttj)
         ttj_cnt += 1
@@ -432,10 +425,6 @@ def create_TTJ_record(action, ttj_data=None):
             u'(ActionType.id = {1})'.format(
                 action.actionType.name,
                 action.actionType_id))
-
-    if ttj_ids:
-        notify_biomaterials_changed(MQOpsBiomaterial.send, ttj_ids)
-        blinker.signal('Core.Notify.TakenTissueJournal').send(None, ids=ttj_ids)
 
 
 def isRedDay(date):
