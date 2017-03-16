@@ -322,6 +322,9 @@ class Service(db.Model):
         elif self.serviceKind_id == ServiceKind.lab_test[0]:
             return self.action_property
 
+    def get_sorted_subservices(self):
+        return sorted(self.subservice_list, key=lambda ss: ss.price_list_item.serviceNameOW)
+
     def get_flatten_subservices(self):
         flatten = []
 
