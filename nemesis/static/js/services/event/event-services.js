@@ -43,7 +43,7 @@ angular.module('WebMis20.services').
             return deferred.promise;
         }
 
-        function check_event_main_diagnoses(event){
+        function check_event_all_main_diagnoses(event){
             var types_with_main = [];
             _.each(event.diagnoses_all, function(diagnosis) {
                 _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
@@ -68,8 +68,7 @@ angular.module('WebMis20.services').
             return deferred.promise;
         }
 
-        function check_event_oparin_diagnoses (event) {
-            // Сделано для удовлетворения тикета TMIS-1085.
+        function check_event_final_or_main_diagnoses (event) {
             var may_close = false;
             _.each(event.diagnoses_all, function(diagnosis) {
                 _.each(diagnosis.diagnosis_types, function (diagnosis_kind, diagnosis_type_code) {
@@ -104,8 +103,8 @@ angular.module('WebMis20.services').
             else if (unclosed_movings.length) {
                 return MessageBox.error('Имеются незакрытые движения', 'Закройте движение пациента в отделении');
             }
-
-            return deferred.resolve().promise;
+            deferred.resolve();
+            return deferred.promise;
         }
 
         function check_event_unclosed_actions(event) {
@@ -152,9 +151,7 @@ angular.module('WebMis20.services').
                 check_event_results(event).then(function () {
                     check_event_diagnoses_results(event).then(function () {
                         // Сделано для удовлетворения тикета TMIS-1085.
-                        var dfrd = (event.info.event_type.request_type.code == 'policlinic' && event.info.event_type.finance.code == '2')
-                            ? check_event_oparin_diagnoses(event)
-                            : check_event_main_diagnoses(event);
+                        var dfrd = check_event_final_or_main_diagnoses(event);
                         dfrd.then(function () {
                             check_event_unclosed_actions(event).then(function () {
                                 check_event_unclosed_movings(event).then(function () {

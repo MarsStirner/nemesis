@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import func, between
 
 from nemesis.models.actions import Action, ActionType, ActionType_Service, ActionType_rbDiagnosisType
 from nemesis.models.accounting import PriceListItem
-from nemesis.models.enums import ActionTypeClass, ATClass
+from nemesis.models.enums import ActionTypeClass, ATClass, OrgStructType
 from nemesis.systemwide import db
 
 
@@ -134,3 +134,8 @@ def get_action_type_class(at_class, tissue_required):
         ActionTypeClass.lab[0] if at_class == ATClass.diagno_labs[0] and at_class else
         at_class
     )
+
+
+def action_is_resuscitation_moving(action):
+    os = action['orgStructStay'].value
+    return os.type == OrgStructType.resuscitation[0] if os else False

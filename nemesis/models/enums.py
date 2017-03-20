@@ -219,3 +219,13 @@ class ActionPayStatus(Enum):
     not_paid = 0, u'Не оплачено'
     paid = 1, u'Оплачено'
     refunded = 2, u'Совершен возврат'
+
+
+class OrgStructType(Enum):
+    amb = 0, u'Амбулатория'
+    clinic = 1, u'Дневной стационар'
+    emergency = 2, u'Скорая помощь'
+    mobile = 3, u'Мобильная станция'
+    hosp_reception = 4, u'Приемное отделение стационара'
+    hospital = 5, u'Круглосутоный стационар'
+    resuscitation = 6, u'Реанимация'

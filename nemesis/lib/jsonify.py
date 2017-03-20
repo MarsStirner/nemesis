@@ -18,7 +18,7 @@ from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
     get_client_diagnostics, get_action_type_class
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
-    get_prev_inspection_with_diags
+    get_prev_inspection_with_diags, action_is_resuscitation_moving
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
@@ -1307,28 +1307,44 @@ class StationaryEventVisualizer(EventVisualizer):
 
         return self.make_action_info(action)
 
-    def make_moving_info(self, moving):
+    def make_moving_info(self, moving, next_resuscitation_moving=None):
         result = self.make_action_info(moving)
-        if moving.event.eventType.requestType.code == 'clinic':
-            result['hb_days'] = (moving.endDate - moving.begDate).days + 1 if moving.endDate else None
-        elif moving.event.eventType.requestType.code == 'hospital':
-            result['hb_days'] = (moving.endDate.date() - moving.begDate.date()).days if moving.endDate else None
+
+        if next_resuscitation_moving is not None:
+            upto_date = next_resuscitation_moving.endDate or moving.endDate
+        else:
+            upto_date = moving.endDate
+        if moving.event.is_day_hospital:
+            result['hb_days'] = (upto_date - moving.begDate).days + 1 if upto_date else None
+        elif moving.event.is_stationary:
+            result['hb_days'] = (upto_date.date() - moving.begDate.date()).days if upto_date else None
         return result
 
     def make_movings(self, event):
-        movings = db.session.query(Action).join(ActionType).filter(Action.event_id == event.id,
-                                                                   Action.deleted == 0,
-                                                                   ActionType.flatCode == 'moving').all() if event.id else []
-        movings = [self.make_moving_info(moving) for moving in movings]
+        movings = db.session.query(Action).join(ActionType).filter(
+            Action.event_id == event.id,
+            Action.deleted == 0,
+            ActionType.flatCode == 'moving'
+        ).all() if event.id else []
 
-        for k, v in enumerate(movings):
-            if v['orgStructStay']['value']['id'] == 27 and k > 0:
-                last = filter(lambda x: x['orgStructStay']['value']['id'] != 27, reversed(movings[:k]))    # last movings different from reanimatology
+        # Длительность пребывания в Движениях в отделениях Реанимации добавляется
+        # к длительности пребывания в отделении предыдущего движения.
+        # Проходя движения в обратном порядке, можно передавать дату движения реанимации
+        # в следующее движение.
+        res = []
+        cur_resus = None
+        for moving in reversed(movings):
+            if action_is_resuscitation_moving(moving):
+                # могут быть 2 движения реанимации подряд?
+                if not cur_resus:
+                    cur_resus = moving
+                m = self.make_moving_info(moving)
+            else:
+                m = self.make_moving_info(moving, cur_resus)
+                cur_resus = None
+            res.append(m)
 
-                if last and v['hb_days'] is not None:
-                    last[0]['hb_days'] += v['hb_days']
-
-        return movings
+        return list(reversed(res))
 
     def make_event_stationary_info(self, event):
         pviz = PersonTreeVisualizer()
