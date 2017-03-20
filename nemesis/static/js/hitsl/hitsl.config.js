@@ -56,10 +56,11 @@ angular.module('hitsl.ui')
         }]);
 
         // adminlte theme
-
-        //Collapse icon
-        $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.collapse = 'fa-chevron-down';
-        //Open icon
-        $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.open = 'fa-chevron-right';
+        if ($.AdminLTE) {
+            //Collapse icon
+            $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.collapse = 'fa-chevron-down';
+            //Open icon
+            $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.open = 'fa-chevron-right';
+        }
     }])
 ;
