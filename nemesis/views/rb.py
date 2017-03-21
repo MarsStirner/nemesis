@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import request
+from sqlalchemy.orm import contains_eager
 
 from nemesis.app import app
 from nemesis.lib.utils import safe_dict
@@ -79,6 +80,25 @@ def check_rb_value_exists(rb_name, value_code, field_name=None):
         return rb_val and rb_val['_id'] not in (None, 'None')
 
 
+def get_mkb_details(mkb=None):
+    from nemesis.models.exists import MKB_details, MKB
+
+    mkb_code = mkb_id = None
+    if mkb is not None:
+        if isinstance(mkb, MKB):
+            mkb_id = mkb.id
+        elif isinstance(mkb, int):
+            mkb_id = mkb
+        elif isinstance(mkb, basestring):
+            mkb_code = mkb
+    query = MKB_details.query.join(MKB_details.mkb).options(contains_eager(MKB_details.mkb))
+    if mkb_id:
+        query = query.filter(MKB.id == mkb_id)
+    elif mkb_code:
+        query = query.filter(MKB.DiagID == mkb_code)
+    return query.first() if mkb_id or mkb_code else query.all()
+
+
 @app.route('/api/rb/')
 @app.route('/api/rb/<name>')
 @app.route('/api/rb/<name>/<code>')
@@ -98,6 +118,17 @@ def api_refbook_search(name):
         return map(Vesta._insert_id, Vesta.search_rb(name, kwargs))
     except VestaNotFoundException, e:
         raise ApiException(404, e.message)
+
+
+@app.route('/api/rb/mkb_details')
+@api_method
+def api_refbook_mkb_details():
+    res = []
+    for md in get_mkb_details():
+        item = safe_dict(md)
+        item.update({'mkb_code': md.mkb.DiagID})
+        res.append(item)
+    return res
 
 
 @cache.memoize(86400)
