@@ -3,6 +3,7 @@
  * http://angular-ui.github.io/bootstrap/
 
  * Version: 0.10.0 - 2014-01-13
+   * with fixed datepickerPopup
  * License: MIT
  */
 angular.module("ui.bootstrap", ["ui.bootstrap.tpls", "ui.bootstrap.transition","ui.bootstrap.collapse","ui.bootstrap.accordion","ui.bootstrap.alert","ui.bootstrap.bindHtml","ui.bootstrap.buttons","ui.bootstrap.carousel","ui.bootstrap.position","ui.bootstrap.datepicker","ui.bootstrap.dropdownToggle","ui.bootstrap.modal","ui.bootstrap.pagination","ui.bootstrap.tooltip","ui.bootstrap.popover","ui.bootstrap.progressbar","ui.bootstrap.rating","ui.bootstrap.tabs","ui.bootstrap.timepicker","ui.bootstrap.typeahead"]);
@@ -1108,7 +1109,8 @@ function ($compile, $parse, $document, $position, dateFilter, datepickerPopupCon
       var scope = originalScope.$new(), // create a child scope so we are not polluting original one
           dateFormat,
           closeOnDateSelection = angular.isDefined(attrs.closeOnDateSelection) ? originalScope.$eval(attrs.closeOnDateSelection) : datepickerPopupConfig.closeOnDateSelection,
-          appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? originalScope.$eval(attrs.datepickerAppendToBody) : datepickerPopupConfig.appendToBody;
+          appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? originalScope.$eval(attrs.datepickerAppendToBody) : datepickerPopupConfig.appendToBody,
+          pref_position = attrs.popupPosition;
 
       attrs.$observe('datepickerPopup', function(value) {
           dateFormat = value || datepickerPopupConfig.dateFormat;
@@ -1251,9 +1253,30 @@ function ($compile, $parse, $document, $position, dateFilter, datepickerPopupCon
         datepickerEl.attr('date-disabled', attrs.dateDisabled);
       }
 
+
+      var clearPosition = function() {
+        scope.popupPosition.top = scope.popupPosition.bottom = scope.popupPosition.left = scope.popupPosition.right = 'initial';
+      };
       function updatePosition() {
-        scope.position = appendToBody ? $position.offset(element) : $position.position(element);
-        scope.position.top = scope.position.top + element.prop('offsetHeight');
+        // fixed with https://github.com/angular-ui/bootstrap/pull/3782/files
+        scope.popupPosition = appendToBody ? $position.offset(element) : $position.position(element);
+        if (!pref_position || pref_position === 'bottom-left') {
+            clearPosition();
+            scope.popupPosition.left = 0;
+            scope.popupPosition.top = $position.position(element).height  + 'px';
+          } else if (pref_position === 'bottom-right') {
+            clearPosition();
+            scope.popupPosition.right = 0;
+            scope.popupPosition.top = $position.position(element).height  + 'px';
+          } else if (pref_position === 'top-right') {
+            clearPosition();
+            scope.popupPosition.right = 0;
+            scope.popupPosition.bottom = $position.position(element).height + 'px';
+          } else if (pref_position === 'top-left') {
+            clearPosition();
+            scope.popupPosition.left = 0;
+            scope.popupPosition.bottom = $position.position(element).height + 'px';
+          }
       }
 
       var documentBindingInitialized = false, elementFocusInitialized = false;
@@ -3492,7 +3515,11 @@ angular.module("template/datepicker/datepicker.html", []).run(["$templateCache",
 
 angular.module("template/datepicker/popup.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/datepicker/popup.html",
-    "<ul class=\"dropdown-menu\" ng-style=\"{display: (isOpen && 'block') || 'none', top: position.top+'px', left: position.left+'px'}\">\n" +
+    "<ul class=\"dropdown-menu\" ng-style=\"{display: (isOpen && 'block') || 'none', position: 'absolute',\
+top: popupPosition.top,\
+left: popupPosition.left,\
+right: popupPosition.right,\
+bottom: popupPosition.bottom}\">\n" +
     "	<li ng-transclude></li>\n" +
     "	<li ng-show=\"showButtonBar\" style=\"padding:10px 9px 2px\">\n" +
     "		<span class=\"btn-group\">\n" +
