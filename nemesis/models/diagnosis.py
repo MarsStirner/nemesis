@@ -187,7 +187,8 @@ class Diagnostic(db.Model):
                 from nemesis.views.rb import get_mkb_details
                 from nemesis.lib.vesta import Vesta
                 md = get_mkb_details(self.MKB)
-                val = Vesta.get_rb(md.refbookName, self.mkb_details_code)
+                if md:
+                    val = Vesta.get_rb(md.refbookName, self.mkb_details_code)
             setattr(self, '_mkb_details', val)
         return self._mkb_details
 
