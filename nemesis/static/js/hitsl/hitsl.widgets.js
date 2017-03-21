@@ -24,7 +24,8 @@ angular.module('WebMis20')
                 style = attrs.style,
                 minDate = attrs.minDate,
                 maxDate = attrs.maxDate,
-                autofocus = attrs.autofocus;
+                autofocus = attrs.autofocus,
+                popupPosition = attrs.popupPosition || 'bottom-left';
             var wmdate = $('<div class="input-group"></div>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
@@ -52,6 +53,9 @@ angular.module('WebMis20')
             }
             date_input.attr('min', minDate);
             if (maxDate) date_input.attr('max', maxDate);
+            if (popupPosition) {
+                date_input.attr('popup-position', popupPosition);
+            }
 
             button_wrap.append(button);
             wmdate.append(date_input, button_wrap);
