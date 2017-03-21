@@ -154,7 +154,8 @@ def fc_urls():
             },
             'rb': {
                 'rb_root': url_for('api_refbook'),
-                'rb_search': url_for('api_refbook_search')
+                'rb_search': url_for('api_refbook_search'),
+                'rb_mkb_details': url_for('api_refbook_mkb_details'),
             }
         }
     }

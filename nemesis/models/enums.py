@@ -157,6 +157,7 @@ class ErrandStatus(EnumLoadable):
     executed = 2, u'выполнено'
     expired = 3, u'просрочено'
     late_execution = 4, u'выполнено с опозданием'
+    request = 5, u'запрос данных'
 
 
 class MedicationPrescriptionStatus(Enum):
@@ -250,6 +251,32 @@ class RadzinskyStage(EnumLoadable):
     before32 = 2, u'Факторы до 32 недель'
     after33 = 3, u'Факторы после 33 недель'
     intranatal = 4, u'Интранатальные факторы'
+
+
+class TomskRegionalRiskStage(Enum):
+    initial = 1, u'Постановка на учет'
+    before21 = 2, u'До 21 недели'
+    from21to30 = 3, u'С 21 по 30 неделю'
+    from31to36 = 4, u'С 31 по 36 неделю'
+
+
+class TomskRegionalRiskRate(EnumLoadable):
+    low = 1, u'Низкая'
+    medium = 2, u'Средняя'
+    high = 3, u'Высокая'
+
+
+class SaratovRegionalRiskStage(Enum):
+    anamnestic = 1, u'Анамнестические факторы'
+    before35 = 2, u'Факторы до 35 недель'
+    after36 = 3, u'Факторы после 36 недель'
+    intranatal = 4, u'Интранатальные факторы'
+
+
+class SaratovRegionalRiskRate(EnumLoadable):
+    low = 1, u'Низкая'
+    medium = 2, u'Средняя'
+    high = 3, u'Высокая'
 
 
 class FisherKTGRate(EnumLoadable):

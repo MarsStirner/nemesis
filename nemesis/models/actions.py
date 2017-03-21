@@ -386,7 +386,10 @@ class ActionProperty(db.Model):
             return value_container
 
         def delete_value(val_object):
-            db.session.delete(val_object)
+            if val_object.id:
+                db.session.delete(val_object)
+            else:
+                db.session.expunge(val_object)
 
         if not self.type.isVector:
             if len(value_container) == 0:

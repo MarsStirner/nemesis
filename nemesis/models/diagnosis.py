@@ -143,6 +143,7 @@ class Diagnostic(db.Model):
     phase_id = db.Column(db.ForeignKey('rbDiseasePhases.id'), index=True)
     traumaType_id = db.Column(db.ForeignKey('rbTraumaType.id'), index=True)
     rbAcheResult_id = db.Column(db.ForeignKey('rbAcheResult.id'), index=True)
+    mkb_details_code = db.Column(db.String(255))
 
     # Auxiliary data
     person_id = db.Column(db.ForeignKey('Person.id'), index=True)
@@ -177,6 +178,26 @@ class Diagnostic(db.Model):
     @property
     def date(self):
         return self.action.begDate
+
+    @property
+    def mkb_details(self):
+        if not hasattr(self, '_mkb_details'):
+            val = None
+            if self.mkb_details_code is not None:
+                from nemesis.views.rb import get_mkb_details
+                from nemesis.lib.vesta import Vesta
+                md = get_mkb_details(self.MKB)
+                val = Vesta.get_rb(md.refbookName, self.mkb_details_code)
+            setattr(self, '_mkb_details', val)
+        return self._mkb_details
+
+    @mkb_details.setter
+    def mkb_details(self, value):
+        if isinstance(value, dict):
+            value = value.get('code')
+        self.mkb_details_code = value
+        if hasattr(self, '_mkb_details'):
+            delattr(self, '_mkb_details')
 
 
 class Event_Diagnosis(db.Model):

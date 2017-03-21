@@ -83,6 +83,13 @@ var WebMis20 = angular.module('WebMis20', [
         return data;
     }
 })
+.filter('danetIfNull', ['$filter', function ($filter) {
+    return function (data) {
+        var data = $filter('danet')(data);
+        if (data === null) return 'нет'; 
+        return data;
+    }
+}])
 .filter('format', function () {
     return function (data, format) {
         if (data instanceof Array) {
