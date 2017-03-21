@@ -1113,3 +1113,8 @@ table.table-grouped tr.group-header td {
 .autoheight {
     overflow-y: auto;
 }
+
+[contenteditable][placeholder]:empty:before {
+    content: attr(placeholder);
+    color: #bababa;
+}
