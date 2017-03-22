@@ -262,4 +262,9 @@ WebMis20
             return wrapper('GET', WMConfig.url.actions.patient_actions + client_id);
         }
     };
+    this.stationary = {
+        get_movings: function (event_id) {
+            return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
+        }
+    };
 }]);

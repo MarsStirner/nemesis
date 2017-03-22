@@ -1291,10 +1291,9 @@ class StationaryEventVisualizer(EventVisualizer):
             result['status'] = action.status
             result['person'] = action.person
             result['flatCode'] = action.actionType.flatCode
-            result['action_type'] = action.actionType
+            result['action_type'] = avis.make_at(action.actionType)
             result['event_id'] = action.event_id
             result['id'] = action.id
-            result['diagnoses'] = avis.make_action_diagnoses_info(action)
         return result
 
     def make_received(self, event, new=False):
@@ -1305,7 +1304,10 @@ class StationaryEventVisualizer(EventVisualizer):
                 ActionType.flatCode == 'received'
             ).first()
 
-        return self.make_action_info(action)
+        avis = ActionVisualizer()
+        res = self.make_action_info(action)
+        res['diagnoses'] = avis.make_action_diagnoses_info(action)
+        return res
 
     def make_moving_info(self, moving, next_resuscitation_moving=None):
         result = self.make_action_info(moving)
