@@ -515,6 +515,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         },
         openAppointmentModal: function (model, date_required) {
             var assigned = {},
+                props_mandatory = {},
                 t_model = {
                     planned_end_date: model.planned_end_date,
                     ped_disabled: model.ped_disabled,
@@ -524,10 +525,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
             model.assignable.forEach(function (prop) {
                 assigned[prop[0]] = model.assigned.has(prop[0]);
+                props_mandatory[prop[0]] = prop[3];
             });
             var Controller = function ($scope) {
                 $scope.model = model;
                 $scope.assigned = assigned;
+                $scope.props_mandatory = props_mandatory;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
                 $scope.assignable = model.assignable.map(function (item) {
@@ -541,7 +544,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.select_all = function () {
                     var enabled = !$scope.check_all_selected();
                     $scope.assignable.forEach(function (prop_id) {
-                        $scope.assigned[prop_id] = enabled;
+                        var mandatory = $scope.props_mandatory[prop_id];
+                        $scope.assigned[prop_id] = mandatory ? true : enabled;
                     });
                 };
                 $scope.price_available = function (prop) {
@@ -740,7 +744,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             </div>\
             <hr class="novmargin"/>\
             <div class="checkbox" ng-repeat="prop in model.assignable">\
-                <label><input type="checkbox" ng-model="assigned[prop[0]]">[[ prop[1] ]]\
+                <label><input type="checkbox" ng-model="assigned[prop[0]]" ng-disabled="prop[3]">[[ prop[1] ]]\
                     <span ng-if="price_available(prop)"><span class="text-danger lmargin20" ng-bind="get_price(prop)"></span> руб.</span></label>\
             </div>\
         </div>\
