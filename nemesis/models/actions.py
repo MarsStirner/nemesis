@@ -269,6 +269,17 @@ class ActionProperty(db.Model):
                 for val in value_container:
                     delete_value(val)
 
+    def set_value_container_and_value(self, val):
+        """
+        Используется в тех случаях, когда значение свойства было загружено отдельно
+        и его нужно установить в ActionProperty без дополнительного запроса.
+
+        NOTE: проверялось только на примерах с последующим чтением данных
+        """
+        from sqlalchemy.orm import attributes
+        attributes.set_committed_value(self, self.__get_value_container_property_name(), [])
+        self.set_value(val, True)
+
     @orm.reconstructor
     def init_on_load(self):
         self._has_pricelist_service = None
