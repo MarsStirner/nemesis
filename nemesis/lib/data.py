@@ -553,15 +553,16 @@ def at_tuple_2_actions_flat_tuple_convert(item):
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: (id_, name, parseAgeSelector(age), sex)
-        for id_, name, age, sex in ActionPropertyType.query.filter(
+        id_: (id_, name, parseAgeSelector(age), sex, mandatory)
+        for id_, name, age, sex, mandatory in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
         ).with_entities(
             ActionPropertyType.id,
             ActionPropertyType.name,
             ActionPropertyType.age,
-            ActionPropertyType.sex
+            ActionPropertyType.sex,
+            ActionPropertyType.mandatory
         )
     }
     at_apt_dict = {

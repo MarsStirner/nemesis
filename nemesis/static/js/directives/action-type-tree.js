@@ -533,18 +533,17 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.props_mandatory = props_mandatory;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
-                $scope.assignable = model.assignable.map(function (item) {
-                    return item[0];
-                });
                 $scope.check_all_selected = function () {
-                    return $scope.assignable.every(function (prop_id) {
+                    return model.assignable.every(function (prop) {
+                        var prop_id = prop[0];
                         return $scope.assigned[prop_id];
                     });
                 };
                 $scope.select_all = function () {
                     var enabled = !$scope.check_all_selected();
-                    $scope.assignable.forEach(function (prop_id) {
-                        var mandatory = $scope.props_mandatory[prop_id];
+                    model.assignable.forEach(function (prop) {
+                        var prop_id = prop[0],
+                            mandatory = prop[3];
                         $scope.assigned[prop_id] = mandatory ? true : enabled;
                     });
                 };
