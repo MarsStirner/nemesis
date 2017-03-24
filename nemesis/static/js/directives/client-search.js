@@ -40,7 +40,7 @@ angular.module('WebMis20.directives').
                                     q: $scope.query,
                                     current_page: $scope.pager.current_page,
                                     items_per_page: $scope.pager.items_per_page,
-                                    pagination: true
+                                    paginated: true
                                 },
                                 timeout: canceler.promise
                             }
