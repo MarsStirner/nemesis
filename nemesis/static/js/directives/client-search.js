@@ -10,9 +10,18 @@ angular.module('WebMis20.directives').
                 onSelectCallback: '&onSelect'
             },
             controller: function ($scope) {
+                $scope.pager = {
+                    current_page: 1,
+                    max_pages: 10,
+                    pages: 1,
+                    items_per_page: 70,
+                    total_items: 1
+                };
                 $scope.clear_results = function () {
                     $scope.results = null;
                     $scope.client_id = null;
+                    $scope.pager.pages = 1;
+                    $scope.pager.current_page = 1;
                 };
 
                 $scope.query_clear = function () {
@@ -28,12 +37,17 @@ angular.module('WebMis20.directives').
                         $http.get(
                             WMConfig.url.patients.client_search, {
                                 params: {
-                                    q: $scope.query
+                                    q: $scope.query,
+                                    current_page: $scope.pager.current_page,
+                                    items_per_page: $scope.pager.items_per_page,
+                                    pagination: true
                                 },
                                 timeout: canceler.promise
                             }
                         ).success(function (data) {
-                            $scope.results = data.result;
+                            $scope.results = data.result.client_info;
+                            $scope.pager.pages = data.result.pages;
+                            $scope.pager.total_items = data.result.total_items;
                         });
                     }
                 };
@@ -109,6 +123,9 @@ angular.module('WebMis20.directives').
         </tr>\
         </tbody>\
     </table>\
+    <pagination ng-model="pager.current_page" total-items="pager.total_items" items-per-page="pager.items_per_page"\
+        max-size="pager.max_pages" ng-change="perform_search()" ng-show="pager.pages > 1" boundary-links="true">\
+    </pagination>\
 </div>'
         };
     }]);
