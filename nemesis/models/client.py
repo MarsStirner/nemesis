@@ -669,6 +669,8 @@ class ClientDocument(db.Model):
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'", default=0)
     clientId = db.Column("client_id", db.ForeignKey('Client.id'), nullable=False, index=True)
     documentType_id = db.Column(db.Integer, db.ForeignKey('rbDocumentType.id'), nullable=False, index=True)
+    country_id = db.Column(db.Integer, db.ForeignKey('rbCountry.id'), index=True)
+    region_id = db.Column(db.Integer, db.ForeignKey('rbRegion.id'), index=True)
     serial = db.Column(db.String(8), nullable=False)
     number = db.Column(db.String(16), nullable=False)
     date = db.Column(db.Date, nullable=False)
@@ -678,10 +680,12 @@ class ClientDocument(db.Model):
     cfa_id = db.Column(db.Integer, db.ForeignKey('ClientFileAttach.id'))
 
     documentType = db.relationship(u'rbDocumentType', lazy=False)
+    country = db.relationship(u'rbCountry', lazy=False)
+    region = db.relationship(u'rbRegion', lazy=False)
     file_attach = db.relationship('ClientFileAttach')
 
     @classmethod
-    def create(cls, doc_type, serial, number, beg_date, end_date, origin, client):
+    def create(cls, doc_type, serial, number, beg_date, end_date, origin, client, country_id, region_id):
         self = cls()
         self.documentType_id = int(doc_type) if doc_type else None
         self.serial = serial
@@ -690,6 +694,8 @@ class ClientDocument(db.Model):
         self.endDate = end_date
         self.origin = origin
         self.client = client
+        self.country_id = country_id
+        self.region_id = region_id
         return self
 
     @property
@@ -725,6 +731,8 @@ class ClientDocument(db.Model):
             'beg_date': self.date,
             'end_date': self.endDate,
             'origin': self.origin,
+            'country': self.country,
+            'region': self.region,
             'doc_text': self.__unicode__(),
             'file_attach': {
                 'id': self.cfa_id
