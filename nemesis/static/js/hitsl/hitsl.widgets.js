@@ -31,8 +31,10 @@ angular.module('WebMis20')
                 minDate = attrs.minDate,
                 maxDate = attrs.maxDate,
                 autofocus = attrs.autofocus,
+                label = attrs.label,
                 easySwitch = attrs.easySwitch;
             var wmdate = $('<div class="input-group"></div>'),
+                label_html = $('<span class="input-group-addon" id="sizing-addon1">'+label+'</span>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
                         is-open="popup.opened" manual-date ui-mask="99.99.9999" date-mask />'
@@ -84,6 +86,9 @@ angular.module('WebMis20')
             if (easySwitch) {
                 wmdate.prepend(prev_date);
                 wmdate.append(next_date);
+            }
+            if (label) {
+                wmdate.prepend(label_html);
             }
             $(element).append(wmdate);
             $compile(wmdate)(scope);
