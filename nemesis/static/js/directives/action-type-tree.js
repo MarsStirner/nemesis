@@ -494,7 +494,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
 
                         var scrollTop=$box.scrollTop();
                         var adHeight=$ad.height();
-                        var boxHeight=$box.height();
+                        var boxHeight=($box.height() - 250) > 0 ? $box.height() - 250 : $box.height();
                         var adTop = parseInt($ad.css("top"));
                             if(isNaN(adTop)) adTop = 0;
 
@@ -694,11 +694,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             </div>\
                             <hr style="margin-top: 7px; margin-bottom: 7px">\
                             <div class="row">\
-                            <div class="col-md-7">\
-                                <div fs-datetime ng-model="action.planned_end_date" class="validatable"\
-                                     wm-validate="validate_direction_date"></div>\
+                            <div class="col-md-8">\
+                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
                             </div>\
-                            <div class="col-md-5">\
+                            <div class="col-md-4">\
                                 <rb-select ref-book="rbTissueType" ng-model="action.ttj.selected_tissue_type"\
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\
@@ -729,7 +728,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <div class="row">\
                 <div class="col-md-6" ng-if="date_required">\
                     <label for="ped">Дата/время назначения</label>\
-                    <div fs-datetime id="ped" ng-model="t_model.planned_end_date" ng-disabled="t_model.ped_disabled"></div>\
+                    <wm-datetime-as id="ped" ng-model="t_model.planned_end_date" ng-disabled="t_model.ped_disabled"></wm-datetime-as>\
                 </div>\
                 <div class="col-md-6" ng-if="t_model.tissue_type_visible">\
                     <label for="tissue_type">Тип биоматериала</label>\
