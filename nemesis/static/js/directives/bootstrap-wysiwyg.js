@@ -429,7 +429,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             }
 
             scope.$watch('$model.$modelValue', function (n, o) {
-                if (cleanHtml(editor.html()) !== n) {
+                if (cleanHtml(getEditor().html()) !== n) {
                     getEditor().html(n);
                 }
                 return n;
