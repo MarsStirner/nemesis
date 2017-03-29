@@ -494,7 +494,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
 
                         var scrollTop=$box.scrollTop();
                         var adHeight=$ad.height();
-                        var boxHeight=$box.height();
+                        var boxHeight=($box.height() - 250) > 0 ? $box.height() - 250 : $box.height();
                         var adTop = parseInt($ad.css("top"));
                             if(isNaN(adTop)) adTop = 0;
 
@@ -515,6 +515,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         },
         openAppointmentModal: function (model, date_required) {
             var assigned = {},
+                props_mandatory = {},
                 t_model = {
                     planned_end_date: model.planned_end_date,
                     ped_disabled: model.ped_disabled,
@@ -524,24 +525,26 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
             model.assignable.forEach(function (prop) {
                 assigned[prop[0]] = model.assigned.has(prop[0]);
+                props_mandatory[prop[0]] = prop[3];
             });
             var Controller = function ($scope) {
                 $scope.model = model;
                 $scope.assigned = assigned;
+                $scope.props_mandatory = props_mandatory;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
-                $scope.assignable = model.assignable.map(function (item) {
-                    return item[0];
-                });
                 $scope.check_all_selected = function () {
-                    return $scope.assignable.every(function (prop_id) {
+                    return model.assignable.every(function (prop) {
+                        var prop_id = prop[0];
                         return $scope.assigned[prop_id];
                     });
                 };
                 $scope.select_all = function () {
                     var enabled = !$scope.check_all_selected();
-                    $scope.assignable.forEach(function (prop_id) {
-                        $scope.assigned[prop_id] = enabled;
+                    model.assignable.forEach(function (prop) {
+                        var prop_id = prop[0],
+                            mandatory = prop[3];
+                        $scope.assigned[prop_id] = mandatory ? true : enabled;
                     });
                 };
                 $scope.price_available = function (prop) {
@@ -691,11 +694,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             </div>\
                             <hr style="margin-top: 7px; margin-bottom: 7px">\
                             <div class="row">\
-                            <div class="col-md-7">\
-                                <div fs-datetime ng-model="action.planned_end_date" class="validatable"\
-                                     wm-validate="validate_direction_date"></div>\
+                            <div class="col-md-8">\
+                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
                             </div>\
-                            <div class="col-md-5">\
+                            <div class="col-md-4">\
                                 <rb-select ref-book="rbTissueType" ng-model="action.ttj.selected_tissue_type"\
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\
@@ -726,7 +728,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <div class="row">\
                 <div class="col-md-6" ng-if="date_required">\
                     <label for="ped">Дата/время назначения</label>\
-                    <div fs-datetime id="ped" ng-model="t_model.planned_end_date" ng-disabled="t_model.ped_disabled"></div>\
+                    <wm-datetime-as id="ped" ng-model="t_model.planned_end_date" ng-disabled="t_model.ped_disabled"></wm-datetime-as>\
                 </div>\
                 <div class="col-md-6" ng-if="t_model.tissue_type_visible">\
                     <label for="tissue_type">Тип биоматериала</label>\
@@ -740,7 +742,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             </div>\
             <hr class="novmargin"/>\
             <div class="checkbox" ng-repeat="prop in model.assignable">\
-                <label><input type="checkbox" ng-model="assigned[prop[0]]">[[ prop[1] ]]\
+                <label><input type="checkbox" ng-model="assigned[prop[0]]" ng-disabled="prop[3]">[[ prop[1] ]]\
                     <span ng-if="price_available(prop)"><span class="text-danger lmargin20" ng-bind="get_price(prop)"></span> руб.</span></label>\
             </div>\
         </div>\

@@ -24,7 +24,8 @@ angular.module('WebMis20')
                 style = attrs.style,
                 minDate = attrs.minDate,
                 maxDate = attrs.maxDate,
-                autofocus = attrs.autofocus;
+                autofocus = attrs.autofocus,
+                popupPosition = attrs.popupPosition || 'bottom-left';
             var wmdate = $('<div class="input-group"></div>'),
                 date_input = $('\
                     <input type="text" class="form-control" autocomplete="off" datepicker_popup="dd.MM.yyyy"\
@@ -52,6 +53,9 @@ angular.module('WebMis20')
             }
             date_input.attr('min', minDate);
             if (maxDate) date_input.attr('max', maxDate);
+            if (popupPosition) {
+                date_input.attr('popup-position', popupPosition);
+            }
 
             button_wrap.append(button);
             wmdate.append(date_input, button_wrap);
@@ -194,6 +198,76 @@ angular.module('WebMis20')
         }
     };
 })
+.directive('wmDatetimeAs', ['$compile', function ($compile) {
+    return {
+        restrict: 'E',
+        require: '^ngModel',
+        link: function (original_scope, element, attrs) {
+            var scope = original_scope.$new(false);
+            var _id = attrs.id,
+                time_id,
+                name = attrs.name,
+                ngDisabled = attrs.ngDisabled,
+                ngRequired = attrs.ngRequired,
+                ngModel = attrs.ngModel,
+                autofocus = attrs.autofocus,
+                wmValidate = attrs.wmValidate;
+            var wmdatetime = $('<div class="row"></div>'),
+                date_group = $('<div class="input-group"></div>'),
+                date_input = $('\
+                    <input type="text" class="form-control" autocomplete="off" bs-datepicker\
+                        data-autoclose="1" date-format="dd.MM.yyyy">'
+                ),
+                date_btn_wrap = $('<span class="input-group-btn">\
+                    <label class="btn btn-default"><i class="glyphicon glyphicon-calendar"></i></label>\
+                    </span>'
+                ),
+                time_group = $('<div class="input-group"></div>'),
+                time_input = $('\
+                    <input type="text" class="form-control" autocomplete="off" bs-timepicker data-autoclose="1"\
+                        data-time-format="HH:mm:ss">'
+                ),
+                time_btn_wrap = $('<span class="input-group-btn">\
+                    <label class="btn btn-default"><i class="glyphicon glyphicon-time"></i></label>\
+                    </span>'
+                );
+            if (!_id) _id = Math.random().toString(36);
+            date_input.attr('id', _id);
+            date_btn_wrap.find('label').attr('for', _id);
+            time_id = _id + 'time';
+            time_input.attr('id', time_id);
+            time_btn_wrap.find('label').attr('for', time_id);
+            if (name) date_input.attr('name', name);
+            date_input.attr('ng-model', ngModel);
+            time_input.attr('ng-model', ngModel);
+            if (ngDisabled) {
+                date_input.attr('ng-disabled', ngDisabled);
+                date_btn_wrap.find('label').attr('ng-disabled', ngDisabled);
+                time_input.attr('ng-disabled', ngDisabled);
+                time_btn_wrap.find('label').attr('ng-disabled', ngDisabled);
+            }
+            if (autofocus) date_input.attr('auto-focus', '');
+            if (ngRequired) {
+                date_input.attr('ng-required', ngRequired);
+                time_input.attr('ng-required', ngRequired);
+            }
+            if (wmValidate) {
+                date_input.attr('wm-validate', wmValidate);
+                time_input.attr('wm-validate', wmValidate);
+            }
+
+            date_group.append(date_input, date_btn_wrap);
+            time_group.append(time_input, time_btn_wrap);
+            var col_date = $('<div class="col-md-6" style="padding-right: 0"></div>'),
+                col_time = $('<div class="col-md-6" style="padding-left 5px"></div>');
+            col_date.append(date_group);
+            col_time.append(time_group);
+            wmdatetime.append(col_date, col_time);
+            $(element).replaceWith(wmdatetime);
+            $compile(wmdatetime)(scope);
+        }
+    };
+}])
 .directive('wmImageEditor', ['$log', function ($log) {
     return {
         restrict: 'E',

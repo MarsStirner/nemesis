@@ -26,9 +26,9 @@ class SearchPerson():
 class SearchPatient():
 
     @staticmethod
-    def search(name, limit=100):
+    def search(name, limit=100, paginated=False, page=1, per_page=70, max_matches=10000):
         search = Search(indexes=['patient'], config=SearchConfig)
-        search = search.match(name).limit(0, limit)
+        search = search.match(name)
         search = search.options(field_weights={'code': 100,
                                                'lastName': 90,
                                                'birthDate_f1': 80,
@@ -40,6 +40,12 @@ class SearchPatient():
                                                'policy': 50})
         #fixme: after sphinxit merge https://github.com/semirook/sphinxit/pull/20
         search = search.order_by('@weight desc, lastName asc, firstName asc, patrName', 'asc')
+        if paginated:
+            from_ = (page - 1) * per_page
+            search = search.limit(from_, per_page)
+            search = search.options(max_matches=max_matches)
+        else:
+            search = search.limit(0, limit)
         result = search.ask()
         return result
 

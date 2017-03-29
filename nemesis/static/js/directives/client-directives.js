@@ -212,6 +212,8 @@ angular.module('WebMis20.directives').
                 link: function(scope, elm, attrs, formCtrl) {
                     scope.docForm = formCtrl;
                     scope.rbDocumentType = RefBookService.get('rbDocumentType');
+                    scope.rbCountry = RefBookService.get('rbCountry');
+                    scope.rbRegion = RefBookService.get('rbRegion');
                     scope.rbUFMS = RefBookService.get('rbUFMS');
                     scope.ufmsItems = scope.rbUFMS.objects.map(function(o) {
                         return o.name;
@@ -242,6 +244,15 @@ angular.module('WebMis20.directives').
                         return function(elem) {
                             return elem.group.code == group_code;
                         };
+                    };
+
+                    scope.regionRequired = function() {
+                        // Если выбрана страна Россия
+                        return scope.modelDocument.country.code == 643;
+                    };
+
+                    scope.countryChange = function() {
+                        scope.modelDocument.region = undefined;
                     };
                 },
                 template:
@@ -298,6 +309,30 @@ angular.module('WebMis20.directives').
              ng-disabled="!edit_mode()" ng-required="docForm.$dirty" ng-model="modelDocument.origin">\
             {{item}}\
         </div>\
+    </div>\
+</div>\
+<div class="row">\
+    <div class="form-group col-md-6"\
+        ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.country.$invalid}">\
+        <label for="country[[idPostfix]]" class="control-label">Страна <span class="text-danger">*</span></label>\
+        <ui-select class="form-control" id="country[[idPostfix]]" name="country" theme="select2" ng-change="countryChange()"\
+                   ng-model="modelDocument.country" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
+            <ui-select-match placeholder="Страна">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="dt in rbCountry.objects | filter: $select.search | limitTo: 25">\
+                <div ng-bind-html="dt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
+    </div>\
+    <div class="form-group col-md-6"\
+        ng-class="{\'has-error\': (docForm.$dirty || modelDocument.id) && docForm.region.$invalid}">\
+        <label for="region[[idPostfix]]" class="control-label">Регион <span class="text-danger" ng-if="regionRequired()">*</span></label>\
+        <ui-select class="form-control" id="region[[idPostfix]]" name="region" theme="select2"\
+                   ng-model="modelDocument.region" ng-disabled="!edit_mode() || !regionRequired()" ng-required="docForm.$dirty && regionRequired()">\
+            <ui-select-match placeholder="Регион">[[$select.selected.name]]</ui-select-match>\
+            <ui-select-choices repeat="dt in rbRegion.objects | filter: $select.search | limitTo: 25">\
+                <div ng-bind-html="dt.name | highlight: $select.search"></div>\
+            </ui-select-choices>\
+        </ui-select>\
     </div>\
 </div>'
             };

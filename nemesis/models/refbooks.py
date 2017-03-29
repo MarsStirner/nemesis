@@ -92,3 +92,49 @@ class rbFinance(db.Model):
 
     def __int__(self):
         return self.id
+
+
+class rbCountry(db.Model, RefBookMixin):
+    __tablename__ = "rbCountry"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(128), unique=True, nullable=False)
+    name = db.Column(db.String(256), nullable=False)
+    idx = db.Column(db.Integer)
+
+    __mapper_args__ = {'order_by': '-idx, name'}
+
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'idx': self.idx,
+        }
+
+
+class rbRegion(db.Model, RefBookMixin):
+    __tablename__ = "rbRegion"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(128), unique=True, nullable=False)
+    name = db.Column(db.String(256), nullable=False)
+    idx = db.Column(db.Integer)
+    country_id = db.Column(db.Integer)
+
+    __mapper_args__ = {'order_by': '-idx, name'}
+
+    def __unicode__(self):
+        return self.name
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'name': self.name,
+            'idx': self.idx,
+            'country_id': self.country_id,
+        }

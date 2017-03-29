@@ -94,9 +94,10 @@ class PriceListItemController(BaseModelController):
         # TODO: filter by agesex
         return result_list
 
-    def get_available_pli_apt_from_rbservice(self, rbservice_id, price_list_id, client_id, action_type_id):
+    def get_available_pli_apt_from_rbservice(self, rbservice_id, price_list_id, client_id, action_type_id,
+                                             only_mandatory=False):
         sel = self.get_selecter()
-        result_list = sel.get_pli_apt_by_rbservice(rbservice_id, price_list_id, action_type_id)
+        result_list = sel.get_pli_apt_by_rbservice(rbservice_id, price_list_id, action_type_id, only_mandatory)
 
         client = self.get_selecter().model_provider.get_query('Client').get(client_id)
         client_age = client.age_tuple(datetime.date.today())
@@ -178,7 +179,7 @@ class PriceListItemSelecter(BaseSelecter):
         )
         return self.get_all()
 
-    def get_pli_apt_by_rbservice(self, rbservice_id, price_list_id, action_type_id):
+    def get_pli_apt_by_rbservice(self, rbservice_id, price_list_id, action_type_id, only_mandatory=False):
         PriceListItem = self.model_provider.get('PriceListItem')
         rbTest_Service = self.model_provider.get('rbTest_Service')
         rbTest = self.model_provider.get('rbTest')
@@ -208,6 +209,8 @@ class PriceListItemSelecter(BaseSelecter):
             ActionPropertyType.age,
             ActionPropertyType.sex
         )
+        if only_mandatory:
+            self.query = self.query.filter(ActionPropertyType.mandatory == 1)
         return self.get_all()
 
     def get_pli_for_groupservice_by_rbservice(self, rbservice_id, price_list_id):

@@ -54,5 +54,13 @@ angular.module('hitsl.ui')
             }];
             return $delegate;
         }]);
+
+        // adminlte theme
+        if ($.AdminLTE) {
+            //Collapse icon
+            $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.collapse = 'fa-chevron-down';
+            //Open icon
+            $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.open = 'fa-chevron-right';
+        }
     }])
 ;

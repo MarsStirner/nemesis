@@ -59,8 +59,9 @@ class ServiceController(BaseModelController):
                 })
                 subservice = self.get_new_service(subservice_params)
                 service.subservice_list.append(subservice)
-        elif not no_subservices:
-            service.subservice_list = self.get_new_subservices_from_pricelist(service)
+        else:
+            # обязательные + (ничего если no_subservices, иначе все остальные)
+            service.subservice_list = self.get_new_subservices_from_pricelist(service, no_subservices)
 
         service.sum = calc_service_total_sum(service) if service.priceListItem_id else 0
 
@@ -98,7 +99,7 @@ class ServiceController(BaseModelController):
             lab_action = service.parent_service.action
             service.action_property = self.get_new_service_action_property(lab_action, serviced_entity_data)
 
-    def get_new_subservices_from_pricelist(self, service):
+    def get_new_subservices_from_pricelist(self, service, only_mandatory=False):
         """Получить экзмепляры подсервисов на основе данных подуслуг"""
         if service.serviceKind_id == ServiceKind.group[0]:
             # в случае группы услуг подуслугами может быть либо новая группа услуг,
@@ -118,7 +119,14 @@ class ServiceController(BaseModelController):
             # в случае лабораторной услуги подуслугами могут быть только показатели исследования
             ss_list = []
             for rbservicegroup_assoc in service.price_list_item.service.subservice_assoc:
-                ss_list.append(self._get_new_subservice_action_property(rbservicegroup_assoc.subservice, service))
+                # для каждой подуслуги rbservicegroup_assoc в бд должна быть найдена соответствующая
+                # позиция прайса для теста лаб. исследования;
+                # но при поиске только обязательных тестов лаб исследований (only_mandatory)
+                # это может не выполняться
+                new_s = self._get_new_subservice_action_property(rbservicegroup_assoc.subservice, service,
+                                                                 only_mandatory)
+                if new_s:
+                    ss_list.append(new_s)
             return ss_list
         else:  # service.serviceKind_id in (ServiceKind.simple_action[0], ServiceKind.lab_test[0]):
             # В остальных случаях - простая услуга-экшен или показатель исследования - подуслуг быть не может
@@ -159,14 +167,17 @@ class ServiceController(BaseModelController):
         })
         return new_service
 
-    def _get_new_subservice_action_property(self, rbservice, parent_service):
+    def _get_new_subservice_action_property(self, rbservice, parent_service, only_mandatory=False):
         pli_ctrl = PriceListItemController()
         pli_apt_list = pli_ctrl.get_available_pli_apt_from_rbservice(
             rbservice.id,
             parent_service.price_list_item.priceList_id,
             parent_service.event.client_id,
-            parent_service.action.actionType_id
+            parent_service.action.actionType_id,
+            only_mandatory
         )
+        if only_mandatory and not pli_apt_list:
+            return None
         if len(pli_apt_list) == 0:
             raise ApiException(409, u'Не найдено подходящей позиции прайса для подуслуги {0} ({1})'.format(
                 rbservice.name, rbservice.id
@@ -382,6 +393,7 @@ class ServiceController(BaseModelController):
 
             # фильтр доступных показателей по наличию услуги в прайс-листе
             contract_id = kwargs.get('contract_id')
+            mandatory_fields = []
             if contract_id:
                 assignable_apt_ids = [apt_data[0] for apt_data in assignable]
                 pli_ctrl = PriceListItemController()
@@ -389,20 +401,16 @@ class ServiceController(BaseModelController):
                 flt_assignable = []
                 flt_apt_ids = filtered_apt_prices.keys()
                 for apt_data in assignable:
-                    if apt_data[0] in flt_apt_ids:
-                        apt_data = list(apt_data)[:2]
-                        apt_data.append(filtered_apt_prices[apt_data[0]])
-                        flt_assignable.append(apt_data)
-                    else:
-                        # без услуги и цены
-                        apt_data = list(apt_data)[:2]
-                        apt_data.append(None)
-                        flt_assignable.append(apt_data)
+                    # Если задано mandatory добавляем в список
+                    apt_data[4] and mandatory_fields.append(apt_data[0])
+                    apt_data = list(apt_data)[:2]
+                    apt_data.append(filtered_apt_prices[apt_data[0]] if apt_data[0] in flt_apt_ids else None)
+                    flt_assignable.append(apt_data)
                 assignable = flt_assignable
 
             no_subservices = kwargs.get('no_subservices', False)
             # apt.id list
-            assigned = [apt_data[0] for apt_data in assignable] if not no_subservices else []
+            assigned = [apt_data[0] for apt_data in assignable] if not no_subservices else mandatory_fields
 
             tissue_type_ids = get_at_tissue_type_ids(at_id)
             selected_tissue_type = tissue_type_ids[0] if tissue_type_ids else None

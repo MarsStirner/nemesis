@@ -269,6 +269,17 @@ class ActionProperty(db.Model):
                 for val in value_container:
                     delete_value(val)
 
+    def set_value_container_and_value(self, val):
+        """
+        Используется в тех случаях, когда значение свойства было загружено отдельно
+        и его нужно установить в ActionProperty без дополнительного запроса.
+
+        NOTE: проверялось только на примерах с последующим чтением данных
+        """
+        from sqlalchemy.orm import attributes
+        attributes.set_committed_value(self, self.__get_value_container_property_name(), [])
+        self.set_value(val, True)
+
     @orm.reconstructor
     def init_on_load(self):
         self._has_pricelist_service = None
@@ -385,6 +396,7 @@ class ActionPropertyType(db.Model):
     createPerson_id = db.Column(db.Integer)
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
+    notLoadableWithTemplate = db.Column(db.SmallInteger)
 
     unit = db.relationship('rbUnit')
     template = db.relationship('ActionPropertyTemplate')
@@ -447,7 +459,8 @@ class ActionPropertyType(db.Model):
             'norm_min': norm_min,
             'norm_max': norm_max,
             'vector': bool(self.isVector),
-            'description': self.descr
+            'description': self.descr,
+            'not_loadable_with_template': bool(self.notLoadableWithTemplate)
         }
         if self.typeName == 'String' and value_domain['subtype']:
             result['type_name'] = 'String/{0}'.format(value_domain['subtype'])

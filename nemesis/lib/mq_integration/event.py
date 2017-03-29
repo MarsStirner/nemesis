@@ -5,7 +5,7 @@ from nemesis.lib.enum import Enum
 from nemesis.lib.apiutils import json_dumps
 from nemesis.lib.data import get_action, get_action_list
 from nemesis.lib.const import STATIONARY_RECEIVED_CODE, STATIONARY_ORG_STRUCT_STAY_CODE, \
-    STATIONARY_MOVING_CODE, STATIONARY_LEAVED_CODE
+    STATIONARY_MOVING_CODE, STATIONARY_LEAVED_CODE, STATIONARY_ORG_STRUCT_TRANSFER_CODE
 from .base import MQIntegrationNotifier
 
 
@@ -79,7 +79,7 @@ class HospEventCreateIntegrationNotifier(MQIntegrationNotifier):
         if res is not None:
             res.update({
                 'orgStructStay': self._make_org_struct(action.get_prop_value(STATIONARY_ORG_STRUCT_STAY_CODE)),
-                'orgStructDirection': self._make_org_struct(action.get_prop_value('orgStructDirection')),
+                'orgStructTransfer': self._make_org_struct(action.get_prop_value(STATIONARY_ORG_STRUCT_TRANSFER_CODE)),
             })
         return res
 
