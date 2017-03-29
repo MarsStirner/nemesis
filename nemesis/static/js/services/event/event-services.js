@@ -86,22 +86,24 @@ angular.module('WebMis20.services').
         function check_event_unclosed_movings(event) {
             var deferred = $q.defer();
 
-            if(!event.movings.length) {
-                return MessageBox.error('Невозможно закрыть обращение', 'Необходимо наличие минимум одного движения пациента');
-            }
-            var unclosed_movings = event.movings.filter(function (moving) {
-                return moving.status == 0;
-            });
+            if (event.movings) {
+                if(!event.movings.length) {
+                    return MessageBox.error('Невозможно закрыть обращение', 'Необходимо наличие минимум одного движения пациента');
+                }
+                var unclosed_movings = event.movings.filter(function (moving) {
+                    return moving.status == 0;
+                });
 
-            var without_bed_movings = event.movings.filter(function (moving) {
-                return !moving.hospitalBed.value;
-            });
+                var without_bed_movings = event.movings.filter(function (moving) {
+                    return !moving.hospitalBed.value;
+                });
 
-            if (without_bed_movings.length) {
-                return MessageBox.error('Имеются незакрытые движения', 'Разместите пациента на койке и закройте движение пациента в отделении');
-            }
-            else if (unclosed_movings.length) {
-                return MessageBox.error('Имеются незакрытые движения', 'Закройте движение пациента в отделении');
+                if (without_bed_movings.length) {
+                    return MessageBox.error('Имеются незакрытые движения', 'Разместите пациента на койке и закройте движение пациента в отделении');
+                }
+                else if (unclosed_movings.length) {
+                    return MessageBox.error('Имеются незакрытые движения', 'Закройте движение пациента в отделении');
+                }
             }
             deferred.resolve();
             return deferred.promise;
