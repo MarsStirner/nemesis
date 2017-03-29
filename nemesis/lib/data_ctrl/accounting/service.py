@@ -345,6 +345,10 @@ class ServiceController(BaseModelController):
         res = self.get_selecter().get_event_services(event_id, page, per_page)
         return res
 
+    def get_services_not_in_invoice(self, event_id):
+        res = self.get_selecter().get_services_not_in_invoice(event_id)
+        return res
+
     def get_new_service_action(self, service, serviced_entity_data):
         event_id = service.event_id
         action_type_id = serviced_entity_data['at_id']
@@ -803,6 +807,34 @@ class ServiceSelecter(BaseSelecter):
             return self.paginate(page, per_page or 10)
         else:
             return self.get_all()
+
+    def get_services_not_in_invoice(self, event_id):
+        Service = self.model_provider.get('Service')
+        Invoice = self.model_provider.get('Invoice')
+        InvoiceItem = self.model_provider.get('InvoiceItem')
+
+        ex_q = self.session.query(InvoiceItem).join(
+            Invoice, InvoiceItem.invoice_id == Invoice.id
+        ).filter(
+            InvoiceItem.deleted == 0, Invoice.deleted == 0,
+            InvoiceItem.concreteService_id == Service.id
+        ).exists()
+
+        self.query = self.query.filter(
+            Service.event_id == event_id,
+            Service.parent_id == None,
+            Service.deleted == 0
+        ).filter(
+            ~ex_q
+        ).options(
+            joinedload(Service.price_list_item, innerjoin=True).
+                joinedload('service', innerjoin=True),
+            joinedload(Service.service_kind, innerjoin=True),
+            joinedload(Service.action).joinedload('actionType'),
+            joinedload(Service.action_property).joinedload('type'),
+            joinedload(Service.discount)
+        )
+        return self.get_all()
 
     def get_action_service(self, action_id):
         # вообще этому место в области экшенов
