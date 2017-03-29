@@ -176,9 +176,6 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 editor_id = 'editor' + Math.random().toString(36);
             }
             editor.attr('id', editor_id);
-            var getEditor = function () {
-                return $('#' + editor_id);
-            };
             var replace = $('<div class="panel panel-default" style="padding: 0"></div>');
             toolbar.find('.dropdown-menu input')
                 .click(function() {return false;})
@@ -429,8 +426,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             }
 
             scope.$watch('$model.$modelValue', function (n, o) {
-                if (cleanHtml(getEditor().html()) !== n) {
-                    getEditor().html(n);
+                if (cleanHtml(editor.html()) !== n) {
+                    editor.html(n);
                 }
                 return n;
             });
