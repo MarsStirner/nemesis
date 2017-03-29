@@ -16,7 +16,7 @@ from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
     urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
     urEventPoliclinicPaidClose, urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
-    urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate)
+    urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate, urEventInvoiceAccessAll)
 
 
 class User(UserMixin):
@@ -498,6 +498,14 @@ class UserUtils(object):
         return event and (
             current_user.has_right('adm') or (
                 current_user.has_right(readRight)
+            )
+        )
+
+    @staticmethod
+    def access_invoices_all(event):
+        return event and (
+            current_user.has_right('adm') or (
+                current_user.has_right(urEventInvoiceAccessAll)
             )
         )
 

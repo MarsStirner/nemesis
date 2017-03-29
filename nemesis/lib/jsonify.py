@@ -915,13 +915,16 @@ class EventVisualizer(object):
     def make_event_info_for_current_role(self, event, new=False):
         data = {
             'event': self.make_event(event),
-            'ro': not UserUtils.can_edit_event(event) if event.id else False,
-            'can_read_diagnoses': UserUtils.can_read_dignoses(event),
-            'can_edit_diagnoses': UserUtils.can_edit_dignoses(event),
-            'can_create_actions': (
-                [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
-                if event.id else [False] * 4
-            ),
+            'access': {
+                'ro': not UserUtils.can_edit_event(event) if event.id else False,
+                'can_read_diagnoses': UserUtils.can_read_dignoses(event),
+                'can_edit_diagnoses': UserUtils.can_edit_dignoses(event),
+                'can_create_actions': (
+                    [UserUtils.can_create_action(event.id, None, cl) for cl in range(4)]
+                    if event.id else [False] * 4
+                ),
+                'invoice_all': UserUtils.access_invoices_all(event),
+            },
             'services': [],
             'invoices': self.make_event_invoices(event.id)
         }

@@ -15,3 +15,4 @@ urEventDiagnosticPaidClose = u'evtDiagnosticPaidClose'  # Имеет возмо�
 urEventDiagnosticBudgetClose = u'evtDiagnosticBudgetClose'  # Имеет возможность закрывать диагностические обращения бюджет
 
 urEventAllAdmPermSetExecDate = u'evtAllAdmPermSetExecDate'  # Имеет возможность устанавливать дату завершения в обращениях с финансированием "Административное разрешение"
+urEventInvoiceAccessAll = u'evtInvoiceAccessAll'  # Имеет доступ к любым операциям со счетами в обращениях
