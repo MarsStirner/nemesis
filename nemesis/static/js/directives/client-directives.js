@@ -318,7 +318,7 @@ angular.module('WebMis20.directives').
         <ui-select class="form-control" id="country[[idPostfix]]" name="country" theme="select2" ng-change="countryChange()"\
                    ng-model="modelDocument.country" ng-disabled="!edit_mode()" ng-required="docForm.$dirty">\
             <ui-select-match placeholder="Страна">[[$select.selected.name]]</ui-select-match>\
-            <ui-select-choices repeat="dt in rbCountry.objects | filter: $select.search">\
+            <ui-select-choices repeat="dt in rbCountry.objects | filter: $select.search | limitTo: 25">\
                 <div ng-bind-html="dt.name | highlight: $select.search"></div>\
             </ui-select-choices>\
         </ui-select>\
@@ -329,7 +329,7 @@ angular.module('WebMis20.directives').
         <ui-select class="form-control" id="region[[idPostfix]]" name="region" theme="select2"\
                    ng-model="modelDocument.region" ng-disabled="!edit_mode() || !regionRequired()" ng-required="docForm.$dirty && regionRequired()">\
             <ui-select-match placeholder="Регион">[[$select.selected.name]]</ui-select-match>\
-            <ui-select-choices repeat="dt in rbRegion.objects | filter: $select.search">\
+            <ui-select-choices repeat="dt in rbRegion.objects | filter: $select.search | limitTo: 25">\
                 <div ng-bind-html="dt.name | highlight: $select.search"></div>\
             </ui-select-choices>\
         </ui-select>\
