@@ -44,9 +44,12 @@ angular.module('WebMis20.services.models').
                 this.allergies = [];
                 this.intolerances = [];
                 this.ro = false;
-                this.can_read_diagnoses = false;
-                this.can_edit_diagnoses = false;
-                this.can_create_actions = [false, false, false, false];
+                this.access = {
+                    can_read_diagnoses: false,
+                    can_edit_diagnoses: false,
+                    can_create_actions: [false, false, false, false],
+                    invoice_all: false
+                };
                 this.request_type_kind = null;
                 return this;
             };
@@ -55,10 +58,11 @@ angular.module('WebMis20.services.models').
                 self.info = data.result.event;
                 self.allergies = data.result.allergies;
                 self.intolerances = data.result.intolerances;
-                self.ro = data.result.ro;
-                self.can_read_diagnoses = data.result.can_read_diagnoses;
-                self.can_edit_diagnoses = data.result.can_edit_diagnoses;
-                self.can_create_actions = data.result.can_create_actions;
+                self.ro = data.result.access.ro;
+                self.access.can_read_diagnoses = data.result.access.can_read_diagnoses;
+                self.access.can_edit_diagnoses = data.result.access.can_edit_diagnoses;
+                self.access.can_create_actions = data.result.access.can_create_actions;
+                self.access.invoice_all = data.result.access.invoice_all;
                 var client_info = self.info.client;
                 self.info.client = new WMClient();
                 self.info.client.init_from_obj({

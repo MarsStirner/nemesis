@@ -114,6 +114,9 @@ WebMis20
         },
         get_service_at_price: function (contract_id) {
             return wrapper('GET', WMConfig.url.accounting.api_service_at_price_get + contract_id);
+        },
+        get_services_not_in_invoice: function (event_id) {
+            return wrapper('GET', WMConfig.url.accounting.api_service_not_in_invoice_get + event_id)
         }
     };
     this.service_discount = {
