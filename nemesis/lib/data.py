@@ -523,12 +523,12 @@ def _split_to_integers(string):
 at_tuple = collections.namedtuple(
     'at_tuple',
     'id name code flat_code gid age sex at_os required_tissue at_apt class_ at_et '
-    'children tissue_types'
+    'children tissue_types note_mandatory'
 )
 
 at_flat_tuple = collections.namedtuple(
     'at_flat_tuple',
-    'id name code flat_code gid age sex at_os required_tissue at_apt tissue_types'
+    'id name code flat_code gid age sex at_os required_tissue at_apt tissue_types note_mandatory'
 )
 
 at_actions_flat_tuple = collections.namedtuple(
@@ -538,7 +538,7 @@ at_actions_flat_tuple = collections.namedtuple(
 
 
 def at_tuple_2_flat_tuple_convert(item):
-    return at_flat_tuple(*[i for idx, i in enumerate(item) if idx < 10 or idx == 13])
+    return at_flat_tuple(*[i for idx, i in enumerate(item) if idx < 10 or idx >= 13])
 
 
 def at_tuple_2_actions_flat_tuple_convert(item):
@@ -553,8 +553,8 @@ def at_tuple_2_actions_flat_tuple_convert(item):
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: (id_, name, parseAgeSelector(age), sex, mandatory)
-        for id_, name, age, sex, mandatory in ActionPropertyType.query.filter(
+        id_: (id_, name, parseAgeSelector(age), sex, mandatory, note_mandatory)
+        for id_, name, age, sex, mandatory, note_mandatory in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
         ).with_entities(
@@ -562,7 +562,8 @@ def select_all_at():
             ActionPropertyType.name,
             ActionPropertyType.age,
             ActionPropertyType.sex,
-            ActionPropertyType.mandatory
+            ActionPropertyType.mandatory,
+            ActionPropertyType.noteMandatory
         )
     }
     at_apt_dict = {
@@ -618,6 +619,7 @@ def select_all_at():
         ActionType.sex,             # 6
         ActionType.isRequiredTissue,    # 7
         ActionType.class_,          # 8
+        ActionType.noteMandatory    # 9
     )
     tmp_dict = {
         id_: at_tuple(
@@ -635,8 +637,10 @@ def select_all_at():
             at_et_dict.get(id_, []),
             set(),
             at_tt_dict.get(id_, []),
+            note_mandatory
         )
-        for id_, name, code, flat_code, gid, age, sex, required_tissue, class_ in l
+        for id_, name, code, flat_code, gid, age, sex, required_tissue,
+            class_, note_mandatory in l
     }
 
     for item in six.itervalues(tmp_dict):

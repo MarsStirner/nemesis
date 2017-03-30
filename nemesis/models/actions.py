@@ -153,6 +153,7 @@ class ActionProperty(db.Model):
     isAssigned = db.Column(db.Boolean, nullable=False, server_default=u"'0'")
     evaluation = db.Column(db.Integer, default=None)
     version = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    note = db.Column(db.Text)
 
     action = db.relationship(u'Action')
     type = db.relationship(u'ActionPropertyType', lazy=False, innerjoin=True)
@@ -397,6 +398,7 @@ class ActionPropertyType(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
     notLoadableWithTemplate = db.Column(db.SmallInteger)
+    noteMandatory = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     unit = db.relationship('rbUnit')
     template = db.relationship('ActionPropertyTemplate')
@@ -1019,6 +1021,7 @@ class ActionType(db.Model):
     mnem = db.Column(db.String(32), server_default=u"''")
     layout = db.Column(db.Text)
     hasPrescriptions = db.Column(db.Integer, index=True)
+    noteMandatory = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     services = db.relationship(u'ActionType_Service')
     nomenclatureService = db.relationship(u'rbService', foreign_keys='ActionType.nomenclativeService_id')

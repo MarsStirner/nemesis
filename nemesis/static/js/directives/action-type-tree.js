@@ -20,6 +20,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.tissue_required = false;
                 this.assignable = [];
                 this.tissue_types = [];
+                this.note_mandatory = false;
             } else if (angular.isArray(source)) {
                 this.id = source[0];
                 this.name = source[1];
@@ -32,6 +33,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.tissue_required = source[8];
                 this.assignable = source[9];
                 this.tissue_types = source[10];
+                this.note_mandatory = source[11];
             } else {
                 angular.extend(this, source)
             }
@@ -289,7 +291,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         ttj: {
                             available_tissue_types: node.tissue_types,
                             selected_tissue_type: $scope.rbTissueType.get(node.tissue_types[0])
-                        }
+                        },
+                        note_mandatory: node.note_mandatory,
+                        note: null
                     };
                     if ($scope.at_service_data.hasOwnProperty(node.id)) {
                         var service_data = $scope.at_service_data[node.id],
@@ -366,7 +370,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                     urgent: action.urgent,
                                     ttj: {
                                         selected_tissue_type: action.ttj.selected_tissue_type
-                                    }
+                                    },
+                                    note: action.note
                                 }
                             })
                         }
@@ -436,6 +441,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     }).every(function (action) {
                         return action.service.subservice_list.length > 0;
                     });
+                };
+                $scope.actionReasonRequired = function (action) {
+                    return Boolean(action.note_mandatory);
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)
@@ -702,6 +710,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\
                             </div>\
+                            </div>\
+                            <div class="form-group" ng-if="actionReasonRequired(action)">\
+                                <label class="control-label">Обоснование <span class="text-danger">*</span></label>\
+                                <textarea class="form-control" rows="1" ng-model="action.note"\
+                                     ng-required="true" placeholder="Укажите обоснование для назначения"></textarea>\
                             </div>\
                         </li>\
                     </ul>\
