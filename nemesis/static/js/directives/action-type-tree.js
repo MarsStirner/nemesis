@@ -132,7 +132,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         }
                     ).map(
                         function (item) {
-                            return [item[0], item[1]];
+                            // id, name, price, mandatory, note_mandatory
+                            return [item[0], item[1], item[4], item[5], item[6]];
                         }
                     ).value();
                     // Построение недостающих родительских узлов - подъём по дереву вверх до первого найденного
@@ -566,6 +567,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         return t_model.available_tissue_types.has(item.id);
                     }
                 };
+                $scope.testReasonRequired = function (prop) {
+                    return prop[4];
+                }
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
@@ -738,6 +742,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <h4 class="modal-title">Назначаемые исследования</h4>\
         </div>\
         <div class="modal-body">\
+            <ng-form name="testsForm">\
             <div class="row">\
                 <div class="col-md-6" ng-if="date_required">\
                     <label for="ped">Дата/время назначения</label>\
@@ -757,11 +762,19 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <div class="checkbox" ng-repeat="prop in model.assignable">\
                 <label><input type="checkbox" ng-model="assigned[prop[0]]" ng-disabled="prop[3]">[[ prop[1] ]]\
                     <span ng-if="price_available(prop)"><span class="text-danger lmargin20" ng-bind="get_price(prop)"></span> руб.</span></label>\
+                <div class="row" ng-if="testReasonRequired(prop)">\
+                    <div class="col-md-10">\
+                    <textarea class="form-control lmargin20" rows="1" ng-model="prop.note"\
+                         ng-required="true" placeholder="Укажите обоснование для назначения"></textarea>\
+                    </div>\
+                </div>\
             </div>\
+            </ng-form>\
         </div>\
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-            <button type="button" class="btn btn-success" ng-click="$close()">OK</button>\
+            <button type="button" class="btn btn-success" ng-disabled="testsForm.$invalid"\
+                ng-click="$close()">OK</button>\
         </div>')
 }])
 ;

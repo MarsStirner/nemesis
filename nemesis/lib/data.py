@@ -536,6 +536,11 @@ at_actions_flat_tuple = collections.namedtuple(
     'id name code flat_code gid class_code'
 )
 
+apt_flat_tuple = collections.namedtuple(
+    'apt_tuple',
+    'id name age sex price mandatory note_mandatory'
+)
+
 
 def at_tuple_2_flat_tuple_convert(item):
     return at_flat_tuple(*[i for idx, i in enumerate(item) if idx < 10 or idx >= 13])
@@ -553,7 +558,7 @@ def at_tuple_2_actions_flat_tuple_convert(item):
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: (id_, name, parseAgeSelector(age), sex, mandatory, note_mandatory)
+        id_: apt_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory)
         for id_, name, age, sex, mandatory, note_mandatory in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
@@ -567,7 +572,8 @@ def select_all_at():
         )
     }
     at_apt_dict = {
-        at_id: [tmp_apt_dict.get(apt_id) for apt_id in _split_to_integers(apt_ids)]
+        at_id: [tuple(tmp_apt_dict[apt_id]) if apt_id in tmp_apt_dict else None
+                for apt_id in _split_to_integers(apt_ids)]
         for at_id, apt_ids in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
