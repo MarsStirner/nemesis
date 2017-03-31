@@ -248,7 +248,7 @@ angular.module('WebMis20.directives').
 
                     scope.regionRequired = function() {
                         // Если выбрана страна Россия
-                        return scope.modelDocument.country.code == 643;
+                        return safe_traverse(scope, ['modelDocument', 'country', 'code']) == 643;
                     };
 
                     scope.countryChange = function() {

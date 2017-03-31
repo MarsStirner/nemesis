@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import hashlib
+import re
+
 from flask import url_for
 from flask_login import UserMixin, AnonymousUserMixin, current_user
 
@@ -14,9 +16,12 @@ from ..models.exists import rbUserProfile
 
 from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
-    urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate, urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
-    urEventPoliclinicPaidClose, urEventPoliclinicOmsClose, urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
-    urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate, urEventInvoiceAccessAll)
+                                     urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate,
+                                     urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
+                                     urEventPoliclinicPaidClose, urEventPoliclinicOmsClose,
+                                     urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
+                                     urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate,
+                                     urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate)
 
 
 class User(UserMixin):
@@ -255,19 +260,64 @@ class UserUtils(object):
             if not current_user.has_right(urEventPoliclinicPaidCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
-        elif event.is_policlinic and event.is_oms:
-            if not current_user.has_right(urEventPoliclinicOmsCreate):
+        elif event.is_policlinic and (event.is_oms or event.is_oms_mo):
+            if event.is_oms and not current_user.has_right(urEventPoliclinicOmsCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
-            # client = event.client
-            # if not (client.policy and client.policy.is_valid(event.setDate)):
-            #     out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
-            #                          u'действующего полиса ОМС' % unicode(event_type)
-            #     return False
-            # if not safe_traverse_attrs(client, 'reg_address', 'is_russian'):
-            #     out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без адреса ' \
-            #                          u'регистрации в РФ' % unicode(event_type)
-            #     return False
+            if event.is_oms_mo and not current_user.has_right(urEventPoliclinicOmsMoCreate):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+
+            client = event.client
+            if not (client.policy and client.policy.is_valid(event.setDate)):
+                out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
+                                     u'действующего полиса ОМС' % unicode(event_type)
+                return False
+            if not client.reg_address:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Адрес регистрации не задан' % unicode(event_type)
+                return False
+            if not re.match("^.[^.].*$", client.firstName):
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Имя пациента не должно содержать инициалы' % unicode(event_type)
+                return False
+            if client.patrName and not re.match("^.[^.].*$", client.patrName):
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Отчество пациента не должно содержать инициалы' % unicode(event_type)
+                return False
+            if client.SNILS == '':
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'СНИЛС должен быть заполнен' % unicode(event_type)
+                return False
+            if client.document.documentType.code not in [u'14', u'91']:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Документ удостоверяюший личность должен быть пастпорт РФ ' \
+                                     u'или вид на жительство' % unicode(event_type)
+                return False
+            if not client.document.serial:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Не задана серия документа удостоверяющего личность' % unicode(event_type)
+                return False
+            if not client.document.number:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Не задан номер документа удостоверяющего личность' % unicode(event_type)
+                return False
+            if not client.document.date:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Не задана дата выдачи документа удостоверяющего личность' % unicode(event_type)
+                return False
+            if not client.policy.number:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Номер полиса ОМС не задан' % unicode(event_type)
+                return False
+            if not client.policy.serial:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Серия полиса ОМС не задана' % unicode(event_type)
+                return False
+            if not client.policy.insurer:
+                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
+                                     u'Страховая медицинская организация не задана' % unicode(event_type)
+                return False
         elif event.is_policlinic and event.is_dms:
             if not current_user.has_right(urEventPoliclinicDmsCreate):
                 out_msg['message'] = base_msg % unicode(event_type)
