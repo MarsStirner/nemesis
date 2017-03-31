@@ -1644,7 +1644,7 @@ class VMPCoupon(db.Model):
         # Round one!
         unformatted_snils = read_smashed_cells(39, itertools.chain('STUWXY', ['AA', 'AB', 'AC', 'AE', 'AF']))
         if unformatted_snils:
-            client = Client.query.filter(Client.SNILS == unformatted_snils).first()
+            client = Client.query.filter(Client.SNILS == unformatted_snils, Client.deleted == 0).first()
         if not client:
             # Round two!
             if first_name or last_name or birthdate:
@@ -1652,6 +1652,7 @@ class VMPCoupon(db.Model):
                     Client.firstName == first_name,
                     Client.lastName == last_name,
                     Client.birthDate == birthdate,
+                    Client.deleted == 0
                 )
                 count = query.count()
                 if count > 1:
