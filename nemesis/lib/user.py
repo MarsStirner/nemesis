@@ -6,6 +6,7 @@ import re
 from flask import url_for
 from flask_login import UserMixin, AnonymousUserMixin, current_user
 
+from nemesis.lib.const import PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_traverse_attrs, initialize_name
 from nemesis.models.exists import Person, vrbPersonWithSpeciality
@@ -289,9 +290,9 @@ class UserUtils(object):
                 out_msg['message'] = u'Нельзя создавать обращения %s. ' \
                                      u'СНИЛС должен быть заполнен' % unicode(event_type)
                 return False
-            if client.document.documentType.code not in [u'14', u'91']:
+            if client.document.documentType.code not in [PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE]:
                 out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Документ удостоверяюший личность должен быть пастпорт РФ ' \
+                                     u'Документ удостоверяюший личность должен быть паспорт РФ ' \
                                      u'или вид на жительство' % unicode(event_type)
                 return False
             if not client.document.serial:

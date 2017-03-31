@@ -33,3 +33,7 @@ STATIONARY_HOSP_BED_CODE = 'hospitalBed'
 STATIONARY_HOSP_LENGTH_CODE = 'hospLength'
 
 NOT_COPYABLE_VALUE_TYPES = ['HospitalBed', 'HospitalBedProfile', 'JobTicket', 'Diagnosis']
+
+# DocumentType
+PASSPORT_DOC_TYPE_CODE = '14'   # Паспорт РФ
+RESIDENCE_DOC_TYPE_CODE = '91'  # Вид на жительство
