@@ -300,6 +300,7 @@ class OrgStructure(db.Model):
             'name': self.name,
             'show': self.show,
             'parent_id': self.parent_id,
+            'hasHospitalBeds': self.hasHospitalBeds,
         }
 
 
