@@ -94,6 +94,17 @@ var WebMis20 = angular.module('WebMis20', [
         return data;
     }
 })
+.filter('IfEmpty', [ function () {
+    return function (data, bydefault) {
+        if (data) { return data }
+        return bydefault;
+    }
+}])
+.filter('noIfEmpty', ['$filter', function ($filter) {
+    return function (data) {
+        return $filter('IfEmpty')(data, 'нет');
+    }
+}])
 .filter('format', function () {
     return function (data, format) {
         if (data instanceof Array) {
