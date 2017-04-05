@@ -1,8 +1,34 @@
 # -*- encoding: utf-8 -*-
+
+import re
+from collections import namedtuple
+
 from sphinxit.core.helpers import BaseSearchConfig
-from sphinxit.core.nodes import Count, OR, RawAttr
-from sphinxit.core.processor import Search, Snippet
+from sphinxit.core.processor import Search
 from nemesis.app import app
+
+
+ESCAPED_CHARS = namedtuple('EscapedChars', ['single_escape', 'double_escape'])(
+    single_escape=("'", '+', '[', ']', '=', '*'),
+    double_escape=('@', '!', '^', '(', ')', '~', '-', '|', '/', '<<', '$', '"')
+)
+
+
+def escape_sphinx_query(query):
+    # from sphintit/core/convertors.py MatchQueryCtx
+    single_escape_chars_re = '|\\'.join(ESCAPED_CHARS.single_escape)
+    query = re.sub(
+        single_escape_chars_re,
+        lambda m: r'\%s' % m.group(),
+        query
+    )
+    double_escape_chars_re = '|\\'.join(ESCAPED_CHARS.double_escape)
+    query = re.sub(
+        double_escape_chars_re,
+        lambda m: r'\\%s' % m.group(),
+        query
+    )
+    return query
 
 
 class SearchConfig(BaseSearchConfig):
@@ -14,7 +40,6 @@ class SearchConfig(BaseSearchConfig):
 
 
 class SearchPerson():
-
     @staticmethod
     def search(name):
         search = Search(indexes=['person'], config=SearchConfig)
@@ -24,9 +49,16 @@ class SearchPerson():
 
 
 class SearchPatient():
-
     @staticmethod
     def search(name, limit=100, paginated=False, page=1, per_page=70, max_matches=10000):
+        words_count = len(name.split())
+        if words_count in [2, 3] and not any(ch.isdigit() for ch in name):
+            return SearchPatient.search_by_initials(name, limit, paginated, page, per_page, max_matches)
+        else:
+            return SearchPatient.full_search(name, limit, paginated, page, per_page, max_matches)
+
+    @staticmethod
+    def full_search(name, limit=100, paginated=False, page=1, per_page=70, max_matches=10000):
         search = Search(indexes=['patient'], config=SearchConfig)
         search = search.match(name)
         search = search.options(field_weights={'code': 100,
@@ -38,8 +70,28 @@ class SearchPatient():
                                                'SNILS': 50,
                                                'document': 50,
                                                'policy': 50})
-        #fixme: after sphinxit merge https://github.com/semirook/sphinxit/pull/20
+        # fixme: after sphinxit merge https://github.com/semirook/sphinxit/pull/20
         search = search.order_by('@weight desc, lastName asc, firstName asc, patrName', 'asc')
+        return SearchPatient.make_paginated(search, paginated, page, per_page, limit, max_matches)
+
+    @staticmethod
+    def search_by_initials(query_string, limit=100, paginated=False, page=1, per_page=70, max_matches=10000):
+        splitted = query_string.split()
+        sp_len = len(splitted)
+        esq = escape_sphinx_query
+        if sp_len == 2:
+            st = u'@lastName {0} @firstName {1}'.format(esq(splitted[0]), esq(splitted[1]))
+        elif sp_len == 3:
+            st = u'@lastName {0} @firstName {1} @patrName {2}'.format(esq(splitted[0]), esq(splitted[1]), esq(splitted[2]))
+        else:
+            st = query_string
+        search = Search(indexes=['patient'], config=SearchConfig)
+        search = search.match(st, raw=True)
+        search = search.order_by('@weight desc, lastName asc, firstName asc, patrName', 'asc')
+        return SearchPatient.make_paginated(search, paginated, page, per_page, limit, max_matches)
+
+    @staticmethod
+    def make_paginated(search, paginated, page, per_page, limit, max_matches):
         if paginated:
             from_ = (page - 1) * per_page
             search = search.limit(from_, per_page)
@@ -51,14 +103,12 @@ class SearchPatient():
 
 
 class SearchEventService(object):
-
     @classmethod
     def get_search(cls):
         return Search(indexes=['event_service'], config=SearchConfig)
 
 
 class SearchEvent():
-
     @staticmethod
     def search(query):
         search = Search(indexes=['events'], config=SearchConfig)
