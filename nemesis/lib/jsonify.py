@@ -1309,6 +1309,7 @@ class StationaryEventVisualizer(EventVisualizer):
 
         avis = ActionVisualizer()
         res = self.make_action_info(action)
+        res['action_type']['diagnosis_types'] = action.actionType.diagnosis_types
         res['diagnoses'] = avis.make_action_diagnoses_info(action)
         return res
 
