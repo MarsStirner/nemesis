@@ -541,13 +541,12 @@ angular.module('WebMis20.directives')
     }])
     .service('PrintingDialog', ['$modal', function ($modal) {
         var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender, meta_values,
-                                                   fast_print, template_code, unchecked) {
+                                                   fast_print, template_code) {
             $scope.aux = aux;
             $scope.page = 0;
             $scope.ps = ps;
             $scope.selected_templates = [];
             $scope.mega_model = {};
-            $scope.unchecked = unchecked;
             $scope.toggle_select_template = function (template) {
                 if ($scope.selected_templates.has(template)) {
                     $scope.selected_templates.remove(template);
@@ -679,7 +678,7 @@ angular.module('WebMis20.directives')
         };
 
         return {
-            open: function (ps, context_extender, meta_values, fast_print, template_code, unchecked) {
+            open: function (ps, context_extender, meta_values, fast_print, template_code) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
                     backdrop : 'static',
@@ -700,9 +699,6 @@ angular.module('WebMis20.directives')
                         },
                         template_code: function () {
                             return template_code
-                        },
-                        unchecked: function () {
-                            return unchecked
                         }
                     }
                 });
@@ -720,7 +716,7 @@ angular.module('WebMis20.directives')
         <thead>\
             <tr>\
                 <th>\
-                    <input id="template-all" type="checkbox" ng-checked="!unchecked && (ps.templates.length == selected_templates.length)" ng-click="select_all_templates()">\
+                    <input id="template-all" type="checkbox" ng-checked="ps.templates.length == selected_templates.length" ng-click="select_all_templates()">\
                 </th>\
                 <th><label for="template-all">Наименование</label></th>\
             </tr>\
@@ -728,7 +724,7 @@ angular.module('WebMis20.directives')
         <tbody>\
             <tr ng-repeat="template in ps.templates">\
                 <td>\
-                <input type="checkbox" ng-checked="!unchecked && (selected_templates.has(template))" id="template-id-[[template.id]]" ng-click="toggle_select_template(template)">\
+                <input type="checkbox" ng-checked="selected_templates.has(template)" id="template-id-[[template.id]]" ng-click="toggle_select_template(template)">\
                 </td>\
                 <td>\
                     <label for="template-id-[[template.id]]" ng-bind="template.name"></label>\
@@ -777,8 +773,7 @@ angular.module('WebMis20.directives')
                 beforePrint: '&?',
                 lazyLoadContext: '@?',
                 fastPrint: '=?',
-                templateCode: '@?',
-                unchecked: '=?'
+                templateCode: '@?'
             },
             link: function (scope, element, attrs) {
                 var resolver_call = attrs.resolve;
@@ -808,7 +803,7 @@ angular.module('WebMis20.directives')
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
                                 PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint, scope.templateCode, scope.unchecked);
+                                    scope.fastPrint, scope.templateCode);
                             }, function () {
                                 MessageBox.error(
                                     'Печать недоступна',
@@ -817,7 +812,7 @@ angular.module('WebMis20.directives')
                             });
                     } else {
                         PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint, scope.templateCode, scope.unchecked);
+                                    scope.fastPrint, scope.templateCode);
                     }
                 };
             }
