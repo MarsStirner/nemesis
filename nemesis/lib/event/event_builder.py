@@ -93,8 +93,9 @@ class StationaryEventBuilder(EventBuilder):
         prev_received = get_action(prev_event, STATIONARY_RECEIVED_CODE)
         action_type = ActionType.query.filter(ActionType.flatCode == STATIONARY_RECEIVED_CODE).first()
         self.event.received = create_action(action_type.id, self.event)
-        self.event.received.propsByCode['weight'].value = prev_received.propsByCode['weight'].value
-        self.event.received.propsByCode['height'].value = prev_received.propsByCode['height'].value
+        if self.event.received and prev_received:
+            self.event.received.propsByCode['weight'].value = prev_received.propsByCode['weight'].value
+            self.event.received.propsByCode['height'].value = prev_received.propsByCode['height'].value
 
 
 class EventConstructionDirector(object):
