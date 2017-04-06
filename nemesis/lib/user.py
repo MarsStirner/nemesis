@@ -251,90 +251,68 @@ class UserUtils(object):
 
         base_msg = u'У пользователя нет прав на создание обращений типа %s'
         event_type = event and event.eventType
+        event_type_err_msg = base_msg % unicode(event_type)
+        errors_stack = []
         if not event_type:
-            out_msg['message'] = u'У обращения не указан тип'
-            return False
+            errors_stack.append(u'У обращения не указан тип')
         if current_user.has_right('adm'):
             return True
         # есть ли ограничения на создание обращений определенных EventType
         if event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
         elif event.is_policlinic and (event.is_oms or event.is_oms_mo):
             if event.is_oms and not current_user.has_right(urEventPoliclinicOmsCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
             if event.is_oms_mo and not current_user.has_right(urEventPoliclinicOmsMoCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
 
             client = event.client
-            if not (client.policy and client.policy.is_valid(event.setDate)):
-                out_msg['message'] = u'Нельзя создавать обращения %s для пациентов без ' \
-                                     u'действующего полиса ОМС' % unicode(event_type)
-                return False
             if not client.reg_address:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Адрес регистрации не задан' % unicode(event_type)
-                return False
+                errors_stack.append(u'Адрес регистрации не задан')
             if not re.match("^.[^.].*$", client.firstName):
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Имя пациента не должно содержать инициалы' % unicode(event_type)
-                return False
+                errors_stack.append(u'Имя пациента не должно содержать инициалы')
             if client.patrName and not re.match("^.[^.].*$", client.patrName):
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Отчество пациента не должно содержать инициалы' % unicode(event_type)
-                return False
+                errors_stack.append(u'Отчество пациента не должно содержать инициалы')
             if client.SNILS == '':
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'СНИЛС должен быть заполнен' % unicode(event_type)
-                return False
-            if client.document.documentType.code not in [PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE]:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Документ удостоверяюший личность должен быть паспорт РФ ' \
-                                     u'или вид на жительство' % unicode(event_type)
-                return False
-            if not client.document.serial:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Не задана серия документа удостоверяющего личность' % unicode(event_type)
-                return False
-            if not client.document.number:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Не задан номер документа удостоверяющего личность' % unicode(event_type)
-                return False
-            if not client.document.date:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Не задана дата выдачи документа удостоверяющего личность' % unicode(event_type)
-                return False
-            if not client.policy.number:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Номер полиса ОМС не задан' % unicode(event_type)
-                return False
-            if not client.policy.serial:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Серия полиса ОМС не задана' % unicode(event_type)
-                return False
-            if not client.policy.insurer:
-                out_msg['message'] = u'Нельзя создавать обращения %s. ' \
-                                     u'Страховая медицинская организация не задана' % unicode(event_type)
-                return False
+                errors_stack.append(u'СНИЛС должен быть заполнен')
+            if not client.document:
+                errors_stack.append(u'Не задан документ удостоверяющий личность')
+            else:
+                if client.document.documentType.code not in [PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE]:
+                    errors_stack.append(u'Документ удостоверяюший личность должен быть паспорт РФ или вид на жительство')
+                if not client.document.serial:
+                    errors_stack.append(u'Не задана серия документа удостоверяющего личность')
+                if not client.document.number:
+                    errors_stack.append(u'Не задан номер документа удостоверяющего личность')
+                if not client.document.date:
+                    errors_stack.append(u'Не задана дата выдачи документа удостоверяющего личность')
+            if not (client.policy and client.policy.is_valid(event.setDate)):
+                errors_stack.append(u'Нет действующего полиса ОМС')
+            else:
+                if not client.policy.number:
+                    errors_stack.append(u'Номер полиса ОМС не задан')
+                if not client.policy.serial:
+                    errors_stack.append(u'Серия полиса ОМС не задана')
+                if not client.policy.insurer:
+                    errors_stack.append(u'Страховая медицинская организация не задана')
         elif event.is_policlinic and event.is_dms:
             if not current_user.has_right(urEventPoliclinicDmsCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
         elif event.is_diagnostic and event.is_paid:
             if not current_user.has_right(urEventDiagnosticPaidCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
         elif event.is_diagnostic and event.is_budget:
             if not current_user.has_right(urEventDiagnosticBudgetCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
         elif event.is_adm_permission:
             if not current_user.has_right(urEventAllAdmPermCreate):
-                out_msg['message'] = base_msg % unicode(event_type)
-                return False
+                errors_stack.append(event_type_err_msg)
+
+        if errors_stack:
+            errors_stack = map(lambda err: u'<span class="text-danger text-bold">{0}</span>'.format(err), errors_stack)
+            out_msg['message'] = u'<br/>' + u',<br/>'.join(errors_stack)
+            return False
         # все остальные можно
         return True
 
