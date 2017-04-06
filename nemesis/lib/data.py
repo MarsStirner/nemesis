@@ -154,7 +154,8 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     if assigned is None:
         assigned = []
     src_props = dict((prop.type_id, prop) for prop in src_action.properties) if src_action else {}
-    full_props = dict((prop_desc['type']['id'], prop_desc) for prop_desc in properties) if properties else {}
+    full_props = dict((safe_traverse(prop_desc, 'type', 'id') or prop_desc['type_id'], prop_desc)
+                      for prop_desc in properties) if properties else {}
     prop_types = actionType.property_types.filter(ActionPropertyType.deleted == 0)
     for prop_type in prop_types:
         if recordAcceptableEx(event.client.sexCode, event.client.age_tuple(now_date), prop_type.sex, prop_type.age):
@@ -168,7 +169,10 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
                 prop.value = src_props[prop_type.id].value
             elif prop_type.id in full_props:
                 prop_desc = full_props[prop_type.id]
-                prop.value = prop_desc['value']
+                if 'value' in prop_desc:
+                    prop.value = prop_desc['value']
+                if 'note' in prop_desc:
+                    prop.note = prop_desc['note']
                 prop.isAssigned = prop_desc['is_assigned']
             elif prop.type.defaultValue:
                 prop.set_value(prop.type.defaultValue, True)
@@ -187,6 +191,19 @@ def create_action_property(action, prop_type):
     prop.action_id = action.id
     action.properties.append(prop)
     return prop
+
+
+def get_new_lab_action(action_type_id, event_id, service_data):
+    action = create_action(action_type_id, event_id)
+    if action_needs_service(action):
+        if not service_data:
+            raise ActionServiceException(u'Для action требуется услуга, но данные service_data отсутствуют')
+
+        from nemesis.lib.data_ctrl.accounting.service import ServiceController
+        service_ctrl = ServiceController()
+        new_service = service_ctrl.get_new_service_for_new_action(action, service_data)
+        action.service = new_service
+    return action
 
 
 def update_action_prescriptions(action, prescriptions):
@@ -239,9 +256,10 @@ def create_new_action(action_type_id, event_id, src_action=None, assigned=None, 
 
         from nemesis.lib.data_ctrl.accounting.service import ServiceController
         service_ctrl = ServiceController()
-        new_service = service_ctrl.get_new_service_for_new_action(action, service_data)
-        db.session.add(new_service)
-        db.session.add_all(new_service.get_flatten_subservices())
+        with service_ctrl.session.no_autoflush:
+            new_service = service_ctrl.get_new_service_for_new_action(action, service_data)
+            db.session.add(new_service)
+            db.session.add_all(new_service.get_flatten_subservices())
 
     return action
 
@@ -285,12 +303,15 @@ def update_action(action, **kwargs):
 
     # properties (full data)
     for prop_desc in kwargs.get('properties', []):
-        type_id = prop_desc['type']['id']
+        type_id = safe_traverse(prop_desc, 'type', 'id') or prop_desc['type_id']
         prop = action.propsByTypeId.get(type_id)
         if not prop:
             logger.warn(u'Попытка установить свойство, когорого нет у действия (Action.id=%s, type_id=%s)' % (action.id, type_id))
             continue
-        prop.value = prop_desc['value']
+        if 'value' in prop_desc:
+            prop.value = prop_desc['value']
+        if 'note' in prop_desc:
+            prop.note = prop_desc['note']
         prop.isAssigned = prop_desc['is_assigned']
 
     update_action_prescriptions(action, kwargs.get('prescriptions'))
@@ -536,9 +557,14 @@ at_actions_flat_tuple = collections.namedtuple(
     'id name code flat_code gid class_code'
 )
 
-apt_flat_tuple = collections.namedtuple(
-    'apt_tuple',
+apt_tree_flat_tuple = collections.namedtuple(
+    'apt_tree_flat_tuple',
     'id name age sex price mandatory note_mandatory'
+)
+
+apt_flat_tuple = collections.namedtuple(
+    'apt_flat_tuple',
+    'id name price mandatory note_mandatory'
 )
 
 
@@ -555,10 +581,14 @@ def at_tuple_2_actions_flat_tuple_convert(item):
     return at_actions_flat_tuple(*fields)
 
 
+def apt_tree_2_apt_flat_tuple_convert(item):
+    return apt_flat_tuple(*[i for idx, i in enumerate(item) if idx < 2 or idx > 3])
+
+
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: apt_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory)
+        id_: apt_tree_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory)
         for id_, name, age, sex, mandatory, note_mandatory in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
@@ -625,7 +655,7 @@ def select_all_at():
         ActionType.sex,             # 6
         ActionType.isRequiredTissue,    # 7
         ActionType.class_,          # 8
-        ActionType.noteMandatory    # 9
+        ActionType.noteMandatory,   # 9
     )
     tmp_dict = {
         id_: at_tuple(

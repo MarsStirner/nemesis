@@ -118,6 +118,12 @@ class Action(db.Model):
         """Инициализировать свойства данными из соответствующего прайс-листа"""
         from nemesis.lib.data_ctrl.accounting.pricelist import PriceListItemController
         from nemesis.lib.data import get_assignable_apts
+        from nemesis.lib.action.utils import action_needs_service
+
+        if not action_needs_service(self):
+            for prop in self.properties:
+                prop.has_pricelist_service = False
+            return
 
         assignable = get_assignable_apts(self.actionType_id)
         assignable_apt_ids = [apt_data[0] for apt_data in assignable]

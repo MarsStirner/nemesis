@@ -16,9 +16,12 @@ from flask import json
 from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
-    get_client_diagnostics, get_action_type_class
+    get_client_diagnostics, get_action_type_class, apt_flat_tuple, get_at_tissue_type_ids
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
     get_prev_inspection_with_diags, action_is_resuscitation_moving
+from nemesis.lib.data_ctrl.accounting.represent import ServiceRepr, ContractRepr, InvoiceRepr
+from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
+
 from nemesis.lib.agesex import recordAcceptableEx
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
@@ -30,7 +33,7 @@ from nemesis.models.event import Event, EventType
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
 from nemesis.models.schedule import (Schedule, rbReceptionType, ScheduleClientTicket, ScheduleTicket,
     QuotingByTime, Office, rbAttendanceType)
-from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service
+from nemesis.models.actions import Action, ActionProperty, ActionType, ActionType_Service, rbTissueType
 from nemesis.models.client import Client, ClientFileAttach, ClientDocument, ClientPolicy
 from nemesis.models.exists import (rbRequestType, rbService, ContractTariff, Contract, Person, rbSpeciality,
     Organisation, rbContactType, FileGroupDocument, MKB)
@@ -977,7 +980,6 @@ class EventVisualizer(object):
         @type event: Event
         """
         cvis = ClientVisualizer()
-        from blueprints.accounting.lib.represent import ContractRepr
         cont_repr = ContractRepr()
         return {
             'id': event.id,
@@ -1135,8 +1137,6 @@ class EventVisualizer(object):
         return usal
 
     def make_event_invoices(self, event_id):
-        from nemesis.lib.data_ctrl.accounting.invoice import InvoiceController
-        from blueprints.accounting.lib.represent import InvoiceRepr
         invoice_ctrl = InvoiceController()
         invoice_list = invoice_ctrl.get_invoices_in_event(event_id)
         invoice_repr = InvoiceRepr()
@@ -1507,6 +1507,39 @@ class ActionVisualizer(object):
             'finance_name': action.event.eventType.finance.name
         }
 
+    def make_new_lab_action(self, action):
+        service = action.service
+        assignable = []
+        props_data = []
+        if service is not None:
+            assignable = service.service_data['tests_data']['assignable']
+            props_data = service.service_data['tests_data']['props_data']
+        else:
+            for ap in action.properties:
+                assignable.append(tuple(apt_flat_tuple(
+                    ap.type_id, ap.type.name, None, ap.type.mandatory, ap.type.noteMandatory
+                )))
+                props_data.append(self.make_lab_direction_property(ap))
+
+        tissue_type_ids = get_at_tissue_type_ids(action.actionType_id)
+        selected_tissue_type = rbTissueType.query.get(tissue_type_ids[0]) if tissue_type_ids else None
+
+        serv_repr = ServiceRepr()
+
+        return {
+            'type_id': action.actionType_id,
+            'type_name': action.actionType.name,
+            'assignable': assignable,
+            'props_data': props_data,
+            'planned_end_date': action.plannedEndDate,
+            'service': serv_repr.represent_service_full(service) if service is not None else None,
+            'urgent': action.isUrgent,
+            'available_tissue_types': tissue_type_ids,
+            'selected_tissue_type': selected_tissue_type,
+            'note_mandatory': action.actionType.noteMandatory,
+            'note': action.note
+        }
+
     def make_action_wo_sensitive_props(self, action):
         action = self.make_action(action, for_template=True)
         for prop in action['properties']:
@@ -1557,9 +1590,8 @@ class ActionVisualizer(object):
 
     def make_default_two_cols_layout(self, action):
         def pairwise(iterable):
-            from itertools import izip_longest
             a = iter(iterable)
-            return izip_longest(a, a)
+            return itertools.izip_longest(a, a)
 
         def make_row(ap, ap2):
             return {
@@ -1618,7 +1650,16 @@ class ActionVisualizer(object):
             'unit': prop.unit,
             'norm': prop.norm,
             'value_in_norm': prop.check_value_norm(),
-            'has_pricelist_service': prop.has_pricelist_service if not for_template else None
+            'has_pricelist_service': prop.has_pricelist_service if not for_template else None,
+            'note': prop.note
+        }
+
+    def make_lab_direction_property(self, prop):
+        return {
+            'id': prop.id,
+            'type_id': prop.type_id,
+            'is_assigned': prop.isAssigned,
+            'note': prop.note
         }
 
     # Здесь будут кастомные мейкеры экшон пропертей.

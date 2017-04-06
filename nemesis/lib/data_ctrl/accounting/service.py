@@ -8,7 +8,7 @@ from sqlalchemy.sql.expression import label
 
 from nemesis.models.accounting import Service, PriceListItem, Invoice, InvoiceItem, ServiceDiscount, rbServiceKind
 from nemesis.models.client import Client
-from nemesis.models.actions import Action
+from nemesis.models.actions import Action, rbTissueType
 from nemesis.models.event import Event
 from nemesis.models.enums import ServiceKind, FinanceOperationType, ActionPayStatus
 from nemesis.lib.utils import (safe_int, safe_unicode, safe_double, safe_decimal, safe_traverse, safe_bool, safe_dict,
@@ -17,7 +17,8 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter, BaseSphinxSearchSelecter
 from nemesis.lib.sphinx_search import SearchEventService
 from nemesis.lib.data import (int_get_atl_dict_all, create_action, get_assignable_apts, get_planned_end_datetime,
-    update_action, delete_action, fit_planned_end_date, create_new_action_ttjs, get_at_tissue_type_ids)
+    update_action, delete_action, fit_planned_end_date, create_new_action_ttjs, get_at_tissue_type_ids,
+    apt_tree_2_apt_flat_tuple_convert, apt_flat_tuple)
 from nemesis.lib.agesex import recordAcceptableEx
 from .pricelist import PriceListItemController, PriceListController
 from .utils import calc_item_sum, get_searched_service_kind, calc_service_total_sum
@@ -91,13 +92,16 @@ class ServiceController(BaseModelController):
     def set_new_service_serviced_entity(self, service, serviced_entity_data):
         if service.serviceKind_id == ServiceKind.simple_action[0]:
             service.action = self.get_new_service_action(service, serviced_entity_data)
+            service.service_data = serviced_entity_data
         elif service.serviceKind_id == ServiceKind.group[0]:
             pass
         elif service.serviceKind_id == ServiceKind.lab_action[0]:
             service.action = self.get_new_service_action(service, serviced_entity_data)
+            service.service_data = serviced_entity_data
         elif service.serviceKind_id == ServiceKind.lab_test[0]:
             lab_action = service.parent_service.action
             service.action_property = self.get_new_service_action_property(lab_action, serviced_entity_data)
+            service.service_data = serviced_entity_data
 
     def get_new_subservices_from_pricelist(self, service, only_mandatory=False):
         """Получить экзмепляры подсервисов на основе данных подуслуг"""
@@ -353,22 +357,13 @@ class ServiceController(BaseModelController):
         event_id = service.event_id
         action_type_id = serviced_entity_data['at_id']
         if 'tests_data' in serviced_entity_data:
-            assigned = serviced_entity_data['tests_data']['assigned']
+            props_data = serviced_entity_data['tests_data']['props_data']
             data = {
                 'plannedEndDate': safe_datetime(serviced_entity_data['tests_data']['planned_end_date'])
             }
         else:
-            assigned = data = None
-        action = create_action(action_type_id, event_id, assigned=assigned, data=data)
-
-        if 'tests_data' in serviced_entity_data:
-            # на основе данных прайс-листа следующие apt имеют цены
-            apt_prices = {apt_data[0]: apt_data[2] for apt_data in serviced_entity_data['tests_data']['assignable']}
-            assignable_by_pricelist = apt_prices.keys()
-            for prop in action.properties:
-                if prop.type_id in assignable_by_pricelist:
-                    prop.has_pricelist_service = True
-                    prop.pl_price = apt_prices[prop.type_id]
+            props_data = data = None
+        action = create_action(action_type_id, event_id, properties=props_data, data=data)
         return action
 
     def get_new_service_action_property(self, lab_action, serviced_entity_data):
@@ -394,30 +389,33 @@ class ServiceController(BaseModelController):
         elif service_kind_id == ServiceKind.lab_action[0]:
             at_id = kwargs['at_id']
             assignable = get_assignable_apts(at_id, kwargs.get('client_id'))
+            props_data = []
 
             # фильтр доступных показателей по наличию услуги в прайс-листе
             contract_id = kwargs.get('contract_id')
-            mandatory_fields = []
+            no_subservices = kwargs.get('no_subservices', False)
             if contract_id:
                 assignable_apt_ids = [apt_data[0] for apt_data in assignable]
                 pli_ctrl = PriceListItemController()
                 filtered_apt_prices = pli_ctrl.get_apts_prices_by_pricelist(assignable_apt_ids, contract_id)
                 flt_assignable = []
-                flt_apt_ids = filtered_apt_prices.keys()
                 for apt_data in assignable:
-                    # Если задано mandatory добавляем в список
-                    apt_data[4] and mandatory_fields.append(apt_data[0])
-                    apt_data = list(apt_data)[:2]
-                    apt_data.append(filtered_apt_prices[apt_data[0]] if apt_data[0] in flt_apt_ids else None)
-                    flt_assignable.append(apt_data)
+                    apt_copy = list(apt_data)
+                    apt_copy[4] = filtered_apt_prices.get(apt_data[0])
+                    apt_data = apt_tree_2_apt_flat_tuple_convert(apt_copy)
+
+                    props_data.append({
+                        'type_id': apt_data.id,
+                        'is_assigned': apt_data.mandatory or not no_subservices,
+                        'note': None
+                    })
+
+                    flt_assignable.append(list(apt_data))
+
                 assignable = flt_assignable
 
-            no_subservices = kwargs.get('no_subservices', False)
-            # apt.id list
-            assigned = [apt_data[0] for apt_data in assignable] if not no_subservices else mandatory_fields
-
             tissue_type_ids = get_at_tissue_type_ids(at_id)
-            selected_tissue_type = tissue_type_ids[0] if tissue_type_ids else None
+            selected_tissue_type = rbTissueType.query.get(tissue_type_ids[0]) if tissue_type_ids else None
             tissue_type_visible = True
 
             if 'event' in kwargs:
@@ -434,7 +432,7 @@ class ServiceController(BaseModelController):
                 'at_id': at_id,
                 'tests_data': {
                     'assignable': assignable,
-                    'assigned': assigned,
+                    'props_data': props_data,
                     'planned_end_date': planned_end_date,
                     'ped_disabled': ped_disabled,
 
@@ -450,6 +448,64 @@ class ServiceController(BaseModelController):
                 'name': kwargs.get('name'),
                 'apt_id': kwargs.get('apt_id'),
                 'action_id': None
+            }
+
+    def make_serviced_entity_data(self, service):
+        serviced_entity = service.get_serviced_entity()
+        if service.serviceKind_id == ServiceKind.simple_action[0]:
+            return {
+                'id': serviced_entity.id,
+                'code': serviced_entity.actionType.code,
+                'name': serviced_entity.actionType.name,
+                'at_id': serviced_entity.actionType.id
+            }
+        elif service.serviceKind_id == ServiceKind.group[0]:
+            return {
+                'id': None,
+                'code': '',
+                'name': ''
+            }
+        elif service.serviceKind_id == ServiceKind.lab_action[0]:
+            action = serviced_entity
+            assignable = []
+            props_data = []
+            for ap in sorted(action.properties, key=lambda prop: prop.type.idx):
+                if ap.deleted != 1 and ap.type.isAssignable:
+                    assignable.append(tuple(apt_flat_tuple(
+                        ap.type.id, ap.type.name, ap.pl_price if ap.has_pricelist_service else None,
+                        ap.type.mandatory, ap.type.noteMandatory
+                    )))
+                    props_data.append({
+                        'id': ap.id,
+                        'type_id': ap.type_id,
+                        'is_assigned': ap.isAssigned,
+                        'note': ap.note
+                    })
+            tissue_type_ids = get_at_tissue_type_ids(action.actionType_id)
+            selected_tissue_type = rbTissueType.query.get(tissue_type_ids[0]) if tissue_type_ids else None
+            tissue_type_visible = not safe_bool(action.id)
+            return {
+                'id': action.id,
+                'code': action.actionType.code,
+                'name': action.actionType.name,
+                'at_id': action.actionType_id,
+                'tests_data': {
+                    'assignable': assignable,
+                    'props_data': props_data,
+                    'planned_end_date': action.plannedEndDate,
+                    'ped_disabled': safe_bool(action.id),
+                    'available_tissue_types': tissue_type_ids,
+                    'selected_tissue_type': selected_tissue_type,
+                    'tissue_type_visible': tissue_type_visible
+                }
+            }
+        elif service.serviceKind_id == ServiceKind.lab_test[0]:
+            return {
+                'id': serviced_entity.id,
+                'code': serviced_entity.type.code,
+                'name': serviced_entity.type.name,
+                'apt_id': serviced_entity.type_id,
+                'action_id': serviced_entity.action_id
             }
 
     def get_service(self, service_id, full_load=False):
@@ -570,8 +626,8 @@ class ServiceController(BaseModelController):
         return action
 
     def update_service_lab_action(self, action, json_data):
-        assigned = json_data['tests_data']['assigned']
-        action = update_action(action, properties_assigned=assigned)
+        props_data = json_data['tests_data']['props_data']
+        action = update_action(action, properties=props_data)
         return action
 
     def save_service_list(self, service_list):
@@ -627,7 +683,10 @@ class ServiceController(BaseModelController):
                 (s.serviced_entity.type_id, s)
                 for s in service.subservice_list
             )
-            for apt_id in service_data['serviced_entity']['tests_data']['assigned']:
+            assigned = [prop['type_id']
+                        for prop in service_data['serviced_entity']['tests_data']['props_data']
+                        if prop['is_assigned']]
+            for apt_id in assigned:
                 if apt_id in ref_ss_map:
                     upd_ss_list.append(
                         existing_ss_map[apt_id] if apt_id in existing_ss_map else ref_ss_map[apt_id]
