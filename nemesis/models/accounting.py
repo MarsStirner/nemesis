@@ -252,7 +252,7 @@ class Service(db.Model):
     service_kind = db.relationship('rbServiceKind')
     parent_service = db.relationship('Service', remote_side=[id])
     event = db.relationship('Event')
-    action = db.relationship('Action')
+    action = db.relationship('Action', backref=db.backref('service', uselist=False))
     action_property = db.relationship('ActionProperty')
     discount = db.relationship('ServiceDiscount')
 
@@ -269,6 +269,7 @@ class Service(db.Model):
         self._in_invoice = None
         self._invoice = None
         self._invoice_loaded = False
+        self._service_data = None
 
     @can_edit
     def can_edit(self):
@@ -293,6 +294,7 @@ class Service(db.Model):
         self._invoice = None
         self._invoice_loaded = False
         self._subservice_list = None
+        self._service_data = None
 
     @property
     def in_invoice(self):
@@ -321,6 +323,21 @@ class Service(db.Model):
             return self.action
         elif self.serviceKind_id == ServiceKind.lab_test[0]:
             return self.action_property
+
+    @property
+    def service_data(self):
+        if self._service_data is None:
+            s_ent = self.get_serviced_entity()
+            if s_ent:
+                from nemesis.lib.data_ctrl.accounting.service import ServiceController
+                s_ctrl = ServiceController()
+                self._service_data = s_ctrl.make_serviced_entity_data(self)
+
+        return self._service_data
+
+    @service_data.setter
+    def service_data(self, val):
+        self._service_data = val
 
     def get_sorted_subservices(self):
         return sorted(self.subservice_list, key=lambda ss: ss.price_list_item.serviceNameOW)
