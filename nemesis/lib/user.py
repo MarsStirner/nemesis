@@ -564,6 +564,7 @@ class UserProfileManager(object):
         'diag_doctor': [admin, doctor_diag, nurse_assist],
         'registrator': [admin, reg_clinic, doctor_otd],
         'registrator_cut': [nurse_admission],
+        'registrator_cashier': [admin, reg_clinic, cashier],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
         'risar': [admin, obstetrician, overseer1, overseer2, overseer3, ambulance],
@@ -641,6 +642,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_risar(cls):
         return cls._get_user_role() in cls.ui_groups['risar']
+
+    @classmethod
+    def has_ui_registrator_cashier(cls):
+        return cls._get_user_role() in cls.ui_groups['registrator_cashier']
 
     @classmethod
     def get_default_url(cls):
