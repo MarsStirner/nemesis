@@ -640,7 +640,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                                 msg.push('<br>Выбрать данные параметры исследования?<br>');
 
                                                 messages.push(msg.join(''));
-                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                _.each(check.dependents, function (_id) {
+                                                    if ($scope.apt_names.hasOwnProperty(_id)) {
+                                                        yesToggle.push(_id);
+                                                    }
+                                                });
                                                 noToggle.push(apt_id);
                                             }
                                         }
@@ -658,7 +662,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                                 msg.push('<br>Снять выбор с этих параметров исследования?<br>');
 
                                                 messages.push(msg.join(''));
-                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                _.each(check.dependents, function (_id) {
+                                                    if ($scope.apt_names.hasOwnProperty(_id)) {
+                                                        yesToggle.push(_id);
+                                                    }
+                                                });
                                                 noToggle.push(apt_id);
                                             }
                                         }
