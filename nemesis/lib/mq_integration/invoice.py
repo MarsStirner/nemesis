@@ -124,5 +124,6 @@ class InvoiceIntegrationNotifier(MQIntegrationNotifier):
             'deleted': invoice.deleted != 0,
             'contract': self._make_contract(invoice.contract),
             'sum': invoice.total_sum if invoice.parent_id is None else invoice.refund_sum,
-            'parent': self._make_invoice(parent_invoice) if parent_invoice is not None else None
+            'parent': self._make_invoice(parent_invoice) if parent_invoice is not None else None,
+            'author': self._make_person(invoice.createPerson)
         }

@@ -208,7 +208,8 @@ class MQIntegrationNotifier(object):
             'firstName': person.firstName,
             'patrName': person.patrName,
             'sex': self._make_gender(person.sex),
-            'birthDate': person.birthDate
+            'birthDate': person.birthDate,
+            'uuid': str(person.uuid)
         }
 
     def _make_contract(self, contract):
