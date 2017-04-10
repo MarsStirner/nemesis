@@ -629,34 +629,38 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
 
                                     // были выбраны те, которые требуют выбор других
                                     _.each(newAptIds, function (apt_id) {
-                                        var check = $scope.apt_groups.getSelectionDeps(apt_id, newSelectedApts),
-                                            msg = [];
-                                        if (!check.ok) {
-                                            msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_names[apt_id]));
-                                            _.each(check.dependents, function (d_apt_id) {
-                                                msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
-                                            });
-                                            msg.push('<br>Выбрать данные параметры исследования?<br>');
+                                        if ($scope.apt_names.hasOwnProperty(apt_id)) {
+                                            var check = $scope.apt_groups.getSelectionDeps(apt_id, newSelectedApts),
+                                                msg = [];
+                                            if (!check.ok) {
+                                                msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_names[apt_id]));
+                                                _.each(check.dependents, function (d_apt_id) {
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                });
+                                                msg.push('<br>Выбрать данные параметры исследования?<br>');
 
-                                            messages.push(msg.join(''));
-                                            Array.prototype.push.apply(yesToggle, check.dependents);
-                                            noToggle.push(apt_id);
+                                                messages.push(msg.join(''));
+                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                noToggle.push(apt_id);
+                                            }
                                         }
                                     });
                                     // был снят выбор с тех, которые требуются для выбора других
                                     _.each(cancelledAptIds, function (apt_id) {
-                                        var check = $scope.apt_groups.getUnselectionDeps(apt_id, newSelectedApts),
-                                            msg = [];
-                                        if (!check.ok) {
-                                            msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_names[apt_id]));
-                                            _.each(check.dependents, function (d_apt_id) {
-                                                msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
-                                            });
-                                            msg.push('<br>Снять выбор с этих параметров исследования?<br>');
+                                        if ($scope.apt_names.hasOwnProperty(apt_id)) {
+                                            var check = $scope.apt_groups.getUnselectionDeps(apt_id, newSelectedApts),
+                                                msg = [];
+                                            if (!check.ok) {
+                                                msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_names[apt_id]));
+                                                _.each(check.dependents, function (d_apt_id) {
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                });
+                                                msg.push('<br>Снять выбор с этих параметров исследования?<br>');
 
-                                            messages.push(msg.join(''));
-                                            Array.prototype.push.apply(yesToggle, check.dependents);
-                                            noToggle.push(apt_id);
+                                                messages.push(msg.join(''));
+                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                noToggle.push(apt_id);
+                                            }
                                         }
                                     });
 
