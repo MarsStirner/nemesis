@@ -475,6 +475,14 @@ class ActionPropertyType(db.Model):
         return result
 
 
+class APT_Groups(db.Model):
+    __tablename__ = u'APT_Groups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    master_apt_id = db.Column(db.Integer, db.ForeignKey('ActionPropertyType.id'), primary_key=True)
+    apt_id = db.Column(db.Integer, db.ForeignKey('ActionPropertyType.id'), primary_key=True)
+
+
 class ActionProperty__ValueType(db.Model):
     __abstract__ = True
 

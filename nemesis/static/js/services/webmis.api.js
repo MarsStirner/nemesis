@@ -266,6 +266,9 @@ WebMis20
         },
         get_patient_actions: function (client_id) {
             return wrapper('GET', WMConfig.url.actions.patient_actions + client_id);
+        },
+        get_apt_groups: function (action_type_id) {
+            return wrapper('GET', WMConfig.url.actions.apt_groups_get.format(action_type_id));
         }
     };
     this.stationary = {

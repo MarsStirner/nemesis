@@ -3,12 +3,12 @@ import logging
 import uuid
 import collections
 import six
-import sqlalchemy
 
 from datetime import datetime, time, timedelta, date
 
 from flask_login import current_user
-from sqlalchemy.orm import joinedload
+from sqlalchemy import func, and_
+from sqlalchemy.orm import joinedload, aliased
 
 from nemesis.lib.action.utils import action_needs_service, get_action_type_class
 from nemesis.lib.agesex import parseAgeSelector, recordAcceptableEx
@@ -20,7 +20,7 @@ from nemesis.lib.user import UserUtils
 from nemesis.lib.utils import group_concat, safe_date, safe_traverse, safe_datetime, bail_out
 from nemesis.models.actions import (Action, ActionType, ActionPropertyType, ActionProperty, TakenTissueJournal, OrgStructure_ActionType, ActionProperty_OrgStructure,
                                     OrgStructure_HospitalBed, ActionProperty_HospitalBed, ActionProperty_Integer,
-                                    ActionType_TissueType, typeName_Value_map)
+                                    ActionType_TissueType, typeName_Value_map, APT_Groups)
 from nemesis.models.client import Client
 from nemesis.models.enums import ActionStatus, MedicationPrescriptionStatus
 from nemesis.models.event import Event, EventType_Action
@@ -756,6 +756,29 @@ def int_get_atl_actions_flat(at_id_list):
     return filtered
 
 
+@cache.cached(3600)
+def int_get_apt_groups():
+    APT2 = aliased(ActionPropertyType)
+    query = db.session.query(APT_Groups).join(
+        ActionPropertyType, APT_Groups.master_apt_id == ActionPropertyType.id
+    ).join(
+        APT2, APT_Groups.apt_id == APT2.id
+    ).filter(
+        APT2.actionType_id == ActionPropertyType.actionType_id
+    ).with_entities(
+        ActionPropertyType.actionType_id,
+        APT_Groups.master_apt_id,
+        APT_Groups.apt_id
+    )
+    res = collections.defaultdict(dict)
+    for at_id, m_apt_id, apt_id in query:
+        res[at_id].setdefault(m_apt_id, set()).add(apt_id)
+    for at_id, apts in res.iteritems():
+        for apt_id, id_list in apts.iteritems():
+            apts[apt_id] = tuple(id_list)
+    return res
+
+
 def get_patient_location(event, dt=None):
     if event.is_stationary:
         query = _get_stationary_location_query(event, dt)
@@ -969,7 +992,7 @@ def get_client_diagnostics(client, beg_date, end_date=None, including_closed=Fal
     query = query.group_by(
         Diagnostic.diagnosis_id
     )
-    query = query.with_entities(sqlalchemy.func.max(Diagnostic.id).label('zid')).subquery()
+    query = query.with_entities(func.max(Diagnostic.id).label('zid')).subquery()
     query = db.session.query(Diagnostic).join(query, query.c.zid == Diagnostic.id)
     return query
 

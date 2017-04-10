@@ -182,11 +182,103 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         return deferred.promise;
     }
 }])
+.service('APTGroupsService', ['$q', 'WebMisApi', function ($q, WebMisApi) {
+    var APTGroup = function (master_id, dependent_ids) {
+        this.master_apt_id = master_id;
+        this.dependent_apt_ids = dependent_ids;
+    };
+    var ATAPTGroups = function () {
+        this.groups = {};
+        this.reversedGroups = {};
+    };
+
+    ATAPTGroups.prototype.available = function () {
+        return !_.isEmpty(this.groups);
+    };
+    ATAPTGroups.prototype.addGroup = function (group) {
+        this.groups[group.master_apt_id] = group;
+        var that = this;
+        group.dependent_apt_ids.forEach(function (dep_id) {
+            if (!that.reversedGroups.hasOwnProperty(dep_id)) {
+                that.reversedGroups[dep_id] = [];
+            }
+            that.reversedGroups[dep_id].push(group.master_apt_id);
+        });
+    };
+    ATAPTGroups.prototype.getSelectionDeps = function (apt_id, selected) {
+        // проверить дочерние apt при выборе родителя
+        var res = {
+            ok: true,
+            dependents: []
+        };
+        var that = this;
+        var getDeps = function (apt_id) {
+            var r = [],
+                new_deps;
+            if (that.groups.hasOwnProperty(apt_id)) {
+                // те дочерние apt_id, которые должны быть выбранными
+                new_deps = _.difference(that.groups[apt_id].dependent_apt_ids, selected);
+                Array.prototype.push.apply(r, new_deps);
+                _.each(new_deps, function (d_apt_id) {
+                    Array.prototype.push.apply(r, getDeps(d_apt_id));
+                });
+            }
+            return r;
+        };
+
+        res.dependents = getDeps(apt_id);
+        res.ok = !Boolean(res.dependents.length);
+        return res;
+    };
+    ATAPTGroups.prototype.getUnselectionDeps = function (apt_id, selected) {
+        // проверить родительские apt при снятии выбора с родителя
+        var res = {
+            ok: true,
+            dependents: []
+        };
+        var that = this;
+        var getDeps = function (apt_id) {
+            var r = [],
+                new_deps;
+            if (that.reversedGroups.hasOwnProperty(apt_id)) {
+                // те родительские apt_id, которые не должны остаться выбранными
+                new_deps = _.intersection(that.reversedGroups[apt_id], selected);
+                Array.prototype.push.apply(r, new_deps);
+                _.each(new_deps, function (d_apt_id) {
+                    Array.prototype.push.apply(r, getDeps(d_apt_id));
+                });
+            }
+            return r;
+        };
+
+        res.dependents = getDeps(apt_id);
+        res.ok = !Boolean(res.dependents.length);
+        return res;
+    };
+
+    var groups = {};
+    this.get = function (action_type_id) {
+        var deferred = $q.defer();
+        if (!groups.hasOwnProperty(action_type_id)) {
+            WebMisApi.action.get_apt_groups(action_type_id)
+                .then(function (group_data) {
+                    var g = groups[action_type_id] = new ATAPTGroups();
+                    angular.forEach(group_data, function (id_list, master_id) {
+                        g.addGroup(new APTGroup(parseInt(master_id), id_list));
+                    });
+                    deferred.resolve(g);
+                });
+        } else {
+            deferred.resolve(groups[action_type_id]);
+        }
+        return deferred.promise;
+    };
+}])
 .service('ActionTypeTreeModal', [
         '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService',
-        'MessageBox', 'WMConfig', 'RefBookService', '$timeout', 'WebMisApi',
+        'MessageBox', 'WMConfig', 'RefBookService', '$timeout', 'WebMisApi', 'APTGroupsService',
         function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService,
-                  MessageBox, WMConfig, RefBookService, $timeout, WebMisApi) {
+                  MessageBox, WMConfig, RefBookService, $timeout, WebMisApi, APTGroupsService) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -496,15 +588,96 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     available_tissue_types: model.available_tissue_types,
                     selected_tissue_type: model.selected_tissue_type,
                     tissue_type_visible: model.tissue_type_visible
-                };
+                },
+                apt_names = {};
             t_model.props_data.forEach(function (prop) {
                 assigned[prop.type_id] = prop;
             });
+            model.assignable.forEach(function (apt) {
+                apt_names[apt[0]] = apt[1];
+            });
             var Controller = function ($scope) {
                 $scope.model = model;
+                $scope.apt_names = apt_names;
+                $scope.action_type_id = model.type_id;
                 $scope.assigned = assigned;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
+                $scope.apt_groups = undefined;
+                var getCheckedApts = function (o) {
+                    var res = [];
+                    _.each(o, function (prop, type_id) {
+                        if (prop.is_assigned) {
+                            res.push(parseInt(type_id));
+                        }
+                    });
+                    return res;
+                };
+                APTGroupsService.get($scope.action_type_id)
+                    .then(function (apt_groups) {
+                        $scope.apt_groups = apt_groups;
+                        if ($scope.apt_groups.available()) {
+                            $scope.$watch('assigned', function (n, o) {
+                                var newSelectedApts = getCheckedApts(n),
+                                    oldSelected = getCheckedApts(o);
+                                if (!angular.equals(newSelectedApts, oldSelected)) {
+                                    var newAptIds = _.difference(newSelectedApts, oldSelected),
+                                        cancelledAptIds = _.difference(oldSelected, newSelectedApts),
+                                        messages = [],
+                                        yesToggle = [],
+                                        noToggle = [];
+
+                                    // были выбраны те, которые требуют выбор других
+                                    _.each(newAptIds, function (apt_id) {
+                                        var check = $scope.apt_groups.getSelectionDeps(apt_id, newSelectedApts),
+                                            msg = [];
+                                        if (!check.ok) {
+                                            msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_names[apt_id]));
+                                            _.each(check.dependents, function (d_apt_id) {
+                                                msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                            });
+                                            msg.push('<br>Выбрать данные параметры исследования?<br>');
+
+                                            messages.push(msg.join(''));
+                                            Array.prototype.push.apply(yesToggle, check.dependents);
+                                            noToggle.push(apt_id);
+                                        }
+                                    });
+                                    // был снят выбор с тех, которые требуются для выбора других
+                                    _.each(cancelledAptIds, function (apt_id) {
+                                        var check = $scope.apt_groups.getUnselectionDeps(apt_id, newSelectedApts),
+                                            msg = [];
+                                        if (!check.ok) {
+                                            msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_names[apt_id]));
+                                            _.each(check.dependents, function (d_apt_id) {
+                                                msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                            });
+                                            msg.push('<br>Снять выбор с этих параметров исследования?<br>');
+
+                                            messages.push(msg.join(''));
+                                            Array.prototype.push.apply(yesToggle, check.dependents);
+                                            noToggle.push(apt_id);
+                                        }
+                                    });
+
+                                    if (messages.length) {
+                                        MessageBox.question(
+                                            'Внимание', messages.join('<br>')
+                                        ).then(function () {
+                                            _.each(yesToggle, function (apt_id) {
+                                                $scope.assigned[apt_id].is_assigned = !$scope.assigned[apt_id].is_assigned;
+                                            });
+                                        }, function () {
+                                            _.each(noToggle, function (apt_id) {
+                                                $scope.assigned[apt_id].is_assigned = !$scope.assigned[apt_id].is_assigned;
+                                            });
+                                        })
+                                    }
+                                }
+                            }, true);
+                        }
+                    });
+
                 $scope.check_all_selected = function () {
                     return model.assignable.every(function (prop) {
                         var type_id = prop[0];
