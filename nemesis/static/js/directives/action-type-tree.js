@@ -18,8 +18,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.sex = null;
                 this.osids = [];
                 this.tissue_required = false;
-                this.assignable = [];
-                this.tissue_types = [];
+                this.note_mandatory = false;
             } else if (angular.isArray(source)) {
                 this.id = source[0];
                 this.name = source[1];
@@ -30,8 +29,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 this.sex = source[6];
                 this.osids = source[7];
                 this.tissue_required = source[8];
-                this.assignable = source[9];
-                this.tissue_types = source[10];
+                this.note_mandatory = source[11];
             } else {
                 angular.extend(this, source)
             }
@@ -122,17 +120,6 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 function (value) {
                     var id = value.id;
                     var clone = filtered[id] = value.clone();
-                    clone.assignable = _.chain(
-                        clone.assignable
-                    ).filter(
-                        function (item) {
-                            return age_acceptable(client_info, item[2]) && sex_acceptable(client_info, item[3])
-                        }
-                    ).map(
-                        function (item) {
-                            return [item[0], item[1]];
-                        }
-                    ).value();
                     // Построение недостающих родительских узлов - подъём по дереву вверх до первого найденного
                     while (id) {
                         id = value.gid;
@@ -195,11 +182,103 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         return deferred.promise;
     }
 }])
+.service('APTGroupsService', ['$q', 'WebMisApi', function ($q, WebMisApi) {
+    var APTGroup = function (master_id, dependent_ids) {
+        this.master_apt_id = master_id;
+        this.dependent_apt_ids = dependent_ids;
+    };
+    var ATAPTGroups = function () {
+        this.groups = {};
+        this.reversedGroups = {};
+    };
+
+    ATAPTGroups.prototype.available = function () {
+        return !_.isEmpty(this.groups);
+    };
+    ATAPTGroups.prototype.addGroup = function (group) {
+        this.groups[group.master_apt_id] = group;
+        var that = this;
+        group.dependent_apt_ids.forEach(function (dep_id) {
+            if (!that.reversedGroups.hasOwnProperty(dep_id)) {
+                that.reversedGroups[dep_id] = [];
+            }
+            that.reversedGroups[dep_id].push(group.master_apt_id);
+        });
+    };
+    ATAPTGroups.prototype.getSelectionDeps = function (apt_id, selected) {
+        // проверить дочерние apt при выборе родителя
+        var res = {
+            ok: true,
+            dependents: []
+        };
+        var that = this;
+        var getDeps = function (apt_id) {
+            var r = [],
+                new_deps;
+            if (that.groups.hasOwnProperty(apt_id)) {
+                // те дочерние apt_id, которые должны быть выбранными
+                new_deps = _.difference(that.groups[apt_id].dependent_apt_ids, selected);
+                Array.prototype.push.apply(r, new_deps);
+                _.each(new_deps, function (d_apt_id) {
+                    Array.prototype.push.apply(r, getDeps(d_apt_id));
+                });
+            }
+            return r;
+        };
+
+        res.dependents = getDeps(apt_id);
+        res.ok = !Boolean(res.dependents.length);
+        return res;
+    };
+    ATAPTGroups.prototype.getUnselectionDeps = function (apt_id, selected) {
+        // проверить родительские apt при снятии выбора с родителя
+        var res = {
+            ok: true,
+            dependents: []
+        };
+        var that = this;
+        var getDeps = function (apt_id) {
+            var r = [],
+                new_deps;
+            if (that.reversedGroups.hasOwnProperty(apt_id)) {
+                // те родительские apt_id, которые не должны остаться выбранными
+                new_deps = _.intersection(that.reversedGroups[apt_id], selected);
+                Array.prototype.push.apply(r, new_deps);
+                _.each(new_deps, function (d_apt_id) {
+                    Array.prototype.push.apply(r, getDeps(d_apt_id));
+                });
+            }
+            return r;
+        };
+
+        res.dependents = getDeps(apt_id);
+        res.ok = !Boolean(res.dependents.length);
+        return res;
+    };
+
+    var groups = {};
+    this.get = function (action_type_id) {
+        var deferred = $q.defer();
+        if (!groups.hasOwnProperty(action_type_id)) {
+            WebMisApi.action.get_apt_groups(action_type_id)
+                .then(function (group_data) {
+                    var g = groups[action_type_id] = new ATAPTGroups();
+                    angular.forEach(group_data, function (id_list, master_id) {
+                        g.addGroup(new APTGroup(parseInt(master_id), id_list));
+                    });
+                    deferred.resolve(g);
+                });
+        } else {
+            deferred.resolve(groups[action_type_id]);
+        }
+        return deferred.promise;
+    };
+}])
 .service('ActionTypeTreeModal', [
         '$modal', '$http', 'ActionTypeTreeService', 'WMWindowSync', 'WMEventServices', 'AccountingService',
-        'MessageBox', 'WMConfig', 'RefBookService', '$timeout',
+        'MessageBox', 'WMConfig', 'RefBookService', '$timeout', 'WebMisApi', 'APTGroupsService',
         function ($modal, $http, ActionTypeTreeService, WMWindowSync, WMEventServices, AccountingService,
-                  MessageBox, WMConfig, RefBookService, $timeout) {
+                  MessageBox, WMConfig, RefBookService, $timeout, WebMisApi, APTGroupsService) {
     return {
         open: function (event_id, client_info, filter_params, onCreateCallback) {
             var self_service = this;
@@ -241,7 +320,6 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     os_check: true,
                     person_check: true
                 };
-                $scope.rbTissueType = RefBookService.get('rbTissueType');
                 var ServiceKind = RefBookService.get('ServiceKind');
                 var sk_lab_action_id;
                 ServiceKind.get_by_code_async('lab_action').then(function (res) {
@@ -278,42 +356,24 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     $modalInstance.dismiss('close');
                 };
                 $scope.add_prepared_action = function (node) {
-                    var newAction = {
-                        type_id: node.id,
-                        type_name: node.name,
-                        assigned: node.assignable.map(function (prop) {return prop[0]}),
-                        assignable: node.assignable,
-                        planned_end_date: new Date(),
-                        service: null,
-                        urgent: false,
-                        ttj: {
-                            available_tissue_types: node.tissue_types,
-                            selected_tissue_type: $scope.rbTissueType.get(node.tissue_types[0])
-                        }
-                    };
+                    var service_data, sd, no_ss;
                     if ($scope.at_service_data.hasOwnProperty(node.id)) {
-                        var service_data = $scope.at_service_data[node.id],
-                            no_ss = safe_traverse(service_data, ['service_kind', 'id']) === sk_lab_action_id &&
-                                service_data.is_complex_service;
-                        AccountingService.get_service(undefined, {
-                            service_kind_id: safe_traverse(service_data, ['service_kind', 'id']),
-                            price_list_item_id: service_data.price_list_item_id,
-                            event_id: $scope.event_id,
-                            serviced_entity_from_search: angular.extend({}, service_data, {no_subservices: no_ss}),
-                            no_subservices: no_ss
-                        })
-                            .then(function (new_service) {
-                                newAction.service = new_service;
-                                if (new_service.service_kind.id == sk_lab_action_id) {
-                                    newAction.assignable = _.deepCopy(new_service.serviced_entity.tests_data.assignable);
-                                    newAction.assigned = _.deepCopy(new_service.serviced_entity.tests_data.assigned);
-                                }
-                            });
+                        sd = $scope.at_service_data[node.id];
+                        no_ss = sd.service_kind.id === sk_lab_action_id && sd.is_complex_service;
+                        service_data = {
+                            service_data: {
+                                service_kind_id: sd.service_kind.id,
+                                price_list_item_id: sd.price_list_item_id,
+                                event_id: $scope.event_id,
+                                serviced_entity_from_search: angular.extend({}, sd, {no_subservices: no_ss}),
+                                no_subservices: no_ss
+                            }
+                        }
                     }
-                    $scope.prepared2create.push(newAction);
-                    WMEventServices.get_action_ped(node.id, $scope.event_id).then(function (ped) {
-                        newAction.planned_end_date = ped;
-                    });
+                    WebMisApi.action.get_new_lab(node.id, $scope.event_id, service_data)
+                        .then(function (newAction) {
+                            $scope.prepared2create.push(newAction);
+                        });
                 };
                 $scope.create_action = function (node) {
                     // или сохранить сразу или открыть вкладку с редактированием нового экшена
@@ -360,13 +420,14 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             directions: $scope.prepared2create.map(function (action) {
                                 return {
                                     type_id: action.type_id,
-                                    assigned: action.assigned,
+                                    props_data: action.props_data,
                                     planned_end_date: action.planned_end_date,
                                     service: action.service,
                                     urgent: action.urgent,
                                     ttj: {
-                                        selected_tissue_type: action.ttj.selected_tissue_type
-                                    }
+                                        selected_tissue_type: action.selected_tissue_type
+                                    },
+                                    note: action.note
                                 }
                             })
                         }
@@ -391,11 +452,13 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.open_assignments = function (action) {
                     return self_service.openAppointmentModal(action, false)
                         .then(function () {
-                            action.service.serviced_entity.tests_data.assigned = action.assigned;
-                            AccountingService.refreshServiceSubservices(action.service)
-                                .then(function (upd_service) {
-                                    angular.copy(upd_service, action.service);
-                                });
+                            if (action.service) {
+                                action.service.serviced_entity.tests_data.props_data = action.props_data;
+                                AccountingService.refreshServiceSubservices(action.service)
+                                    .then(function (upd_service) {
+                                        angular.copy(upd_service, action.service);
+                                    });
+                            }
                         });
                 };
                 $scope.get_at_item_price = function (at_id) {
@@ -419,7 +482,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
                 $scope.filterItemLabTissueType = function (action) {
                     return function (item) {
-                        return action.ttj.available_tissue_types.has(item.id);
+                        return action.available_tissue_types.has(item.id);
                     }
                 };
                 $scope.labHasTestsWithPrices = function (action) {
@@ -436,6 +499,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     }).every(function (action) {
                         return action.service.subservice_list.length > 0;
                     });
+                };
+                $scope.actionReasonRequired = function (action) {
+                    return Boolean(action.note_mandatory);
                 };
 
                 AccountingService.getServiceActionTypePrices(filter_params.contract_id)
@@ -456,7 +522,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             personal_check = true;
                         }
                         if (at_item.children.length) {
-                            $scope.hidden_nodes.push(at_item.id) // по умолчанию все узлы свернуты
+                            $scope.hidden_nodes.push(at_item.id);  // по умолчанию все узлы свернуты
                         }
                     });
                     $scope.conditions.os_check = $scope.os_check_enabled = os_check;
@@ -515,36 +581,125 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         },
         openAppointmentModal: function (model, date_required) {
             var assigned = {},
-                props_mandatory = {},
                 t_model = {
+                    props_data: model.props_data.clone(),
                     planned_end_date: model.planned_end_date,
                     ped_disabled: model.ped_disabled,
                     available_tissue_types: model.available_tissue_types,
                     selected_tissue_type: model.selected_tissue_type,
                     tissue_type_visible: model.tissue_type_visible
-                };
-            model.assignable.forEach(function (prop) {
-                assigned[prop[0]] = model.assigned.has(prop[0]);
-                props_mandatory[prop[0]] = prop[3];
+                },
+                apt_names = {};
+            t_model.props_data.forEach(function (prop) {
+                assigned[prop.type_id] = prop;
+            });
+            model.assignable.forEach(function (apt) {
+                apt_names[apt[0]] = apt[1];
             });
             var Controller = function ($scope) {
                 $scope.model = model;
+                $scope.apt_names = apt_names;
+                $scope.action_type_id = model.type_id;
                 $scope.assigned = assigned;
-                $scope.props_mandatory = props_mandatory;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
+                $scope.apt_groups = undefined;
+                var getCheckedApts = function (o) {
+                    var res = [];
+                    _.each(o, function (prop, type_id) {
+                        if (prop.is_assigned) {
+                            res.push(parseInt(type_id));
+                        }
+                    });
+                    return res;
+                };
+                APTGroupsService.get($scope.action_type_id)
+                    .then(function (apt_groups) {
+                        $scope.apt_groups = apt_groups;
+                        if ($scope.apt_groups.available()) {
+                            $scope.$watch('assigned', function (n, o) {
+                                var newSelectedApts = getCheckedApts(n),
+                                    oldSelected = getCheckedApts(o);
+                                if (!angular.equals(newSelectedApts, oldSelected)) {
+                                    var newAptIds = _.difference(newSelectedApts, oldSelected),
+                                        cancelledAptIds = _.difference(oldSelected, newSelectedApts),
+                                        messages = [],
+                                        yesToggle = [],
+                                        noToggle = [];
+
+                                    // были выбраны те, которые требуют выбор других
+                                    _.each(newAptIds, function (apt_id) {
+                                        var check = $scope.apt_groups.getSelectionDeps(apt_id, newSelectedApts),
+                                            msg = [];
+                                        if (!check.ok) {
+                                            check.dependents = _.filter(check.dependents, function (d_apt_id) {
+                                                return $scope.apt_names.hasOwnProperty(d_apt_id);
+                                            });
+                                            if (check.dependents.length) {
+                                                msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_names[apt_id]));
+                                                _.each(check.dependents, function (d_apt_id) {
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                });
+                                                msg.push('<br>Выбрать данные параметры исследования?<br>');
+
+                                                messages.push(msg.join(''));
+                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                noToggle.push(apt_id);
+                                            }
+                                        }
+                                    });
+                                    // был снят выбор с тех, которые требуются для выбора других
+                                    _.each(cancelledAptIds, function (apt_id) {
+                                        var check = $scope.apt_groups.getUnselectionDeps(apt_id, newSelectedApts),
+                                            msg = [];
+                                        if (!check.ok) {
+                                            check.dependents = _.filter(check.dependents, function (d_apt_id) {
+                                                return $scope.apt_names.hasOwnProperty(d_apt_id);
+                                            });
+                                            if (check.dependents.length) {
+                                                msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_names[apt_id]));
+                                                _.each(check.dependents, function (d_apt_id) {
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                });
+                                                msg.push('<br>Снять выбор с этих параметров исследования?<br>');
+
+                                                messages.push(msg.join(''));
+                                                Array.prototype.push.apply(yesToggle, check.dependents);
+                                                noToggle.push(apt_id);
+                                            }
+                                        }
+                                    });
+
+                                    if (messages.length) {
+                                        MessageBox.question(
+                                            'Внимание', messages.join('<br>')
+                                        ).then(function () {
+                                            _.each(yesToggle, function (apt_id) {
+                                                $scope.assigned[apt_id].is_assigned = !$scope.assigned[apt_id].is_assigned;
+                                            });
+                                        }, function () {
+                                            _.each(noToggle, function (apt_id) {
+                                                $scope.assigned[apt_id].is_assigned = !$scope.assigned[apt_id].is_assigned;
+                                            });
+                                        })
+                                    }
+                                }
+                            }, true);
+                        }
+                    });
+
                 $scope.check_all_selected = function () {
                     return model.assignable.every(function (prop) {
-                        var prop_id = prop[0];
-                        return $scope.assigned[prop_id];
+                        var type_id = prop[0];
+                        return $scope.assigned[type_id].is_assigned;
                     });
                 };
                 $scope.select_all = function () {
                     var enabled = !$scope.check_all_selected();
                     model.assignable.forEach(function (prop) {
-                        var prop_id = prop[0],
+                        var type_id = prop[0],
                             mandatory = prop[3];
-                        $scope.assigned[prop_id] = mandatory ? true : enabled;
+                        $scope.assigned[type_id].is_assigned =  mandatory ? true : enabled;
                     });
                 };
                 $scope.price_available = function (prop) {
@@ -558,6 +713,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         return t_model.available_tissue_types.has(item.id);
                     }
                 };
+                $scope.testReasonRequired = function (prop) {
+                    return prop[4];
+                };
             };
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
@@ -566,12 +724,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 controller: Controller
             });
             return instance.result.then(function () {
-                var result = [];
-                for (var key in assigned) {
-                    if (! assigned.hasOwnProperty(key)) continue;
-                    if (assigned[key]) result.push(parseInt(key));
-                }
-                model.assigned = result;
+                model.props_data = t_model.props_data;
                 model.planned_end_date = t_model.planned_end_date;
                 model.selected_tissue_type = t_model.selected_tissue_type;
             });
@@ -698,10 +851,15 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                 <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
                             </div>\
                             <div class="col-md-4">\
-                                <rb-select ref-book="rbTissueType" ng-model="action.ttj.selected_tissue_type"\
+                                <rb-select ref-book="rbTissueType" ng-model="action.selected_tissue_type"\
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\
                             </div>\
+                            </div>\
+                            <div class="form-group" ng-if="actionReasonRequired(action)">\
+                                <label class="control-label">Обоснование <span class="text-danger">*</span></label>\
+                                <textarea class="form-control" rows="1" ng-model="action.note"\
+                                     ng-required="true" placeholder="Укажите обоснование для назначения"></textarea>\
                             </div>\
                         </li>\
                     </ul>\
@@ -725,6 +883,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <h4 class="modal-title">Назначаемые исследования</h4>\
         </div>\
         <div class="modal-body">\
+            <ng-form name="testsForm">\
             <div class="row">\
                 <div class="col-md-6" ng-if="date_required">\
                     <label for="ped">Дата/время назначения</label>\
@@ -733,7 +892,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 <div class="col-md-6" ng-if="t_model.tissue_type_visible">\
                     <label for="tissue_type">Тип биоматериала</label>\
                     <rb-select id="tissue_type" ref-book="rbTissueType" ng-model="t_model.selected_tissue_type"\
-                        custom-filter="filterItemLabTissueType()">\
+                        custom-filter="filterItemLabTissueType()" ng-required="true">\
                     </rb-select>\
                 </div>\
             </div>\
@@ -742,13 +901,21 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             </div>\
             <hr class="novmargin"/>\
             <div class="checkbox" ng-repeat="prop in model.assignable">\
-                <label><input type="checkbox" ng-model="assigned[prop[0]]" ng-disabled="prop[3]">[[ prop[1] ]]\
+                <label><input type="checkbox" ng-model="assigned[prop[0]].is_assigned" ng-disabled="prop[3]">[[ prop[1] ]]\
                     <span ng-if="price_available(prop)"><span class="text-danger lmargin20" ng-bind="get_price(prop)"></span> руб.</span></label>\
+                <div class="row" ng-if="testReasonRequired(prop)">\
+                    <div class="col-md-10">\
+                    <textarea class="form-control lmargin20" rows="1" ng-model="assigned[prop[0]].note"\
+                         ng-required="assigned[prop[0]].is_assigned" placeholder="Укажите обоснование для назначения"></textarea>\
+                    </div>\
+                </div>\
             </div>\
+            </ng-form>\
         </div>\
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-            <button type="button" class="btn btn-success" ng-click="$close()">OK</button>\
+            <button type="button" class="btn btn-success" ng-disabled="testsForm.$invalid"\
+                ng-click="$close()">Подтвердить</button>\
         </div>')
 }])
 ;

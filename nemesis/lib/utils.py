@@ -692,3 +692,12 @@ def bail_out(exc):
     @raise: exc
     """
     raise exc
+
+
+def db_non_flushable(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        from nemesis.systemwide import db
+        with db.session.no_autoflush:
+            return func(*args, **kwargs)
+    return wrapper

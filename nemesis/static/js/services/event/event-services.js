@@ -192,6 +192,9 @@ angular.module('WebMis20.services').
             is_policlinic: function () {
                 return rt.code === 'policlinic';
             },
+            is_hospital: function () {
+                return rt.code === 'hospital';
+            },
             is_stationary: function () {
                 return stat_codes.has(rt.code);
             },

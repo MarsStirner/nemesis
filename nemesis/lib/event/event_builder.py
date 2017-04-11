@@ -3,14 +3,16 @@ import datetime
 
 from flask_login import current_user
 
-from nemesis.lib.data import create_action
+from nemesis.lib.const import STATIONARY_EVENT_CODES, STATIONARY_RECEIVED_CODE
+from nemesis.lib.data import create_action, get_action
 from nemesis.models.actions import ActionType
 from nemesis.models.client import Client
 from nemesis.models.enums import EventPrimary, EventOrder
 from nemesis.models.event import (Event, EventType)
-from nemesis.models.exists import Person
+from nemesis.models.exists import Person, rbRequestType
 from nemesis.models.schedule import ScheduleClientTicket
 from nemesis.lib.data_ctrl.utils import get_default_org
+from nemesis.systemwide import db
 
 
 class EventBuilder(object):
@@ -50,6 +52,14 @@ class EventBuilder(object):
         self.event.exec_person_id = current_user.get_main_user().id
         self.event.note = ''
 
+    def get_prev_event(self, event_codes):
+        return Event.query.join(EventType, rbRequestType).filter(
+            Event.client_id == self.client_id,
+            Event.deleted == 0,
+            rbRequestType.code.in_(event_codes),
+            Event.execDate.is_(None)
+        ).order_by(Event.setDate.desc()).first()
+
     def set_additional_properties(self):
         pass
 
@@ -79,8 +89,13 @@ class StationaryEventBuilder(EventBuilder):
         self.event.order = EventOrder.planned[0]
 
     def create_received(self):
-        action_type = ActionType.query.filter(ActionType.flatCode == u'received').first()
+        prev_event = self.get_prev_event(STATIONARY_EVENT_CODES)
+        prev_received = get_action(prev_event, STATIONARY_RECEIVED_CODE)
+        action_type = ActionType.query.filter(ActionType.flatCode == STATIONARY_RECEIVED_CODE).first()
         self.event.received = create_action(action_type.id, self.event)
+        if self.event.received and prev_received:
+            self.event.received.propsByCode['weight'].value = prev_received.propsByCode['weight'].value
+            self.event.received.propsByCode['height'].value = prev_received.propsByCode['height'].value
 
 
 class EventConstructionDirector(object):

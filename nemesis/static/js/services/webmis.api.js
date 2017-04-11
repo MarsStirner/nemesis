@@ -258,11 +258,17 @@ WebMis20
         }
     };
     this.action = {
+        get_new_lab: function (action_type_id, event_id, service_data) {
+            return wrapper('GET', WMConfig.url.actions.action_new_lab.format(action_type_id, event_id), service_data);
+        },
         search: function (data) {
             return wrapper('POST', WMConfig.url.actions.search_actions, {}, data);
         },
         get_patient_actions: function (client_id) {
             return wrapper('GET', WMConfig.url.actions.patient_actions + client_id);
+        },
+        get_apt_groups: function (action_type_id) {
+            return wrapper('GET', WMConfig.url.actions.apt_groups_get.format(action_type_id));
         }
     };
     this.stationary = {

@@ -6,7 +6,7 @@ import re
 from nemesis.lib.agesex import AgeSex, parseAgeSelector
 from nemesis.lib.const import PAYER_EVENT_CODES, STATIONARY_EVENT_CODES, DIAGNOSTIC_EVENT_CODES, \
     POLICLINIC_EVENT_CODES, PAID_EVENT_CODE, OMS_EVENT_CODE, DMS_EVENT_CODE, BUDGET_EVENT_CODE, DAY_HOSPITAL_CODE, \
-    VMP_EVENT_CODE, ADM_PERM_EVENT_CODES, VMP_FROM_OMS_EVENT_CODE
+    VMP_EVENT_CODE, ADM_PERM_EVENT_CODES, VMP_FROM_OMS_EVENT_CODE, OMS_MO_EVENT_CODE
 from nemesis.lib.settings import Settings
 from nemesis.models.client import ClientDocument
 from nemesis.models.diagnosis import EventType_rbDiagnosisType
@@ -178,6 +178,10 @@ class Event(db.Model):
     @property
     def is_oms(self):
         return self.eventType.finance.code == OMS_EVENT_CODE
+
+    @property
+    def is_oms_mo(self):
+        return self.eventType.finance.code == OMS_MO_EVENT_CODE
 
     @property
     def is_dms(self):

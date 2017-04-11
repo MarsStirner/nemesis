@@ -101,7 +101,7 @@ angular.module('WebMis20.directives').
          ng-class="{\'has-error\': policyForm.pol_enddate[[idPostfix]].$invalid }">\
         <label for="pol_enddate[[idPostfix]]" class="control-label">Действителен до</label>\
         <wm-date id="pol_enddate[[idPostfix]]" name="pol_enddate[[idPostfix]]"\
-                 ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()">\
+                 ng-model="modelPolicy.end_date" ng-disabled="!edit_mode()" ng-required="pType==1 && policyForm.$dirty">\
         </wm-date>\
     </div>\
 </div>\
@@ -248,7 +248,7 @@ angular.module('WebMis20.directives').
 
                     scope.regionRequired = function() {
                         // Если выбрана страна Россия
-                        return scope.modelDocument.country.code == 643;
+                        return safe_traverse(scope, ['modelDocument', 'country', 'code']) == 643;
                     };
 
                     scope.countryChange = function() {

@@ -118,6 +118,12 @@ class Action(db.Model):
         """Инициализировать свойства данными из соответствующего прайс-листа"""
         from nemesis.lib.data_ctrl.accounting.pricelist import PriceListItemController
         from nemesis.lib.data import get_assignable_apts
+        from nemesis.lib.action.utils import action_needs_service
+
+        if not action_needs_service(self):
+            for prop in self.properties:
+                prop.has_pricelist_service = False
+            return
 
         assignable = get_assignable_apts(self.actionType_id)
         assignable_apt_ids = [apt_data[0] for apt_data in assignable]
@@ -153,6 +159,7 @@ class ActionProperty(db.Model):
     isAssigned = db.Column(db.Boolean, nullable=False, server_default=u"'0'")
     evaluation = db.Column(db.Integer, default=None)
     version = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    note = db.Column(db.Text)
 
     action = db.relationship(u'Action')
     type = db.relationship(u'ActionPropertyType', lazy=False, innerjoin=True)
@@ -397,6 +404,7 @@ class ActionPropertyType(db.Model):
     modifyDatetime = db.Column(db.DateTime, nullable=False)
     modifyPerson_id = db.Column(db.Integer)
     notLoadableWithTemplate = db.Column(db.SmallInteger)
+    noteMandatory = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     unit = db.relationship('rbUnit')
     template = db.relationship('ActionPropertyTemplate')
@@ -465,6 +473,14 @@ class ActionPropertyType(db.Model):
         if self.typeName == 'String' and value_domain['subtype']:
             result['type_name'] = 'String/{0}'.format(value_domain['subtype'])
         return result
+
+
+class APT_Groups(db.Model):
+    __tablename__ = u'APT_Groups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    master_apt_id = db.Column(db.Integer, db.ForeignKey('ActionPropertyType.id'), primary_key=True)
+    apt_id = db.Column(db.Integer, db.ForeignKey('ActionPropertyType.id'), primary_key=True)
 
 
 class ActionProperty__ValueType(db.Model):
@@ -1019,6 +1035,7 @@ class ActionType(db.Model):
     mnem = db.Column(db.String(32), server_default=u"''")
     layout = db.Column(db.Text)
     hasPrescriptions = db.Column(db.Integer, index=True)
+    noteMandatory = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     services = db.relationship(u'ActionType_Service')
     nomenclatureService = db.relationship(u'rbService', foreign_keys='ActionType.nomenclativeService_id')

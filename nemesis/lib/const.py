@@ -14,6 +14,7 @@ OMS_EVENT_CODE = '2'
 DMS_EVENT_CODE = '3'
 VMP_EVENT_CODE = '6'
 VMP_FROM_OMS_EVENT_CODE = '11'
+OMS_MO_EVENT_CODE = '12'
 BUDGET_EVENT_CODE = '1'
 ADM_PERM_EVENT_CODES = ('8', 'admperm1', 'admperm2')
 PAYER_EVENT_CODES = ('4', '3', '2')
@@ -32,3 +33,7 @@ STATIONARY_HOSP_BED_CODE = 'hospitalBed'
 STATIONARY_HOSP_LENGTH_CODE = 'hospLength'
 
 NOT_COPYABLE_VALUE_TYPES = ['HospitalBed', 'HospitalBedProfile', 'JobTicket', 'Diagnosis']
+
+# DocumentType
+PASSPORT_DOC_TYPE_CODE = '14'   # Паспорт РФ
+RESIDENCE_DOC_TYPE_CODE = '91'  # Вид на жительство

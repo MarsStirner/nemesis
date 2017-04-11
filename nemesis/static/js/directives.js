@@ -1425,6 +1425,26 @@ angular.module('WebMis20.directives')
             }
         }
     }])
+    .directive('capitalizeFirst', ['$parse', function($parse) {
+       return {
+         require: 'ngModel',
+         link: function(scope, element, attrs, modelCtrl) {
+            var capitalize = function(inputValue) {
+               if (inputValue === undefined) { inputValue = ''; }
+               var capitalized = inputValue.charAt(0).toUpperCase() +
+                                 inputValue.substring(1).toLowerCase();
+               if(capitalized !== inputValue) {
+                  var el = element[0];
+                  modelCtrl.$setViewValue(capitalized);
+                  modelCtrl.$render();
+                }
+                return capitalized;
+             }
+             modelCtrl.$parsers.push(capitalize);
+             capitalize($parse(attrs.ngModel)(scope)); // capitalize initial value
+         }
+       };
+    }])
 .run(['$templateCache', function ($templateCache) {
     $templateCache.put('/WebMis20/wm-diagnosis-new.html',
         '<div>\
