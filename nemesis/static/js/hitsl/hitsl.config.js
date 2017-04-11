@@ -4,8 +4,8 @@
 'use strict';
 angular.module('hitsl.ui')
 .config([
-    '$interpolateProvider', 'datepickerConfig', 'datepickerPopupConfig', 'paginationConfig', '$provide', '$tooltipProvider',
-    function ($interpolateProvider, datepickerConfig, datepickerPopupConfig, paginationConfig, $provide, $tooltipProvider) {
+    '$interpolateProvider', 'datepickerConfig', 'datepickerPopupConfig', 'paginationConfig', '$provide', '$tooltipProvider', 'localStorageServiceProvider',
+    function ($interpolateProvider, datepickerConfig, datepickerPopupConfig, paginationConfig, $provide, $tooltipProvider, localStorageServiceProvider) {
         $interpolateProvider.startSymbol('[[');
         $interpolateProvider.endSymbol(']]');
         datepickerConfig.showWeek = false;
@@ -62,5 +62,7 @@ angular.module('hitsl.ui')
             //Open icon
             $.AdminLTE.options.boxWidgetOptions.boxWidgetIcons.open = 'fa-chevron-right';
         }
+
+        localStorageServiceProvider.setPrefix('webmis20').setNotify(true, true);
     }])
 ;
