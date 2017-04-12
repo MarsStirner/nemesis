@@ -276,4 +276,9 @@ WebMis20
             return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
         }
     };
+    this.client = {
+        search: function (args) {
+            return wrapper('GET',WMConfig.url.patients.client_search, args);
+        }
+    };
 }]);
