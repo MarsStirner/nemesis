@@ -492,7 +492,7 @@ class ScheduleVisualizer(object):
         ).order_by(Schedule.date).options(db.contains_eager(Schedule.tickets).contains_eager('schedule'))
         result = []
         tickets_overplan = []
-        schedule_id = None # id резерва. Записать "Сверхплана" можно только к конкретному резеву.
+        schedule_id = None  # id резерва. Записать "Сверхплана" можно только к конкретному резеву.
         current_datetime = datetime.datetime.now()
 
         def filter_plan_tickets(ticket):
@@ -514,6 +514,8 @@ class ScheduleVisualizer(object):
             })
             schedule_id = schedule.id
 
+        # Сортируем резервы в хронологическом порядке
+        result = sorted(result, key=lambda reserve: reserve['tickets'][0]['begDateTime'])
         tickets_overplan_data = [self.get_ticket_data(t, current_datetime, schedule_date) for t in tickets_overplan]
         # Добавляем пустой тикет для записи "Сверхплана".
         if schedule_id and current_datetime.date() <= schedule_date:
