@@ -140,12 +140,36 @@ def int_api_thesaurus(code):
     ]
 
 
+@rb_cache.memoize(600)
+def int_api_symbols(code):
+    from nemesis.models.exists import rbSymbol
+    from itertools import groupby
+    grouped_by_group = groupby(rbSymbol.query.order_by('group_name').all(), lambda row: row.group_name)
+    return dict((symb_group, represent_symbols(items))
+            for symb_group, items in grouped_by_group)
+
+
+
+def represent_symbols(symbols_list):
+    return [{
+        'id': symbol.id,
+        'code': symbol.code,
+        'name': symbol.name,
+    } for symbol in symbols_list]
+
+
 @module.route('/rbThesaurus/')
 @module.route('/rbThesaurus/<code>')
 @api_method
 def api_thesaurus(code=None):
     if code:
         return int_api_thesaurus(code)
+
+@module.route('/rbSymbols/')
+@module.route('/rbSymbols/<code>')
+@api_method
+def api_symbols(code=None):
+    return int_api_symbols(code)
 
 
 @module.route('/rb/')
