@@ -3,8 +3,9 @@
 /*jslint browser:true*/
 'use strict';
 angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
-.service('ThesaurusService', ['$http', '$q', 'FlatTree','WMConfig', function ($http, $q, FlatTree, WMConfig) {
+.service('ThesaurusService', ['$http', '$q', 'FlatTree', 'WMConfig', function ($http, $q, FlatTree, WMConfig) {
     var cache = {};
+
     function convert(item) {
         return {
             id: item[0],
@@ -14,6 +15,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             template: item[4]
         }
     }
+
     function makeObject(item) {
         if (!item) {
             return {
@@ -27,6 +29,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             return item
         }
     }
+
     var Thesaurus = function (data) {
         var list = data.map(convert);
         var tree = new FlatTree('parent_id').set_array(list).filter().render(makeObject);
@@ -39,10 +42,10 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             defer.resolve(cache[code]);
         } else {
             $http.get(WMConfig.url.nemesis.rbThesaurus_root + code)
-            .success(function (data) {
-                var result = cache[code] = new Thesaurus(data.result);
-                defer.resolve(result)
-            });
+                .success(function (data) {
+                    var result = cache[code] = new Thesaurus(data.result);
+                    defer.resolve(result)
+                });
         }
         return defer.promise;
     }
@@ -52,6 +55,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
     function buildList(list) {
         return '<ul>{0}</ul>'.format(list.map(buildNode).join(''));
     }
+
     function buildNode(node) {
         if (!node.children.length) {
             return '<li><a ng-click="select(\'{0}\')"><i class="fa fa-angle-double-right">&nbsp;</i>{1}</a></li>'.format(node.id, node.name);
@@ -59,11 +63,13 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             return '<li><a ng-click="select(\'{0}\')"><i class="fa fa-angle-double-right">&nbsp;</i>{1}</a>{2}</li>'.format(node.id, node.name, buildList(node.children));
         }
     }
+
     function buildView(thesaurus_tree_nodes) {
         var tree = buildList(thesaurus_tree_nodes),
             editor = '<wysiwyg ng-model="model.text" get-wysiwyg-api="getWysiwygApi(api)" />';
         return editor + '<hr>' + '<div class="thesaurus-tree ui-treeview">' + tree + '</div>';
     }
+
     this.openThesaurus = function (code, editor_model, close_promise) {
         var myAside;
         return ThesaurusService.getThesaurus(code).then(function (thesaurus) {
@@ -122,6 +128,92 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         }
     }
 }])
+.service('SymbolsService', ['$http', '$q', 'FlatTree', 'WMConfig', function ($http, $q, FlatTree, WMConfig) {
+    var cache = {};
+
+    this.getSymbols = function (code) {
+        var defer = $q.defer();
+        if (cache.hasOwnProperty(code)) {
+            defer.resolve(cache[code]);
+        } else {
+            $http.get(WMConfig.url.nemesis.rbSymbols_root + code).success(function (data) {
+                var result = data.result;
+                defer.resolve(result)
+            });
+        }
+        return defer.promise;
+    }
+}])
+.service('AsideSymbols', ['SymbolsService', '$modal', '$templateCache', '$filter', function (SymbolsService, $modal, $templateCache, $filter) {
+    // Рендер вида
+    this.openSymbols = function (code, editor_model, close_promise) {
+        var myAside;
+        return SymbolsService.getSymbols('symbols').then(function (symbols) {
+            myAside = $modal.open({
+                windowTemplateUrl: '/WebMis20/aside-symbols.html',
+                template: $templateCache.get('/WebMis20/aside-symbols/groups.html'),
+                backdrop: true,
+                controller: function ($scope) {
+                    function chunk(arr, size) {
+                          var newArr = [];
+                          for (var i=0; i<arr.length; i+=size) {
+                            newArr.push(arr.slice(i, i+size));
+                          }
+                          return newArr;
+                    }
+                    function chunkSymbols(symbols, everyN) {
+                        for (var key in symbols) {
+                            symbols[key] = chunk(symbols[key], everyN);
+                        }
+                        return symbols
+                    }
+                    var numOfColumns = 25;
+                    $scope.symbols_groups = chunkSymbols(symbols, numOfColumns);
+
+                    function renderSymbolsTemplate(symbol) {
+                        return $filter('charCode')(symbol.code)
+                    }
+
+                    $scope.model = {
+                        text: editor_model
+                    };
+                    $scope.getWysiwygApi = function (api) {
+                        $scope.wysiwygApi = api;
+                    };
+                    $scope.select = function (symbol) {
+                        var text = renderSymbolsTemplate(symbol);
+                        $scope.wysiwygApi.insertText(text);
+                    };
+                    $scope.$on('$destroy', function () {
+                        close_promise.resolve($scope.model.text);
+                    });
+                }
+            });
+
+            return close_promise.promise.then(function (edited_text) {
+                return edited_text;
+            });
+        });
+    };
+}])
+.directive('wysiwygOpenSymbols', ['AsideSymbols', '$q', function (AsideSymbols, $q) {
+    return {
+        restrict: 'A',
+        link: function (scope, element, attributes) {
+            var jqElement = $(element);
+            jqElement.click(function (event) {
+                event.preventDefault();
+                var code = scope.$eval(attributes.wysiwygOpenSymbols);
+                var close = $q.defer();
+                AsideSymbols.openSymbols(
+                    code, scope.$model.$modelValue, close
+                ).then(function (result) {
+                    scope.replaceContent(result);
+                });
+            })
+        }
+    }
+}])
 .directive('wysiwyg', ['$q', '$compile', '$templateCache', 'HtmlCleaner',
         function ($q, $compile, $templateCache, HtmlCleaner) {
     var regexp_cleanHtml = new RegExp('(<br>|<div><br><\/div>)', 'g'),
@@ -160,6 +252,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             contenteditable: '=',
             userOptions: '=',
             thesaurusCode: '@',
+            isAlreadyOpened: '@?',
             complainsCode: '@',
             placeholder: '@',
             getWysiwygApi: '&?'
@@ -327,7 +420,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 });
             });
 
-            function handlePaste (e) {
+            function handlePaste(e) {
                 // http://stackoverflow.com/a/6804718
                 var types, pastedData, savedContent;
                 var _editor = editor[0];
@@ -374,7 +467,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 waitForPastedData(_editor, savedContent);
                 return true;
             }
-            function waitForPastedData (elem, savedContent) {
+
+            function waitForPastedData(elem, savedContent) {
                 // If data has been processes by browser, process it
                 if (elem.childNodes && elem.childNodes.length > 0) {
                     // Retrieve pasted content via innerHTML
@@ -392,7 +486,8 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                     }, 20);
                 }
             }
-            function processPaste (pastedData) {
+
+            function processPaste(pastedData) {
                 var cleaned = HtmlCleaner.clean(pastedData);
                 editor.focus();
                 restoreSelection();
@@ -434,7 +529,9 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
 
             scope.$on('$destroy', function () {
                 editor.unbind();
-                toolbar.find().each(function () {$(this).unbind()})
+                toolbar.find().each(function () {
+                    $(this).unbind()
+                })
             });
 
             $(window).bind('touchend', function (e) {
@@ -474,7 +571,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         [new RegExp(/<[^>]*docs-internal-guid[^>]*>/gi), ''],
         [new RegExp(/<\/b>(<br[^>]*>)?$/gi), ''],
 
-         // un-html spaces and newlines inserted by OS X
+        // un-html spaces and newlines inserted by OS X
         [new RegExp(/<span class="Apple-converted-space">\s*<\/span>/gi), ' '],
         [new RegExp(/<span class="Apple-converted-space"><span style=""><\/span><\/span>/gi), ' '],
         [new RegExp(/<br class="Apple-interchange-newline">/g), '<br>'],
@@ -488,10 +585,10 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         //[replace google docs bolds with a span to be replaced once the html is inserted
         [new RegExp(/<span[^>]*font-weight:(bold|700)[^>]*>/gi), '<span class="replace-with bold">'],
 
-         // replace manually entered b/i/a tags with real ones
+        // replace manually entered b/i/a tags with real ones
         [new RegExp(/&lt;(\/?)(i|b|a)&gt;/gi), '<$1$2>'],
 
-         // replace manually a tags with real ones, converting smart-quotes from google docs
+        // replace manually a tags with real ones, converting smart-quotes from google docs
         [new RegExp(/&lt;a(?:(?!href).)+href=(?:&quot;|&rdquo;|&ldquo;|"|“|”)(((?!&quot;|&rdquo;|&ldquo;|"|“|”).)*)(?:&quot;|&rdquo;|&ldquo;|"|“|”)(?:(?!&gt;).)*&gt;/gi), '<a href="$1">'],
 
         // Newlines between paragraphs in html have no syntactic value,
@@ -607,6 +704,9 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 <a class="btn" data-edit="undo" title="Undo (Ctrl/Cmd+Z)"><i class="fa fa-undo"></i></a>\
                 <a class="btn" data-edit="redo" title="Redo (Ctrl/Cmd+Y)"><i class="fa fa-repeat"></i></a>\
             </div>\
+            <div class="btn-group">\
+                <a class="btn" wysiwyg-open-symbols ng-if="!isAlreadyOpened"><i class="fa">Спецсимвол <i class="fa fa-yen"></i></i></a>\
+            </div>\
         </div>'.format(fonts.map(makeFontSelector).join('')));
     $templateCache.put('/WebMis20/aside-thesaurus/tree.html',
 '<div class="aside-header">\
@@ -627,11 +727,38 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             <div class="aside-content full-height">\
                 <div class="full-height" ng-transclude></div>\
             </div>\
+        </div>');
+    $templateCache.put('/WebMis20/aside-symbols.html',
+        '<div tabindex="-1" role="dialog" class="modal fade full-height" ng-class="{in: animate}" ng-style="{\'z-index\': 1050 + index*10, display: \'block\'}" ng-click="close($event)">\
+            <div class="aside right full-height">\
+                <div class="aside-dialog full-height">\
+                    <div class="aside-content full-height">\
+                        <div class="full-height" ng-transclude>\
+                        </div>\
+                    </div>\
+                </div>\
+            </div>\
+        </div>'
+    );
+    $templateCache.put('/WebMis20/aside-symbols/groups.html',
+        '<div class="aside-header">\
+            <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
+            <h4 class="aside-title">Выберите специальный символ</h4>\
         </div>\
-    </div>\
-</div>'
+        <div class="aside-body full-height modal-scrollable">\
+        <wysiwyg ng-model="model.text" is-already-opened="true" get-wysiwyg-api="getWysiwygApi(api)" />\
+        <hr>\
+        <div ng-repeat="(group_name, group) in symbols_groups">\
+            <span><b>[[group_name]]</b></span>\
+            <table class="table table-bordered table-clickable" role="presentation" cellspacing="0" >\
+                <tbody>\
+                    <tr ng-repeat="chunk in group">\
+                        <td title="[[symbol.name]]" ng-click="select(symbol)" ng-repeat="symbol in chunk">[[symbol.code|charCode]]\
+                        </td>\
+                    </tr>\
+                </tbody>\
+            </table>\
+         </div></div>'
     );
 }])
 ;
-
-

@@ -157,6 +157,7 @@ def fc_urls():
             'nemesis': {
                 'rb_root': url_for('rb.api_refbook'),
                 'rbThesaurus_root': url_for('rb.api_thesaurus'),
+                'rbSymbols_root': url_for('rb.api_symbols'),
                 'print_subsystem': {
                     'base': print_subsystem_url,
                     'templates': print_subsystem_url + 'templates/',
