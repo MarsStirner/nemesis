@@ -1695,4 +1695,5 @@ class rbSymbol(db.Model):
 class rbSymbolGroup(db.Model):
     __tablename__ = u'rbSymbolGroup'
     id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(30), nullable=False, index=True)
     name = db.Column(db.String(255), nullable=False, server_default=u"''")
