@@ -3,6 +3,7 @@ import logging
 import six
 import functools
 
+from itertools import groupby
 from copy import copy
 from flask import request
 from sqlalchemy import or_
@@ -10,6 +11,7 @@ from sqlalchemy.orm import noload
 
 from .blueprint import module, rb_cache
 from nemesis.lib.apiutils import api_method, ApiException
+from nemesis.models.exists import rbSymbol, rbSymbolGroup
 
 __author__ = 'viruzzz-kun'
 
@@ -139,23 +141,20 @@ def int_api_thesaurus(code):
         for item in rbThesaurus.query.filter(rbThesaurus.id.in_(id_list))
     ]
 
-
-@rb_cache.memoize(600)
-def int_api_symbols(code):
-    from nemesis.models.exists import rbSymbol
-    from itertools import groupby
-    grouped_by_group = groupby(rbSymbol.query.order_by('group_name').all(), lambda row: row.group_name)
-    return dict((symb_group, represent_symbols(items))
-            for symb_group, items in grouped_by_group)
-
-
-
 def represent_symbols(symbols_list):
     return [{
         'id': symbol.id,
         'code': symbol.code,
         'name': symbol.name,
     } for symbol in symbols_list]
+
+
+@rb_cache.memoize(600)
+def int_api_symbols(code):
+    query = rbSymbol.query.join(rbSymbolGroup).order_by(rbSymbolGroup.name).all()
+    grouped_by_group = groupby(query, lambda row: row.group.name)
+    return dict((symb_group, represent_symbols(items))
+            for symb_group, items in grouped_by_group)
 
 
 @module.route('/rbThesaurus/')
