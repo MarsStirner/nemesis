@@ -278,7 +278,16 @@ WebMis20
     };
     this.client = {
         search: function (args) {
-            return wrapper('GET',WMConfig.url.patients.client_search, args);
+            return wrapper('GET', WMConfig.url.patients.client_search, args);
+        }
+    };
+    this.event = {
+        get_new_hosp: function (client_id) {
+            var args = {
+                new: true,
+                client_id: client_id
+            };
+            return wrapper('GET', WMConfig.url.event.event_hosp_get, args);
         }
     };
 }]);
