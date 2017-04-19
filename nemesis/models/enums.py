@@ -229,3 +229,10 @@ class OrgStructType(Enum):
     hosp_reception = 4, u'Приемное отделение стационара'
     hospital = 5, u'Круглосутоный стационар'
     resuscitation = 6, u'Реанимация'
+
+
+class HospitalizationStageStatus(Enum):
+    current = 0, u'Текущие'
+    received = 1, u'Поступившие'
+    transferred = 2, u'Переведенные'
+    discharged = 3, u'Выписанные'

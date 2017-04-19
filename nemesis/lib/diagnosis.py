@@ -328,6 +328,8 @@ def get_events_diagnoses(event_id_list):
         rbDiagnosisTypeN, Event_Diagnosis.diagnosisType_id == rbDiagnosisTypeN.id
     ).outerjoin(
         rbDiagnosisKind, Event_Diagnosis.diagnosisKind_id == rbDiagnosisKind.id
+    ).outerjoin(
+        MKB, Diagnostic.MKB == MKB.DiagID
     ).filter(
         Event.id.in_(event_id_list),
         Diagnostic.setDate <= func.coalesce(Event.execDate, func.current_timestamp()),
@@ -337,6 +339,7 @@ def get_events_diagnoses(event_id_list):
         Event.id.label('event_id'),
         Event.eventType_id.label('et_id'),
         Diagnostic.MKB.label('mkb'),
+        MKB.DiagName.label('dg_name'),
         rbDiagnosisTypeN.code.label('dg_type_code'),
         rbDiagnosisKind.code.label('dg_kind_code')
     )
@@ -350,6 +353,7 @@ def get_events_diagnoses(event_id_list):
         mkb_types = e_diags.setdefault(item.mkb, default_types(item.et_id))
         t_code = item.dg_type_code
         k_code = item.dg_kind_code
+        mkb_types['name'] = item.dg_name
         if t_code and k_code:
             mkb_types[t_code] = k_code
 

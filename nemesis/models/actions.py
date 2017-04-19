@@ -1267,7 +1267,7 @@ class OrgStructure_HospitalBed(db.Model):
     begDateInvolute = db.Column(db.Date)
     endDateInvolute = db.Column(db.Date)
 
-    orgStructure = db.relationship(u'OrgStructure')
+    orgStructure = db.relationship(u'OrgStructure', backref=u"beds")
     type = db.relationship(u'rbHospitalBedType')
     profile = db.relationship(u'rbHospitalBedProfile')
     schedule = db.relationship(u'rbHospitalBedSchedule')
