@@ -18,3 +18,5 @@ urEventDiagnosticBudgetClose = u'evtDiagnosticBudgetClose'  # Имеет воз�
 
 urEventAllAdmPermSetExecDate = u'evtAllAdmPermSetExecDate'  # Имеет возможность устанавливать дату завершения в обращениях с финансированием "Административное разрешение"
 urEventInvoiceAccessAll = u'evtInvoiceAccessAll'  # Имеет доступ к любым операциям со счетами в обращениях
+
+urSetPersonChange = u'urSetPersonChange'  # Может менять назначившего врача
