@@ -229,12 +229,47 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
         fReader.readAsDataURL(fileInfo);
         return loader.promise;
     };
-    var cleanHtml = function (html) {
-        return html && html.replace(regexp_cleanHtml, '');
-    },
-        isEmptyHtml = function (html) {
+    function cleanIndents(html){
+        try {
+            var allHtml = angular.element(html);
+        } catch(err) {
+            return html
+        }
+        var indentValues = [];
+        var toIterate = allHtml.length> 1 ? allHtml : allHtml.children('*');
+        toIterate.map(function(idx, v) {
+            if (v && v.style) {
+                indentValues.push(parseFloat(v.style.getPropertyValue('text-indent')));
+            }
+        });
+        var inchesToIndent = Math.abs(_.min(indentValues));
+        var newHtml = [];
+        if (inchesToIndent) {
+            toIterate.map(function(idx, v) {
+                if (v && v.style) {
+                    var vl = parseFloat(v.style.getPropertyValue('text-indent'));
+                    if (vl) {
+                        var newInches = vl+inchesToIndent;
+                        v.style['textIndent'] = newInches+'in';
+                        v.style.setProperty('text-indent', newInches+'in');
+                        newHtml.push(v.outerHTML);
+                    }
+                }
+            });
+        }
+        var return_value = allHtml.length > 1 ? newHtml.join('\n') : allHtml[0] ? allHtml[0].outerHTML: '';
+        return return_value
+    };
+
+    function cleanHtml(html) {
+        if (html) {
+            var html = cleanIndents(html);
+            return html.replace(regexp_cleanHtml, '');
+        }
+    };
+    var isEmptyHtml = function (html) {
             return !Boolean(html && html.replace(regexp_emptyHtml, ''));
-        };
+    };
     var defaults = {
         toolbarSelector: '[data-role=editor-toolbar]',
         commandRole: 'edit',
@@ -401,6 +436,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                     ? cleanHtml(editor.html())
                     : '';
                 ngModel.$setViewValue(view_value);
+                console.log(view_value);
                 ngModel.$render();
             }
 
@@ -523,6 +559,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             scope.$watch('$model.$modelValue', function (n, o) {
                 if (cleanHtml(editor.html()) !== n) {
                     editor.html(n);
+                    console.log(n);
                 }
                 return n;
             });
