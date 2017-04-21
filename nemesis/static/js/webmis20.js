@@ -550,8 +550,8 @@ var WebMis20 = angular.module('WebMis20', [
         var self = this;
         return self.loading.then(function () {
             self.objects = self.objects.filter(function (item) {
-                return AgeSex.sex_acceptable(client.info, item.sex) &&
-                    AgeSex.age_acceptable(client.info, item.age_tuple);
+                return AgeSex.sex_acceptable(client, item.sex) &&
+                    AgeSex.age_acceptable(client, item.age_tuple);
             });
         });
     };

@@ -34,7 +34,7 @@ def escape_sphinx_query(query):
 class SearchConfig(BaseSearchConfig):
     DEBUG = app.config['DEBUG']
     WITH_META = True
-    WITH_STATUS = DEBUG
+    WITH_STATUS = False  # DEBUG
     if app.config['SEARCHD_CONNECTION']:
         SEARCHD_CONNECTION = app.config['SEARCHD_CONNECTION']
 

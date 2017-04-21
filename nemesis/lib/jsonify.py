@@ -632,7 +632,7 @@ class ClientVisualizer(object):
         """Данные пациента для фрейма информации о пациенте."""
         reg_addr, live_addr = self.make_addresses_info(client)
         info = {
-            'info': client,
+            'info': self.make_client(client),
             'id_document': client.id_document,
             'reg_address': reg_addr,
             'live_address': live_addr,
@@ -673,8 +673,23 @@ class ClientVisualizer(object):
             'last_name': client.lastName,
             'birth_date': client.birthDate,
             'sex': Gender(client.sexCode) if client.sexCode is not None else None,
+            'full_name': client.nameText
+        }
+
+    def make_client(self, client):
+        return {
+            'id': client.id,
+            'first_name': client.firstName,
+            'last_name': client.lastName,
+            'patr_name': client.patrName,
+            'birth_date': client.birthDate,
+            'sex': Gender(client.sexCode) if client.sexCode is not None else None,
+            'snils': client.SNILS,
             'full_name': client.nameText,
-            'age': client.age
+            'notes': client.notes,
+            'age_tuple': client.age_tuple(),
+            'age': client.age,
+            'sex_raw': client.sexCode
         }
 
     def make_client_info_for_servicing(self, client):
@@ -1391,7 +1406,7 @@ class StationaryEventVisualizer(EventVisualizer):
                 'external_id': event.externalId,
                 'order': EventOrder(event.order),
                 'is_primary': EventPrimary(event.isPrimaryCode),
-                'client': cvis.make_short_client_info(event.client),
+                'client': cvis.make_client(event.client),
                 'set_date': event.setDate,
                 'exec_date': event.execDate,
                 'exec_person': event.execPerson,

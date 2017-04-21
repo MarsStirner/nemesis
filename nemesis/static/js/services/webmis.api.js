@@ -288,6 +288,9 @@ WebMis20
                 client_id: client_id
             };
             return wrapper('GET', WMConfig.url.event.event_hosp_get, args);
+        },
+        save: function (data) {
+            return wrapper('POST', WMConfig.url.event.event_save, {}, data)
         }
     };
 }]);
