@@ -559,12 +559,12 @@ at_actions_flat_tuple = collections.namedtuple(
 
 apt_tree_flat_tuple = collections.namedtuple(
     'apt_tree_flat_tuple',
-    'id name age sex price mandatory note_mandatory'
+    'id name age sex price mandatory note_mandatory idx'
 )
 
 apt_flat_tuple = collections.namedtuple(
     'apt_flat_tuple',
-    'id name price mandatory note_mandatory'
+    'id name price mandatory note_mandatory idx'
 )
 
 
@@ -588,8 +588,8 @@ def apt_tree_2_apt_flat_tuple_convert(item):
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: apt_tree_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory)
-        for id_, name, age, sex, mandatory, note_mandatory in ActionPropertyType.query.filter(
+        id_: apt_tree_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory, idx)
+        for id_, name, age, sex, mandatory, note_mandatory, idx in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
         ).with_entities(
@@ -598,7 +598,8 @@ def select_all_at():
             ActionPropertyType.age,
             ActionPropertyType.sex,
             ActionPropertyType.mandatory,
-            ActionPropertyType.noteMandatory
+            ActionPropertyType.noteMandatory,
+            ActionPropertyType.idx
         )
     }
     at_apt_dict = {
