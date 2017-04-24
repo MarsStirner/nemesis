@@ -1518,7 +1518,7 @@ class ActionVisualizer(object):
         else:
             for ap in action.properties:
                 assignable.append(tuple(apt_flat_tuple(
-                    ap.type_id, ap.type.name, None, ap.type.mandatory, ap.type.noteMandatory
+                    ap.type_id, ap.type.name, None, ap.type.mandatory, ap.type.noteMandatory, ap.type.idx
                 )))
                 props_data.append(self.make_lab_direction_property(ap))
 
