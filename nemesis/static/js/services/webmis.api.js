@@ -289,6 +289,9 @@ WebMis20
             };
             return wrapper('GET', WMConfig.url.event.event_hosp_get, args);
         },
+        get_hosp: function (event_id) {
+            return wrapper('GET',  WMConfig.url.event.event_hosp_get + event_id);
+        },
         save: function (data) {
             return wrapper('POST', WMConfig.url.event.event_save, {}, data)
         }

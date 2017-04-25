@@ -1327,8 +1327,9 @@ class StationaryEventVisualizer(EventVisualizer):
 
         avis = ActionVisualizer()
         res = self.make_action_info(action)
-        res['action_type']['diagnosis_types'] = action.actionType.diagnosis_types
-        res['diagnoses'] = avis.make_action_diagnoses_info(action)
+        if action:
+            res['action_type']['diagnosis_types'] = action.actionType.diagnosis_types
+            res['diagnoses'] = avis.make_action_diagnoses_info(action)
         return res
 
     def make_moving_info(self, moving, next_resuscitation_moving=None):
@@ -1406,7 +1407,9 @@ class StationaryEventVisualizer(EventVisualizer):
                 'external_id': event.externalId,
                 'order': EventOrder(event.order),
                 'is_primary': EventPrimary(event.isPrimaryCode),
-                'client': cvis.make_client(event.client),
+                'client': {
+                    'info': cvis.make_client(event.client)
+                },
                 'set_date': event.setDate,
                 'exec_date': event.execDate,
                 'exec_person': event.execPerson,

@@ -30,10 +30,12 @@ angular.module('WebMis20.services.models').
         };
         return this;
     }]).
-    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMConfig',
-        function($http, $q, WMClient, WMConfig) {
+    factory('WMEvent', ['$http', '$q', '$injector', 'WMConfig',
+        function($http, $q, $injector, WMConfig) {
+            var WMClient;
+
             var WMEvent = function(event_id, client_id, ticket_id) {
-                this.event_id = parseInt(event_id);
+                this.event_id = parseInt(event_id) || null;
                 this.client_id = client_id;
                 this.ticket_id = ticket_id;
                 this.info = null;
@@ -64,6 +66,7 @@ angular.module('WebMis20.services.models').
                 self.access.can_create_actions = data.result.access.can_create_actions;
                 self.access.invoice_all = data.result.access.invoice_all;
                 var client_info = self.info.client;
+                if (!WMClient) WMClient = $injector.get('WMClient');
                 self.info.client = new WMClient();
                 self.info.client.init_from_obj({
                     client_data: client_info
@@ -75,7 +78,9 @@ angular.module('WebMis20.services.models').
                 self.invoices = data.result.invoices;
                 self.is_closed = self.closed();
             };
-
+            WMEvent.prototype.init_from_obj = function (data) {
+                this.get_data(data);
+            };
             WMEvent.prototype.reload = function() {
                 var self = this;
                 var url = this.is_new() ? WMConfig.url.event.event_new : WMConfig.url.event.event_get;
@@ -115,6 +120,15 @@ angular.module('WebMis20.services.models').
                     deferred.reject(response.meta.name);
                 });
                 return deferred.promise;
+            };
+            WMEvent.prototype.clone = function () {
+                var copy = new this.constructor();
+                for (var prop in this) {
+                    if (this.hasOwnProperty(prop)) {
+                        copy[prop] = _.deepCopy(this[prop]);
+                    }
+                }
+                return copy;
             };
 
             WMEvent.prototype.is_new = function() {
@@ -180,6 +194,41 @@ angular.module('WebMis20.services.models').
                 });
                 return deferred.promise;
             };
-            return WMStationaryEvent
+            return WMStationaryEvent;
         }
-    ]);
+    ]).
+    factory('WMAdmissionEvent', ['$injector', 'WMEvent', 'WebMisApi',
+            function($injector, WMEvent, WebMisApi) {
+        var WMClient;
+
+        var WMAdmissionEvent = function () {
+            WMEvent.call(this);
+            this.request_type_kind = "stationary";
+        };
+        WMAdmissionEvent.inheritsFrom(WMEvent);
+        WMAdmissionEvent.prototype.get_data = function(data) {
+            if (!WMClient) WMClient = $injector.get('WMClient');
+            var wmclient = new WMClient();
+            wmclient.init_from_obj({
+                client_data: data.event.client
+            });
+            this.event_id = data.event.id;
+            this.info = data.event;
+            this.info.client = wmclient;
+
+            this.received = data.received;
+            return this;
+        };
+        WMAdmissionEvent.prototype.save = function() {
+            var self = this;
+            return WebMisApi.event.save({
+                event: self.info,
+                received: self.received,
+                request_type_kind: self.request_type_kind
+            }).then(function (result) {
+                self.event_id = result.id;
+                return self.reload();
+            });
+        };
+        return WMAdmissionEvent;
+    }]);
