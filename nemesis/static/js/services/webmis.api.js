@@ -276,4 +276,24 @@ WebMis20
             return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
         }
     };
+    this.client = {
+        search: function (args) {
+            return wrapper('GET', WMConfig.url.patients.client_search, args);
+        }
+    };
+    this.event = {
+        get_new_hosp: function (client_id) {
+            var args = {
+                new: true,
+                client_id: client_id
+            };
+            return wrapper('GET', WMConfig.url.event.event_hosp_get, args);
+        },
+        get_hosp: function (event_id) {
+            return wrapper('GET',  WMConfig.url.event.event_hosp_get + event_id);
+        },
+        save: function (data) {
+            return wrapper('POST', WMConfig.url.event.event_save, {}, data)
+        }
+    };
 }]);

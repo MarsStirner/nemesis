@@ -566,7 +566,7 @@ class UserProfileManager(object):
         'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist, doctor_otd],
         'diag_doctor': [admin, doctor_diag, nurse_assist],
         'registrator': [admin, reg_clinic, doctor_otd],
-        'registrator_cut': [nurse_admission],
+        'adm_nurse': [admin, nurse_admission],
         'registrator_cashier': [admin, reg_clinic, cashier],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
@@ -603,8 +603,8 @@ class UserProfileManager(object):
         return cls._get_user_role() in cls.ui_groups['registrator']
 
     @classmethod
-    def has_ui_registrator_cut(cls):
-        return cls._get_user_role() in cls.ui_groups['registrator_cut']
+    def has_ui_adm_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['adm_nurse']
 
     @classmethod
     def has_ui_doctor(cls):

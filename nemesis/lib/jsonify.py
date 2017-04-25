@@ -12,6 +12,7 @@ from collections import defaultdict
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.sql.expression import between, func
 from flask import json
+from flask_login import current_user
 
 from nemesis.app import app
 from nemesis.systemwide import db
@@ -27,6 +28,7 @@ from nemesis.lib.apiutils import ApiException
 from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, format_date, safe_date, encode_file_name,
                                format_money, safe_bool)
 from nemesis.lib.user import UserUtils, UserProfileManager
+from nemesis.lib.event.utils import get_client_events, get_current_hospitalisation
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
@@ -630,7 +632,7 @@ class ClientVisualizer(object):
         """Данные пациента для фрейма информации о пациенте."""
         reg_addr, live_addr = self.make_addresses_info(client)
         info = {
-            'info': client,
+            'info': self.make_client(client),
             'id_document': client.id_document,
             'reg_address': reg_addr,
             'live_address': live_addr,
@@ -674,16 +676,34 @@ class ClientVisualizer(object):
             'full_name': client.nameText
         }
 
+    def make_client(self, client):
+        return {
+            'id': client.id,
+            'first_name': client.firstName,
+            'last_name': client.lastName,
+            'patr_name': client.patrName,
+            'birth_date': client.birthDate,
+            'sex': Gender(client.sexCode) if client.sexCode is not None else None,
+            'snils': client.SNILS,
+            'full_name': client.nameText,
+            'notes': client.notes,
+            'age_tuple': client.age_tuple(),
+            'age': client.age,
+            'sex_raw': client.sexCode
+        }
+
     def make_client_info_for_servicing(self, client):
         """Данные пациента, используемые в интерфейсах работы регистратора и врача."""
-        if UserProfileManager.has_ui_registrator_cut():
-            event_filter = 'stationary'
-        else:
-            event_filter = None
+        only_stationary = current_user.role_in(UserProfileManager.nurse_admission)
+        events = get_client_events(client, stationary=only_stationary)
+        cur_hosp = get_current_hospitalisation(client.id)
+
+        evis = StationaryEventVisualizer()
         return {
             'client_data': self.make_client_info_for_view_frame(client),
             'appointments': self.make_appointments(client.id),
-            'events': self.make_events(client, event_filter)
+            'events': self.make_events(client, events),
+            'current_hosp': evis.make_admission_event_info(cur_hosp)
         }
 
     def make_appointments(self, client_id, every=False):
@@ -794,12 +814,9 @@ class ClientVisualizer(object):
             for row in load_all
         ]
 
-    def make_events(self, client, event_filter=None):
-        events = client.events
-        if event_filter == 'stationary':
-            events = events.join(EventType, rbRequestType).filter(rbRequestType.code.in_(STATIONARY_EVENT_CODES))
-        events = events.order_by(Event.setDate.desc())
-        return map(self.make_event, events)
+    def make_events(self, client, events):
+        evis = EventVisualizer()
+        return map(evis.make_ushort_event, events)
 
     def make_person(self, person):
         if person is None:
@@ -809,21 +826,6 @@ class ClientVisualizer(object):
             'id': person.id,
             'name': person.nameText,
             'speciality': person.speciality.name if speciality else None
-        }
-
-    def make_event(self, event):
-        return {
-            'id': event.id,
-            'externalId': event.externalId,
-            'setDate': event.setDate,
-            'execDate': event.execDate,
-            'person': self.make_person(event.execPerson),
-            'requestType': event.eventType.requestType,
-            'event_type': event.eventType,
-            'result': event.result,
-            'contract': {
-                'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft')),
-            },
         }
 
     def make_payer_for_lc(self, client):
@@ -966,6 +968,22 @@ class EventVisualizer(object):
                 'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft'))
             },
             'diagnoses': diag_data
+        }
+
+    def make_ushort_event(self, event):
+        pvis = PersonTreeVisualizer()
+        return {
+            'id': event.id,
+            'externalId': event.externalId,
+            'setDate': event.setDate,
+            'execDate': event.execDate,
+            'person': pvis.make_person_ws(event.execPerson),
+            'requestType': event.eventType.requestType,
+            'event_type': event.eventType,
+            'result': event.result,
+            'contract': {
+                'draft': safe_bool(safe_traverse_attrs(event, 'contract', 'draft')),
+            },
         }
 
     def make_short_event_type(self, event_type):
@@ -1309,8 +1327,9 @@ class StationaryEventVisualizer(EventVisualizer):
 
         avis = ActionVisualizer()
         res = self.make_action_info(action)
-        res['action_type']['diagnosis_types'] = action.actionType.diagnosis_types
-        res['diagnoses'] = avis.make_action_diagnoses_info(action)
+        if action:
+            res['action_type']['diagnosis_types'] = action.actionType.diagnosis_types
+            res['diagnoses'] = avis.make_action_diagnoses_info(action)
         return res
 
     def make_moving_info(self, moving, next_resuscitation_moving=None):
@@ -1376,6 +1395,31 @@ class StationaryEventVisualizer(EventVisualizer):
         data['blood_history'] = [self.make_blood_history(obj) for obj in event.client.blood_history]
         data['vmp_quoting'] = self.make_vmp_quoting(event)
         return data
+
+    def make_admission_event_info(self, event, new=False):
+        if not event:
+            return None
+        cvis = ClientVisualizer()
+        cont_repr = ContractRepr()
+        res = {
+            'event': {
+                'id': event.id,
+                'external_id': event.externalId,
+                'order': EventOrder(event.order),
+                'is_primary': EventPrimary(event.isPrimaryCode),
+                'client': {
+                    'info': cvis.make_client(event.client)
+                },
+                'set_date': event.setDate,
+                'exec_date': event.execDate,
+                'exec_person': event.execPerson,
+                'contract': cont_repr.represent_contract_with_description(event.contract),
+                'event_type': event.eventType,
+                'organisation': event.organisation,
+            },
+            'received': self.make_received(event, new)
+        }
+        return res
 
     def make_vmp_quoting(self, event):
         return event.VMP_quoting

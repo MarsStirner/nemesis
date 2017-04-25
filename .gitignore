@@ -32,6 +32,8 @@ nosetests.xml
 .project
 .pydevproject
 .idea
+*.swp
+
 config_*.py
 #forms_prototype
 .fuse_*
