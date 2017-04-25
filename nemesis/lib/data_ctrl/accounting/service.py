@@ -412,7 +412,7 @@ class ServiceController(BaseModelController):
 
                     flt_assignable.append(list(apt_data))
 
-                assignable = flt_assignable
+                assignable = sorted(flt_assignable, key=lambda x: x[5])
 
             tissue_type_ids = get_at_tissue_type_ids(at_id)
             selected_tissue_type = rbTissueType.query.get(tissue_type_ids[0]) if tissue_type_ids else None
@@ -473,7 +473,7 @@ class ServiceController(BaseModelController):
                 if ap.deleted != 1 and ap.type.isAssignable:
                     assignable.append(tuple(apt_flat_tuple(
                         ap.type.id, ap.type.name, ap.pl_price if ap.has_pricelist_service else None,
-                        ap.type.mandatory, ap.type.noteMandatory
+                        ap.type.mandatory, ap.type.noteMandatory, ap.type.idx
                     )))
                     props_data.append({
                         'id': ap.id,

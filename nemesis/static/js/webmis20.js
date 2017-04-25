@@ -363,6 +363,11 @@ var WebMis20 = angular.module('WebMis20', [
         }
     }
 }])
+.filter('charCode', [ function () {
+    return function (code) {
+        if (code) { return String.fromCharCode('0x'+code) }
+    }
+}])
 // Services
 .factory('RefBook', ['$http', '$rootScope', 'WMConfig', function ($http, $rootScope, WMConfig) {
     var RefBook = function (name) {

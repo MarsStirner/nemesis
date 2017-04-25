@@ -375,7 +375,6 @@ def check_action_dates(action):
     e_beg = action.event.setDate
     e_end = action.event.execDate
     for d, name in ((action.begDate, u'Дата начала'),
-                    (action.endDate, u'Дата окончания'),
                     (action.plannedEndDate, u'Плановая дата выполнения')):
         if d is not None and (d < e_beg or (e_end is not None and d > e_end)):
             raise ActionException(u'{0} выходит за период действия обращения {1}-{2}'.format(
@@ -559,12 +558,12 @@ at_actions_flat_tuple = collections.namedtuple(
 
 apt_tree_flat_tuple = collections.namedtuple(
     'apt_tree_flat_tuple',
-    'id name age sex price mandatory note_mandatory'
+    'id name age sex price mandatory note_mandatory idx'
 )
 
 apt_flat_tuple = collections.namedtuple(
     'apt_flat_tuple',
-    'id name price mandatory note_mandatory'
+    'id name price mandatory note_mandatory idx'
 )
 
 
@@ -588,8 +587,8 @@ def apt_tree_2_apt_flat_tuple_convert(item):
 @cache.memoize(3600)
 def select_all_at():
     tmp_apt_dict = {
-        id_: apt_tree_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory)
-        for id_, name, age, sex, mandatory, note_mandatory in ActionPropertyType.query.filter(
+        id_: apt_tree_flat_tuple(id_, name, parseAgeSelector(age), sex, None, mandatory, note_mandatory, idx)
+        for id_, name, age, sex, mandatory, note_mandatory, idx in ActionPropertyType.query.filter(
             ActionPropertyType.deleted == 0,
             ActionPropertyType.isAssignable == 1,
         ).with_entities(
@@ -598,7 +597,8 @@ def select_all_at():
             ActionPropertyType.age,
             ActionPropertyType.sex,
             ActionPropertyType.mandatory,
-            ActionPropertyType.noteMandatory
+            ActionPropertyType.noteMandatory,
+            ActionPropertyType.idx
         )
     }
     at_apt_dict = {

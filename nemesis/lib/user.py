@@ -14,7 +14,6 @@ from nemesis.app import app
 from ..models.actions import ActionType_User
 from ..models.exists import rbUserProfile
 
-
 from nemesis.models.enums import ActionStatus
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
                                      urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate,
@@ -22,11 +21,11 @@ from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPolicli
                                      urEventPoliclinicPaidClose, urEventPoliclinicOmsClose,
                                      urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
                                      urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate,
-                                     urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate)
+                                     urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate,
+                                     urSetPersonChange)
 
 
 class User(UserMixin):
-
     def __init__(self, person):
         if not isinstance(person, Person):
             raise AttributeError(u'Not instance of models.Person')
@@ -170,7 +169,6 @@ class User(UserMixin):
 
 
 class AnonymousUser(AnonymousUserMixin):
-
     def is_admin(self):
         return False
 
@@ -188,7 +186,6 @@ class AnonymousUser(AnonymousUserMixin):
 
 
 class UserAuth():
-
     @classmethod
     def auth_user(cls, login, password):
         person = cls.__get_by_login(login)
@@ -243,7 +240,6 @@ modeRights = (
 
 
 class UserUtils(object):
-
     @staticmethod
     def can_create_event(event, out_msg=None):
         if out_msg is None:
@@ -537,6 +533,13 @@ class UserUtils(object):
                 current_user.has_right(urEventInvoiceAccessAll)
             )
         )
+
+    @property
+    def can_change_set_person(self):
+        return (current_user.has_right('adm') or (
+                current_user.has_right(urSetPersonChange)
+        ))
+
 
 
 class UserProfileManager(object):
