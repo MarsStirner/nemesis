@@ -375,7 +375,6 @@ def check_action_dates(action):
     e_beg = action.event.setDate
     e_end = action.event.execDate
     for d, name in ((action.begDate, u'Дата начала'),
-                    (action.endDate, u'Дата окончания'),
                     (action.plannedEndDate, u'Плановая дата выполнения')):
         if d is not None and (d < e_beg or (e_end is not None and d > e_end)):
             raise ActionException(u'{0} выходит за период действия обращения {1}-{2}'.format(
