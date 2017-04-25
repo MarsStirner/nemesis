@@ -122,10 +122,12 @@ angular.module('WebMis20.services.models').
                     // Do we need? add_vmp_coupons();
                     self.appointments = data.appointments;
                     self.events = data.events;
-                    if (!self.current_hosp) {
-                        self.current_hosp = new WMAdmissionEvent();
+                    if (data.current_hosp) {
+                        if (!self.current_hosp) {
+                            self.current_hosp = new WMAdmissionEvent();
+                        }
+                        self.current_hosp.init_from_obj(data.current_hosp);
                     }
-                    self.current_hosp.init_from_obj(data.current_hosp);
                 }
             }
 
