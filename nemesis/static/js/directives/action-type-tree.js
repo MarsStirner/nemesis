@@ -589,12 +589,17 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     selected_tissue_type: model.selected_tissue_type,
                     tissue_type_visible: model.tissue_type_visible
                 },
-                apt_names = {};
+                apt_names = {},
+                services_with_price = [];
             t_model.props_data.forEach(function (prop) {
                 assigned[prop.type_id] = prop;
             });
             model.assignable.forEach(function (apt) {
-                apt_names[apt[0]] = apt[1];
+                var apt_id = apt[0],
+                    apt_name = apt[1],
+                    apt_price = apt[2];
+                apt_names[apt_id] = apt_name;
+                if (apt_price) { services_with_price.push(String(apt[0])) }
             });
             var Controller = function ($scope) {
                 $scope.model = model;
@@ -604,6 +609,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
                 $scope.apt_groups = undefined;
+                $scope.sub_services_info = {
+                    assigned_with_price: 0,
+                    binding_text: '',
+                    invalid: false,
+                    show_info: $scope.model.service.is_complex_service && ($scope.model.service.max_sub_services > 0)
+                };
                 var getCheckedApts = function (o) {
                     var res = [];
                     _.each(o, function (prop, type_id) {
@@ -688,6 +699,21 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         }
                     });
 
+                $scope.$watch('assigned', function (n, o) {
+                    var assigned_counter = 0;
+                    for (var service_id in n) {
+                        if (n[service_id].is_assigned && (_.indexOf(services_with_price, service_id) != -1)) {
+                            assigned_counter += 1
+                        }
+                    }
+                    $scope.sub_services_info.assigned_with_price = assigned_counter;
+                }, true);
+                $scope.$watch('sub_services_info.assigned_with_price', function (n, o) {
+                    var assigned_with_price = $scope.sub_services_info.assigned_with_price,
+                        max_sub_services = $scope.model.service.max_sub_services;
+                    $scope.sub_services_info.invalid = (max_sub_services > 0) && (assigned_with_price > max_sub_services);
+                    $scope.sub_services_info.binding_text = '{0}/{1}'.format(assigned_with_price, max_sub_services);
+                }, true);
                 $scope.check_all_selected = function () {
                     return model.assignable.every(function (prop) {
                         var type_id = prop[0];
@@ -880,7 +906,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
     $templateCache.put('/WebMis20/modal-action-assignments.html',
         '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
             <button type="button" class="close" ng-click="$dismiss()">&times;</button>\
-            <h4 class="modal-title">Назначаемые исследования</h4>\
+            <h4 class="modal-title" ng-class="{\'text-danger\': sub_services_info.invalid}">\
+                Назначаемые исследования\
+                <span ng-if="sub_services_info.show_info" ng-bind="sub_services_info.binding_text"></span>\
+            </h4>\
         </div>\
         <div class="modal-body">\
             <ng-form name="testsForm">\
@@ -914,7 +943,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         </div>\
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="$dismiss()">Отмена</button>\
-            <button type="button" class="btn btn-success" ng-disabled="testsForm.$invalid"\
+            <button type="button" class="btn btn-success" ng-disabled="testsForm.$invalid || sub_services_info.invalid"\
                 ng-click="$close()">Подтвердить</button>\
         </div>')
 }])

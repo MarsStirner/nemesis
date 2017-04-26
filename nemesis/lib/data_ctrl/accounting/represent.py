@@ -345,6 +345,7 @@ class ServiceRepr(object):
             self.represent_subservice(ss)
             for ss in service.get_sorted_subservices()
         ]
+        data['max_sub_services'] = service.price_list_item.service.maxSubServices
         return data
 
     def represent_subservice(self, service):

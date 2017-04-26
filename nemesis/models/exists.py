@@ -757,6 +757,7 @@ class rbService(db.Model):
     UET = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
     departCode = db.Column(db.String(3), server_default=u"'NULL'")
     isComplex = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    maxSubServices = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     medicalAidProfile = db.relationship(u'rbMedicalAidProfile')
     rbMedicalKind = db.relationship(u'rbMedicalKind')

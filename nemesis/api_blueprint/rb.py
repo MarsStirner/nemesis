@@ -141,6 +141,7 @@ def int_api_thesaurus(code):
         for item in rbThesaurus.query.filter(rbThesaurus.id.in_(id_list))
     ]
 
+
 def represent_symbols(symbols_list):
     return [{
         'id': symbol.id,
@@ -163,6 +164,7 @@ def int_api_symbols(code):
 def api_thesaurus(code=None):
     if code:
         return int_api_thesaurus(code)
+
 
 @module.route('/rbSymbols/')
 @module.route('/rbSymbols/<code>')
