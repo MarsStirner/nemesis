@@ -589,8 +589,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     selected_tissue_type: model.selected_tissue_type,
                     tissue_type_visible: model.tissue_type_visible
                 },
-                apt_names = {},
-                services_with_price = [];
+                apt_props = {};
             t_model.props_data.forEach(function (prop) {
                 assigned[prop.type_id] = prop;
             });
@@ -598,19 +597,20 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 var apt_id = apt[0],
                     apt_name = apt[1],
                     apt_price = apt[2];
-                apt_names[apt_id] = apt_name;
-                if (apt_price) { services_with_price.push(String(apt[0])) }
+                apt_props[apt_id] = {
+                    name: apt_name,
+                    has_price: Boolean(apt_price)
+                };
             });
             var Controller = function ($scope) {
                 $scope.model = model;
-                $scope.apt_names = apt_names;
+                $scope.apt_props = apt_props;
                 $scope.action_type_id = model.type_id;
                 $scope.assigned = assigned;
                 $scope.date_required = date_required;
                 $scope.t_model = t_model;
                 $scope.apt_groups = undefined;
                 $scope.sub_services_info = {
-                    assigned_with_price: 0,
                     binding_text: '',
                     invalid: false,
                     show_info: $scope.model.service.is_complex_service && ($scope.model.service.max_sub_services > 0)
@@ -644,12 +644,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                             msg = [];
                                         if (!check.ok) {
                                             check.dependents = _.filter(check.dependents, function (d_apt_id) {
-                                                return $scope.apt_names.hasOwnProperty(d_apt_id);
+                                                return $scope.apt_props.hasOwnProperty(d_apt_id);
                                             });
                                             if (check.dependents.length) {
-                                                msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_names[apt_id]));
+                                                msg.push('Показатель "{0}" зависит от других показателей:<br>'.format($scope.apt_props[apt_id].name));
                                                 _.each(check.dependents, function (d_apt_id) {
-                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_props[d_apt_id].name));
                                                 });
                                                 msg.push('<br>Выбрать данные параметры исследования?<br>');
 
@@ -665,12 +665,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                             msg = [];
                                         if (!check.ok) {
                                             check.dependents = _.filter(check.dependents, function (d_apt_id) {
-                                                return $scope.apt_names.hasOwnProperty(d_apt_id);
+                                                return $scope.apt_props.hasOwnProperty(d_apt_id);
                                             });
                                             if (check.dependents.length) {
-                                                msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_names[apt_id]));
+                                                msg.push('От показателя "{0}" зависят другие показатели:<br>'.format($scope.apt_props[apt_id].name));
                                                 _.each(check.dependents, function (d_apt_id) {
-                                                    msg.push('  - "{0}"<br>'.format($scope.apt_names[d_apt_id]));
+                                                    msg.push('  - "{0}"<br>'.format($scope.apt_props[d_apt_id].name));
                                                 });
                                                 msg.push('<br>Снять выбор с этих параметров исследования?<br>');
 
@@ -700,17 +700,13 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     });
 
                 $scope.$watch('assigned', function (n, o) {
-                    var assigned_counter = 0;
-                    for (var service_id in n) {
-                        if (n[service_id].is_assigned && (_.indexOf(services_with_price, service_id) != -1)) {
-                            assigned_counter += 1
+                    var assigned_with_price = 0,
+                        max_sub_services = $scope.model.service.max_sub_services;
+                    for (var apt_id in n) {
+                        if (n[apt_id].is_assigned && apt_props[apt_id].has_price) {
+                            assigned_with_price += 1
                         }
                     }
-                    $scope.sub_services_info.assigned_with_price = assigned_counter;
-                }, true);
-                $scope.$watch('sub_services_info.assigned_with_price', function (n, o) {
-                    var assigned_with_price = $scope.sub_services_info.assigned_with_price,
-                        max_sub_services = $scope.model.service.max_sub_services;
                     $scope.sub_services_info.invalid = (max_sub_services > 0) && (assigned_with_price > max_sub_services);
                     $scope.sub_services_info.binding_text = '{0}/{1}'.format(assigned_with_price, max_sub_services);
                 }, true);
@@ -746,7 +742,6 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             var instance = $modal.open({
                 templateUrl: '/WebMis20/modal-action-assignments.html',
                 backdrop : 'static',
-//                size: 'sm',
                 controller: Controller
             });
             return instance.result.then(function () {
