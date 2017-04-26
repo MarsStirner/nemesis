@@ -226,7 +226,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             return r;
         };
 
-        res.dependents = getDeps(apt_id);
+        res.dependents = _.uniq(getDeps(apt_id));
         res.ok = !Boolean(res.dependents.length);
         return res;
     };
@@ -251,7 +251,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             return r;
         };
 
-        res.dependents = getDeps(apt_id);
+        res.dependents = _.uniq(getDeps(apt_id));
         res.ok = !Boolean(res.dependents.length);
         return res;
     };
