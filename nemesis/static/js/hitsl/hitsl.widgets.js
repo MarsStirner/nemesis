@@ -1197,6 +1197,7 @@ angular.module('WebMis20')
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
                     scope.placeholder = iAttrs.placeholder || 'Поиска врача';
+                    scope.ngModel = scope.$eval(iAttrs.ngModel);
 
                     scope.persons = [];
                     scope.refresh_choices = function (query) {
@@ -1209,7 +1210,15 @@ angular.module('WebMis20')
                         $http.get(url_api_search_persons, {
                             params: params
                         }).success(function (data) {
-                            scope.persons = data.result;
+                            if (scope.ngModel) {
+                                scope.ngModel = scope.$eval(iAttrs.ngModel);
+                                var chosenPersons = _.object(_.pluck(scope.ngModel, 'id'), []);
+                                scope.persons = data.result.filter(function (p) {
+                                    return !chosenPersons.hasOwnProperty(p.id);
+                                });
+                            } else {
+                                scope.persons = data.result;
+                            }
                         });
                     };
                     scope.personsWithSheds = {};
