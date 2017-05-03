@@ -1159,6 +1159,99 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('extSelectPersonWScheds', ['$compile', '$http', 'PersonSelectKind', 'PersonTreeUpdater',
+        function ($compile, $http, PersonSelectKind, PersonTreeUpdater) {
+    return {
+        restrict: 'A',
+        priority: 50000,
+        terminal: true,
+        scope: true,
+        compile: function compile (tElement, tAttrs, transclude) {
+            tElement.attr('theme', 'select2');
+            if (tAttrs.multiple) {
+                tElement.append(
+                    '<ui-select-match placeholder="[[placeholder]]">\
+                        <span ng-bind="$item.full_name || $item.short_name" ng-style="getItemStyle($item)"></span>\
+                     </ui-select-match>'
+                )
+            } else {
+                tElement.append(
+                    '<ui-select-match placeholder="[[placeholder]]">\
+                        <span ng-bind="$select.selected.full_name || $select.selected.short_name"\
+                            ng-style="getItemStyle($select.selected)"></span>\
+                     </ui-select-match>'
+                )
+            }
+            tElement.append(
+                '<ui-select-choices refresh="refresh_choices($select.search)"\
+                        repeat="person in persons | filter: $select.search | limitTo: 100 track by person.id">\
+                    <div ng-style="getItemStyle(person)">\
+                        <div ng-bind-html="person.short_name | highlight: $select.search"></div>\
+                        <div ng-if="person.org_structure" class="lmargin20"><i>[[person.org_structure.name]]</i></div>\
+                    </div>\
+                </ui-select-choices>'
+            );
+            tElement.removeAttr('ext-select-person-w-scheds');
+            tElement.removeAttr('data-ext-select-person-w-scheds');
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    scope.placeholder = iAttrs.placeholder || 'Поиска врача';
+                    scope.ngModel = scope.$eval(iAttrs.ngModel);
+
+                    scope.persons = [];
+                    scope.refresh_choices = function (query) {
+                        if (!query) { return }
+                        var params = {
+                            q: query,
+                            person_kind: PersonSelectKind.onlyOrgPersons
+                        };
+
+                        $http.get(url_api_search_persons, {
+                            params: params
+                        }).success(function (data) {
+                            if (scope.ngModel) {
+                                scope.ngModel = scope.$eval(iAttrs.ngModel);
+                                var chosenPersons = _.object(_.pluck(scope.ngModel, 'id'), []);
+                                scope.persons = data.result.filter(function (p) {
+                                    return !chosenPersons.hasOwnProperty(p.id);
+                                });
+                            } else {
+                                scope.persons = data.result;
+                            }
+                        });
+                    };
+                    scope.personsWithSheds = {};
+                    scope.refresh_schedule_info = function (date_period) {
+                        if (!date_period || !date_period.length) return;
+                        $http.get(url_api_persons_tree_schedule_info, {
+                            params: {
+                                beg_date: date_period[0].toISOString(),
+                                end_date: date_period[1].toISOString()
+                            }
+                        }).success(function (data) {
+                            scope.personsWithSheds = _.object(data.result.persons_with_scheds, []);
+                        });
+                    };
+                    scope.$watch(PersonTreeUpdater.get_schedule_period, function (n, o) {
+                        scope.refresh_schedule_info(n);
+                    });
+
+                    scope.hasSchedule = function (person) {
+                        return scope.personsWithSheds.hasOwnProperty(person.id);
+                    };
+                    scope.getItemStyle = function (person) {
+                        if (!scope.hasSchedule(person)) {
+                            return {'text-decoration': 'line-through', 'font-style': 'italic', 'color': '#999'};
+                        }
+                    };
+
+                    $compile(iElement)(scope);
+                }
+            }
+        }
+    }
+}])
 .controller('InplaceTableCtrl', ['$scope', function($scope) {
     var edited = null,
         self = this,
