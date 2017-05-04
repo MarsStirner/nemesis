@@ -271,11 +271,6 @@ WebMis20
             return wrapper('GET', WMConfig.url.actions.apt_groups_get.format(action_type_id));
         }
     };
-    this.stationary = {
-        get_movings: function (event_id) {
-            return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
-        }
-    };
     this.client = {
         search: function (args) {
             return wrapper('GET', WMConfig.url.patients.client_search, args);
@@ -294,6 +289,18 @@ WebMis20
         },
         save: function (data) {
             return wrapper('POST', WMConfig.url.event.event_save, {}, data)
+        },
+        get_movings: function (event_id) {
+            return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
+        },
+        get_moving: function (event_id, action_id, args) {
+            if (action_id === undefined) action_id = '';
+            return wrapper('GET', WMConfig.url.event.api_event_moving_get.format(event_id, action_id), args);
+        }
+    };
+    this.hospitalizations = {
+        get_current: function (args) {
+            return wrapper('GET', WMConfig.url.hospitalizations.api_current_hosps_get, args);
         }
     };
 }]);
