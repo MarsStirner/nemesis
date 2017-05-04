@@ -22,7 +22,8 @@ from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPolicli
                                      urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
                                      urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate,
                                      urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate,
-                                     urSetPersonChange)
+                                     urSetPersonChange, urEventPoliclinicOmsMoClose, urEventClinicClose,
+                                     urEventClinicCreate, urEventHospitalClose, urEventHospitalCreate)
 
 
 class User(UserMixin):
@@ -254,7 +255,13 @@ class UserUtils(object):
         if current_user.has_right('adm'):
             return True
         # есть ли ограничения на создание обращений определенных EventType
-        if event.is_policlinic and event.is_paid:
+        if event.is_day_hospital:
+            if not current_user.has_right(urEventClinicCreate):
+                errors_stack.append(event_type_err_msg)
+        elif event.is_all_day_hospital:
+            if not current_user.has_right(urEventHospitalCreate):
+                errors_stack.append(event_type_err_msg)
+        elif event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidCreate):
                 errors_stack.append(event_type_err_msg)
         elif event.is_policlinic and (event.is_oms or event.is_oms_mo):
@@ -301,12 +308,12 @@ class UserUtils(object):
         elif event.is_diagnostic and event.is_budget:
             if not current_user.has_right(urEventDiagnosticBudgetCreate):
                 errors_stack.append(event_type_err_msg)
-        elif event.is_adm_permission:
+        if event.is_adm_permission:
             if not current_user.has_right(urEventAllAdmPermCreate):
                 errors_stack.append(event_type_err_msg)
 
         if errors_stack:
-            errors_stack = map(lambda err: u'<span class="text-danger text-bold">{0}</span>'.format(err), errors_stack)
+            errors_stack = map(lambda err: u'<span class="text-bold">{0}</span>'.format(err), errors_stack)
             out_msg['message'] = u'<br/>' + u',<br/>'.join(errors_stack)
             return False
         # все остальные можно
@@ -416,12 +423,24 @@ class UserUtils(object):
             out_msg['message'] = u'Пользователь не является создателем или ответственным за обращение'
             return False
         # есть ли ограничения на закрытие обращений определенных EventType
-        if event.is_policlinic and event.is_paid:
+        if event.is_day_hospital:
+            if not current_user.has_right(urEventClinicClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_all_day_hospital:
+            if not current_user.has_right(urEventHospitalClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidClose):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
         elif event.is_policlinic and event.is_oms:
             if not current_user.has_right(urEventPoliclinicOmsClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_policlinic and event.is_oms_mo:
+            if not current_user.has_right(urEventPoliclinicOmsMoClose):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
         elif event.is_policlinic and event.is_dms:

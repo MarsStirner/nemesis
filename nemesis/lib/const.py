@@ -21,6 +21,7 @@ PAYER_EVENT_CODES = ('4', '3', '2')
 POLICLINIC_EVENT_CODES = ('policlinic',)
 STATIONARY_EVENT_CODES = ('clinic', 'hospital', 'stationary')
 DAY_HOSPITAL_CODE = 'clinic'
+ALL_DAY_HOSPITAL_CODE = 'hospital'
 DIAGNOSTIC_EVENT_CODES = ('4', 'diagnosis', 'diagnostic')
 
 STATIONARY_RECEIVED_CODE = 'received'
