@@ -296,6 +296,15 @@ WebMis20
         get_moving: function (event_id, action_id, args) {
             if (action_id === undefined) action_id = '';
             return wrapper('GET', WMConfig.url.event.api_event_moving_get.format(event_id, action_id), args);
+        },
+        save_moving: function (event_id, action_id, data) {
+            var method = !action_id ? 'POST' : 'PUT';
+            if (action_id === undefined || action_id === null) action_id = '';
+            return wrapper(method, WMConfig.url.event.moving_save.format(event_id, action_id),
+                {}, data);
+        },
+        get_available_hosp_beds: function (args) {
+            return wrapper('GET', WMConfig.url.event.hosp_beds, args);
         }
     };
     this.hospitalizations = {
