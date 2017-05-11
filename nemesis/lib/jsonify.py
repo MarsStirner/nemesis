@@ -1124,6 +1124,12 @@ class EventVisualizer(object):
             'urgent': action.isUrgent,
         }
 
+    def make_lab_action(self, action, tissue_data, pay_info=None):
+        dct = self.make_action(action, pay_info=pay_info)
+        tissue = tissue_data.get(action.id) if tissue_data else None
+        dct['tissue_info'] = tissue if tissue else None
+        return dct
+
     def make_ultra_small_actions(self, event):
         if not event.id:
             return []
@@ -1500,7 +1506,8 @@ class ActionVisualizer(object):
             } if not for_template else None,
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions if not for_template else [],
-            'diagnoses': self.make_action_diagnoses_info(action) if not for_template else []
+            'diagnoses': self.make_action_diagnoses_info(action) if not for_template else [],
+            'tissues': self.make_action_tissues_info(action) if not for_template else []
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
@@ -1867,6 +1874,12 @@ class ActionVisualizer(object):
             ))
         return result
 
+
+    def make_action_tissues_info(self, action):
+        tissues = action.tissues
+        if tissues:
+            return [tis for tis in tissues]
+        return []
 
 class DiagnosisVisualizer(object):
 
