@@ -33,6 +33,10 @@ def get_current_hospitalisation(client_id, one=True):
 
 
 def get_opened_events_data(client_id):
+    """Получаем все открытые истории болезни.
+    Открытыми ИБ считаются те, у которых последнее движение не закрыто и отсутствует выписка.
+    """
+
     # Event.id > 20000000 чтобы не проверять евенты импортированные из старых баз (TMIS-1459)
     base_query = db.session.query(Event).join(Client, EventType, rbRequestType)\
         .filter(Event.id > 20000000, Event.deleted == 0, Client.id == client_id,
