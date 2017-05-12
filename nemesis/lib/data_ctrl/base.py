@@ -83,6 +83,12 @@ class BaseSelecter(object):
     def get_one(self):
         return self.query.first()
 
+    def get_paginated(self, args):
+        per_page = safe_int(args.get('per_page')) or 20
+        page = safe_int(args.get('page')) or 1
+        paginated_data = self.paginate(page, per_page)
+        return paginated_data
+
     def paginate(self, page, per_page=20, error_out=False):
         """Returns `per_page` items from page `page`.  By default it will
         abort with 404 if no items were found and the page was larger than

@@ -931,13 +931,15 @@ class EventVisualizer(object):
                 'invoice_all': UserUtils.access_invoices_all(event),
             },
             'services': [],
-            'invoices': self.make_event_invoices(event.id)
+            'invoices': []
         }
 
-        if UserProfileManager.has_ui_admin():
-            data['diagnoses'] = self.make_diagnoses(event)
-            data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
-        elif UserProfileManager.has_ui_doctor():
+        if UserProfileManager.has_ui_admin() or UserProfileManager.has_ui_registrator() or \
+                UserProfileManager.has_ui_cashier() or UserProfileManager.has_ui_doctor() or \
+                UserProfileManager.has_ui_registrator_cashier():
+            data['invoices'] = self.make_event_invoices(event.id)
+        if UserProfileManager.has_ui_admin() or UserProfileManager.has_ui_doctor() or \
+                UserProfileManager.has_ui_station_nurse():
             data['diagnoses'] = self.make_diagnoses(event)
             data['event']['diagnosis_types'] = self.make_event_diagnosis_types_info(event)
         return data

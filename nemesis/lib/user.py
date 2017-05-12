@@ -560,7 +560,6 @@ class UserUtils(object):
         ))
 
 
-
 class UserProfileManager(object):
     user = None
 
@@ -573,7 +572,7 @@ class UserProfileManager(object):
     doctor_anest = 'anestezDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
-    nurse = 'strNurse'  # Медсестра отделения
+    nurse = 'strNurse'  # Медсестра отделения (постовая медсестра)
     cashier = 'kassir'  # Кассир
     obstetrician = 'obstetrician'  # Акушер-гинеколог
     overseer1 = 'overseer1'
@@ -586,6 +585,7 @@ class UserProfileManager(object):
         'diag_doctor': [admin, doctor_diag, nurse_assist],
         'registrator': [admin, reg_clinic, doctor_otd],
         'adm_nurse': [admin, nurse_admission],
+        'station_nurse': [admin, nurse],
         'registrator_cashier': [admin, reg_clinic, cashier],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
@@ -624,6 +624,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_adm_nurse(cls):
         return cls._get_user_role() in cls.ui_groups['adm_nurse']
+
+    @classmethod
+    def has_ui_station_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['station_nurse']
 
     @classmethod
     def has_ui_doctor(cls):
@@ -673,4 +677,6 @@ class UserProfileManager(object):
     def get_default_url(cls):
         if cls._get_user_role() == cls.nurse_admission:
             return url_for('patients.index')
+        if cls._get_user_role() == cls.nurse:
+            return url_for('hospitalizations.html_current_hosps')
         return url_for(app.config.get('DEFAULT_ENDPOINT', 'index'))

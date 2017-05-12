@@ -271,11 +271,6 @@ WebMis20
             return wrapper('GET', WMConfig.url.actions.apt_groups_get.format(action_type_id));
         }
     };
-    this.stationary = {
-        get_movings: function (event_id) {
-            return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
-        }
-    };
     this.client = {
         search: function (args) {
             return wrapper('GET', WMConfig.url.patients.client_search, args);
@@ -292,8 +287,32 @@ WebMis20
         get_hosp: function (event_id) {
             return wrapper('GET',  WMConfig.url.event.event_hosp_get + event_id);
         },
+        get: function (event_id) {
+            return wrapper('GET',  WMConfig.url.event.event_get, {event_id: event_id});
+        },
         save: function (data) {
-            return wrapper('POST', WMConfig.url.event.event_save, {}, data)
+            return wrapper('POST', WMConfig.url.event.event_save, {}, data);
+        },
+        get_movings: function (event_id) {
+            return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));
+        },
+        get_moving: function (event_id, action_id, args) {
+            if (action_id === undefined) action_id = '';
+            return wrapper('GET', WMConfig.url.event.api_event_moving_get.format(event_id, action_id), args);
+        },
+        save_moving: function (event_id, action_id, data) {
+            var method = !action_id ? 'POST' : 'PUT';
+            if (action_id === undefined || action_id === null) action_id = '';
+            return wrapper(method, WMConfig.url.event.moving_save.format(event_id, action_id),
+                {}, data);
+        },
+        get_available_hosp_beds: function (args) {
+            return wrapper('GET', WMConfig.url.event.hosp_beds, args);
+        }
+    };
+    this.hospitalizations = {
+        get_current: function (args) {
+            return wrapper('GET', WMConfig.url.hospitalizations.api_current_hosps_get, args);
         }
     };
 }]);
