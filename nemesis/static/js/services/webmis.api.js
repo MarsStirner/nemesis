@@ -287,8 +287,11 @@ WebMis20
         get_hosp: function (event_id) {
             return wrapper('GET',  WMConfig.url.event.event_hosp_get + event_id);
         },
+        get: function (event_id) {
+            return wrapper('GET',  WMConfig.url.event.event_get, {event_id: event_id});
+        },
         save: function (data) {
-            return wrapper('POST', WMConfig.url.event.event_save, {}, data)
+            return wrapper('POST', WMConfig.url.event.event_save, {}, data);
         },
         get_movings: function (event_id) {
             return wrapper('GET', WMConfig.url.event.api_event_movings_get.format(event_id));

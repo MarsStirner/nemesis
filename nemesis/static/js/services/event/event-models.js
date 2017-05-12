@@ -56,27 +56,27 @@ angular.module('WebMis20.services.models').
                 return this;
             };
 
-            WMEvent.prototype.get_data = function(self, data){
-                self.info = data.result.event;
-                self.allergies = data.result.allergies;
-                self.intolerances = data.result.intolerances;
-                self.ro = data.result.access.ro;
-                self.access.can_read_diagnoses = data.result.access.can_read_diagnoses;
-                self.access.can_edit_diagnoses = data.result.access.can_edit_diagnoses;
-                self.access.can_create_actions = data.result.access.can_create_actions;
-                self.access.invoice_all = data.result.access.invoice_all;
-                var client_info = self.info.client;
+            WMEvent.prototype.get_data = function (data) {
+                this.info = data.result.event;
+                this.allergies = data.result.allergies;
+                this.intolerances = data.result.intolerances;
+                this.ro = data.result.access.ro;
+                this.access.can_read_diagnoses = data.result.access.can_read_diagnoses;
+                this.access.can_edit_diagnoses = data.result.access.can_edit_diagnoses;
+                this.access.can_create_actions = data.result.access.can_create_actions;
+                this.access.invoice_all = data.result.access.invoice_all;
+                var client_info = this.info.client;
                 if (!WMClient) WMClient = $injector.get('WMClient');
-                self.info.client = new WMClient();
-                self.info.client.init_from_obj({
+                this.info.client = new WMClient();
+                this.info.client.init_from_obj({
                     client_data: client_info
                 }, 'for_event');
                 var diagnoses_all = (_.isArray(data.result.diagnoses)) ? data.result.diagnoses : [];
-                self.diagnoses_all = diagnoses_all;
-                self.diagnoses = _.filter(diagnoses_all, function (diag) {return ! diag.end_date});
-                self.services = data.result.services;
-                self.invoices = data.result.invoices;
-                self.is_closed = self.closed();
+                this.diagnoses_all = diagnoses_all;
+                this.diagnoses = _.filter(diagnoses_all, function (diag) {return ! diag.end_date});
+                this.services = data.result.services;
+                this.invoices = data.result.invoices;
+                this.is_closed = this.closed();
             };
             WMEvent.prototype.init_from_obj = function (data) {
                 this.get_data(data);
@@ -94,7 +94,7 @@ angular.module('WebMis20.services.models').
                 return $http.get(url, {
                     params: params
                 }).success(function (data) {
-                    self.get_data(self, data);
+                    self.get_data(data);
                 });
             };
 
@@ -158,18 +158,18 @@ angular.module('WebMis20.services.models').
                 this.blood_history = [];
             };
             WMStationaryEvent.inheritsFrom(WMEvent);
-            WMStationaryEvent.prototype.get_data = function(self, data) {
-                WMEvent.prototype.get_data(self, data);
-                self.admission_date = data.result.admission_date;
-                self.discharge_date = data.result.discharge_date;
-                self.hosp_length = data.result.hosp_length;
-                self.patient_current_os = data.result.patient_current_os;
-                self.hospital_bed = data.result.hospital_bed;
-                self.attending_doctor = data.result.attending_doctor;
-                self.received = data.result.received;
-                self.movings = data.result.movings;
-                self.blood_history = data.result.blood_history;
-                self.vmp_quoting = data.result.vmp_quoting;
+            WMStationaryEvent.prototype.get_data = function(data) {
+                WMEvent.prototype.get_data.call(this, data);
+                this.admission_date = data.result.admission_date;
+                this.discharge_date = data.result.discharge_date;
+                this.hosp_length = data.result.hosp_length;
+                this.patient_current_os = data.result.patient_current_os;
+                this.hospital_bed = data.result.hospital_bed;
+                this.attending_doctor = data.result.attending_doctor;
+                this.received = data.result.received;
+                this.movings = data.result.movings;
+                this.blood_history = data.result.blood_history;
+                this.vmp_quoting = data.result.vmp_quoting;
             };
             WMStationaryEvent.prototype.save = function() {
                 var self = this;
