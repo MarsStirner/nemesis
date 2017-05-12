@@ -211,7 +211,7 @@ angular.module('WebMis20.services.models').
             var wmclient = new WMClient();
             wmclient.init_from_obj({
                 client_data: data.event.client
-            });
+            }, 'for_admission_event');
             this.event_id = data.event.id;
             this.info = data.event;
             this.info.client = wmclient;

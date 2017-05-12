@@ -209,6 +209,7 @@ angular.module('WebMis20')
                 name = attrs.name,
                 ngDisabled = attrs.ngDisabled,
                 ngRequired = attrs.ngRequired,
+                ngChange = attrs.ngChange,
                 ngModel = attrs.ngModel,
                 autofocus = attrs.autofocus,
                 wmValidate = attrs.wmValidate;
@@ -250,6 +251,10 @@ angular.module('WebMis20')
             if (ngRequired) {
                 date_input.attr('ng-required', ngRequired);
                 time_input.attr('ng-required', ngRequired);
+            }
+            if (ngChange) {
+                date_input.attr('ng-change', ngChange);
+                time_input.attr('ng-change', ngChange);
             }
             if (wmValidate) {
                 date_input.attr('wm-validate', wmValidate);
