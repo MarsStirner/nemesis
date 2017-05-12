@@ -114,6 +114,8 @@ angular.module('WebMis20.services.models').
                     add_relations();
                     add_contacts();
                     // Do we need? add_vmp_coupons();
+                } else if (info_type === 'for_admission_event') {
+                    add_policies();
                 } else if (info_type === 'for_servicing') {
                     add_id_doc();
                     add_policies();

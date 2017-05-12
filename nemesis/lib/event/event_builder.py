@@ -3,13 +3,14 @@ import datetime
 
 from flask_login import current_user
 
-from nemesis.lib.const import STATIONARY_EVENT_CODES, STATIONARY_RECEIVED_CODE
+from nemesis.lib.const import STATIONARY_EVENT_CODES, STATIONARY_RECEIVED_CODE, \
+    STATIONARY_ORG_STRUCT_STAY_CODE
 from nemesis.lib.data import create_action, get_action
 from nemesis.models.actions import ActionType
 from nemesis.models.client import Client
 from nemesis.models.enums import EventPrimary, EventOrder
 from nemesis.models.event import (Event, EventType)
-from nemesis.models.exists import Person, rbRequestType
+from nemesis.models.exists import Person, rbRequestType, OrgStructure
 from nemesis.models.schedule import ScheduleClientTicket
 from nemesis.lib.data_ctrl.utils import get_default_org
 from nemesis.systemwide import db
@@ -93,6 +94,9 @@ class StationaryEventBuilder(EventBuilder):
         prev_received = get_action(prev_event, STATIONARY_RECEIVED_CODE)
         action_type = ActionType.query.filter(ActionType.flatCode == STATIONARY_RECEIVED_CODE).first()
         self.event.received = create_action(action_type.id, self.event)
+        cur_os = db.session.query(OrgStructure).get(current_user.orgStructure_id) \
+            if current_user.orgStructure_id else None
+        self.event.received[STATIONARY_ORG_STRUCT_STAY_CODE].value = cur_os
         if self.event.received and prev_received:
             self.event.received.propsByCode['weight'].value = prev_received.propsByCode['weight'].value
             self.event.received.propsByCode['height'].value = prev_received.propsByCode['height'].value

@@ -979,7 +979,7 @@ class EventVisualizer(object):
             'externalId': event.externalId,
             'setDate': event.setDate,
             'execDate': event.execDate,
-            'person': pvis.make_person_ws(event.execPerson),
+            'person': pvis.make_person_ws(event.execPerson) if event.execPerson else None,
             'requestType': event.eventType.requestType,
             'event_type': event.eventType,
             'result': event.result,
@@ -1415,7 +1415,9 @@ class StationaryEventVisualizer(EventVisualizer):
                 'order': EventOrder(event.order),
                 'is_primary': EventPrimary(event.isPrimaryCode),
                 'client': {
-                    'info': cvis.make_client(event.client)
+                    'info': cvis.make_client(event.client),
+                    'compulsory_policy': event.client.compulsoryPolicy,
+                    'voluntary_policies': event.client.voluntaryPolicies
                 },
                 'set_date': event.setDate,
                 'exec_date': event.execDate,
