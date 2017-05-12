@@ -184,8 +184,34 @@ class MQIntegrationNotifier(object):
             'addresses': [
                 self._make_address(addr)
                 for addr in client.addresses
-            ]
+            ],
+            'telecom': self._make_client_contacts(client)
         }
+
+    def _make_client_contacts(self, client):
+        res = []
+        for contact in client.contacts:
+            item = {
+                'id': contact.id,
+                'value': contact.contact
+            }
+            if contact.contactType.code == '01':
+                item['system'] = 'phone'
+                item['use'] = 'home'
+            elif contact.contactType.code == '02':
+                item['system'] = 'phone'
+                item['use'] = 'work'
+            elif contact.contactType.code == '03':
+                item['system'] = 'phone'
+                item['use'] = 'mobile'
+            elif contact.contactType.code == '04':
+                item['system'] = 'email'
+                item['use'] = 'temp'
+
+            if 'system' in item:
+                res.append(item)
+
+        return res
 
     def _make_event(self, event):
         return {
