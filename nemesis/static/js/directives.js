@@ -1430,7 +1430,7 @@ angular.module('WebMis20.directives')
          require: 'ngModel',
          link: function(scope, element, attrs, modelCtrl) {
             var capitalize = function(inputValue) {
-               if (inputValue === undefined) { inputValue = ''; }
+               var inputValue = inputValue || '';
                var capitalized = inputValue.charAt(0).toUpperCase() +
                                  inputValue.substring(1).toLowerCase();
                if(capitalized !== inputValue) {
