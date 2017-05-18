@@ -462,82 +462,83 @@ angular.module('WebMis20.services').
                     client[entity].splice(idx, 1);
                 }
             },
-            addVmpCoupon: function (client) {
-                var coupon = {
-                    id: null,
-                    number: 0,
-                    mkb: null,
-                    code: '',
-                    date: null,
-                    event: null,
-                    name: '',
-                    deleted: 0
-                };
-                this.editVmpCoupon(client, coupon).then(function (coupon) {
-                    client.vmp_coupons.push(coupon);
-                });
-            },
-            removeVmpCoupon: function(client, coupon) {
-                var self = this;
-                MessageBox.question(
-                    'Удаление талона ВМП',
-                    'Вы действительно хотите удалить талон ВМП?'
-                ).then(function () {
-                    $http.post(
-                        WMConfig.url.patients.coupon_delete, {
-                            coupon: coupon
-                        }
-                    ).success(function(){
-                        self.delete_record(client, 'vmp_coupons', coupon)
-                    });
-
-                })
-            },
-            editVmpCoupon: function(client, coupon) {
-                var self = this;
-                var deferred = $q.defer();
-                $modal.open({
-                    size: 'lg',
-                    templateUrl: '/nemesis/client/services/modal/edit_vmp_coupon.html',
-                    backdrop : 'static',
-                    resolve: {
-                        coupon: function () {
-                            return coupon;
-                        }
-                    },
-                    controller: function ($scope, $modalInstance, coupon) {
-                        $scope.coupon_file = {};
-                        $scope.coupon = coupon;
-                        $scope.parse_xlsx = function() {
-                            ApiCalls.wrapper('POST', WMConfig.url.patients.coupon_parse, {}, {
-                                coupon: $scope.coupon_file
-                            }).then(function (coupon) {
-                                $scope.coupon = coupon;
-                                $scope.wrong_client = client.client_id != $scope.coupon.client.id;
-                                $scope.nonunique = client.vmp_coupons.filter(function (coupon){
-                                    return coupon.number == $scope.coupon.number
-                                }).length > 0;
-                            });
-                        }
-                    }
-                }).result.then(function (result) {
-                    $http.post(
-                        WMConfig.url.patients.coupon_save, {
-                            client_id: client.client_id,
-                            coupon: result[0],
-                            coupon_file: result[1]
-                        }
-                    ).success(function(data){
-                        deferred.resolve(data.result);
-                    }).error(function (data) {
-                        return MessageBox.error(
-                            'Ошибка',
-                            'Произошла ошибка добавления талона'
-                        );
-                    });
-                });
-                return deferred.promise;
-            }
+            // addVmpCoupon: function (client) {
+            //     var coupon = {
+            //         id: null,
+            //         number: 0,
+            //         mkb: null,
+            //         code: '',
+            //         date: null,
+            //         event: null,
+            //         name: '',
+            //         deleted: 0
+            //     };
+            //     this.editVmpCoupon(client, coupon).then(function (coupon) {
+            //         client.vmp_coupons.push(coupon);
+            //     });
+            // },
+            // removeVmpCoupon: function(client, coupon) {
+            //     var self = this;
+            //     MessageBox.question(
+            //         'Удаление талона ВМП',
+            //         'Вы действительно хотите удалить талон ВМП?'
+            //     ).then(function () {
+            //         $http.post(
+            //             WMConfig.url.patients.coupon_delete, {
+            //                 coupon: coupon
+            //             }
+            //         ).success(function(){
+            //             self.delete_record(client, 'vmp_coupons', coupon)
+            //         });
+            //
+            //     })
+            // },
+            // editVmpCoupon: function(client, coupon) {
+            //     var self = this;
+            //     var deferred = $q.defer();
+            //     $modal.open({
+            //         size: 'lg',
+            //         templateUrl: '/nemesis/client/services/modal/edit_vmp_coupon.html',
+            //         backdrop : 'static',
+            //         resolve: {
+            //             coupon: function () {
+            //                 return coupon;
+            //             }
+            //         },
+            //         controller: function ($scope, $modalInstance, coupon) {
+            //             $scope.coupon_file = {};
+            //             $scope.coupon = coupon;
+            //             function reloadCoupon (coupon) {
+            //                 $scope.coupon = coupon;
+            //                 $scope.wrong_client = client.client_id != $scope.coupon.client.id;
+            //                 $scope.nonunique = client.vmp_coupons.filter(function (coupon){
+            //                     return coupon.number == $scope.coupon.number
+            //                 }).length > 0;
+            //             };
+            //             $scope.parse_xlsx = function() {
+            //                 ApiCalls.wrapper('POST', WMConfig.url.patients.coupon_parse, {}, {
+            //                     coupon: $scope.coupon_file
+            //                 }).then(reloadCoupon);
+            //             }
+            //         }
+            //     }).result.then(function (result) {
+            //         $http.post(
+            //             WMConfig.url.patients.coupon_save, {
+            //                 client_id: client.client_id,
+            //                 coupon: result[0],
+            //                 coupon_file: result[1]
+            //             }
+            //         ).success(function(data){
+            //             deferred.resolve(data.result);
+            //         }).error(function (data) {
+            //             return MessageBox.error(
+            //                 'Ошибка',
+            //                 'Произошла ошибка добавления талона'
+            //             );
+            //         });
+            //     });
+            //     return deferred.promise;
+            // }
         };
     }])
     .run(['$templateCache', function ($templateCache) {
