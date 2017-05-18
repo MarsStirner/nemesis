@@ -927,17 +927,20 @@ angular.module('WebMis20')
                 post: function postLink(scope, iElement, iAttrs, controller) {
                     scope.placeholder = iAttrs.placeholder || 'Выберите талон';
                     scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.reloadCouponList = function () {
+                        $http.get(WMConfig.url.patients.client_vmp_coupons, {
+                            params: {
+                                client_id: scope.client_id
+                            }
+                        }).then(function (res) {
+                            return scope.coupon_list = res.data.result;
+                        });
+                    };
+
                     scope.$watch(tAttrs.client, function (newVal, oldVal) {
                         if (newVal) {
                             scope.client_id = newVal;
-                            $http.get(WMConfig.url.patients.client_vmp_coupons, {
-                                params: {
-                                    client_id: scope.client_id
-                                }
-                            })
-                            .then(function (res) {
-                                return scope.coupon_list = res.data.result;
-                            });
+                            scope.reloadCouponList();
                         }
                     });
                     scope.get_text = function(coupon){
