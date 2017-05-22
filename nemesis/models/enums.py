@@ -232,8 +232,8 @@ class OrgStructType(Enum):
 
 
 class HospStateStatus(Enum):
-    current = 0, u'Текущие'
-    received = 1, u'Поступившие'
-    transferred = 2, 'Переведенные'
-    leaved = 3, 'Выписанные'
+    current = 1, u'Текущие'
+    received = 2, u'Поступившие'
+    transferred = 3, 'Переведенные'
+    leaved = 4, 'Выписанные'
 
