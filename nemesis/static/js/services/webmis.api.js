@@ -311,8 +311,11 @@ WebMis20
         }
     };
     this.hospitalizations = {
-        get_current: function (args) {
-            return wrapper('GET', WMConfig.url.hospitalizations.api_current_hosps_get, args);
+        get_list: function (args) {
+            return wrapper('GET', WMConfig.url.hospitalizations.api_hosp_list_get, args);
+        },
+        get_stats: function (args) {
+            return wrapper('GET', WMConfig.url.hospitalizations.api_hosps_stats_get, args);
         }
     };
 }]);

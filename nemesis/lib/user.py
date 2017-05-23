@@ -678,5 +678,5 @@ class UserProfileManager(object):
         if cls._get_user_role() == cls.nurse_admission:
             return url_for('patients.index')
         if cls._get_user_role() == cls.nurse:
-            return url_for('hospitalizations.html_current_hosps')
+            return url_for('hospitalizations.html_search_hosps')
         return url_for(app.config.get('DEFAULT_ENDPOINT', 'index'))
