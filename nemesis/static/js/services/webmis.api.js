@@ -318,4 +318,24 @@ WebMis20
             return wrapper('GET', WMConfig.url.hospitalizations.api_hosps_stats_get, args);
         }
     };
+    this.vmp = {
+        save: function(client, coupon, coupon_file) {
+            return wrapper('POST', WMConfig.url.patients.coupon_save, {}, {
+                        client_id: client.client_id,
+                        coupon: coupon,
+                        coupon_file: coupon_file
+                    });
+        },
+        del: function(coupon) {
+            return wrapper('POST', WMConfig.url.patients.coupon_delete, {}, {
+                        coupon: coupon,
+                    });
+        },
+        parse_xlsx: function(coupon_file) {
+            return wrapper('POST', WMConfig.url.patients.coupon_parse, {}, {
+                        coupon: coupon_file,
+                    });
+        }
+    }
+;
 }]);

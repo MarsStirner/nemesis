@@ -19,6 +19,7 @@ urEventPoliclinicOmsMoClose = u'evtPoliclinicOmsMoClose'  # Имеет возм�
 urEventPoliclinicDmsClose = u'evtPoliclinicDmsClose'  # Имеет возможность закрывать поликлинические обращения ДМС
 urEventDiagnosticPaidClose = u'evtDiagnosticPaidClose'  # Имеет возможность закрывать диагностические обращения платные
 urEventDiagnosticBudgetClose = u'evtDiagnosticBudgetClose'  # Имеет возможность закрывать диагностические обращения бюджет
+urEventVmpCouponExpChange = u'evtVmpCouponExpChange'  # Имеет возможность менять срок действия талона (даты (с,по))
 
 urEventAllAdmPermSetExecDate = u'evtAllAdmPermSetExecDate'  # Имеет возможность устанавливать дату завершения в обращениях с финансированием "Административное разрешение"
 urEventInvoiceAccessAll = u'evtInvoiceAccessAll'  # Имеет доступ к любым операциям со счетами в обращениях

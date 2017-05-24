@@ -2,11 +2,13 @@
 import datetime
 
 import itertools
+
 from sqlalchemy import Table, between
 from sqlalchemy.dialects.mysql.base import MEDIUMBLOB
 
 from nemesis.systemwide import db
 from nemesis.lib.agesex import AgeSex
+from nemesis.lib.utils import db_non_flushable
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
 
 
@@ -1420,6 +1422,7 @@ class QuotaType(db.Model):
     code = db.Column(db.String(16), nullable=False)
     name = db.Column(db.Unicode(255), nullable=False)
     teenOlder = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    amount_of_days = db.Column(db.Integer, nullable=False, server_default=u"'30'")
     price = db.Column(db.Float(asdecimal=True), nullable=False, server_default=u"'0'")
 
     catalog = db.relationship('QuotaCatalog', backref='quotaTypes')
@@ -1438,7 +1441,9 @@ class QuotaType(db.Model):
                 'code': self.code,
                 'name': self.name,
                 'teen_older': self.teenOlder,
-                'price': self.price}
+                'price': self.price,
+                'amount_of_days': self.amount_of_days
+                }
 
     def __unicode__(self):
         return self.name
@@ -1561,6 +1566,8 @@ class VMPCoupon(db.Model):
     number = db.Column(db.Integer, nullable=False)
     MKB_id = db.Column(db.ForeignKey('MKB.id'), nullable=False)
     date = db.Column(db.Date)
+    begDate = db.Column(db.DateTime)
+    endDate = db.Column(db.DateTime)
     quotaType_id = db.Column(db.ForeignKey('QuotaType.id'), nullable=False)
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False)
     clientQuoting_id = db.Column(db.Integer)
@@ -1585,6 +1592,11 @@ class VMPCoupon(db.Model):
     @property
     def parsed(self):
         return self._parsed
+
+    @property
+    @db_non_flushable
+    def is_unique(self, ):
+        return not bool(VMPCoupon.query.filter_by(number=self.number, deleted=0).count())
 
     @classmethod
     def from_xlsx(cls, xlsx_file):
@@ -1675,10 +1687,13 @@ class VMPCoupon(db.Model):
             'mkb': self.MKB_object,
             'quota_type': self.quotaType,
             'date': self.date,
+            'beg_date': self.begDate,
+            'end_date': self.endDate,
             'event': safe_traverse_attrs(self, 'clientQuoting', 'event', 'externalId'),
             'client': {'id': self.client.id,
                        'name': safe_traverse_attrs(self, 'client', 'nameText')},
-            'file': self.fileLink
+            'file': self.fileLink,
+            'is_unique': self.is_unique,
         }
 
 

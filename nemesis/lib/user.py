@@ -23,7 +23,8 @@ from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPolicli
                                      urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate,
                                      urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate,
                                      urSetPersonChange, urEventPoliclinicOmsMoClose, urEventClinicClose,
-                                     urEventClinicCreate, urEventHospitalClose, urEventHospitalCreate)
+                                     urEventClinicCreate, urEventHospitalClose, urEventHospitalCreate,
+                                     urEventVmpCouponExpChange)
 
 
 class User(UserMixin):
@@ -557,6 +558,12 @@ class UserUtils(object):
     def can_change_set_person(self):
         return (current_user.has_right('adm') or (
                 current_user.has_right(urSetPersonChange)
+        ))
+
+    @property
+    def can_change_vmp_coupon(self):
+        return (current_user.has_right('adm') or (
+                current_user.has_right(urEventVmpCouponExpChange)
         ))
 
 
