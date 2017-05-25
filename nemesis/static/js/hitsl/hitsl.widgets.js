@@ -924,7 +924,8 @@ angular.module('WebMis20')
 
             return {
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
-                post: function postLink(scope, iElement, iAttrs, controller) {
+                post: function postLink(scope, iElement, iAttrs, controllers) {
+                    var ngModelCtrl = controllers[1];
                     scope.placeholder = iAttrs.placeholder || 'Выберите талон';
                     scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
                     scope.reloadCouponList = function () {
@@ -936,8 +937,13 @@ angular.module('WebMis20')
                             return scope.coupon_list = res.data.result;
                         });
                     };
-                    scope.$on('new_vmp_saved', function(event, coupon) {
-                        if (coupon) {scope.coupon_list.push(coupon);}
+                    scope.$on('new_vmp_saved', function(event, data) {
+                        var coupon = data.coupon;
+                        if (coupon) {
+                            scope.coupon_list.push(coupon);
+                            ngModelCtrl.$setViewValue(coupon);
+                            ngModelCtrl.$render();
+                        }
                     });
                     scope.$watch(tAttrs.client, function (newVal, oldVal) {
                         if (newVal) {

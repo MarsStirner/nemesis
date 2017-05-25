@@ -138,6 +138,16 @@ angular.module('WebMis20.services.models').
             WMEvent.prototype.closed = function() {
                 return this.info && this.info.result_id !== null && this.info.exec_date !== null;
             };
+            
+            WMEvent.prototype.can_create_actions = function(action_type_group) {
+               var at_class = {
+                'medical_documents': 0,
+                'diagnostics': 1,
+                'lab': 1,
+                'treatments': 2
+               };
+              return this.access.can_create_actions[at_class[action_type_group]]
+            };
 
             return WMEvent;
         }
@@ -171,7 +181,8 @@ angular.module('WebMis20.services.models').
                 this.blood_history = data.result.blood_history;
                 this.vmp_quoting = data.result.vmp_quoting;
             };
-            WMStationaryEvent.prototype.save = function() {
+            
+            WMStationaryEvent.prototype.save = function() {   
                 var self = this;
                 var deferred = $q.defer();
                 $http.post(WMConfig.url.event.event_save, {
@@ -193,6 +204,18 @@ angular.module('WebMis20.services.models').
                     deferred.reject(response.meta.name);
                 });
                 return deferred.promise;
+            };
+
+            WMStationaryEvent.prototype.can_create_actions = function(action_type_group) {
+                if (action_type_group !== 'medical_documents') {
+                    var couponEndDate = moment(safe_traverse(this, ['vmp_quoting', 'coupon', 'end_date']));
+                    if (couponEndDate.isValid()) {
+                        var isVmpCouponExpired = moment(new Date()).startOf('d').isAfter(couponEndDate.clone().startOf('d'));
+                        return WMEvent.prototype.can_create_actions.call(this, action_type_group) && !isVmpCouponExpired;
+                    }
+                }
+                return WMEvent.prototype.can_create_actions.call(this, action_type_group)
+                
             };
             return WMStationaryEvent;
         }
