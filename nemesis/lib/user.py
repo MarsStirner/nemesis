@@ -641,6 +641,10 @@ class UserProfileManager(object):
         return cls._get_user_role(True) in cls.ui_groups['doctor']
 
     @classmethod
+    def has_ui_otd_doctor(cls):
+        return cls._get_user_role(True) == cls.doctor_otd
+
+    @classmethod
     def has_ui_doctor_stat(cls):
         return cls._get_user_role() == cls.doctor_stat
 
