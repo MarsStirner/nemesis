@@ -30,10 +30,12 @@ angular.module('WebMis20.services.models').
         };
         return this;
     }]).
-    factory('WMEvent', ['$http', '$q', 'WMClient', 'WMConfig',
-        function($http, $q, WMClient, WMConfig) {
+    factory('WMEvent', ['$http', '$q', '$injector', 'WMConfig',
+        function($http, $q, $injector, WMConfig) {
+            var WMClient;
+
             var WMEvent = function(event_id, client_id, ticket_id) {
-                this.event_id = parseInt(event_id);
+                this.event_id = parseInt(event_id) || null;
                 this.client_id = client_id;
                 this.ticket_id = ticket_id;
                 this.info = null;
@@ -54,28 +56,31 @@ angular.module('WebMis20.services.models').
                 return this;
             };
 
-            WMEvent.prototype.get_data = function(self, data){
-                self.info = data.result.event;
-                self.allergies = data.result.allergies;
-                self.intolerances = data.result.intolerances;
-                self.ro = data.result.access.ro;
-                self.access.can_read_diagnoses = data.result.access.can_read_diagnoses;
-                self.access.can_edit_diagnoses = data.result.access.can_edit_diagnoses;
-                self.access.can_create_actions = data.result.access.can_create_actions;
-                self.access.invoice_all = data.result.access.invoice_all;
-                var client_info = self.info.client;
-                self.info.client = new WMClient();
-                self.info.client.init_from_obj({
+            WMEvent.prototype.get_data = function (data) {
+                this.info = data.result.event;
+                this.allergies = data.result.allergies;
+                this.intolerances = data.result.intolerances;
+                this.ro = data.result.access.ro;
+                this.access.can_read_diagnoses = data.result.access.can_read_diagnoses;
+                this.access.can_edit_diagnoses = data.result.access.can_edit_diagnoses;
+                this.access.can_create_actions = data.result.access.can_create_actions;
+                this.access.invoice_all = data.result.access.invoice_all;
+                var client_info = this.info.client;
+                if (!WMClient) WMClient = $injector.get('WMClient');
+                this.info.client = new WMClient();
+                this.info.client.init_from_obj({
                     client_data: client_info
                 }, 'for_event');
                 var diagnoses_all = (_.isArray(data.result.diagnoses)) ? data.result.diagnoses : [];
-                self.diagnoses_all = diagnoses_all;
-                self.diagnoses = _.filter(diagnoses_all, function (diag) {return ! diag.end_date});
-                self.services = data.result.services;
-                self.invoices = data.result.invoices;
-                self.is_closed = self.closed();
+                this.diagnoses_all = diagnoses_all;
+                this.diagnoses = _.filter(diagnoses_all, function (diag) {return ! diag.end_date});
+                this.services = data.result.services;
+                this.invoices = data.result.invoices;
+                this.is_closed = this.closed();
             };
-
+            WMEvent.prototype.init_from_obj = function (data) {
+                this.get_data(data);
+            };
             WMEvent.prototype.reload = function() {
                 var self = this;
                 var url = this.is_new() ? WMConfig.url.event.event_new : WMConfig.url.event.event_get;
@@ -89,7 +94,7 @@ angular.module('WebMis20.services.models').
                 return $http.get(url, {
                     params: params
                 }).success(function (data) {
-                    self.get_data(self, data);
+                    self.get_data(data);
                 });
             };
 
@@ -116,6 +121,15 @@ angular.module('WebMis20.services.models').
                 });
                 return deferred.promise;
             };
+            WMEvent.prototype.clone = function () {
+                var copy = new this.constructor();
+                for (var prop in this) {
+                    if (this.hasOwnProperty(prop)) {
+                        copy[prop] = _.deepCopy(this[prop]);
+                    }
+                }
+                return copy;
+            };
 
             WMEvent.prototype.is_new = function() {
                 return !this.event_id;
@@ -123,6 +137,16 @@ angular.module('WebMis20.services.models').
 
             WMEvent.prototype.closed = function() {
                 return this.info && this.info.result_id !== null && this.info.exec_date !== null;
+            };
+            
+            WMEvent.prototype.can_create_actions = function(action_type_group) {
+               var at_class = {
+                'medical_documents': 0,
+                'diagnostics': 1,
+                'lab': 1,
+                'treatments': 2
+               };
+              return this.access.can_create_actions[at_class[action_type_group]]
             };
 
             return WMEvent;
@@ -144,20 +168,21 @@ angular.module('WebMis20.services.models').
                 this.blood_history = [];
             };
             WMStationaryEvent.inheritsFrom(WMEvent);
-            WMStationaryEvent.prototype.get_data = function(self, data) {
-                WMEvent.prototype.get_data(self, data);
-                self.admission_date = data.result.admission_date;
-                self.discharge_date = data.result.discharge_date;
-                self.hosp_length = data.result.hosp_length;
-                self.patient_current_os = data.result.patient_current_os;
-                self.hospital_bed = data.result.hospital_bed;
-                self.attending_doctor = data.result.attending_doctor;
-                self.received = data.result.received;
-                self.movings = data.result.movings;
-                self.blood_history = data.result.blood_history;
-                self.vmp_quoting = data.result.vmp_quoting;
+            WMStationaryEvent.prototype.get_data = function(data) {
+                WMEvent.prototype.get_data.call(this, data);
+                this.admission_date = data.result.admission_date;
+                this.discharge_date = data.result.discharge_date;
+                this.hosp_length = data.result.hosp_length;
+                this.patient_current_os = data.result.patient_current_os;
+                this.hospital_bed = data.result.hospital_bed;
+                this.attending_doctor = data.result.attending_doctor;
+                this.received = data.result.received;
+                this.movings = data.result.movings;
+                this.blood_history = data.result.blood_history;
+                this.vmp_quoting = data.result.vmp_quoting;
             };
-            WMStationaryEvent.prototype.save = function() {
+            
+            WMStationaryEvent.prototype.save = function() {   
                 var self = this;
                 var deferred = $q.defer();
                 $http.post(WMConfig.url.event.event_save, {
@@ -180,6 +205,53 @@ angular.module('WebMis20.services.models').
                 });
                 return deferred.promise;
             };
-            return WMStationaryEvent
+
+            WMStationaryEvent.prototype.can_create_actions = function(action_type_group) {
+                if (action_type_group !== 'medical_documents') {
+                    var couponEndDate = moment(safe_traverse(this, ['vmp_quoting', 'coupon', 'end_date']));
+                    if (couponEndDate.isValid()) {
+                        var isVmpCouponExpired = moment(new Date()).startOf('d').isAfter(couponEndDate.clone().startOf('d'));
+                        return WMEvent.prototype.can_create_actions.call(this, action_type_group) && !isVmpCouponExpired;
+                    }
+                }
+                return WMEvent.prototype.can_create_actions.call(this, action_type_group)
+                
+            };
+            return WMStationaryEvent;
         }
-    ]);
+    ]).
+    factory('WMAdmissionEvent', ['$injector', 'WMEvent', 'WebMisApi',
+            function($injector, WMEvent, WebMisApi) {
+        var WMClient;
+
+        var WMAdmissionEvent = function () {
+            WMEvent.call(this);
+            this.request_type_kind = "stationary";
+        };
+        WMAdmissionEvent.inheritsFrom(WMEvent);
+        WMAdmissionEvent.prototype.get_data = function(data) {
+            if (!WMClient) WMClient = $injector.get('WMClient');
+            var wmclient = new WMClient();
+            wmclient.init_from_obj({
+                client_data: data.event.client
+            }, 'for_admission_event');
+            this.event_id = data.event.id;
+            this.info = data.event;
+            this.info.client = wmclient;
+
+            this.received = data.received;
+            return this;
+        };
+        WMAdmissionEvent.prototype.save = function() {
+            var self = this;
+            return WebMisApi.event.save({
+                event: self.info,
+                received: self.received,
+                request_type_kind: self.request_type_kind
+            }).then(function (result) {
+                self.event_id = result.id;
+                return self.reload();
+            });
+        };
+        return WMAdmissionEvent;
+    }]);

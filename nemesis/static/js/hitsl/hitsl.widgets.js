@@ -209,6 +209,7 @@ angular.module('WebMis20')
                 name = attrs.name,
                 ngDisabled = attrs.ngDisabled,
                 ngRequired = attrs.ngRequired,
+                ngChange = attrs.ngChange,
                 ngModel = attrs.ngModel,
                 autofocus = attrs.autofocus,
                 wmValidate = attrs.wmValidate;
@@ -250,6 +251,10 @@ angular.module('WebMis20')
             if (ngRequired) {
                 date_input.attr('ng-required', ngRequired);
                 time_input.attr('ng-required', ngRequired);
+            }
+            if (ngChange) {
+                date_input.attr('ng-change', ngChange);
+                time_input.attr('ng-change', ngChange);
             }
             if (wmValidate) {
                 date_input.attr('wm-validate', wmValidate);
@@ -919,23 +924,34 @@ angular.module('WebMis20')
 
             return {
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
-                post: function postLink(scope, iElement, iAttrs, controller) {
+                post: function postLink(scope, iElement, iAttrs, controllers) {
+                    var ngModelCtrl = controllers[1];
                     scope.placeholder = iAttrs.placeholder || 'Выберите талон';
                     scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
+                    scope.reloadCouponList = function () {
+                        $http.get(WMConfig.url.patients.client_vmp_coupons, {
+                            params: {
+                                client_id: scope.client_id
+                            }
+                        }).then(function (res) {
+                            return scope.coupon_list = res.data.result;
+                        });
+                    };
+                    scope.$on('new_vmp_saved', function(event, data) {
+                        var coupon = data.coupon;
+                        if (coupon) {
+                            scope.coupon_list.push(coupon);
+                            ngModelCtrl.$setViewValue(coupon);
+                            ngModelCtrl.$render();
+                        }
+                    });
                     scope.$watch(tAttrs.client, function (newVal, oldVal) {
                         if (newVal) {
                             scope.client_id = newVal;
-                            $http.get(WMConfig.url.patients.client_vmp_coupons, {
-                                params: {
-                                    client_id: scope.client_id
-                                }
-                            })
-                            .then(function (res) {
-                                return scope.coupon_list = res.data.result;
-                            });
+                            scope.reloadCouponList();
                         }
                     });
-                    scope.get_text = function(coupon){
+                    scope.get_text = function(coupon) {
                         var coupon_date = moment(coupon.date).format('DD.MM.YYYY');
                         return '{0} на {1}'.format(coupon.number, coupon_date)
                     }

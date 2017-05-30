@@ -3,6 +3,7 @@
 import datetime
 
 from sqlalchemy import exists, join, and_, or_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import func, between
 
 from nemesis.models.actions import Action, ActionType, ActionType_Service, ActionType_rbDiagnosisType
@@ -139,3 +140,13 @@ def get_action_type_class(at_class, tissue_required):
 def action_is_resuscitation_moving(action):
     os = action['orgStructStay'].value
     return os.type == OrgStructType.resuscitation[0] if os else False
+
+
+def get_tissues(action_id_list):
+    qr = Action.query.options(
+        joinedload(Action.tissues),
+        joinedload('tissues.tissueType')
+    ).filter(
+        Action.id.in_(action_id_list)
+    )
+    return dict((row.id, row.tissues) for row in qr.all())

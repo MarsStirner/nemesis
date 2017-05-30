@@ -46,6 +46,25 @@ class ContractRepr(object):
             data['last_contract_number'] = con_ctrl.get_last_contract_number()
         return data
 
+    def represent_contract_with_payers(self, contract):
+        """
+        @type contract: nemesis.models.accounting.Contract
+        @param contract:
+        @return:
+        """
+        if not contract:
+            return None
+        data = self.represent_contract(contract)
+        data.update({
+            'recipient': self.ca_repr.represent_contragent(contract.recipient),
+            'payer': self.ca_repr.represent_contragent(contract.payer),
+            'description': {
+                'full': self.make_full_description(contract),
+                'short': self.make_short_description(contract),
+            }
+        })
+        return data
+
     def represent_contract(self, contract):
         """
         @type contract: nemesis.models.accounting.Contract
@@ -127,13 +146,13 @@ class ContractRepr(object):
             'count': paginated_data.total,
             'total_pages': paginated_data.pages,
             'contract_list': [
-                self.represent_contract_full(contract) for contract in paginated_data.items
+                self.represent_contract_with_payers(contract) for contract in paginated_data.items
             ]
         }
 
     def represent_listed_contracts(self, contract_list):
         return [
-            self.represent_contract_full(contract) for contract in contract_list
+            self.represent_contract_with_payers(contract) for contract in contract_list
         ]
 
 
@@ -345,6 +364,7 @@ class ServiceRepr(object):
             self.represent_subservice(ss)
             for ss in service.get_sorted_subservices()
         ]
+        data['max_sub_services'] = service.price_list_item.service.maxSubServices
         return data
 
     def represent_subservice(self, service):

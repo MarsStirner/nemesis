@@ -555,8 +555,8 @@ var WebMis20 = angular.module('WebMis20', [
         var self = this;
         return self.loading.then(function () {
             self.objects = self.objects.filter(function (item) {
-                return AgeSex.sex_acceptable(client.info, item.sex) &&
-                    AgeSex.age_acceptable(client.info, item.age_tuple);
+                return AgeSex.sex_acceptable(client, item.sex) &&
+                    AgeSex.age_acceptable(client, item.age_tuple);
             });
         });
     };
@@ -666,12 +666,21 @@ var WebMis20 = angular.module('WebMis20', [
         link: function (scope, element, attributes) {
             // Создаём элементы
             var id = Math.random().toString(36).substring(7);
-            var inputElement = $('<input type="checkbox" id="'+id+'" class="rmargin10"></input>');
-            var replace = $('<span class="styled"></span>');
-            var label = $('<label for="'+id+'"></label>');
-            // Формируем элеменент для замены
-            replace.append(inputElement);
-            replace.append(label);
+            var inputElement = $('<input type="checkbox" id="'+id+'" class="rmargin10"></input>'),
+                replace = $('<span></span>'),
+                styledSpan = $('<span class="styled"></span>'),
+                label = $('<label for="'+id+'"></label>&nbsp;');
+
+            if (attributes.ngHide) {
+                styledSpan.attr('ng-hide', attributes.ngHide);
+            }
+            if (attributes.initiallyChecked == true) {
+                scope.selectAll.select(scope.key, true);
+            }
+            // // Формируем элеменент для замены
+            styledSpan.append(inputElement);
+            styledSpan.append(label);
+            replace.append(styledSpan)
             replace.append(element.html());
 
             // 2-way binding
@@ -687,10 +696,10 @@ var WebMis20 = angular.module('WebMis20', [
                 inputElement[0].checked = scope.selectAll.selected(scope.key);
                 return n;
             });
-
             $(element).replaceWith(replace); // Заменяем исходный элемент
             inputElement.change(select); // Цепляем хендл. Не могу сказать, как jQuery поступит при дестрое элемента
             $compile(replace)(scope); // Компилируем
+            // scope.onChecked();
         }
     }
 }])

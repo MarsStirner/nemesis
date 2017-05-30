@@ -1,13 +1,15 @@
 'use strict';
 
 angular.module('WebMis20.directives').
-    directive('wmSearchClient', ['$q', '$http', 'WMConfig', function ($q, $http, WMConfig) {
+    directive('wmSearchClient', ['$q', 'WebMisApi', 'WMConfig', 'TimeoutCallback',
+            function ($q, WebMisApi, WMConfig, TimeoutCallback) {
         return {
             restrict: 'E',
             scope: {
                 client_id: '=clientId',
                 query: '=',
-                onSelectCallback: '&onSelect'
+                onSelectCallback: '&onSelect',
+                getSearchApi: '&?'
             },
             controller: function ($scope) {
                 $scope.pager = {
@@ -23,33 +25,33 @@ angular.module('WebMis20.directives').
                     $scope.pager.pages = 1;
                     $scope.pager.current_page = 1;
                 };
-
                 $scope.query_clear = function () {
                     $scope.query = '';
                     $scope.clear_results();
                 };
 
-                var canceler = $q.defer();
-                $scope.perform_search = function () {
-                    canceler.resolve();
-                    canceler = $q.defer();
-                    if ($scope.query) {
-                        $http.get(
-                            WMConfig.url.patients.client_search, {
-                                params: {
-                                    q: $scope.query,
-                                    current_page: $scope.pager.current_page,
-                                    items_per_page: $scope.pager.items_per_page,
-                                    paginated: true
-                                },
-                                timeout: canceler.promise
-                            }
-                        ).success(function (data) {
-                            $scope.results = data.result.client_info;
-                            $scope.pager.pages = data.result.pages;
-                            $scope.pager.total_items = data.result.total_items;
-                        });
+                $scope.performSearch = function () {
+                    $scope.$emit('ClientSearchChanged', {query: $scope.query});
+
+                    if (!$scope.query) {
+                        return $q.reject([]);
                     }
+
+                    return WebMisApi.client.search({
+                        q: $scope.query,
+                        current_page: $scope.pager.current_page,
+                        items_per_page: $scope.pager.items_per_page,
+                        paginated: true
+                    }).then(function (data) {
+                        $scope.results = data.client_info;
+                        $scope.pager.pages = data.pages;
+                        $scope.pager.total_items = data.total_items;
+                        return data.client_info;
+                    });
+                };
+                var tc = new TimeoutCallback($scope.performSearch, 600);
+                $scope.startSearch = function () {
+                    tc.start();
                 };
 
                 $scope.open_new_client = function (client_id) {
@@ -66,15 +68,23 @@ angular.module('WebMis20.directives').
             link: function (scope, element, attrs) {
                 scope.results = null;
                 scope.allow_register = angular.isDefined(attrs.allowRegister);
+                if (angular.isDefined(scope.getSearchApi)) {
+                    scope.getSearchApi({
+                        api: {
+                            performSearch: scope.performSearch
+                        }
+                    });
+                }
             },
             template: '\
 <form class="form-horizontal marginal" role="form">\
     <div class="input-group input-group-lg">\
         <input id="search" class="form-control" type="text" ng-model="query" autocomplete="off"\
                ng-change="clear_results()"\
-               placeholder="Поиск пациента по коду, ФИО, дате рождения, полису или документу, удостоверяющему личность">\
+               placeholder="Поиск пациента по коду, ФИО, дате рождения, полису или документу, удостоверяющему личность"\
+               autofocus>\
         <span class="input-group-btn">\
-            <button class="btn btn-success" ng-click="perform_search()"><span class="glyphicon glyphicon-search"></span> Найти</button>\
+            <button class="btn btn-success" ng-click="startSearch()"><span class="glyphicon glyphicon-search"></span> Найти</button>\
         </span>\
     </div>\
 </form>\
@@ -124,7 +134,7 @@ angular.module('WebMis20.directives').
         </tbody>\
     </table>\
     <pagination ng-model="pager.current_page" total-items="pager.total_items" items-per-page="pager.items_per_page"\
-        max-size="pager.max_pages" ng-change="perform_search()" ng-show="pager.pages > 1" boundary-links="true">\
+        max-size="pager.max_pages" ng-change="startSearch()" ng-show="pager.pages > 1" boundary-links="true">\
     </pagination>\
 </div>'
         };

@@ -374,12 +374,23 @@ def get_new_action_default_dt(event):
 def check_action_dates(action):
     e_beg = action.event.setDate
     e_end = action.event.execDate
+
+    def raise_exception(name):
+        raise ActionException(u'{0} выходит за период действия обращения {1}-{2}'.format(
+            name, e_beg, e_end or u''
+        ))
+
     for d, name in ((action.begDate, u'Дата начала'),
-                    (action.endDate, u'Дата окончания'),
                     (action.plannedEndDate, u'Плановая дата выполнения')):
-        if d is not None and (d < e_beg or (e_end is not None and d > e_end)):
-            raise ActionException(u'{0} выходит за период действия обращения {1}-{2}'.format(
-                name, e_beg, e_end or u''
+        if d is not None and (d < e_beg or (e_end is not None and e_end < d)):
+            raise_exception(name)
+
+    if action.endDate:
+        if action.endDate < e_beg:
+            raise_exception(u'Дата окончания')
+        elif action.begDate and action.endDate <= action.begDate:
+            raise ActionException(u'Дата окончания {0} не может быть меньше даты начала {1}'.format(
+                action.endDate, action.begDate or u''
             ))
 
 

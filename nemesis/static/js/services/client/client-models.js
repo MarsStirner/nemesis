@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('WebMis20.services.models').
-    factory('WMClient', ['ApiCalls', 'WMConfig',
-        function(ApiCalls, WMConfig) {
+    factory('WMClient', ['ApiCalls', 'WMConfig', 'WMAdmissionEvent',
+        function(ApiCalls, WMConfig, WMAdmissionEvent) {
             function initialize(self, data, info_type) {
                 // В разных интерфейсах поля модели могут отличаться
                 function add_id_doc() {
@@ -94,6 +94,7 @@ angular.module('WebMis20.services.models').
                 }
 
                 self.info = data.client_data.info;
+                self.client_id = self.info.id;
                 if (info_type === 'for_editing') {
                     add_id_doc();
                     add_policies(true);
@@ -113,6 +114,8 @@ angular.module('WebMis20.services.models').
                     add_relations();
                     add_contacts();
                     // Do we need? add_vmp_coupons();
+                } else if (info_type === 'for_admission_event') {
+                    add_policies();
                 } else if (info_type === 'for_servicing') {
                     add_id_doc();
                     add_policies();
@@ -121,6 +124,12 @@ angular.module('WebMis20.services.models').
                     // Do we need? add_vmp_coupons();
                     self.appointments = data.appointments;
                     self.events = data.events;
+                    if (data.current_hosp) {
+                        if (!self.current_hosp) {
+                            self.current_hosp = new WMAdmissionEvent();
+                        }
+                        self.current_hosp.init_from_obj(data.current_hosp);
+                    }
                 }
             }
 
@@ -137,21 +146,29 @@ angular.module('WebMis20.services.models').
                     url_args[info_type] = true;
                 }
 
-                return ApiCalls.wrapper('GET', WMConfig.url.patients.client_get, url_args).then(function(result) {
-                    initialize(self, result, info_type);
-                });
+                return ApiCalls.wrapper('GET', WMConfig.url.patients.client_get, url_args)
+                    .then(function(result) {
+                        initialize(self, result, info_type);
+                    });
             };
 
             WMClient.prototype.init_from_obj = function (client_data, info_type) {
-                if (_.isUndefined(info_type)) {
-                    info_type = 'for_editing';
-                }
                 initialize(this, client_data, info_type);
             };
 
             WMClient.prototype.save = function() {
                 var data = this.get_changed_data();
                 return ApiCalls.wrapper('POST', WMConfig.url.patients.client_save, undefined, data);
+            };
+
+            WMClient.prototype.clone = function () {
+                var copy = new this.constructor();
+                for (var prop in this) {
+                    if (this.hasOwnProperty(prop)) {
+                        copy[prop] = _.deepCopy(this[prop]);
+                    }
+                }
+                return copy;
             };
 
             WMClient.prototype.get_changed_data = function() {

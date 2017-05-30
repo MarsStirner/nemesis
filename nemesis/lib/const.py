@@ -21,6 +21,7 @@ PAYER_EVENT_CODES = ('4', '3', '2')
 POLICLINIC_EVENT_CODES = ('policlinic',)
 STATIONARY_EVENT_CODES = ('clinic', 'hospital', 'stationary')
 DAY_HOSPITAL_CODE = 'clinic'
+ALL_DAY_HOSPITAL_CODE = 'hospital'
 DIAGNOSTIC_EVENT_CODES = ('4', 'diagnosis', 'diagnostic')
 
 STATIONARY_RECEIVED_CODE = 'received'
@@ -30,6 +31,8 @@ STATIONARY_ORG_STRUCT_STAY_CODE = 'orgStructStay'
 STATIONARY_ORG_STRUCT_TRANSFER_CODE = 'orgStructTransfer'
 STATIONARY_ORG_STRUCT_RECEIVED_CODE = 'orgStructReceived'
 STATIONARY_HOSP_BED_CODE = 'hospitalBed'
+STATIONARY_HOSP_BED_PROFILE_CODE = 'hospitalBedProfile'
+STATIONARY_PATRONAGE_CODE = 'patronage'
 STATIONARY_HOSP_LENGTH_CODE = 'hospLength'
 
 NOT_COPYABLE_VALUE_TYPES = ['HospitalBed', 'HospitalBedProfile', 'JobTicket', 'Diagnosis']

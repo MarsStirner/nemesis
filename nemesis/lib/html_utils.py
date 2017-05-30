@@ -11,7 +11,7 @@ class UIException(Exception):
         self.kwargs = kwargs
 
     def __str__(self):
-        return '<UIException (%s)>\n%s\n%s' % (self.code, self.title, self.message)
+        return '<%s (%s)>\n%s\n%s' % (self.__class__.__name__, self.code, self.title, self.message)
 
     def __unicode__(self):
-        return u'<UIException (%s)>\n%s\n%s' % (self.code, self.title, self.message)
+        return u'<%s (%s)>\n%s\n%s' % (self.__class__.__name__, self.code, self.title, self.message)

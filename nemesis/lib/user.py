@@ -22,7 +22,9 @@ from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPolicli
                                      urEventPoliclinicDmsClose, urEventDiagnosticPaidClose,
                                      urEventDiagnosticBudgetClose, urEventAllAdmPermSetExecDate,
                                      urEventInvoiceAccessAll, urEventPoliclinicOmsMoCreate,
-                                     urSetPersonChange)
+                                     urSetPersonChange, urEventPoliclinicOmsMoClose, urEventClinicClose,
+                                     urEventClinicCreate, urEventHospitalClose, urEventHospitalCreate,
+                                     urEventVmpCouponExpChange)
 
 
 class User(UserMixin):
@@ -254,7 +256,13 @@ class UserUtils(object):
         if current_user.has_right('adm'):
             return True
         # есть ли ограничения на создание обращений определенных EventType
-        if event.is_policlinic and event.is_paid:
+        if event.is_day_hospital:
+            if not current_user.has_right(urEventClinicCreate):
+                errors_stack.append(event_type_err_msg)
+        elif event.is_all_day_hospital:
+            if not current_user.has_right(urEventHospitalCreate):
+                errors_stack.append(event_type_err_msg)
+        elif event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidCreate):
                 errors_stack.append(event_type_err_msg)
         elif event.is_policlinic and (event.is_oms or event.is_oms_mo):
@@ -301,12 +309,12 @@ class UserUtils(object):
         elif event.is_diagnostic and event.is_budget:
             if not current_user.has_right(urEventDiagnosticBudgetCreate):
                 errors_stack.append(event_type_err_msg)
-        elif event.is_adm_permission:
+        if event.is_adm_permission:
             if not current_user.has_right(urEventAllAdmPermCreate):
                 errors_stack.append(event_type_err_msg)
 
         if errors_stack:
-            errors_stack = map(lambda err: u'<span class="text-danger text-bold">{0}</span>'.format(err), errors_stack)
+            errors_stack = map(lambda err: u'<span class="text-bold">{0}</span>'.format(err), errors_stack)
             out_msg['message'] = u'<br/>' + u',<br/>'.join(errors_stack)
             return False
         # все остальные можно
@@ -416,12 +424,24 @@ class UserUtils(object):
             out_msg['message'] = u'Пользователь не является создателем или ответственным за обращение'
             return False
         # есть ли ограничения на закрытие обращений определенных EventType
-        if event.is_policlinic and event.is_paid:
+        if event.is_day_hospital:
+            if not current_user.has_right(urEventClinicClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_all_day_hospital:
+            if not current_user.has_right(urEventHospitalClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_policlinic and event.is_paid:
             if not current_user.has_right(urEventPoliclinicPaidClose):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
         elif event.is_policlinic and event.is_oms:
             if not current_user.has_right(urEventPoliclinicOmsClose):
+                out_msg['message'] = base_msg % unicode(event_type)
+                return False
+        elif event.is_policlinic and event.is_oms_mo:
+            if not current_user.has_right(urEventPoliclinicOmsMoClose):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
         elif event.is_policlinic and event.is_dms:
@@ -540,6 +560,11 @@ class UserUtils(object):
                 current_user.has_right(urSetPersonChange)
         ))
 
+    @property
+    def can_change_vmp_coupon(self):
+        return (current_user.has_right('adm') or (
+                current_user.has_right(urEventVmpCouponExpChange)
+        ))
 
 
 class UserProfileManager(object):
@@ -554,7 +579,7 @@ class UserProfileManager(object):
     doctor_anest = 'anestezDoctor'  # Врач отделения
     nurse_admission = 'admNurse'  # Медсестра приемного отделения
     nurse_assist = 'assistNurse'  # Медсестра (ассистент врача)
-    nurse = 'strNurse'  # Медсестра отделения
+    nurse = 'strNurse'  # Медсестра отделения (постовая медсестра)
     cashier = 'kassir'  # Кассир
     obstetrician = 'obstetrician'  # Акушер-гинеколог
     overseer1 = 'overseer1'
@@ -566,7 +591,8 @@ class UserProfileManager(object):
         'doctor': [admin, doctor_clinic, doctor_diag, nurse_assist, doctor_otd],
         'diag_doctor': [admin, doctor_diag, nurse_assist],
         'registrator': [admin, reg_clinic, doctor_otd],
-        'registrator_cut': [nurse_admission],
+        'adm_nurse': [admin, nurse_admission],
+        'station_nurse': [admin, nurse],
         'registrator_cashier': [admin, reg_clinic, cashier],
         'cashier': [admin, cashier],
         'obstetrician': [admin, obstetrician],
@@ -603,12 +629,20 @@ class UserProfileManager(object):
         return cls._get_user_role() in cls.ui_groups['registrator']
 
     @classmethod
-    def has_ui_registrator_cut(cls):
-        return cls._get_user_role() in cls.ui_groups['registrator_cut']
+    def has_ui_adm_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['adm_nurse']
+
+    @classmethod
+    def has_ui_station_nurse(cls):
+        return cls._get_user_role() in cls.ui_groups['station_nurse']
 
     @classmethod
     def has_ui_doctor(cls):
         return cls._get_user_role(True) in cls.ui_groups['doctor']
+
+    @classmethod
+    def has_ui_otd_doctor(cls):
+        return cls._get_user_role(True) == cls.doctor_otd
 
     @classmethod
     def has_ui_doctor_stat(cls):
@@ -654,4 +688,6 @@ class UserProfileManager(object):
     def get_default_url(cls):
         if cls._get_user_role() == cls.nurse_admission:
             return url_for('patients.index')
+        if cls._get_user_role() == cls.nurse:
+            return url_for('hospitalizations.html_search_hosps')
         return url_for(app.config.get('DEFAULT_ENDPOINT', 'index'))
