@@ -1083,7 +1083,7 @@ angular.module('WebMis20')
                     scope.Organisation.loading.then(function () {
                         // выбрать isHospital или isLPU или isStationary, но при этом не поставлен признак isInsurer
                         scope.flt_orgs = _.filter(scope.Organisation.objects, function(org) {
-                            if (org.is_hospital && org.is_lpu && org.is_stationary) {
+                            if (org.is_hospital || org.is_lpu || org.is_stationary) {
                                 if (!org.is_insurer) {
                                     return org
                                 }
