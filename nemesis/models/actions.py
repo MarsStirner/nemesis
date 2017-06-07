@@ -74,6 +74,11 @@ class Action(db.Model):
     properties = db.relationship(u'ActionProperty')
     self_finance = db.relationship(u'rbFinance')
     bbt_response = db.relationship(u'BbtResponse', uselist=False)
+    attach_files = db.relationship(
+        'ActionFileAttach',
+        primaryjoin='and_(ActionFileAttach.action_id == Action.id, ActionFileAttach.deleted == 0)',
+        backref='action'
+    )
 
     @property
     def properties_ordered(self):
@@ -1036,6 +1041,7 @@ class ActionType(db.Model):
     layout = db.Column(db.Text)
     hasPrescriptions = db.Column(db.Integer, index=True)
     noteMandatory = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
+    canHaveAttaches = db.Column(db.SmallInteger, nullable=False, server_default=u"'0'")
 
     services = db.relationship(u'ActionType_Service')
     nomenclatureService = db.relationship(u'rbService', foreign_keys='ActionType.nomenclativeService_id')
@@ -1063,6 +1069,7 @@ class ActionType(db.Model):
             'context_name': self.context,
             'diagnosis_types': self.diagnosis_types,
             'hidden': self.hidden,
+            'can_have_attaches': self.canHaveAttaches,
             'action_type_class': get_action_type_class(self.class_, self.isRequiredTissue).__json__()
         }
 
@@ -1134,6 +1141,29 @@ class ActionType_User(db.Model):
     actionType = db.relationship(u'ActionType')
     person = db.relationship(u'Person')
     profile = db.relationship(u'rbUserProfile')
+
+
+class ActionFileAttach(db.Model):
+    __tablename__ = u'ActionFileAttach'
+
+    id = db.Column(db.Integer, primary_key=True)
+    action_id = db.Column(db.Integer, db.ForeignKey('Action.id'), nullable=False)
+    filemeta_id = db.Column(db.Integer, db.ForeignKey('FileMeta.id'), nullable=False)
+    setPerson_id = db.Column(db.Integer, db.ForeignKey('Person.id'))
+    attachDate = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    deleted = db.Column(db.SmallInteger, nullable=False, server_default="'0'")
+
+    file_meta = db.relationship('FileMeta')
+    set_person = db.relationship('Person')
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'action_id': self.action_id,
+            'filemeta_id': self.filemeta_id,
+            'set_person_id': self.setPerson_id,
+            'attach_date': self.attachDate
+        }
 
 
 class rbUnit(db.Model):

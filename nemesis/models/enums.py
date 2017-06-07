@@ -215,6 +215,11 @@ class CardFillRate(Enum):
     not_filled = 3, u'Не заполнено'
 
 
+class FileAttachType(Enum):
+    errand = 1, u'Поручения'
+    action = 2, u'Action'
+
+
 class ActionPayStatus(Enum):
     not_paid = 0, u'Не оплачено'
     paid = 1, u'Оплачено'
