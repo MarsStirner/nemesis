@@ -270,6 +270,22 @@ def create_new_action_ttjs(action, ttj_data=None):
         create_TTJ_record(action, ttj_data)
 
 
+def update_action_attach_files(action, attach_data):
+    if not attach_data:
+        return
+    cur_attaches = dict((attach.id, attach) for attach in action.attach_files)
+    for at_data in attach_data:
+        id = at_data.get('id')
+        attach = cur_attaches.pop(id, None) if id else None
+        if attach is not None:
+            fm = attach.file_meta
+            fm.name = at_data['file_meta']['name']
+    for attach in cur_attaches.values():
+        attach.deleted = 1
+        attach.file_meta.deleted = 1
+    return action
+
+
 def update_action(action, **kwargs):
     """
     Обновление модели действия данными из kwargs.
@@ -313,8 +329,8 @@ def update_action(action, **kwargs):
         if 'note' in prop_desc:
             prop.note = prop_desc['note']
         prop.isAssigned = prop_desc['is_assigned']
-
     update_action_prescriptions(action, kwargs.get('prescriptions'))
+    update_action_attach_files(action, kwargs.get('attached_files'))
 
     return action
 
