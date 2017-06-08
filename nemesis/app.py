@@ -173,7 +173,7 @@ def fc_urls():
                 'doctors_to_assist': url_for('api_doctors_to_assist'),
             },
             'devourer': {
-                'upload': devourer_url + 'api/0/upload'
+                'upload': devourer_url + 'api/1/upload'
             },
             'rb': {
                 'rb_root': url_for('rb.api_refbook'),
