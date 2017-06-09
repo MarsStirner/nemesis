@@ -225,6 +225,7 @@ class OrgStructure(db.Model):
     organisation_id = db.Column(db.Integer, db.ForeignKey('Organisation.id'), nullable=False, index=True)
     code = db.Column(db.Unicode(255), nullable=False)
     name = db.Column(db.Unicode(255), nullable=False)
+    shortName = db.Column(db.Unicode(255), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('OrgStructure.id'), index=True)
     type = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     net_id = db.Column(db.Integer, db.ForeignKey('rbNet.id'), index=True)
@@ -299,7 +300,7 @@ class OrgStructure(db.Model):
         return {
             'id': self.id,
             'code': self.code,
-            'name': self.name,
+            'name': self.shortName,
             'show': self.show,
             'parent_id': self.parent_id,
             'hasHospitalBeds': self.hasHospitalBeds,
