@@ -1374,6 +1374,7 @@ class FileMeta(db.Model):
     idx = db.Column(db.Integer, nullable=False, default='0')
     deleted = db.Column(db.SmallInteger, nullable=False, default='0')
     note = db.Column(db.Unicode(1024))
+    filegroup = db.relationship('FileGroupDocument', backref='files')
 
 
 class QuotaCatalog(db.Model):
