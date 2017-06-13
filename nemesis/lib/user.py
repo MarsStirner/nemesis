@@ -633,6 +633,10 @@ class UserProfileManager(object):
         return cls._get_user_role() in cls.ui_groups['adm_nurse']
 
     @classmethod
+    def has_ui_adm_nurse_ex(cls):
+        return cls._get_user_role() in [cls.nurse_admission]
+
+    @classmethod
     def has_ui_station_nurse(cls):
         return cls._get_user_role() in cls.ui_groups['station_nurse']
 

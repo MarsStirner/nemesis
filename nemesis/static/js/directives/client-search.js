@@ -9,7 +9,8 @@ angular.module('WebMis20.directives').
                 client_id: '=clientId',
                 query: '=',
                 onSelectCallback: '&onSelect',
-                getSearchApi: '&?'
+                getSearchApi: '&?',
+                customRegisterCallback: '&?'
             },
             controller: function ($scope) {
                 $scope.pager = {
@@ -28,6 +29,10 @@ angular.module('WebMis20.directives').
                 $scope.query_clear = function () {
                     $scope.query = '';
                     $scope.clear_results();
+                };
+                $scope.setQuery = function (text) {
+                    $scope.clear_results();
+                    $scope.query = text;
                 };
 
                 $scope.performSearch = function () {
@@ -54,6 +59,13 @@ angular.module('WebMis20.directives').
                     tc.start();
                 };
 
+                $scope.registerNewClient = function () {
+                    if ($scope.custom_register) {
+                        $scope.customRegisterCallback();
+                    } else {
+                        $scope.open_new_client('new');
+                    }
+                };
                 $scope.open_new_client = function (client_id) {
                     window.open(WMConfig.url.patients.client_html + '?client_id=' + client_id, '_blank');
                 };
@@ -68,10 +80,12 @@ angular.module('WebMis20.directives').
             link: function (scope, element, attrs) {
                 scope.results = null;
                 scope.allow_register = angular.isDefined(attrs.allowRegister);
+                scope.custom_register = angular.isDefined(attrs.customRegister);
                 if (angular.isDefined(scope.getSearchApi)) {
                     scope.getSearchApi({
                         api: {
-                            performSearch: scope.performSearch
+                            performSearch: scope.performSearch,
+                            setQuery: scope.setQuery
                         }
                     });
                 }
@@ -95,7 +109,7 @@ angular.module('WebMis20.directives').
             <span ng-if="results.length === 0 && query">Пациент не найден в базе данных</span>\
         </div>\
         <div class="col-sm-4 text-right" ng-if="allow_register">\
-            <button ng-click="open_new_client(\'new\')" class="btn btn-primary">Зарегистрировать пациента</button>\
+            <button ng-click="registerNewClient()" class="btn btn-primary">Зарегистрировать пациента</button>\
         </div>\
     </div>\
     <table id="result_tbl" class="table table-condensed table-clickable table-hover" ng-if="results.length > 0">\
