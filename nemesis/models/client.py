@@ -2,7 +2,8 @@
 import datetime
 import calendar
 from nemesis.lib.agesex import calcAgeTuple, formatDays, formatMonthsWeeks, formatYearsMonths, formatYears
-from nemesis.lib.const import ID_DOC_GROUP_CODE, VOL_POLICY_CODES, COMP_POLICY_CODES
+from nemesis.lib.const import ID_DOC_GROUP_CODE, VOL_POLICY_CODES, COMP_POLICY_CODES, \
+    CLIENT_CONTACT_EMAIL_CODE, CLIENT_CONTACT_MOBILE_PHONE_CODE
 from nemesis.models.utils import safe_current_user_id, UUIDColumn
 from nemesis.models.enums import Gender, LocalityType, AllergyPower
 from nemesis.models.exists import rbDocumentTypeGroup, rbDocumentType, rbContactType
@@ -170,9 +171,9 @@ class Client(db.Model):
 
     @orm.reconstructor
     def init_on_load(self):
-        # TODO: redo?
         self._id_document = None
         self._cache_policies = None
+        self._cache_contacts = None
 
     def age_tuple(self, moment=None):
         """
@@ -281,11 +282,23 @@ class Client(db.Model):
         return [vpol for vpol in self.policies_all if vpol.policyType.code in VOL_POLICY_CODES]
 
     @property
+    def _contacts(self):
+        if not getattr(self, '_cache_contacts'):
+            self._cache_contacts = self.contacts.join(rbContactType).order_by(rbContactType.idx).all()
+        return self._cache_contacts
+
+    @property
     def phones(self):
         return [(u'%s: %s (%s)' % (contact.name, contact.contact, contact.notes))
                 if contact.notes
                 else (u'%s: %s' % (contact.name, contact.contact))
-                for contact in self.contacts.join(rbContactType).order_by(rbContactType.idx)]
+                for contact in self._contacts]
+
+    def has_contact_email(self):
+        return any(contact.contactType.code == CLIENT_CONTACT_EMAIL_CODE for contact in self._contacts)
+
+    def has_contact_mobile_phone(self):
+        return any(contact.contactType.code == CLIENT_CONTACT_MOBILE_PHONE_CODE for contact in self._contacts)
 
     def has_identical_addresses(self):
         reg = self.reg_address

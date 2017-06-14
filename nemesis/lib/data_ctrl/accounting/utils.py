@@ -7,16 +7,6 @@ from nemesis.lib.utils import safe_decimal, safe_bool
 from nemesis.lib.const import PAID_EVENT_CODE
 
 
-def get_contragent_type(contragent):
-    return ContragentType(
-        ContragentType.individual[0] if contragent.client is not None
-        else (
-            ContragentType.legal[0] if contragent.org is not None
-            else ContragentType.undefined[0]
-        )
-    )
-
-
 def calc_item_sum(price, amount, discount=None):
     if discount is not None:
         if discount.valuePct is not None:

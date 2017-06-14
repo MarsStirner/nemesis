@@ -1,7 +1,6 @@
 # coding: utf-8
 import logging
 
-from nemesis.lib.data_ctrl.accounting.utils import get_contragent_type
 from nemesis.lib.enum import Enum
 from nemesis.models.enums import ContragentType
 from nemesis.lib.apiutils import json_dumps
@@ -24,7 +23,7 @@ def notify_invoice_changed(op, invoice):
     finance_code = invoice.contract.finance.code
 
     if finance_code == PAID_EVENT_CODE and\
-            get_contragent_type(payer).value == ContragentType.individual[0]:
+            payer.get_type().value == ContragentType.individual[0]:
         notifier = InvoiceIntegrationNotifier()
 
         try:
