@@ -53,9 +53,10 @@ def get_opened_events_data(client_id):
         Event.id
     ).subquery('MaxActionBegDates')
 
-    q_latest_movings_ids = db.session.query(Action).join(
+    q_latest_movings_ids = db.session.query(Action).join(ActionType).join(
         q_action_begdates, and_(q_action_begdates.c.max_beg_date == Action.begDate,
-                                q_action_begdates.c.event_id == Action.event_id)
+                                q_action_begdates.c.event_id == Action.event_id,
+                                ActionType.flatCode == STATIONARY_MOVING_CODE)
     ).group_by(
         Action.event_id
     ).with_entities(

@@ -468,6 +468,7 @@ angular.module('hitsl.ui', [
     'nvd3ChartDirectives',
     'legendDirectives',
     'ui.calendar',
-    'LocalStorageModule'
+    'LocalStorageModule',
+    'ngFileUpload'
 ])
 ;

@@ -1264,7 +1264,7 @@ angular.module('WebMis20.directives')
                     var keywords = scope_query.toLowerCase().split();
                     tree = der_tree.filter(function filter(item, idDict) {
                         return !keywords.length || keywords.filter(function (keyword) {
-                            return (item.name.toLowerCase()).indexOf(keyword) !== -1
+                            return (item.name.toLowerCase()).indexOf(keyword) !== -1 || item.full_name.toLowerCase().indexOf(keyword) !== -1
                         }).length == keywords.length
                     });
                     doRender();
