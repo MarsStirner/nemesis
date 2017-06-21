@@ -343,5 +343,21 @@ WebMis20
                     });
         }
     }
+    this.client_attach = {
+        get: function (client_id) {
+            return wrapper('GET',  WMConfig.url.patients.client_attach.get, {client_id: client_id});
+        },
+        save: function(client, client_attach) {
+            return wrapper('POST', WMConfig.url.patients.client_attach.save, {}, {
+                        client_id: client.client_id,
+                        client_attach: client_attach,
+                    });
+        },
+        del: function(client_attach) {
+            return wrapper('POST', WMConfig.url.patients.client_attach.del, {}, {
+                        client_attach: client_attach,
+                    });
+        }
+    }
 ;
 }]);

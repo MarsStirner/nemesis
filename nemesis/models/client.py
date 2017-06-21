@@ -153,6 +153,14 @@ class Client(db.Model):
                     'ClientAttach.deleted==0)',
         order_by="desc(ClientAttach.id)",
         lazy='dynamic')
+    amb_card = db.relationship(
+        u'AmbulanceCard',
+        primaryjoin='and_('
+                    'AmbulanceCard.client_id==Client.id, '
+                    'AmbulanceCard.deleted==0)',
+        order_by="desc(AmbulanceCard.id)",
+        uselist=False,
+        backref='client')
     diagnoses = db.relationship(
         u'Diagnosis',
         primaryjoin='and_('
@@ -337,7 +345,8 @@ class Client(db.Model):
             'notes': self.notes,
             'age_tuple': self.age_tuple(),
             'age': self.age,
-            'sex_raw': self.sexCode
+            'sex_raw': self.sexCode,
+            'amb_card': self.amb_card
         }
 
 
@@ -516,6 +525,7 @@ class ClientAttach(db.Model):
     createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
     modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id, onupdate=safe_current_user_id)
+    person_id = db.Column(db.ForeignKey('Person.id'), index=True, default=safe_current_user_id)
     deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
     client_id = db.Column(db.ForeignKey('Client.id'), nullable=False, index=True)
     attachType_id = db.Column(db.ForeignKey('rbAttachType.id'), nullable=False, index=True)
@@ -524,13 +534,33 @@ class ClientAttach(db.Model):
     begDate = db.Column(db.Date, nullable=False)
     endDate = db.Column(db.Date)
     document_id = db.Column(db.ForeignKey('ClientDocument.id'), index=True)
+    amb_card_id = db.Column(db.ForeignKey('AmbulanceCard.id'), index=True)
 
     client = db.relationship(u'Client')
     self_document = db.relationship(u'ClientDocument')
     org = db.relationship(u'Organisation')
     orgStructure = db.relationship(u'OrgStructure')
     attachType = db.relationship(u'rbAttachType')
-    modifyPerson = db.relationship(u'Person')
+    modifyPerson = db.relationship(u'Person', foreign_keys=[modifyPerson_id])
+    person = db.relationship(u'Person', foreign_keys=[person_id])
+    amb_card = db.relationship(u'AmbulanceCard',
+                               primaryjoin='and_(ClientAttach.amb_card_id==AmbulanceCard.id,'
+                                                'ClientAttach.deleted == 0)',
+                               backref='client_attaches')
+
+    @property
+    def previous_without_end_date(self):
+        qr = ClientAttach.query.filter(
+            ClientAttach.id != self.id,
+            ClientAttach.attachType_id == self.attachType_id,
+            ClientAttach.begDate <= self.begDate,
+            ClientAttach.endDate == None,
+            ClientAttach.amb_card_id == self.amb_card_id,
+            ClientAttach.deleted == 0
+        ).order_by(
+            ClientAttach.begDate.desc()
+        )
+        return qr.first()
 
     @property
     def code(self):
@@ -564,7 +594,10 @@ class ClientAttach(db.Model):
             'org': self.org,
             'attach_type': self.attachType,
             'begDate': self.begDate,
-            'modifyPerson': self.modifyPerson.shortNameText
+            'endDate': self.endDate,
+            'person': self.person,
+            'modifyPerson': self.modifyPerson.shortNameText,
+            'amb_card_id': self.amb_card_id,
         }
 
     def __int__(self):
@@ -1390,3 +1423,42 @@ class ClientFileAttach(db.Model):
     file_document = db.relationship('FileGroupDocument')
     documentType = db.relationship('rbDocumentType')
     relationType = db.relationship('rbRelationType')
+
+
+
+class AmbulanceCard(db.Model):
+    __tablename__ = u'AmbulanceCard'
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('Client.id'), nullable=False)
+    createPerson_id = db.Column(db.Integer, index=True, default=safe_current_user_id)
+    modifyPerson_id = db.Column(db.ForeignKey('Person.id'), index=True,
+                                default=safe_current_user_id, onupdate=safe_current_user_id)
+    deleted = db.Column(db.Integer, nullable=False, server_default=u"'0'")
+    createDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
+    modifyDatetime = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now,
+                               onupdate=datetime.datetime.now)
+    generatedId = db.Column(db.String(30), nullable=False, server_default="''")
+    modifyPerson = db.relationship(u'Person')
+
+    @property
+    def sorted_client_attaches(self):
+        return sorted(self.client_attaches, key=lambda x: x.begDate)
+
+    @property
+    def last_person(self):
+        sca = self.sorted_client_attaches
+        if sca:
+            return sca[-1].person
+
+    def __json__(self):
+        return {
+            'id': self.id,
+            'client_id': self.client_id,
+            'generated_id': self.generatedId,
+            'deleted': self.deleted,
+            'create_datetime': self.createDatetime,
+            'modify_datetime': self.modifyDatetime,
+            'last_person': self.last_person,
+        }
+
