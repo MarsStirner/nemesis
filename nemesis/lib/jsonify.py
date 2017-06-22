@@ -1519,6 +1519,17 @@ class ActionVisualizer(object):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
         return result
 
+    def make_tree_action_properties(self, action):
+        """
+        @type action: Action
+        """
+        return {
+            'properties': [
+                self.make_tree_property(prop)
+                for prop in action.properties_ordered
+            ],
+        }
+
     def make_small_action_info(self, action, pay_data=None):
         return {
             'id': action.id,
@@ -1710,6 +1721,24 @@ class ActionVisualizer(object):
             'value_in_norm': prop.check_value_norm(),
             'has_pricelist_service': prop.has_pricelist_service if not for_template else None,
             'note': prop.note
+        }
+
+    def make_tree_property(self, prop):
+        """
+        @type prop: ActionProperty
+        """
+        return {
+            'id': prop.id,
+            'action_id': prop.action_id,
+            'type': {
+                'id': prop.type.id,
+                'idx': prop.type.idx,
+                'code': prop.type.code,
+                'name': prop.type.name,
+            },
+            'is_assigned': prop.isAssigned,
+            'value_str': prop.value_str,
+            'unit': prop.unit,
         }
 
     def make_lab_direction_property(self, prop):

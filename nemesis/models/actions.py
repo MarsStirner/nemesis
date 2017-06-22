@@ -5,6 +5,7 @@ import re
 from sqlalchemy import orm
 
 from nemesis.models.diagnosis import ActionType_rbDiagnosisType
+from nemesis.lib.utils import parse_json
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
@@ -221,6 +222,17 @@ class ActionProperty(db.Model):
             if value_container:
                 return value_container[0].value
 
+    @property
+    def value_str(self):
+        value_container = self.value_container
+        if self.type.isVector:
+            if value_container:
+                return u', '.join([unicode(item) for item in value_container])
+        else:
+            if value_container:
+                return unicode(value_container[0])
+        return u''
+
     @value.setter
     def value(self, value):
         self.set_value(value)
@@ -417,7 +429,6 @@ class ActionPropertyType(db.Model):
 
     def parse_value_domain(self):
         if self.typeName == 'Diagnosis':
-            from nemesis.lib.utils import parse_json
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
             values = [match.strip() for match in apt_valueDomain_String_re.findall(self.valueDomain)]
@@ -436,6 +447,14 @@ class ActionPropertyType(db.Model):
                     'subtype': 'Select',
                     'values': values,
                 }
+        elif self.typeName in ('Text', 'Html'):
+            value_domain = parse_json(self.valueDomain)
+            if isinstance(value_domain, dict) and \
+                    (not {'templates', 'context', 'at_class'}.issubset(set(value_domain.keys()))
+                     or not value_domain['templates']):
+                return {'error': u'valueDomain для типа Text или Html задан неверно.'}
+
+            return value_domain
         return None
 
     def parse_norm(self):
@@ -513,6 +532,9 @@ class ActionProperty__ValueType(db.Model):
         else:
             self.value = value
 
+    def __unicode__(self):
+        return unicode(self.value) if self.value is not None else u''
+
 
 class ActionProperty_Action(ActionProperty__ValueType):
     __tablename__ = u'ActionProperty_Action'
@@ -538,6 +560,9 @@ class ActionProperty_Date(ActionProperty__ValueType):
     def objectify(cls, prop, json_data):
         from nemesis.lib.utils import safe_date  # fixme: reorganize utils module
         return safe_date(json_data)
+
+    def __unicode__(self):
+        return unicode(self.value.strftime('%d.%m.%Y')) if self.value else u''
 
 
 class ActionProperty_Double(ActionProperty__ValueType):
@@ -729,6 +754,9 @@ class ActionProperty_Boolean(ActionProperty_Integer_Base):
     @value.setter
     def value(self, val):
         self.value_ = 1 if val else 0
+
+    def __unicode__(self):
+        return u'Да' if self.value else u'Нет'
 
 
 class ActionProperty_RLS(ActionProperty_Integer_Base):
@@ -1314,6 +1342,9 @@ class OrgStructure_HospitalBed(db.Model):
     def isPermanent(self):
         return self.isPermanentCode == 1
 
+    def __unicode__(self):
+        return u' '.join([self.name or '', self.code or ''])
+
 
 class rbHospitalBedSchedule(db.Model):
     __tablename__ = u'rbHospitalBedSchedule'
@@ -1361,6 +1392,9 @@ class rbHospitalBedProfile(db.Model):
             'code': self.code,
             'name': self.name,
         }
+
+    def __unicode__(self):
+        return u' '.join([self.name or '', self.code or ''])
 
 
 class rbOperationType(db.Model):

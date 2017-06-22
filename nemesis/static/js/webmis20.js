@@ -491,6 +491,28 @@ var WebMis20 = angular.module('WebMis20', [
     };
     PrintingService.prototype.print_template = function(template_data_list, separated) { // [ {template_id, context}, ... ]
         var self = this;
+        var modal_instance = $modal.open({
+            template: '<div class="modal-header" xmlns="http://www.w3.org/1999/html"><button type="button" class="close" ng-click="$dismiss()">&times;</button><h4 class="modal-title" id="myModalLabel">Печать</h4></div>\
+<div class="modal-body"><iframe id="print-iframe" style="margin: 0; border: hidden; width: 100%; min-height: 500px" seamless></iframe></div>\
+<div class="modal-footer"><button type="button" class="btn btn-primary" ng-click="print()">Печать</button><button type="button" class="btn btn-default" ng-click="$dismiss()">Закрыть</button></div>',
+            backdrop : 'static',
+            controller: function ($scope) {
+                $scope.print = function () {
+                    $('#print-iframe')[0].contentWindow.print();
+                };
+                self.render_template(template_data_list, separated)
+                    .then(function (html_template) {
+                        $('#print-iframe').contents().find('body').html(html_template);
+                        // timeout to fix chrome (36) behaviour - empty print preview https://code.google.com/p/chromium/issues/detail?id=396667
+                        $timeout($scope.print, 300);
+                    });
+            },
+            size: 'lg'
+        });
+        return modal_instance.result;
+    };
+    PrintingService.prototype.render_template = function(template_data_list, separated) { // [ {template_id, context}, ... ]
+        var self = this;
         var send_data = {
             separate: separated,
             documents: template_data_list.map(function (item) {
@@ -507,41 +529,28 @@ var WebMis20 = angular.module('WebMis20', [
                 }
             }
         )};
-        var modal_instance = $modal.open({
-            template: '<div class="modal-header" xmlns="http://www.w3.org/1999/html"><button type="button" class="close" ng-click="$dismiss()">&times;</button><h4 class="modal-title" id="myModalLabel">Печать</h4></div>\
-<div class="modal-body"><iframe id="print-iframe" style="margin: 0; border: hidden; width: 100%; min-height: 500px" seamless></iframe></div>\
-<div class="modal-footer"><button type="button" class="btn btn-primary" ng-click="print()">Печать</button><button type="button" class="btn btn-default" ng-click="$dismiss()">Закрыть</button></div>',
-            backdrop : 'static',
-            controller: function ($scope) {
-                $scope.print = function () {
-                    $('#print-iframe')[0].contentWindow.print();
-                };
-                $http.post(WMConfig.url.nemesis.print_subsystem.print, send_data)
-                    .success(function (data) {
-                        $('#print-iframe').contents().find('body').html(data);
-                        $timeout($scope.print, 300); // timeout to fix chrome (36) behaviour - empty print preview https://code.google.com/p/chromium/issues/detail?id=396667
-                    })
-                    .error(function (data, status) {
-                        var result = data.result,
-                            info = (data === '' && status === 0) ?
-                            {
-                                text: 'Ошибка соединения с сервером печати',
-                                code: status,
-                                data: null,
-                                type: 'danger'
-                            } :
-                            {
-                                text: result.name,
-                                code: status,
-                                data: result.data,
-                                type: 'danger'
-                            };
-                        $rootScope.$broadcast('printing_error', info);
-                    });
-            },
-            size: 'lg'
-        });
-        return modal_instance.result;
+        return $http.post(WMConfig.url.nemesis.print_subsystem.print, send_data)
+            .then(function (response) {
+                return response.data;
+            }, function (response) {
+                var data = response.data,
+                    result = data.result,
+                    info = (data === '' && response.status === 0) ?
+                        {
+                            text: 'Ошибка соединения с сервером печати',
+                            code: response.status,
+                            data: null,
+                            type: 'danger'
+                        } :
+                        {
+                            text: result.name,
+                            code: response.status,
+                            data: result.data,
+                            type: 'danger'
+                        };
+                $rootScope.$broadcast('printing_error', info);
+                return $q.reject();
+            });
     };
     return PrintingService;
 }])
