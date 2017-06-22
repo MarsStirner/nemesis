@@ -1519,7 +1519,7 @@ class ActionVisualizer(object):
             result['bak_lab_info'] = self.make_bak_lab_info(action)
         return result
 
-    def make_action_properties(self, action):
+    def make_tree_action_properties(self, action):
         """
         @type action: Action
         """

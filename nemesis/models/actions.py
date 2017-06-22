@@ -5,6 +5,7 @@ import re
 from sqlalchemy import orm
 
 from nemesis.models.diagnosis import ActionType_rbDiagnosisType
+from nemesis.lib.utils import parse_json
 from nemesis.lib.vesta import Vesta
 from nemesis.systemwide import db
 from exists import FDRecord
@@ -427,8 +428,6 @@ class ActionPropertyType(db.Model):
     test = db.relationship('rbTest')
 
     def parse_value_domain(self):
-        from nemesis.lib.utils import parse_json
-
         if self.typeName == 'Diagnosis':
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
@@ -534,7 +533,7 @@ class ActionProperty__ValueType(db.Model):
             self.value = value
 
     def __unicode__(self):
-        return unicode(self.value) or u''
+        return unicode(self.value) if self.value is not None else u''
 
 
 class ActionProperty_Action(ActionProperty__ValueType):
@@ -561,6 +560,9 @@ class ActionProperty_Date(ActionProperty__ValueType):
     def objectify(cls, prop, json_data):
         from nemesis.lib.utils import safe_date  # fixme: reorganize utils module
         return safe_date(json_data)
+
+    def __unicode__(self):
+        return unicode(self.value.strftime('%d.%m.%Y')) if self.value else u''
 
 
 class ActionProperty_Double(ActionProperty__ValueType):
@@ -752,6 +754,9 @@ class ActionProperty_Boolean(ActionProperty_Integer_Base):
     @value.setter
     def value(self, val):
         self.value_ = 1 if val else 0
+
+    def __unicode__(self):
+        return u'Да' if self.value else u'Нет'
 
 
 class ActionProperty_RLS(ActionProperty_Integer_Base):
@@ -1337,6 +1342,9 @@ class OrgStructure_HospitalBed(db.Model):
     def isPermanent(self):
         return self.isPermanentCode == 1
 
+    def __unicode__(self):
+        return u' '.join([self.name or '', self.code or ''])
+
 
 class rbHospitalBedSchedule(db.Model):
     __tablename__ = u'rbHospitalBedSchedule'
@@ -1384,6 +1392,9 @@ class rbHospitalBedProfile(db.Model):
             'code': self.code,
             'name': self.name,
         }
+
+    def __unicode__(self):
+        return u' '.join([self.name or '', self.code or ''])
 
 
 class rbOperationType(db.Model):
