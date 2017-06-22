@@ -14,7 +14,7 @@ from nemesis.app import app
 from ..models.actions import ActionType_User
 from ..models.exists import rbUserProfile
 
-from nemesis.models.enums import ActionStatus
+from nemesis.models.enums import ActionStatus, ContragentType
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
                                      urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate,
                                      urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
@@ -554,6 +554,24 @@ class UserUtils(object):
             )
         )
 
+    @staticmethod
+    def can_create_invoice(contract, out_msg=None):
+        if out_msg is None:
+            out_msg = {'message': u'ok'}
+
+        errors = []
+        payer = contract.payer
+        if not payer:
+            errors.append('В договоре не указан плательщик')
+        elif payer.get_type().value == ContragentType.individual[0]:
+            client = payer.client
+            if not client.has_contact_email() and not client.has_contact_mobile_phone():
+                errors.append(u'не указан адрес электронной почты или мобильный телефон')
+        if errors:
+            out_msg['message'] = u'Невозможно сформировать счёт: ' + u'; '.join(errors)
+            return False
+        return True
+
     @property
     def can_change_set_person(self):
         return (current_user.has_right('adm') or (
@@ -631,6 +649,10 @@ class UserProfileManager(object):
     @classmethod
     def has_ui_adm_nurse(cls):
         return cls._get_user_role() in cls.ui_groups['adm_nurse']
+
+    @classmethod
+    def has_ui_adm_nurse_ex(cls):
+        return cls._get_user_role() in [cls.nurse_admission]
 
     @classmethod
     def has_ui_station_nurse(cls):

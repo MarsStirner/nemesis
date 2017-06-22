@@ -16,8 +16,10 @@ from nemesis.lib.counter import InvoiceCounter
 from nemesis.lib.utils import safe_int, safe_date, safe_unicode, safe_bool, safe_double, safe_traverse
 from nemesis.lib.apiutils import ApiException
 from nemesis.lib.data_ctrl.base import BaseModelController, BaseSelecter
+from nemesis.lib.user import UserUtils
 from .service import ServiceController
 from .finance_trx import FinanceTrxController
+from .contract import ContractController
 from .utils import calc_invoice_total_sum, calc_invoice_item_total_sum
 
 
@@ -210,6 +212,17 @@ class InvoiceController(BaseModelController):
         same_number = counter.check_number_used(number)
         if same_number:
             raise ApiException(409, u'Невозможно сохранить счет: счет с таким номером уже существует')
+
+    def check_can_create_invoice(self, contract_id):
+        contract_ctrl = ContractController()
+        contract = contract_ctrl.get_contract(contract_id)
+        if not contract:
+            raise ApiException(404, u'Не найден договор с id = {0}'.format(contract_id))
+
+        res = {}
+        ok = UserUtils.can_create_invoice(contract, out_msg=res)
+        if not ok:
+            raise ApiException(403, res['message'])
 
     def get_invoice_event(self, invoice, with_deleted=False):
         sel = self.get_selecter()

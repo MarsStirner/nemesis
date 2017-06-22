@@ -40,3 +40,9 @@ NOT_COPYABLE_VALUE_TYPES = ['HospitalBed', 'HospitalBedProfile', 'JobTicket', 'D
 # DocumentType
 PASSPORT_DOC_TYPE_CODE = '14'   # Паспорт РФ
 RESIDENCE_DOC_TYPE_CODE = '91'  # Вид на жительство
+
+# Client contacts type
+CLIENT_CONTACT_EMAIL_CODE = '04'
+CLIENT_CONTACT_HOME_PHONE_CODE = '01'
+CLIENT_CONTACT_WORK_PHONE_CODE = '02'
+CLIENT_CONTACT_MOBILE_PHONE_CODE = '03'

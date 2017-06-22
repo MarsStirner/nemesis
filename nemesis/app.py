@@ -116,6 +116,7 @@ def fc_urls():
     simargl_url = config['SIMARGL_URL'].rstrip('/') + '/'
     pharmexpert_url = config.get('PHARMEXPERT_URL', '').rstrip('/') + '/'
     print_subsystem_url = config.get('PRINT_SUBSYSTEM_URL', '').rstrip('/') + '/'
+    devourer_url = config['DEVOURER_URL'].rstrip('/') + '/'
     current_role = None
     try:
         current_role = current_user.current_role
@@ -171,6 +172,9 @@ def fc_urls():
                 'roles': url_for('api_roles'),
                 'doctors_to_assist': url_for('api_doctors_to_assist'),
             },
+            'devourer': {
+                'upload': devourer_url + 'api/1/upload'
+            },
             'rb': {
                 'rb_root': url_for('rb.api_refbook'),
                 'rb_search': url_for('rb.api_refbook_search')
@@ -206,7 +210,8 @@ def fc_settings():
             'ui': {
                 'defaultHideTimeout': 400,
                 'ttj_barcode_len': safe_int(safe_traverse(app.config, 'system_prefs', 'ui', 'ttj_barcode_len'))
-            }
+            },
+            'files_upload': app.config.get('files_upload', {}),
         }
     }
 

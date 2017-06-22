@@ -29,6 +29,7 @@ from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, for
                                format_money, safe_bool)
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.event.utils import get_client_events, get_current_hospitalisation
+from nemesis.lib.represent.common import represent_action_file
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
@@ -1510,7 +1511,9 @@ class ActionVisualizer(object):
             'layout': self.make_action_layout(action),
             'prescriptions': action.medication_prescriptions if not for_template else [],
             'diagnoses': self.make_action_diagnoses_info(action) if not for_template else [],
-            'tissues': action.tissues if not for_template else []
+            'tissues': action.tissues if not for_template else [],
+            'attached_files': map(represent_action_file, action.attach_files) if not for_template else []
+
         }
         if action_is_bak_lab(action):
             result['bak_lab_info'] = self.make_bak_lab_info(action)

@@ -2,7 +2,7 @@
 
 from nemesis.models.enums import Gender, ContragentType
 from nemesis.lib.utils import format_date, safe_double, safe_decimal, format_money, safe_bool, safe_traverse
-from nemesis.lib.data_ctrl.accounting.utils import (get_contragent_type, check_invoice_closed,
+from nemesis.lib.data_ctrl.accounting.utils import (check_invoice_closed,
     check_invoice_can_add_discounts, calc_invoice_sum_wo_discounts, calc_invoice_refunds_sum)
 from nemesis.lib.data_ctrl.accounting.service import ServiceController
 from nemesis.lib.data_ctrl.accounting.contract import ContragentController, ContractController
@@ -164,7 +164,7 @@ class ContragentRepr(object):
     def represent_contragent(self, contragent):
         if not contragent:
             return None
-        ca_type = get_contragent_type(contragent)
+        ca_type = contragent.get_type()
         return {
             'id': contragent.id,
             'client': self.represent_ca_client(contragent.client),
@@ -192,14 +192,14 @@ class ContragentRepr(object):
         return data
 
     def make_ca_short_descr(self, contragent):
-        ca_type = get_contragent_type(contragent)
+        ca_type = contragent.get_type()
         if ca_type.value == ContragentType.legal[0]:
             return contragent.org.shortName
         elif ca_type.value == ContragentType.individual[0]:
             return contragent.client.nameText
 
     def make_ca_full_descr(self, contragent):
-        ca_type = get_contragent_type(contragent)
+        ca_type = contragent.get_type()
         if ca_type.value == ContragentType.legal[0]:
             return contragent.org.fullName
         elif ca_type.value == ContragentType.individual[0]:

@@ -8,7 +8,9 @@ from kombu.pools import producers
 
 from nemesis.lib.utils import safe_traverse, safe_double
 from nemesis.models.enums import Gender, AddressType, ActionStatus
-from nemesis.lib.const import STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_ORG_STRUCT_RECEIVED_CODE
+from nemesis.lib.const import STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_ORG_STRUCT_RECEIVED_CODE, \
+    CLIENT_CONTACT_EMAIL_CODE, CLIENT_CONTACT_HOME_PHONE_CODE, CLIENT_CONTACT_WORK_PHONE_CODE, \
+    CLIENT_CONTACT_MOBILE_PHONE_CODE
 from nemesis.app import app
 
 
@@ -195,16 +197,16 @@ class MQIntegrationNotifier(object):
                 'id': contact.id,
                 'value': contact.contact
             }
-            if contact.contactType.code == '01':
+            if contact.contactType.code == CLIENT_CONTACT_HOME_PHONE_CODE:
                 item['system'] = 'phone'
                 item['use'] = 'home'
-            elif contact.contactType.code == '02':
+            elif contact.contactType.code == CLIENT_CONTACT_WORK_PHONE_CODE:
                 item['system'] = 'phone'
                 item['use'] = 'work'
-            elif contact.contactType.code == '03':
+            elif contact.contactType.code == CLIENT_CONTACT_MOBILE_PHONE_CODE:
                 item['system'] = 'phone'
                 item['use'] = 'mobile'
-            elif contact.contactType.code == '04':
+            elif contact.contactType.code == CLIENT_CONTACT_EMAIL_CODE:
                 item['system'] = 'email'
                 item['use'] = 'temp'
 

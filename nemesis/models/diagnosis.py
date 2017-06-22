@@ -3,7 +3,6 @@ import datetime
 
 from blinker._utilities import lazy_property
 from nemesis.models.refbooks import RefBookMixin
-from nvesta.library.shape import RefBook
 from sqlalchemy import Table
 
 from nemesis.models.utils import safe_current_user_id
