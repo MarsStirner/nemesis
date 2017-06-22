@@ -221,6 +221,17 @@ class ActionProperty(db.Model):
             if value_container:
                 return value_container[0].value
 
+    @property
+    def value_str(self):
+        value_container = self.value_container
+        if self.type.isVector:
+            if value_container:
+                return u', '.join([unicode(item) for item in value_container])
+        else:
+            if value_container:
+                return unicode(value_container[0])
+        return u''
+
     @value.setter
     def value(self, value):
         self.set_value(value)
@@ -416,8 +427,9 @@ class ActionPropertyType(db.Model):
     test = db.relationship('rbTest')
 
     def parse_value_domain(self):
+        from nemesis.lib.utils import parse_json
+
         if self.typeName == 'Diagnosis':
-            from nemesis.lib.utils import parse_json
             return parse_json(self.valueDomain)
         elif self.typeName == 'String':
             values = [match.strip() for match in apt_valueDomain_String_re.findall(self.valueDomain)]
@@ -436,6 +448,14 @@ class ActionPropertyType(db.Model):
                     'subtype': 'Select',
                     'values': values,
                 }
+        elif self.typeName in ('Text', 'Html'):
+            value_domain = parse_json(self.valueDomain)
+            if isinstance(value_domain, dict) and \
+                    (not {'templates', 'context', 'at_class'}.issubset(set(value_domain.keys()))
+                     or not value_domain['templates']):
+                return {'error': u'valueDomain для типа Text или Html задан неверно.'}
+
+            return value_domain
         return None
 
     def parse_norm(self):
@@ -512,6 +532,9 @@ class ActionProperty__ValueType(db.Model):
             return self.set_raw_value(value)
         else:
             self.value = value
+
+    def __unicode__(self):
+        return unicode(self.value) or u''
 
 
 class ActionProperty_Action(ActionProperty__ValueType):
