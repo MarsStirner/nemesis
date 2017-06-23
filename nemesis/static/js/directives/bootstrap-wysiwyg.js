@@ -272,8 +272,23 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                         });
 
                         $scope.refreshActionProperties = function(node) {
-                            node.load_children();
-                            $scope.tree.toggle_expanded(node)
+                            node.load_children().then(function (result) {
+                                $scope.tree.toggle_expanded(node);
+                                if (node.isSelected) {
+                                    node.setChildrenSelection(true)
+                                }
+                            });
+                        };
+                        $scope.toggleSelection = function(node) {
+                            if (!node.chilren_loaded) {
+                                node.isSelected = !node.isSelected;
+                                $scope.refreshActionProperties(node);
+                            } else {
+                                node.toggleSelection();
+                                if (!$scope.tree.is_expanded(node) && node.isSelected) {
+                                    $scope.tree.toggle_expanded(node);
+                                }
+                            }
                         };
                         $scope.pasteText = function (result) {
                             $scope.$close(result);
