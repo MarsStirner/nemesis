@@ -1735,10 +1735,10 @@ class ActionVisualizer(object):
                 'idx': prop.type.idx,
                 'code': prop.type.code,
                 'name': prop.type.name,
+                'unit': prop.type.unit,
             },
             'is_assigned': prop.isAssigned,
             'value_str': prop.value_str,
-            'unit': prop.unit,
         }
 
     def make_lab_direction_property(self, prop):
