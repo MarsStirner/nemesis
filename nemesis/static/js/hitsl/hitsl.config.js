@@ -2,6 +2,7 @@
  * Created by mmalkov on 10.06.15.
  */
 'use strict';
+window['moment-range'].extendMoment(moment);
 angular.module('hitsl.ui')
 .config([
     '$interpolateProvider', 'datepickerConfig', 'datepickerPopupConfig', 'paginationConfig', '$provide', '$tooltipProvider', 'localStorageServiceProvider',

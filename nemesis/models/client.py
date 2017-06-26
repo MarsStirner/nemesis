@@ -345,8 +345,7 @@ class Client(db.Model):
             'notes': self.notes,
             'age_tuple': self.age_tuple(),
             'age': self.age,
-            'sex_raw': self.sexCode,
-            'amb_card': self.amb_card
+            'sex_raw': self.sexCode
         }
 
 
