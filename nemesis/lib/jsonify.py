@@ -17,7 +17,8 @@ from flask_login import current_user
 from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
-    get_client_diagnostics, get_action_type_class, apt_flat_tuple, get_at_tissue_type_ids
+    get_client_diagnostics, get_action_type_class, apt_flat_tuple, get_at_tissue_type_ids, \
+    get_action
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
     get_prev_inspection_with_diags, action_is_resuscitation_moving
 from nemesis.lib.data_ctrl.accounting.represent import ServiceRepr, ContractRepr, InvoiceRepr
@@ -30,7 +31,8 @@ from nemesis.lib.utils import (safe_unicode, safe_dict, safe_traverse_attrs, for
 from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.event.utils import get_client_events, get_current_hospitalisation
 from nemesis.lib.represent.common import represent_action_file
-from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES
+from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES, \
+    STATIONARY_STATCARD_CODE, STATIONARY_LEAVED_CODE, LeavedProps
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
@@ -932,7 +934,8 @@ class EventVisualizer(object):
                 'invoice_all': UserUtils.access_invoices_all(event),
             },
             'services': [],
-            'invoices': []
+            'invoices': [],
+            'diagnoses': []
         }
 
         if UserProfileManager.has_ui_admin() or UserProfileManager.has_ui_registrator() or \
@@ -1430,6 +1433,40 @@ class StationaryEventVisualizer(EventVisualizer):
             'received': self.make_received(event, new)
         }
         return res
+
+    def make_hosp_for_close(self, event):
+        data = super(StationaryEventVisualizer, self).make_event_info_for_current_role(event)
+        data.update(self.make_event_stationary_info(event))
+        data['movings'] = self.make_movings(event)
+        data['vmp_quoting'] = self.make_vmp_quoting(event)
+        data['stat_card'] = self.make_statcard_for_close(event)
+        data['surgeries'] = []
+        data['leaved'] = self.make_leaved_for_close(event)
+        data['death_epicrisis'] = None
+        return data
+
+    def make_leaved_for_close(self, event):
+        leaved = get_action(event, STATIONARY_LEAVED_CODE)
+        if not leaved:
+            return None
+        return {
+            'id': leaved.id,
+            'rw': {
+                'value': leaved[LeavedProps.rw].value,
+                'domain': leaved[LeavedProps.rw].type.parse_value_domain()
+            },
+            'aids': {
+                'value': leaved[LeavedProps.aids].value,
+                'domain': leaved[LeavedProps.aids].type.parse_value_domain()
+            },
+        }
+
+    def make_statcard_for_close(self, event):
+        stat_card = get_action(event, STATIONARY_STATCARD_CODE, create=True)
+        return {
+            'id': stat_card.id,
+            'note': stat_card.note
+        }
 
     def make_vmp_quoting(self, event):
         return event.VMP_quoting
