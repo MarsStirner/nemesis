@@ -6,7 +6,7 @@ import time
 from kombu import Connection
 from kombu.pools import producers
 
-from nemesis.lib.utils import safe_traverse, safe_double
+from nemesis.lib.utils import safe_traverse, safe_double, safe_bool
 from nemesis.models.enums import Gender, AddressType, ActionStatus
 from nemesis.lib.const import STATIONARY_ORG_STRUCT_STAY_CODE, STATIONARY_ORG_STRUCT_RECEIVED_CODE, \
     CLIENT_CONTACT_EMAIL_CODE, CLIENT_CONTACT_HOME_PHONE_CODE, CLIENT_CONTACT_WORK_PHONE_CODE, \
@@ -95,6 +95,16 @@ class MQIntegrationNotifier(object):
             'code': rb.code,
             'name': rb.name,
             'shortName': rb.shortname if hasattr(rb, 'shortname') else rb.name
+        }
+
+    def _make_rb_service(self, rb):
+        if rb is None:
+            return None
+        return {
+            'id': rb.id,
+            'code': rb.code,
+            'name': rb.name,
+            'isComplex': safe_bool(rb.isComplex)
         }
 
     def _make_value_and_unit(self, value, unit):

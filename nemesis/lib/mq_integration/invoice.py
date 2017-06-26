@@ -5,6 +5,8 @@ from nemesis.lib.enum import Enum
 from nemesis.models.enums import ContragentType
 from nemesis.lib.apiutils import json_dumps
 from nemesis.lib.const import PAID_EVENT_CODE
+from nemesis.lib.data_ctrl.accounting.utils import calc_item_sum
+from nemesis.lib.utils import safe_bool, safe_decimal, safe_int
 from .base import MQIntegrationNotifier
 
 
@@ -124,5 +126,40 @@ class InvoiceIntegrationNotifier(MQIntegrationNotifier):
             'contract': self._make_contract(invoice.contract),
             'sum': invoice.total_sum if invoice.parent_id is None else invoice.refund_sum,
             'parent': self._make_invoice(parent_invoice) if parent_invoice is not None else None,
-            'author': self._make_person(invoice.createPerson)
+            'author': self._make_person(invoice.createPerson),
+            'items': self._make_invoice_items(invoice)
+        }
+
+    def _make_invoice_items(self, invoice):
+        return [
+            self._make_invoice_item(item)
+            for item in invoice.get_all_subitems()
+        ]
+
+    def _make_invoice_item(self, item):
+        sum_total = item.sum
+        price = item.price
+        amount = item.amount
+        item_sum_wo_discount = calc_item_sum(price, amount)
+        sum_discount = safe_decimal(sum_total - item_sum_wo_discount) if item.discount is not None \
+            else safe_decimal('0')
+
+        return {
+            'id': item.id,
+            'parent_id': item.parent_id,
+            'service': self._make_concrete_service(item.service),
+            'price': price,
+            'amount': safe_int(amount),
+            'sum_discount': sum_discount,
+            'sum_total': sum_total
+        }
+
+    def _make_concrete_service(self, service):
+        pli = service.price_list_item
+        return {
+            'id': service.id,
+            'code': pli.serviceCodeOW,
+            'name': pli.serviceNameOW,
+            'isAccumulativePrice': safe_bool(pli.isAccumulativePrice),
+            'service': self._make_rb_service(pli.service)
         }
