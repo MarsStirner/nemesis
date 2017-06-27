@@ -127,13 +127,15 @@ class InvoiceIntegrationNotifier(MQIntegrationNotifier):
             'sum': invoice.total_sum if invoice.parent_id is None else invoice.refund_sum,
             'parent': self._make_invoice(parent_invoice) if parent_invoice is not None else None,
             'author': self._make_person(invoice.createPerson),
-            'items': self._make_invoice_items(invoice)
+            'items': self._make_invoice_items(invoice, is_refund=parent_invoice is not None)
         }
 
-    def _make_invoice_items(self, invoice):
+    def _make_invoice_items(self, invoice, is_refund=False):
+        items = invoice.get_all_refund_subitems() if is_refund else \
+            invoice.get_all_subitems()
         return [
             self._make_invoice_item(item)
-            for item in invoice.get_all_subitems()
+            for item in items
         ]
 
     def _make_invoice_item(self, item):

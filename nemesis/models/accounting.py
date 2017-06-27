@@ -469,6 +469,14 @@ class Invoice(db.Model):
 
         return result
 
+    def get_all_refund_subitems(self):
+        result = []
+        for item in self.refund_items:
+            result.append(item)
+            result.extend(item.get_flatten_subitems())
+
+        return result
+
     def get_all_entities(self):
         result = [self]
         for item in self.item_list:
