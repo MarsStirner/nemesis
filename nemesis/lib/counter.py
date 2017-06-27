@@ -89,7 +89,12 @@ class ContractCounter(Counter):
             number = number.decode('utf-8')
         elif not isinstance(number, unicode):
             number = unicode(number)
-        return Contract.query.filter(Contract.number == number, Contract.deleted == 0).count() > 0
+        return Contract.query.join(rbCounter, rbCounter.code == self.code).filter(
+            Contract.number == number,
+            Contract.deleted == 0,
+            or_(rbCounter.resetDate.is_(None),
+                Contract.date >= rbCounter.resetDate)
+        ).count() > 0
 
     def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
