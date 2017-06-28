@@ -536,6 +536,20 @@ def get_new_event_ext_id(event_type_id, client_id):
     return external_id
 
 
+def get_new_amb_card_ext_id(client_id):
+    from nemesis.models.exists import rbCounter
+    counter = rbCounter.query.filter_by(code='amb_card').with_for_update().first()
+    if not counter:
+        return ''
+    external_id = _get_external_id_from_counter(counter.prefix,
+                                                counter.value + 1,
+                                                counter.separator,
+                                                client_id)
+    counter.value += 1
+    db.session.add(counter)
+    return external_id
+
+
 def _get_external_id_from_counter(prefix, value, separator, client_id):
     def get_date_prefix(val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')

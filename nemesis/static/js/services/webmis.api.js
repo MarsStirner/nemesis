@@ -267,8 +267,14 @@ WebMis20
         get_patient_actions: function (client_id) {
             return wrapper('GET', WMConfig.url.actions.patient_actions + client_id);
         },
+        get_patient_actions_with_values: function (client_id, args) {
+            return wrapper('GET', WMConfig.url.actions.patient_actions + client_id, args);
+        },
         get_apt_groups: function (action_type_id) {
             return wrapper('GET', WMConfig.url.actions.apt_groups_get.format(action_type_id));
+        },
+        get_action_properties: function (action_id) {
+            return wrapper('GET', WMConfig.url.actions.action_properties_get.format(action_id));
         }
     };
     this.client = {
@@ -334,6 +340,22 @@ WebMis20
         parse_xlsx: function(coupon_file) {
             return wrapper('POST', WMConfig.url.patients.coupon_parse, {}, {
                         coupon: coupon_file,
+                    });
+        }
+    }
+    this.client_attach = {
+        get: function (client_id) {
+            return wrapper('GET',  WMConfig.url.patients.client_attach.get, {client_id: client_id});
+        },
+        save: function(client, client_attach) {
+            return wrapper('POST', WMConfig.url.patients.client_attach.save, {}, {
+                        client_id: client.client_id,
+                        client_attach: client_attach,
+                    });
+        },
+        del: function(client_attach) {
+            return wrapper('POST', WMConfig.url.patients.client_attach.del, {}, {
+                        client_attach: client_attach,
                     });
         }
     }

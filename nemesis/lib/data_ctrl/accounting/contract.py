@@ -282,7 +282,6 @@ class ContragentController(BaseModelController):
             'existing': existing
         }
 
-
     def update_contragent(self, contragent, json_data):
         json_data = self._format_contragent_data(json_data)
         contragent.client = json_data['client']

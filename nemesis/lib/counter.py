@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 __author__ = 'plakrisenko'
 import datetime
-from sqlalchemy import func, or_, Integer
-from sqlalchemy.orm import aliased
-from sqlalchemy import cast
+from sqlalchemy import func, or_
 
+from nemesis.lib.utils import safe_int
 from nemesis.models.client import ClientIdentification
 from nemesis.models.exists import rbCounter, rbAccountingSystem
 from nemesis.models.accounting import Contract, Invoice
-from nemesis.systemwide import db
 
 
 class Counter(object):
@@ -26,11 +24,14 @@ class Counter(object):
     def check_number_used(self, number):
         return False
 
-    def get_current_value(self):
-        return self.counter.value
-
     def get_next_value(self, current_value=None):
-        raise NotImplementedError
+        if current_value is None:
+            current_value = self.counter.value
+        while 1:
+            next_value = current_value + 1
+            if not self.check_number_used(next_value):
+                return next_value
+            current_value = next_value
 
     def get_next_number(self):
         next_value = self.get_next_value()
@@ -79,14 +80,6 @@ class Counter(object):
                             prefix.append(val)
         return separator.join(prefix)
 
-    def cast_str_to_number(self, column):
-        re_str_is_number = '^([1-9][0-9]*|0)$'
-        return func.IF(
-            column.op('regexp')(re_str_is_number),
-            cast(column, Integer),
-            None
-        )
-
 
 class ContractCounter(Counter):
     code = 'contract'
@@ -103,54 +96,10 @@ class ContractCounter(Counter):
                 Contract.date >= rbCounter.resetDate)
         ).count() > 0
 
-    def get_next_value(self):
+    def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
-        # текущий номер по счетчику
-        cur_val = self.get_current_value() or 0
-        base_query = db.session.query(Contract).join(
-            rbCounter, rbCounter.code == self.code
-        ).filter(
-            Contract.deleted == 0,
-            or_(rbCounter.resetDate.is_(None),
-                Contract.date >= rbCounter.resetDate),
-            self.cast_str_to_number(Contract.number) >= cur_val,
-        )
-
-        # следующий минимальный номер
-        min_contract_num = base_query.order_by(
-            self.cast_str_to_number(Contract.number)
-        ).with_entities(self.cast_str_to_number(Contract.number)).first()
-        # если есть пропуск после текущего номера (при этом договора на текущий
-        # номер нет)
-        if min_contract_num is not None and min_contract_num[0] > cur_val + 1:
-            next_number = cur_val + 1
-        # иначе - найти следующий договор, после которого будет пропуск
-        else:
-            NContract = aliased(Contract, name='NextContract')
-            contract_next = db.session.query(NContract.number).join(
-                rbCounter, rbCounter.code == self.code
-            ).filter(
-                NContract.deleted == 0,
-                or_(rbCounter.resetDate.is_(None),
-                    NContract.date >= rbCounter.resetDate),
-                self.cast_str_to_number(NContract.number) > rbCounter.value
-            )
-
-            gap_number = base_query.filter(
-                # после целевого договора должен быть пропуск в нумерации
-                ~contract_next.filter(
-                    self.cast_str_to_number(NContract.number) == self.cast_str_to_number(Contract.number) + 1
-                ).exists()
-            ).order_by(
-                self.cast_str_to_number(Contract.number),
-            ).with_entities(
-                self.cast_str_to_number(Contract.number) + 1
-            ).first()
-            # пропущенный номер; если нет, значит текущее значение больше, чем все
-            # существующие номера договоров, - взять следующий номер
-            gap_number = gap_number[0] if gap_number else cur_val + 1
-            next_number = gap_number
-        return next_number
+        n = super(ContractCounter, self).get_next_number()
+        return n if n.isdigit() else None
 
 
 class InvoiceCounter(Counter):
@@ -164,51 +113,7 @@ class InvoiceCounter(Counter):
                 Invoice.setDate >= rbCounter.resetDate)
         ).count() > 0
 
-    def get_next_value(self):
+    def get_next_number(self):
         """В текущей реализации номер может состоять только из цифр"""
-        # текущий номер по счетчику
-        cur_val = self.get_current_value() or 0
-        base_query = db.session.query(Invoice).join(
-            rbCounter, rbCounter.code == self.code
-        ).filter(
-            Invoice.deleted == 0,
-            or_(rbCounter.resetDate.is_(None),
-                Invoice.setDate >= rbCounter.resetDate),
-            self.cast_str_to_number(Invoice.number) >= cur_val,
-        )
-
-        # следующий минимальный номер
-        min_invoice_num = base_query.order_by(
-            self.cast_str_to_number(Invoice.number)
-        ).with_entities(self.cast_str_to_number(Invoice.number)).first()
-        # если есть пропуск после текущего номера (при этом счета с текущим
-        # номером нет)
-        if min_invoice_num is not None and min_invoice_num[0] > cur_val + 1:
-            next_number = cur_val + 1
-        # иначе - найти следующий счет, после которого будет пропуск
-        else:
-            NInvoice = aliased(Invoice, name='NextInvoice')
-            invoice_next = db.session.query(NInvoice.number).join(
-                rbCounter, rbCounter.code == self.code
-            ).filter(
-                NInvoice.deleted == 0,
-                or_(rbCounter.resetDate.is_(None),
-                    NInvoice.setDate >= rbCounter.resetDate),
-                self.cast_str_to_number(NInvoice.number) > rbCounter.value
-            )
-
-            gap_number = base_query.filter(
-                # после целевого договора должен быть пропуск в нумерации
-                ~invoice_next.filter(
-                    self.cast_str_to_number(NInvoice.number) == self.cast_str_to_number(Invoice.number) + 1
-                ).exists()
-            ).order_by(
-                self.cast_str_to_number(Invoice.number),
-            ).with_entities(
-                self.cast_str_to_number(Invoice.number) + 1
-            ).first()
-            # пропущенный номер; если нет, значит текущее значение больше, чем все
-            # существующие номера счетов, - взять следующий номер
-            gap_number = gap_number[0] if gap_number else cur_val + 1
-            next_number = gap_number
-        return next_number
+        n = super(InvoiceCounter, self).get_next_number()
+        return n if n.isdigit() else None

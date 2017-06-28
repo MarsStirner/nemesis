@@ -8,7 +8,7 @@ from sqlalchemy import orm
 
 from nemesis.systemwide import db
 from nemesis.models.utils import safe_current_user_id
-from nemesis.models.enums import ServiceKind
+from nemesis.models.enums import ServiceKind, ContragentType
 
 
 class Contract(db.Model):
@@ -45,8 +45,6 @@ class Contract(db.Model):
         secondary='Contract_PriceList',
         secondaryjoin='and_(Contract_PriceListAssoc.priceList_id == PriceList.id, PriceList.deleted == 0)',
     )
-    # tariff = db.relationship('ContractTariff',
-    #                          primaryjoin='and_(ContractTariff.master_id == Contract.id, ContractTariff.deleted == 0)')
 
     def __unicode__(self):
         return u'%s %s' % (self.number, self.date)
@@ -79,6 +77,15 @@ class Contract_Contragent(db.Model):
         primaryjoin='and_(Contract_Contragent.id == Contract.payer_id, Contract.deleted == 0)'
     )
     payer_finance_trx_list = db.relationship('FinanceTransaction')
+
+    def get_type(self):
+        return ContragentType(
+            ContragentType.individual[0] if self.client is not None
+            else (
+                ContragentType.legal[0] if self.org is not None
+                else ContragentType.undefined[0]
+            )
+        )
 
 
 class Contract_Contingent(db.Model):
@@ -457,6 +464,14 @@ class Invoice(db.Model):
     def get_all_subitems(self):
         result = []
         for item in self.item_list:
+            result.append(item)
+            result.extend(item.get_flatten_subitems())
+
+        return result
+
+    def get_all_refund_subitems(self):
+        result = []
+        for item in self.refund_items:
             result.append(item)
             result.extend(item.get_flatten_subitems())
 

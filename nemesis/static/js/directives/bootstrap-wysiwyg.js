@@ -213,6 +213,120 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             })
         }
     }
+}]).service('PatientActionsWithValuesService', ['$modal', 'WMConfig',
+    function ($modal, WMConfig) {
+        return {
+            open: function (client_id, value_domain, editor_text) {
+                var instance = $modal.open({
+                    templateUrl: WMConfig.url.actions.html.actions_with_values_modal.format(client_id),
+                    size: 'lg',
+                    windowClass: 'modal-scrollable',
+                    backdrop : 'static',
+                    resolve: {
+                        client_id: function () {
+                            return client_id
+                        }
+                    },
+                    controller: function ($scope, PatientATTreeService, RefBookService,
+                                          PrintingService, client_id) {
+                        $scope.client_id = undefined;
+                        $scope.tree = null;
+                        $scope.filtered_tree = null;
+                        $scope.cond = {
+                            query: ''
+                        };
+                        $scope.ps = null;
+
+                        $scope.get_context = function () {
+                            return value_domain.context;
+                        };
+                        $scope.get_templates = function () {
+                            return value_domain.templates;
+                        };
+                        $scope.ps_resolve = function () {
+                            var action_id_dict = $scope.tree.get_selected_ap_tree_items($scope.filtered_tree);
+                            return {action_id_dict: action_id_dict}
+                        };
+                        $scope.reloadData = function(client_id) {
+                            $scope.client_id = client_id;
+                            PatientATTreeService.get_with_values(client_id, value_domain.at_class)
+                                .then(function (tree) {
+                                    $scope.tree = tree;
+                                    $scope.set_filter();
+                                });
+                        };
+                        $scope.set_filter = function (query_changed) {
+                            if (!$scope.tree) return;
+                            $scope.filtered_tree = $scope.tree.filter(
+                                $scope.cond.query
+                            );
+                            if (query_changed) {
+                                $scope.tree.expand_all($scope.filtered_tree);
+                            }
+                        };
+
+                        $scope.$on('patientActionsOpened', function (event, args) {
+                            if (!$scope.client_id || $scope.client_id !== args.client_id) {
+                                $scope.init(args.client_id);
+                            }
+                        });
+
+                        $scope.refreshActionProperties = function(node) {
+                            node.load_children().then(function (result) {
+                                $scope.tree.toggle_expanded(node);
+                                if (node.isSelected) {
+                                    node.setChildrenSelection(true)
+                                }
+                            });
+                        };
+                        $scope.toggleSelection = function(node) {
+                            if (!node.chilren_loaded) {
+                                node.isSelected = !node.isSelected;
+                                $scope.refreshActionProperties(node);
+                            } else {
+                                node.toggleSelection();
+                                if (!$scope.tree.is_expanded(node) && node.isSelected) {
+                                    $scope.tree.toggle_expanded(node);
+                                }
+                            }
+                        };
+                        $scope.pasteText = function (result) {
+                            $scope.$close(result);
+                        };
+
+                        $scope.init = function (client_id) {
+                            $scope.reloadData(client_id);
+                            $scope.ps = new PrintingService('action_list');
+                        };
+
+                        if (client_id) {
+                            $scope.init(client_id);
+                        }
+                    }
+                });
+                return instance.result;
+            }
+        }
+}])
+.directive('wysiwygOpenPatientActionsWithValues', ['$q', 'PatientActionsWithValuesService',
+    function ($q, PatientActionsWithValuesService) {
+        return {
+            restrict: 'A',
+            link: function (scope, element, attributes) {
+                var jqElement = $(element),
+                    value_domain = scope.userOptions;
+                jqElement.click(function (event) {
+                    event.preventDefault();
+                    var client_id = scope.clientId;
+                    var edited_text = scope.$model.$modelValue;
+                    PatientActionsWithValuesService.open(client_id, value_domain, edited_text).then(
+                        function (result) {
+                            scope.insertHTML(result);
+                        }
+                    );
+                })
+            }
+        }
 }])
 .directive('wysiwyg', ['$q', '$compile', '$templateCache', 'HtmlCleaner',
         function ($q, $compile, $templateCache, HtmlCleaner) {
@@ -255,6 +369,7 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             isAlreadyOpened: '@?',
             complainsCode: '@',
             placeholder: '@',
+            clientId: '@',
             getWysiwygApi: '&?'
         },
         require: '^ngModel',
@@ -505,12 +620,26 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
                 saveSelection();
                 updateModel();
             };
+            scope.insertHTML = function (myValue) {
+                editor.focus();
+                restoreSelection();
+                execCommand('insertHTML', myValue);
+                saveSelection();
+                updateModel();
+            };
             scope.replaceContent = function (text) {
                 editor.focus();
                 document.execCommand('selectAll');
                 execCommand('insertHTML', text);
                 saveSelection();
                 updateModel();
+            };
+            scope.isAvailableActionsWithValues = function () {
+                var value_domain = scope.userOptions;
+                if (!value_domain || 'error' in value_domain) {
+                    return false;
+                }
+                return !scope.isAlreadyOpened;
             };
             if (angular.isDefined(scope.getWysiwygApi)) {
                 scope.getWysiwygApi({
@@ -706,6 +835,9 @@ angular.module('WebMis20.directives.wysiwyg', ['WebMis20.directives.goodies'])
             </div>\
             <div class="btn-group">\
                 <a class="btn" wysiwyg-open-symbols ng-if="!isAlreadyOpened"><i class="fa">Спецсимвол <i class="fa fa-yen"></i></i></a>\
+            </div>\
+            <div class="btn-group">\
+                <a class="btn" wysiwyg-open-patient-actions-with-values ng-if="isAvailableActionsWithValues()"><i class="fa">Результаты исследований</a>\
             </div>\
         </div>'.format(fonts.map(makeFontSelector).join('')));
     $templateCache.put('/WebMis20/aside-thesaurus/tree.html',

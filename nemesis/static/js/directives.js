@@ -541,7 +541,7 @@ angular.module('WebMis20.directives')
     }])
     .service('PrintingDialog', ['$modal', function ($modal) {
         var ModalPrintDialogController = function ($scope, $modalInstance, ps, context_extender, meta_values,
-                                                   fast_print, template_code) {
+                                                   fast_print, template_code, render_only) {
             $scope.aux = aux;
             $scope.page = 0;
             $scope.ps = ps;
@@ -625,24 +625,23 @@ angular.module('WebMis20.directives')
                 }
             }
             $scope.print_separated = function () {
-                ps.print_template(prepare_data(), true).then(
-                    function () {
-                        angular.noop();
-                    },
-                    function () {
-                        $scope.$close();
-                    }
-                );
+                if (render_only) {
+                    return ps.render_template(prepare_data())
+                        .then(function (html_template) {
+                            return $scope.$close(html_template);
+                        });
+                } else {
+                    return ps.print_template(prepare_data(), true).then(angular.noop, $scope.$close);
+                }
             };
             $scope.print_compact = function () {
-                ps.print_template(prepare_data(), false).then(
-                    function () {
-                        angular.noop();
-                    },
-                    function () {
-                        $scope.$close();
-                    }
-                );
+                var res;
+                if (render_only) {
+                    res = ps.render_template(prepare_data());
+                } else {
+                    res = ps.print_template(prepare_data(), false)
+                }
+                return res.then(angular.noop, $scope.$close);
             };
             $scope.cancel = function () {
                 $modalInstance.dismiss('cancel');
@@ -678,7 +677,7 @@ angular.module('WebMis20.directives')
         };
 
         return {
-            open: function (ps, context_extender, meta_values, fast_print, template_code) {
+            open: function (ps, context_extender, meta_values, fast_print, template_code, render_only) {
                 return $modal.open({
                     templateUrl: '/WebMis20/modal-print-dialog.html',
                     backdrop : 'static',
@@ -689,7 +688,7 @@ angular.module('WebMis20.directives')
                             return ps;
                         },
                         context_extender: function () {
-                            return context_extender
+                            return context_extender;
                         },
                         meta_values: function () {
                             return meta_values;
@@ -698,10 +697,13 @@ angular.module('WebMis20.directives')
                             return fast_print;
                         },
                         template_code: function () {
-                            return template_code
+                            return template_code;
+                        },
+                        render_only: function () {
+                            return render_only;
                         }
                     }
-                });
+                }).result;
             }
         }
     }])
@@ -771,6 +773,7 @@ angular.module('WebMis20.directives')
             scope: {
                 $ps: '=ps',
                 beforePrint: '&?',
+                afterPrint: '&?',
                 lazyLoadContext: '@?',
                 fastPrint: '=?',
                 templateCode: '@?'
@@ -780,8 +783,14 @@ angular.module('WebMis20.directives')
                 if (!attrs.beforePrint) {
                     scope.beforePrint = null;
                 }
+                if (!attrs.afterPrint) {
+                    scope.afterPrint = angular.noop;
+                }
                 if (attrs.forceReloadContext) {
                     scope.forceReloadContext = scope.$eval(attrs.forceReloadContext);
+                }
+                if (attrs.renderOnly) {
+                    scope.renderOnly = scope.$eval(attrs.renderOnly);
                 }
                 scope.disabled = function () {
                     return !scope.$ps.is_available();
@@ -803,7 +812,10 @@ angular.module('WebMis20.directives')
                         scope.$ps.set_context(scope.lazyLoadContext)
                             .then(function () {
                                 PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint, scope.templateCode);
+                                        scope.fastPrint, scope.templateCode, scope.renderOnly)
+                                    .then(function(result) {
+                                        scope.afterPrint({result: result});
+                                    });
                             }, function () {
                                 MessageBox.error(
                                     'Печать недоступна',
@@ -812,7 +824,10 @@ angular.module('WebMis20.directives')
                             });
                     } else {
                         PrintingDialog.open(scope.$ps, scope.$parent.$eval(resolver_call), undefined,
-                                    scope.fastPrint, scope.templateCode);
+                                scope.fastPrint, scope.templateCode, scope.renderOnly)
+                            .then(function(result) {
+                                scope.afterPrint({result: result});
+                            });
                     }
                 };
             }

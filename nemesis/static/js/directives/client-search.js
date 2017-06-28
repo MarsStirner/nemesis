@@ -124,6 +124,8 @@ angular.module('WebMis20.directives').
             <th width="10%">Полис ОМС</th>\
             <th width="10%">Полис ДМС</th>\
             <th width="1%">Контакты</th>\
+            <th width="5%">Номер АК</th>\
+            <th width="5%">Врач</th>\
         </tr>\
         </thead>\
         <tbody>\
@@ -144,6 +146,8 @@ angular.module('WebMis20.directives').
             <td class="cursor-default">\
                 <wm-client-contacts contacts="result.contacts"></wm-client-contacts>\
             </td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.amb_card.generated_id | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.amb_card.last_person.short_name | highlight: query"></td>\
         </tr>\
         </tbody>\
     </table>\
