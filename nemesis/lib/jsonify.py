@@ -657,7 +657,8 @@ class ClientVisualizer(object):
             'id_document': client.id_document,
             'compulsory_policy': client.compulsoryPolicy,
             'voluntary_policies': client.voluntaryPolicies,
-            'contacts': self.make_contacts_info(client)
+            'contacts': self.make_contacts_info(client),
+            'amb_card': client.amb_card,
         }
 
     def make_short_client_info(self, client):

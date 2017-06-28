@@ -146,8 +146,8 @@ angular.module('WebMis20.directives').
             <td class="cursor-default">\
                 <wm-client-contacts contacts="result.contacts"></wm-client-contacts>\
             </td>\
-            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.amb_card.generated_id | highlight: query"></td>\
-            <td ng-click="onClientSelect(result)" ng-bind-html="result.info.amb_card.last_person.short_name | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.amb_card.generated_id | highlight: query"></td>\
+            <td ng-click="onClientSelect(result)" ng-bind-html="result.amb_card.last_person.short_name | highlight: query"></td>\
         </tr>\
         </tbody>\
     </table>\
