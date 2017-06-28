@@ -30,6 +30,7 @@ STATIONARY_MOVING_CODE = 'moving'
 STATIONARY_LEAVED_CODE = 'leaved'
 STATIONARY_STATCARD_CODE = 'Statement'
 DEATH_EPICRISIS_CODE = 'death_epicrisis'
+SURGICAL_REPORT_CODE = 'surgical_report'
 # props
 STATIONARY_ORG_STRUCT_STAY_CODE = 'orgStructStay'
 STATIONARY_ORG_STRUCT_TRANSFER_CODE = 'orgStructTransfer'
@@ -47,6 +48,23 @@ class LeavedProps(Enum):
 
 class DeathEpicrisisProps(Enum):
     main_rod = 'mainReasonOD'
+
+
+class SurgicalReportProps(Enum):
+    date_start = 'date_start'
+    time_start = 'time_start'
+    operation1 = 'operation1'
+    operation2 = 'operation2'
+    operation3 = 'operation3'
+    anesthesia1 = 'anesthesia1'
+    anesthesia2 = 'anesthesia2'
+    anesthesia3 = 'anesthesia3'
+    spec_equipment_use1 = 'spec_equipment_use1'
+    spec_equipment_use2 = 'spec_equipment_use2'
+    spec_equipment_use3 = 'spec_equipment_use3'
+    transplant1 = 'transplant1'
+    transplant2 = 'transplant2'
+    transplant3 = 'transplant3'
 
 
 NOT_COPYABLE_VALUE_TYPES = ['HospitalBed', 'HospitalBedProfile', 'JobTicket', 'Diagnosis']

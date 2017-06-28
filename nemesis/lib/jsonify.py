@@ -18,7 +18,7 @@ from nemesis.app import app
 from nemesis.systemwide import db
 from nemesis.lib.data import int_get_atl_dict_all, get_patient_location, get_patient_hospital_bed, get_hosp_length, \
     get_client_diagnostics, get_action_type_class, apt_flat_tuple, get_at_tissue_type_ids, \
-    get_action
+    get_action, get_action_list
 from nemesis.lib.action.utils import action_is_bak_lab, action_is_lab, action_is_prescriptions, \
     get_prev_inspection_with_diags, action_is_resuscitation_moving
 from nemesis.lib.data_ctrl.accounting.represent import ServiceRepr, ContractRepr, InvoiceRepr
@@ -32,7 +32,8 @@ from nemesis.lib.user import UserUtils, UserProfileManager
 from nemesis.lib.event.utils import get_client_events, get_current_hospitalisation
 from nemesis.lib.represent.common import represent_action_file
 from nemesis.lib.const import STATIONARY_EVENT_CODES, NOT_COPYABLE_VALUE_TYPES, \
-    STATIONARY_STATCARD_CODE, STATIONARY_LEAVED_CODE, LeavedProps
+    STATIONARY_STATCARD_CODE, STATIONARY_LEAVED_CODE, LeavedProps, DEATH_EPICRISIS_CODE, \
+    DeathEpicrisisProps, SURGICAL_REPORT_CODE, SurgicalReportProps
 from nemesis.models.enums import EventPrimary, EventOrder, ActionStatus, Gender, IntoleranceType, AllergyPower
 from nemesis.models.event import Event, EventType
 from nemesis.models.diagnosis import Diagnosis, Diagnostic, Action_Diagnosis, Event_Diagnosis, rbDiagnosisKind
@@ -1440,9 +1441,9 @@ class StationaryEventVisualizer(EventVisualizer):
         data['movings'] = self.make_movings(event)
         data['vmp_quoting'] = self.make_vmp_quoting(event)
         data['stat_card'] = self.make_statcard_for_close(event)
-        data['surgeries'] = []
+        data['surgeries'] = self.make_surgical_reports_for_close(event)
         data['leaved'] = self.make_leaved_for_close(event)
-        data['death_epicrisis'] = None
+        data['death_epicrisis'] = self.make_death_epicrisis_for_close(event)
         return data
 
     def make_leaved_for_close(self, event):
@@ -1459,6 +1460,61 @@ class StationaryEventVisualizer(EventVisualizer):
                 'value': leaved[LeavedProps.aids].value,
                 'domain': leaved[LeavedProps.aids].type.parse_value_domain()
             },
+        }
+
+    def make_surgical_reports_for_close(self, event):
+        reports = get_action_list(event, SURGICAL_REPORT_CODE, all=True)
+        return [
+            self.make_surgical_report_for_close(rep)
+            for rep in reports
+        ]
+
+    def make_surgical_report_for_close(self, action):
+        def make_prop(code):
+            return {
+                'value': action.get_prop_value(code),
+                'domain': action.get_property(code).type.parse_value_domain()
+                    if action.has_property(code) else None
+            }
+
+        return {
+            'id': action.id,
+            'beg_date': action.begDate,
+            'name': action.actionType.name,
+            'date_start': action.get_prop_value(SurgicalReportProps.date_start),
+            'time_start': action.get_prop_value(SurgicalReportProps.time_start),
+            'operations': {
+                'op1': {
+                    'operation_type': make_prop(SurgicalReportProps.operation1),
+                    'anesthesia': make_prop(SurgicalReportProps.anesthesia1),
+                    'transplant': make_prop(SurgicalReportProps.transplant1),
+                    'spec_equipment_use': make_prop(SurgicalReportProps.spec_equipment_use1),
+                },
+                'op2': {
+                    'operation_type': make_prop(SurgicalReportProps.operation2),
+                    'anesthesia': make_prop(SurgicalReportProps.anesthesia2),
+                    'transplant': make_prop(SurgicalReportProps.transplant2),
+                    'spec_equipment_use': make_prop(SurgicalReportProps.spec_equipment_use2),
+                },
+                'op3': {
+                    'operation_type': make_prop(SurgicalReportProps.operation3),
+                    'anesthesia': make_prop(SurgicalReportProps.anesthesia3),
+                    'transplant': make_prop(SurgicalReportProps.transplant3),
+                    'spec_equipment_use': make_prop(SurgicalReportProps.spec_equipment_use3),
+                },
+            }
+        }
+
+    def make_death_epicrisis_for_close(self, event):
+        de = get_action(event, DEATH_EPICRISIS_CODE)
+        if not de:
+            return None
+        return {
+            'id': de.id,
+            'main_rod': {
+                'value': de[DeathEpicrisisProps.main_rod].value,
+                'domain': de[DeathEpicrisisProps.main_rod].type.parse_value_domain()
+            }
         }
 
     def make_statcard_for_close(self, event):

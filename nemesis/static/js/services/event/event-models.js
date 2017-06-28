@@ -260,7 +260,12 @@ angular.module('WebMis20.services.models').
         var WMHospCloseEvent = function () {
             WMEvent.call(this);
             this.request_type_kind = "stationary";
+            this.movings = null;
+            this.vmp_quoting = null;
+            this.leaved = null;
             this.stat_card = null;
+            this.surgeries = null;
+            this.death_epicrisis = null;
         };
         WMHospCloseEvent.inheritsFrom(WMEvent);
         WMHospCloseEvent.prototype.get_data = function(data) {
@@ -269,6 +274,8 @@ angular.module('WebMis20.services.models').
             this.vmp_quoting = data.result.vmp_quoting;
             this.leaved = data.result.leaved;
             this.stat_card = data.result.stat_card;
+            this.surgeries = data.result.surgeries;
+            this.death_epicrisis = data.result.death_epicrisis;
         };
         return WMHospCloseEvent;
     }]);
