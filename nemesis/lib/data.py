@@ -78,7 +78,7 @@ def create_action(action_type_id, event, src_action=None, assigned=None, propert
     """
     # TODO: transfer some checks from ntk
     if not action_type_id or not event:
-        raise AttributeError
+        raise AttributeError(u'Для создания action необходимы action_type_id и event')
 
     actionType = ActionType.query.get(int(action_type_id)) or bail_out(ApiException(404, u'Тип действия с id=%s не найден' % action_type_id))
     if isinstance(event, (int, long, basestring)):
@@ -1048,7 +1048,10 @@ def get_action(event, flat_code, create=False):
         raise TypeError('flat_code must be list|tuple|basestring|None')
     action = query.first()
     if action is None and create:
-        action = create_action(get_action_type_id(flat_code), event)
+        at_id = get_action_type_id(flat_code)
+        if not at_id:
+            raise Exception(u'Не найден ActionType по flatCode="{0}"'.format(flat_code))
+        action = create_action(at_id, event)
     return action
 
 

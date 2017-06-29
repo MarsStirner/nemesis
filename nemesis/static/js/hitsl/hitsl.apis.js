@@ -14,15 +14,17 @@ angular.module('hitsl.core')
                 data_meta = safe_traverse(response.data, ['meta'], {code: data_meta_status, name: data_meta_name});
             if (!_.has(response.data, 'meta')) {
                 console.log('Strange response');
-                console.log([method, url, params, data, config]);
+                console.log([method, url, params, data, options]);
                 console.log(response);
             }
             if (response.status != 200 || data_meta_status != 200) {
-                NotificationService.notify(
-                    data_meta_status,
-                    'Ошибка.<br/>{0}'.format(data_meta_name),
-                    'danger'
-                );
+                if (!options.wo_notify) {
+                    NotificationService.notify(
+                        data_meta_status,
+                        'Ошибка.<br/>{0}'.format(data_meta_name),
+                        'danger'
+                    );
+                }
                 defer.reject(data_meta);
             } else {
                 defer.resolve(response.data.result);

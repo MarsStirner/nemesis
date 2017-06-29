@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import datetime
 import re
+import six
 
 from sqlalchemy import orm
 
 from nemesis.models.diagnosis import ActionType_rbDiagnosisType
 from nemesis.lib.utils import parse_json
 from nemesis.lib.vesta import Vesta
+from nemesis.lib.types import CalculatedPropertyRO
 from nemesis.systemwide import db
 from exists import FDRecord
 from nemesis.models.enums import TTJStatus
@@ -81,11 +83,19 @@ class Action(db.Model):
         backref='action'
     )
 
+    propsByCode = CalculatedPropertyRO('_propsByCode')
+    propsByTypeId = CalculatedPropertyRO('_propsByTypeId')
+
+    @orm.reconstructor
+    def kill_calculated_fields(self):
+        del self.propsByCode
+        del self.propsByTypeId
+
     @property
     def properties_ordered(self):
         return sorted(self.properties, key=lambda ap: ap.type.idx)
 
-    @property
+    @propsByCode
     def propsByCode(self):
         return dict(
             (prop.type.code, prop)
@@ -93,12 +103,67 @@ class Action(db.Model):
             if prop.type.code
         )
 
-    @property
+    @propsByTypeId
     def propsByTypeId(self):
         return dict(
             (prop.type_id, prop)
             for prop in self.properties
         )
+
+    def has_property(self, code, potential=False):
+        """
+        Проверить существует ли в экшене свойство по коду, а при передаче
+        флага potential проверить может ли свойство с таким кодом добавлено
+        в экшен.
+        """
+        res = code in self.propsByCode
+        if not res and potential:
+            res = self.actionType.property_types.filter(
+                ActionPropertyType.deleted == 0, ActionPropertyType.code == code
+            ).count() > 0
+        return res
+
+    def get_property(self, code, create=False):
+        """
+        Получить имеющееся свойство по коду, или создать новое, если передан
+        флаг create и подходящий код типа свойства.
+        """
+        if code in self.propsByCode:
+            return self.propsByCode[code]
+        if create:
+            prop_type = self.actionType.get_property_type_by_code(code)
+            if prop_type:
+                prop = self.create_property(prop_type)
+                self.add_property(prop)
+                return prop
+        raise KeyError('Action does not have a property with code "{0}"'.format(code))
+
+    def get_prop_value(self, code, default=None):
+        """
+        Получить значения свойства по коду.
+
+        Если свойство не существует, вернуть default значение.
+        """
+        prop = self.propsByCode.get(code)
+        return prop.value if prop else default
+
+    def set_prop_value(self, code, val, refresh_props_dict=True):
+        """
+        Записать значение в свойство по коду.
+
+        Если свойство отсутствует, то оно будет создано, если передан
+        подходящий код типа свойства.
+        """
+        if code in self.propsByCode:
+            self.propsByCode[code].value = val
+        else:
+            prop_type = self.actionType.get_property_type_by_code(code)
+            if prop_type:
+                prop = self.create_property(prop_type)
+                self.add_property(prop, refresh_props_dict)
+                prop.value = val
+            else:
+                raise KeyError('Action does not have a property with code "{0}"'.format(code))
 
     def setPropValue(self, pt_id, value, raw=False):
         if pt_id not in self.propsByTypeId:
@@ -111,14 +176,62 @@ class Action(db.Model):
             new_p = self.propsByTypeId[pt_id]
         new_p.set_value(value, raw)
 
-    def get_prop_value(self, apt_code):
-        if apt_code in self.propsByCode:
-            return self.propsByCode[apt_code].value
-
     def delete(self):
         self.deleted = 1
         for prop in self.properties:
             prop.delete()
+
+    def create_property(self, prop_type):
+        """
+        Создать свойство по типу или по коду типа.
+        """
+        if not isinstance(prop_type, ActionPropertyType):
+            apt_code = prop_type
+            prop_type = self.actionType.property_types.filter(
+                ActionPropertyType.deleted == 0, ActionPropertyType.code == apt_code
+            ).first()
+            if not prop_type:
+                raise TypeError(u'Отсутствует тип свойства по коду {0} в типе действия с id={1}'.format(
+                    prop_type, self.actionType.id))
+        prop = ActionProperty()
+        prop.type = prop_type
+        prop.action = self
+        prop.isAssigned = False
+        prop.value = None
+        return prop
+
+    def add_property(self, prop, refresh_props_dict=True):
+        """
+        Добавить новое свойство к экшену и перестроить словарь пропертей, если нужно.
+        """
+        self.properties.append(prop)
+        if refresh_props_dict:
+            self.refresh_property_dicts()
+
+    def refresh_property_dicts(self):
+        """
+        Очистить словрь пропертей, который будет перестроен при следующем к нему обращении.
+        """
+        del self.propsByCode
+        del self.propsByTypeId
+
+    def update_action_integrity(self):
+        must_have_props = {
+            prop_type.id: prop_type
+            for prop_type in self.actionType.property_types.filter(ActionPropertyType.deleted == 0)
+        }
+        have_props = {
+            prop.type_id: prop
+            for prop in self.properties
+        }
+        for type_id, prop_type in six.iteritems(must_have_props):
+            if type_id not in have_props:
+                prop = self.create_property(prop_type)
+                self.add_property(prop)
+
+    def get_lock(self):
+        if self.id:
+            self.__class__.query.filter(Action.id == self.id).with_for_update().first()
 
     def _load_ap_price_info(self):
         """Инициализировать свойства данными из соответствующего прайс-листа"""
@@ -145,8 +258,32 @@ class Action(db.Model):
             else:
                 prop.has_pricelist_service = False
 
-    def __getitem__(self, item):
-        return self.propsByCode[item]
+    def __getitem__(self, code):
+        """
+        Получить ActionProperty по коду.
+        Должно использоваться только в выражениях с операциями чтения значений свойств
+        экшенов. Для записи использовать set_prop_value.
+
+        Если для данного экшена не было создано свойство по передаваемому коду
+        (например, на момент создания экшена отсутствовал тип свойства ActionPropertyType с
+        таким кодом), и при этом тип свойства с таким кодом существует, то
+        то будет возвращено пустое свойство-заглушка. Если по переданному коду не
+        находится тип свойства в справочнике, то возникает ошибка.
+        """
+        if code in self.propsByCode:
+            return self.propsByCode[code]
+        else:
+            prop_type = self.actionType.get_property_type_by_code(code)
+            if prop_type:
+                prop = self.create_property(prop_type)
+                return prop
+            else:
+                raise KeyError('Action does not have a property with code "{0}"'.format(code))
+
+    def __json__(self):
+        return {
+            'id': self.id
+        }
 
 
 class ActionProperty(db.Model):

@@ -305,17 +305,6 @@ def get_events_diagnoses(event_id_list):
     if not event_id_list:
         return {}
 
-    et_diag_types = {}
-    et_diag_types_q = db.session.query(Event).join(EventType).outerjoin(EventType.diagnosis_types).filter(
-        Event.id.in_(event_id_list)
-    ).distinct().with_entities(
-        EventType.id.label('et_id'),
-        rbDiagnosisTypeN.code.label('dg_type_code')
-    )
-    for et_id, dg_type_code in et_diag_types_q:
-        if dg_type_code:
-            et_diag_types.setdefault(et_id, set()).add(dg_type_code)
-
     diags_q = db.session.query(Event).join(
         Diagnosis, and_(Diagnosis.client_id == Event.client_id,
                         Diagnosis.setDate <= func.coalesce(Event.execDate, func.current_timestamp()),
@@ -341,6 +330,17 @@ def get_events_diagnoses(event_id_list):
         rbDiagnosisKind.code.label('dg_kind_code')
     )
 
+    et_diag_types = {}
+    et_diag_types_q = db.session.query(Event).join(EventType).outerjoin(EventType.diagnosis_types).filter(
+        Event.id.in_(event_id_list)
+    ).distinct().with_entities(
+        EventType.id.label('et_id'),
+        rbDiagnosisTypeN.code.label('dg_type_code')
+    )
+    for et_id, dg_type_code in et_diag_types_q:
+        if dg_type_code:
+            et_diag_types.setdefault(et_id, set()).add(dg_type_code)
+
     def default_types(et_id):
         return dict((dg_type_code, 'associated') for dg_type_code in et_diag_types.get(et_id, []))
 
@@ -348,10 +348,10 @@ def get_events_diagnoses(event_id_list):
     for item in diags_q:
         e_diags = event_diags.setdefault(item.event_id, {})
         mkb_types = e_diags.setdefault(item.mkb, default_types(item.et_id))
-        t_code = item.dg_type_code
-        k_code = item.dg_kind_code
-        if t_code and k_code:
-            mkb_types[t_code] = k_code
+        type_code = item.dg_type_code
+        kind_code = item.dg_kind_code
+        if type_code and kind_code:
+            mkb_types[type_code] = kind_code
 
     return event_diags
 

@@ -6,7 +6,8 @@ import re
 from flask import url_for
 from flask_login import UserMixin, AnonymousUserMixin, current_user
 
-from nemesis.lib.const import PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE
+from nemesis.lib.const import PASSPORT_DOC_TYPE_CODE, RESIDENCE_DOC_TYPE_CODE, \
+    STATIONARY_MOVING_CODE, STATIONARY_LEAVED_CODE, STATIONARY_HOSP_BED_CODE
 from nemesis.systemwide import db
 from nemesis.lib.utils import safe_traverse_attrs, initialize_name
 from nemesis.models.exists import Person, vrbPersonWithSpeciality
@@ -15,6 +16,7 @@ from ..models.actions import ActionType_User
 from ..models.exists import rbUserProfile
 
 from nemesis.models.enums import ActionStatus, ContragentType
+from nemesis.lib.settings import Settings
 from nemesis.lib.user_rights import (urEventPoliclinicPaidCreate, urEventPoliclinicOmsCreate,
                                      urEventPoliclinicDmsCreate, urEventDiagnosticPaidCreate,
                                      urEventDiagnosticBudgetCreate, urEventAllAdmPermCreate,
@@ -406,6 +408,9 @@ class UserUtils(object):
 
     @staticmethod
     def can_close_event(event, out_msg=None):
+        """
+        Имеет доступ к закрытию обращения (проверяются права)
+        """
         if out_msg is None:
             out_msg = {'message': u'ok'}
 
@@ -456,7 +461,100 @@ class UserUtils(object):
             if not current_user.has_right(urEventDiagnosticBudgetClose):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
+
         # все остальные можно
+        return True
+
+    @staticmethod
+    def can_perform_close_event(event, final_step=False, out_msg=None):
+        """
+        Имеет возможность закрыть обращение - все данные в обращении
+        и связанные сущности приведены в состояние, удовлетворяющему
+        признаку закрытия.
+
+        final_step - True если предполагается, что обращение уже находится
+            в итоговом состоянии для закрытия и сохранения;
+            False - если необходимо проверять только часть параметров, а
+            оставшиеся данные будут редактироваться на форме закрытия обращения.
+        """
+        if out_msg is None:
+            out_msg = {'message': u'ok'}
+        errors = []
+        warnings = []
+
+        # main attributes
+        if final_step and not event.execDate:
+            errors.append(u'Не задана дата закрытия')
+        if final_step and not event.result:
+            errors.append(u'Не задан результат')
+        if final_step and Settings.getBool('Event.mandatoryResult') and not event.is_diagnostic and \
+                not event.rbAcheResult:
+            errors.append(u'Не задан исход заболевания/госпитализации')
+
+        if event.is_stationary:
+            # leaved
+            from nemesis.lib.data import get_action
+            leaved = get_action(event, STATIONARY_LEAVED_CODE)
+            if not leaved:
+                errors.append(u'Необходимо добавить "Выписной эпикриз"')
+
+            # unclosed movings
+            movings = [action for action in event.actions
+                       if action.actionType.flatCode == STATIONARY_MOVING_CODE]
+            if not movings:
+                errors.append(u'Необходимо наличие минимум одного движения пациента')
+            for moving in movings:
+                if not moving[STATIONARY_HOSP_BED_CODE].value:
+                    errors.append(u'Имеются движения без выбранной койки: разместите '
+                        u'пациента на койке и закройте движение пациента в отделении')
+                    break
+            for moving in movings:
+                if moving.status != ActionStatus.finished[0]:
+                    errors.append(u'Имеются незакрытые движения: закройте движение '
+                        u'пациента в отделении')
+                    break
+
+        # diagnoses
+        from nemesis.lib.diagnosis import get_events_diagnoses
+        event_diags = get_events_diagnoses([event.id]).get(event.id, {})
+        # check main or final diagnosis exists
+        found = False
+        for mkb, types_info in event_diags.iteritems():
+            if found:
+                break
+            for d_type, d_kind in types_info.iteritems():
+                if d_type == 'final' or d_kind == 'main':
+                    found = True
+                    break
+        if not found:
+            errors.append(u'Необходимо указать основной или заключительный диагноз')
+        # check diag results
+        # TODO: check diagnostic.ache_result filled if rbDiagnosisTypeN.require_result
+        # + diag's kind should not be 'associated'
+
+        # check unclosed actions
+        unclosed_a = []
+        for action in event.actions:
+            if action.status != ActionStatus.finished[0]:
+                unclosed_a.append(action.actionType.name)
+        if unclosed_a:
+            msg = (
+                u'Следующие документы не закрыты:<br> * {0}<br><br>'
+                u'Продолжить процесс закрытия обращения и запретить '
+                u'редактирование всех незакрытых документов?'
+            ).format(u'<br> * '.join(unclosed_a))
+            warnings.append(msg)
+
+        if warnings:
+            out_msg['warnings_message'] = u'<br>'.join(warnings)
+
+        if errors:
+            msg = (
+                u'Невозможно закрыть обращение:<br> * {0}<br><br>'
+            ).format(u'<br> * '.join(errors))
+            out_msg['message'] = msg
+            return False
+
         return True
 
     @staticmethod

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nemesis.models.utils import get_class_by_tablename
 
 __author__ = 'mmalkov'
 
@@ -87,6 +86,7 @@ class EnumBaseLoadable(EnumBase):
     @classmethod
     def reload(cls):
         from nemesis.systemwide import db
+        from nemesis.models.utils import get_class_by_tablename
 
         klass = get_class_by_tablename(cls.__tablename__)
         if klass:

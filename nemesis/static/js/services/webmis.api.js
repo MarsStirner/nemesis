@@ -314,6 +314,30 @@ WebMis20
         },
         get_available_hosp_beds: function (args) {
             return wrapper('GET', WMConfig.url.event.hosp_beds, args);
+        },
+        get_hosp_to_close: function (event_id, args, wo_notify) {
+            var options = {};
+            if (wo_notify !== undefined) {
+                options.wo_notify = wo_notify;
+            }
+            return wrapper('GET', WMConfig.url.event.api_event_hosp_close_get.format(event_id),
+                args, undefined, options);
+        },
+        save_hosp_to_close: function (event_id, data, args, wo_notify) {
+            var options = {};
+            if (wo_notify !== undefined) {
+                options.wo_notify = wo_notify;
+            }
+            return wrapper('POST', WMConfig.url.event.api_event_hosp_close_save.format(event_id),
+                args, data, options);
+        },
+        close: function (event_id, data, args, wo_notify) {
+            var options = {};
+            if (wo_notify !== undefined) {
+                options.wo_notify = wo_notify;
+            }
+            return wrapper('POST', WMConfig.url.event.api_event_close.format(event_id),
+                args, data, options);
         }
     };
     this.hospitalizations = {

@@ -103,7 +103,7 @@ angular.module('WebMis20.services.models').
                 var deferred = $q.defer();
                 $http.post(WMConfig.url.event.event_save, {
                     event: this.info,
-                    diagnoses: this.diagnoses,  // TODO: Отдаются только актуальные диагнозы. Надо закрытые?
+                    diagnoses: this.diagnoses,
                     ticket_id: this.ticket_id,
                     close_event: close_event,
                     request_type_kind: this.request_type_kind
@@ -138,7 +138,7 @@ angular.module('WebMis20.services.models').
             WMEvent.prototype.closed = function() {
                 return this.info && this.info.result_id !== null && this.info.exec_date !== null;
             };
-            
+
             WMEvent.prototype.can_create_actions = function(action_type_group) {
                var at_class = {
                 'medical_documents': 0,
@@ -181,8 +181,8 @@ angular.module('WebMis20.services.models').
                 this.blood_history = data.result.blood_history;
                 this.vmp_quoting = data.result.vmp_quoting;
             };
-            
-            WMStationaryEvent.prototype.save = function() {   
+
+            WMStationaryEvent.prototype.save = function() {
                 var self = this;
                 var deferred = $q.defer();
                 $http.post(WMConfig.url.event.event_save, {
@@ -215,7 +215,7 @@ angular.module('WebMis20.services.models').
                     }
                 }
                 return WMEvent.prototype.can_create_actions.call(this, action_type_group)
-                
+
             };
             return WMStationaryEvent;
         }
@@ -254,4 +254,28 @@ angular.module('WebMis20.services.models').
             });
         };
         return WMAdmissionEvent;
+    }]).
+    factory('WMHospCloseEvent', ['$injector', 'WMEvent', 'WebMisApi',
+            function($injector, WMEvent, WebMisApi) {
+        var WMHospCloseEvent = function () {
+            WMEvent.call(this);
+            this.request_type_kind = "stationary";
+            this.movings = null;
+            this.vmp_quoting = null;
+            this.leaved = null;
+            this.stat_card = null;
+            this.surgeries = null;
+            this.death_epicrisis = null;
+        };
+        WMHospCloseEvent.inheritsFrom(WMEvent);
+        WMHospCloseEvent.prototype.get_data = function(data) {
+            WMEvent.prototype.get_data.call(this, data);
+            this.movings = data.result.movings;
+            this.vmp_quoting = data.result.vmp_quoting;
+            this.leaved = data.result.leaved;
+            this.stat_card = data.result.stat_card;
+            this.surgeries = data.result.surgeries;
+            this.death_epicrisis = data.result.death_epicrisis;
+        };
+        return WMHospCloseEvent;
     }]);
