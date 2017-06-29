@@ -1090,4 +1090,42 @@ angular.module('WebMis20')
         }
     }
 }])
+.directive('nonEmptyEditable', ['$compile', function ($compile) {
+    return {
+        restrict: 'A',
+        priority: 50000,
+        terminal: true,
+        scope: true,
+        compile: function compile (tElement, tAttrs, transclude) {
+            tElement.removeAttr('non-empty-editable');
+            tElement.removeAttr('data-non-empty-editable');
+
+            return {
+                pre: function preLink(scope, iElement, iAttrs, controller) {},
+                post: function postLink(scope, iElement, iAttrs, controller) {
+                    var ngModelUnWatch = null;
+                    var ngDisabled = iAttrs.ngDisabled;
+                    // custom disable flag
+                    var _disable = false;
+                    scope.disableIfInitialValIsEmpty = function () {
+                        return _disable;
+                    };
+
+                    // append custom ng-disabled
+                    if (ngDisabled) ngDisabled += ' && disableIfInitialValIsEmpty()';
+                    else ngDisabled = 'disableIfInitialValIsEmpty()';
+                    iAttrs.$set('ngDisabled', ngDisabled);
+
+                    $compile(iElement)(scope);
+
+                    // read initial value from ng-model
+                    ngModelUnWatch = scope.$watch(iAttrs.ngModel, function (n, o) {
+                        _disable = (n === null || n === undefined);
+                        ngModelUnWatch();
+                    });
+                }
+            }
+        }
+    }
+}])
 ;

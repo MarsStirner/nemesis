@@ -462,10 +462,6 @@ class UserUtils(object):
                 out_msg['message'] = base_msg % unicode(event_type)
                 return False
 
-        if event.is_policlinic:
-            pass
-        elif event.is_stationary:
-            pass
         # все остальные можно
         return True
 
@@ -487,8 +483,8 @@ class UserUtils(object):
         warnings = []
 
         # main attributes
-#        if final_step and not event.execDate:
-#            errors.append(u'Не задана дата закрытия')
+        if final_step and not event.execDate:
+            errors.append(u'Не задана дата закрытия')
         if final_step and not event.result:
             errors.append(u'Не задан результат')
         if final_step and Settings.getBool('Event.mandatoryResult') and not event.is_diagnostic and \

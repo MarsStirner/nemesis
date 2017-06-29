@@ -1521,7 +1521,8 @@ class StationaryEventVisualizer(EventVisualizer):
         stat_card = get_action(event, STATIONARY_STATCARD_CODE, create=True)
         return {
             'id': stat_card.id,
-            'note': stat_card.note
+            'note': stat_card.note,
+            'template_context': stat_card.actionType.context
         }
 
     def make_vmp_quoting(self, event):
