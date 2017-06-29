@@ -293,25 +293,37 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     break;
                 case 'treatments':
                     at_class = 2;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-lab_diag_treat-create.html';
                     break;
                 case 'diagnostics':
                     at_class = 1;
                     tissue = false;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-lab_diag_treat-create.html';
                     break;
                 case 'lab':
                     at_class = 1;
                     tissue = true;
-                    templateUrl = '/WebMis20/modal-laboratory-create.html';
+                    templateUrl = '/WebMis20/modal-lab_diag_treat-create.html';
                     break;
                 default:
                     throw 'bee-dah!'
             }
             filter_params.at_class = at_class;
             delete filter_params.at_group;
-            var Controller = function ($scope, $modalInstance) {
+            var Controller = function ($scope, $modalInstance, at_group) {
                 var service;
+                $scope.rbTissueTypeVisible = function(){
+                   var bl = ['treatments', 'diagnostics'].indexOf(at_group) !== -1;
+                  return !bl;
+                };
+                $scope.getTitleName = function() {
+                    var title = {
+                        lab:'Новое направление на лаб. исследование',
+                        diagnostics:'Новое направление на исследование',
+                        treatments:'Новое направление ',
+                    };
+                    return title[at_group];
+                };
                 $scope.prepared2create = [];
                 $scope.url_for_schedule_html_action = WMConfig.url.actions.action_html;
                 $scope.event_id = event_id;
@@ -547,6 +559,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 templateUrl: templateUrl,
                 backdrop : 'static',
                 size: 'lg',
+                resolve: {
+                    at_group: function () {
+                        return at_group;
+                    },
+                },
                 controller: Controller,
                 windowClass: 'modal-scrollable'
             });
@@ -799,10 +816,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
         </div>'
     );
-    $templateCache.put('/WebMis20/modal-laboratory-create.html',
+    $templateCache.put('/WebMis20/modal-lab_diag_treat-create.html',
         '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
             <button type="button" class="close" ng-click="cancel()">&times;</button>\
-            <h4 class="modal-title" id="myModalLabel">Новое направление на лаб. исследование</h4>\
+            <h4 class="modal-title" id="myModalLabel">[[getTitleName()]]</h4>\
         </div>\
         <div class="modal-body modal-scrollable affix-container">\
             <div class="row">\
@@ -871,7 +888,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             <div class="col-md-8">\
                                 <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
                             </div>\
-                            <div class="col-md-4">\
+                            <div class="col-md-4" ng-if="rbTissueTypeVisible()">\
                                 <rb-select ref-book="rbTissueType" ng-model="action.selected_tissue_type"\
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\

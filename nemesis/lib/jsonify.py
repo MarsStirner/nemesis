@@ -1581,8 +1581,14 @@ class ActionVisualizer(object):
         assignable = []
         props_data = []
         if service is not None:
-            assignable = service.service_data['tests_data']['assignable']
-            props_data = service.service_data['tests_data']['props_data']
+            tests_data = service.service_data.get('tests_data')
+            if tests_data:
+                asgn = tests_data.get('assignable')
+                if asgn:
+                    assignable = asgn
+                prp_data = tests_data.get('props_data')
+                if prp_data:
+                    props_data = prp_data
         else:
             for ap in action.properties:
                 assignable.append(tuple(apt_flat_tuple(
