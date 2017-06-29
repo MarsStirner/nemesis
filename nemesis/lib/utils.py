@@ -715,3 +715,11 @@ def db_non_flushable(func):
         with db.session.no_autoflush:
             return func(*args, **kwargs)
     return wrapper
+
+
+def is_sqla_table_joined(query, model_class):
+    for mapper in query._join_entities:
+        if mapper.class_ == model_class or mapper.entity == model_class:
+            return True
+    return False
+
