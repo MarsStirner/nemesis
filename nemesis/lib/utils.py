@@ -544,13 +544,13 @@ def get_new_amb_card_ext_id(client_id):
     external_id = _get_external_id_from_counter(counter.prefix,
                                                 counter.value + 1,
                                                 counter.separator,
-                                                client_id, skip_value=True)
+                                                client_id)
     counter.value += 1
     db.session.add(counter)
     return external_id
 
 
-def _get_external_id_from_counter(prefix, value, separator, client_id, skip_value=False):
+def _get_external_id_from_counter(prefix, value, separator, client_id):
     def get_date_prefix(val):
         val = val.replace('Y', 'y').replace('m', 'M').replace('D', 'd')
         if val.count('y') not in [0, 2, 4] or val.count('M') > 2 or val.count('d') > 2:
@@ -588,8 +588,6 @@ def _get_external_id_from_counter(prefix, value, separator, client_id, skip_valu
                     val = prefix_types[t](val[1:-1])
                     if val:
                         prefix.append(val)
-    if skip_value:
-        return separator.join(prefix)
     return separator.join(prefix + ['%d' % value])
 
 
