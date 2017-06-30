@@ -293,25 +293,39 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     break;
                 case 'treatments':
                     at_class = 2;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-direction-create.html';
                     break;
                 case 'diagnostics':
                     at_class = 1;
                     tissue = false;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-direction-create.html';
                     break;
                 case 'lab':
                     at_class = 1;
                     tissue = true;
-                    templateUrl = '/WebMis20/modal-laboratory-create.html';
+                    templateUrl = '/WebMis20/modal-direction-create.html';
                     break;
                 default:
                     throw 'bee-dah!'
             }
             filter_params.at_class = at_class;
             delete filter_params.at_group;
-            var Controller = function ($scope, $modalInstance) {
+            var Controller = function ($scope, $modalInstance, at_group) {
                 var service;
+                $scope.isTissueTypeVisible = function(){
+                  return at_group === 'lab'
+                };
+                $scope.isUrgentVisible = function(){
+                  return at_group === 'lab' || at_group === 'diagnostics'
+                };
+                $scope.getTitleName = function() {
+                    var title = {
+                        lab:'Новое направление на лаб. исследования',
+                        diagnostics:'Новое направление на инструментальные исследования',
+                        treatments:'Новое направление на манипуляции и операции',
+                    };
+                    return title[at_group];
+                };
                 $scope.prepared2create = [];
                 $scope.url_for_schedule_html_action = WMConfig.url.actions.action_html;
                 $scope.event_id = event_id;
@@ -370,7 +384,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             }
                         }
                     }
-                    WebMisApi.action.get_new_lab(node.id, $scope.event_id, service_data)
+                    WebMisApi.action.get_new_direction(node.id, $scope.event_id, service_data)
                         .then(function (newAction) {
                             $scope.prepared2create.push(newAction);
                         });
@@ -414,7 +428,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 };
                 $scope.create_actions = function () {
                     $http.post(
-                        WMConfig.url.actions.create_lab_direction,
+                        WMConfig.url.actions.create_directions,
                         {
                             event_id: event_id,
                             directions: $scope.prepared2create.map(function (action) {
@@ -424,9 +438,9 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                                     planned_end_date: action.planned_end_date,
                                     service: action.service,
                                     urgent: action.urgent,
-                                    ttj: {
+                                    ttj: at_group === 'lab' ? {
                                         selected_tissue_type: action.selected_tissue_type
-                                    },
+                                    } : undefined,
                                     note: action.note
                                 }
                             })
@@ -435,7 +449,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         $scope.$close('created');
                         (onCreateCallback || angular.noop)();
                     }).error(function (data) {
-                        var msg = 'Невозможно создать направление на лаб. исследование: {0}.'.format(data.meta.name);
+                        var msg = 'Невозможно создать направление: {0}.'.format(data.meta.name);
                         MessageBox.error(
                             'Ошибка',
                             msg
@@ -547,6 +561,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 templateUrl: templateUrl,
                 backdrop : 'static',
                 size: 'lg',
+                resolve: {
+                    at_group: function () {
+                        return at_group;
+                    },
+                },
                 controller: Controller,
                 windowClass: 'modal-scrollable'
             });
@@ -799,10 +818,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
         </div>'
     );
-    $templateCache.put('/WebMis20/modal-laboratory-create.html',
+    $templateCache.put('/WebMis20/modal-direction-create.html',
         '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
             <button type="button" class="close" ng-click="cancel()">&times;</button>\
-            <h4 class="modal-title" id="myModalLabel">Новое направление на лаб. исследование</h4>\
+            <h4 class="modal-title">[[getTitleName()]]</h4>\
         </div>\
         <div class="modal-body modal-scrollable affix-container">\
             <div class="row">\
@@ -842,7 +861,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         </ul>\
                     </div>\
                 </div>\
-                <ng-form name="labDirectionsForm">\
+                <ng-form name="directionsForm">\
                 <div class="col-md-6 modal-affix">\
                     <ul class="list-group">\
                         <li ng-repeat="action in prepared2create" class="list-group-item">\
@@ -859,7 +878,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             </div>\
                             <div class="col-md-4">\
                                 <div class="pull-right">\
-                                    <button class="btn-sm" checkbox-button="action.urgent">Срочно</button>\
+                                    <button class="btn-sm" checkbox-button="action.urgent" ng-if="isUrgentVisible()">Срочно</button>\
                                     <button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)">\
                                         <i class="glyphicon glyphicon-trash"></i>\
                                     </button>\
@@ -869,9 +888,10 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             <hr style="margin-top: 7px; margin-bottom: 7px">\
                             <div class="row">\
                             <div class="col-md-8">\
-                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
+                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"\
+                                    ng-required="true"></wm-datetime-as>\
                             </div>\
-                            <div class="col-md-4">\
+                            <div class="col-md-4" ng-if="isTissueTypeVisible()">\
                                 <rb-select ref-book="rbTissueType" ng-model="action.selected_tissue_type"\
                                     custom-filter="filterItemLabTissueType(action)">\
                                 </rb-select>\
@@ -884,7 +904,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             </div>\
                         </li>\
                     </ul>\
-                    <div ng-if="labDirectionsForm.$invalid && labDirectionsForm.$error.directionDate"\
+                    <div ng-if="directionsForm.$invalid && directionsForm.$error.directionDate"\
                         class="alert alert-danger">\
                         Планируемая дата и время выполнения не могут быть раньше текущей даты и времени\
                     </div>\
@@ -895,7 +915,7 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
             <button type="button" class="btn btn-success" ng-click="create_actions()"\
-                ng-disabled="labDirectionsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
+                ng-disabled="directionsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
         </div>'
     );
     $templateCache.put('/WebMis20/modal-action-assignments.html',

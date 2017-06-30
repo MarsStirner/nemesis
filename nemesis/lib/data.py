@@ -193,7 +193,7 @@ def create_action_property(action, prop_type):
     return prop
 
 
-def get_new_lab_action(action_type_id, event_id, service_data):
+def get_new_direction_action(action_type_id, event_id, service_data):
     action = create_action(action_type_id, event_id)
     if action_needs_service(action):
         if not service_data:

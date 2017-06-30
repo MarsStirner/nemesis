@@ -258,8 +258,8 @@ WebMis20
         }
     };
     this.action = {
-        get_new_lab: function (action_type_id, event_id, service_data) {
-            return wrapper('GET', WMConfig.url.actions.action_new_lab.format(action_type_id, event_id), service_data);
+        get_new_direction: function (action_type_id, event_id, service_data) {
+            return wrapper('GET', WMConfig.url.actions.action_new_direction.format(action_type_id, event_id), service_data);
         },
         search: function (data) {
             return wrapper('POST', WMConfig.url.actions.search_actions, {}, data);
