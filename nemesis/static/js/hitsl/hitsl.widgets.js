@@ -212,7 +212,9 @@ angular.module('WebMis20')
                 ngChange = attrs.ngChange,
                 ngModel = attrs.ngModel,
                 autofocus = attrs.autofocus,
-                wmValidate = attrs.wmValidate;
+                wmValidate = attrs.wmValidate,
+                minDate = attrs.minDate,
+                maxDate = attrs.maxDate;
             var wmdatetime = $('<div class="row"></div>'),
                 date_group = $('<div class="input-group"></div>'),
                 date_input = $('\
@@ -260,6 +262,12 @@ angular.module('WebMis20')
                 date_input.attr('wm-validate', wmValidate);
                 time_input.attr('wm-validate', wmValidate);
             }
+            if (!minDate) {
+                scope.__mindate = new Date(1900, 0, 1);
+                minDate = '__mindate';
+            }
+            date_input.attr('min-date', '[[ ' + minDate + ' ]]');
+            if (maxDate) date_input.attr('max-date', '[[ ' + maxDate + ' ]]');
 
             date_group.append(date_input, date_btn_wrap);
             time_group.append(time_input, time_btn_wrap);
@@ -715,7 +723,7 @@ angular.module('WebMis20')
         compile: function compile (tElement, tAttrs, transclude) {
             // Add the inner content to the element
             tElement.append(
-'<ui-select-match placeholder="[[placeholder]]">[[ $select.selected.full_name ]]</ui-select-match>\
+'<ui-select-match placeholder="[[placeholder]]" allow-clear="[[allowClear]]">[[ $select.selected.full_name ]]</ui-select-match>\
 <ui-select-choices repeat="client in clients" refresh="get_clients($select.search)">\
     <div>\
         <small>[[ client.id ]]</small>\
@@ -730,6 +738,7 @@ angular.module('WebMis20')
                 pre: function preLink(scope, iElement, iAttrs, controller) {},
                 post: function postLink(scope, iElement, iAttrs, controller) {
                     scope.placeholder = iAttrs.placeholder || 'ФИО пациента';
+                    scope.allowClear = Boolean(scope.$eval(iAttrs.allowClear));
                     scope.get_clients = function (query) {
                         if (!query) return;
                         return $http.get(WMConfig.url.patients.client_search, {
