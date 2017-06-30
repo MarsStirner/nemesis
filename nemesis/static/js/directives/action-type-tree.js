@@ -293,12 +293,12 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                     break;
                 case 'treatments':
                     at_class = 2;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-treatments-create.html';
                     break;
                 case 'diagnostics':
                     at_class = 1;
                     tissue = false;
-                    templateUrl = '/WebMis20/modal-action-create.html';
+                    templateUrl = '/WebMis20/modal-diagnostics-create.html';
                     break;
                 case 'lab':
                     at_class = 1;
@@ -310,9 +310,25 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
             }
             filter_params.at_class = at_class;
             delete filter_params.at_group;
-            var Controller = function ($scope, $modalInstance) {
+            var Controller = function ($scope, $modalInstance, at_group) {
                 var service;
                 $scope.prepared2create = [];
+                $scope.getTitleName = function() {
+                    var title = {
+                        lab:'Новое направление на лаб. исследование',
+                        diagnostics:'Новое направление на исследование',
+                        treatments:'Новое направление ',
+                    };
+                    return title[at_group];
+                };
+                $scope.getTitleName = function() {
+                    var title = {
+                        lab:'Новое направление на лаб. исследование',
+                        diagnostics:'Новое направление на исследование',
+                        treatments:'Новое направление ',
+                    };
+                    return title[at_group];
+                };
                 $scope.url_for_schedule_html_action = WMConfig.url.actions.action_html;
                 $scope.event_id = event_id;
                 var conditions = $scope.conditions = {
@@ -412,7 +428,8 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                         $scope.$close();
                     }
                 };
-                $scope.create_actions = function () {
+                $scope.create_labs = function () {
+                    // Лабораторные исследования
                     $http.post(
                         WMConfig.url.actions.create_lab_direction,
                         {
@@ -441,6 +458,63 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                             msg
                         );
                     });
+                };
+                $scope.create_treatments = function () {
+                    // Манипуляции и операции
+                    $http.post(
+                        WMConfig.url.actions.create_treatment_direction,
+                        {
+                            event_id: event_id,
+                            directions: $scope.prepared2create.map(function (action) {
+                                return {
+                                    type_id: action.type_id,
+                                    props_data: action.props_data,
+                                    planned_end_date: action.planned_end_date,
+                                    service: action.service,
+                                    urgent: action.urgent,
+                                    note: action.note
+                                }
+                            })
+                        }
+                    ).success(function (data) {
+                        $scope.$close('created');
+                        (onCreateCallback || angular.noop)();
+                    }).error(function (data) {
+                        var msg = 'Невозможно создать направление на манипуляции и операции: {0}.'.format(data.meta.name);
+                        MessageBox.error(
+                            'Ошибка',
+                            msg
+                        );
+                    });
+                };
+                $scope.create_diagnostics = function () {
+                    // инструментальные исследования
+                    $http.post(
+                        WMConfig.url.actions.create_diagnostic_direction,
+                        {
+                            event_id: event_id,
+                            directions: $scope.prepared2create.map(function (action) {
+                                return {
+                                    type_id: action.type_id,
+                                    props_data: action.props_data,
+                                    planned_end_date: action.planned_end_date,
+                                    service: action.service,
+                                    urgent: action.urgent,
+                                    note: action.note
+                                }
+                            })
+                        }
+                    ).success(function (data) {
+                        $scope.$close('created');
+                        (onCreateCallback || angular.noop)();
+                    }).error(function (data) {
+                        var msg = 'Невозможно создать направление на инструментальные исследования: {0}.'.format(data.meta.name);
+                        MessageBox.error(
+                            'Ошибка',
+                            msg
+                        );
+                    });
+                    
                 };
                 $scope.validate_direction_date = function (model_val) {
                     var result = {
@@ -547,6 +621,11 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
                 templateUrl: templateUrl,
                 backdrop : 'static',
                 size: 'lg',
+                resolve: {
+                    at_group: function () {
+                        return at_group;
+                    },
+                },
                 controller: Controller,
                 windowClass: 'modal-scrollable'
             });
@@ -894,8 +973,195 @@ angular.module('WebMis20.directives.ActionTypeTree', ['WebMis20.directives.goodi
         </div>\
         <div class="modal-footer">\
             <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
-            <button type="button" class="btn btn-success" ng-click="create_actions()"\
+            <button type="button" class="btn btn-success" ng-click="create_labs()"\
                 ng-disabled="labDirectionsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
+        </div>'
+    );
+    $templateCache.put('/WebMis20/modal-diagnostics-create.html',
+        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+            <button type="button" class="close" ng-click="cancel()">&times;</button>\
+            <h4 class="modal-title" id="myModalLabel">Новое направление на инструментальные исследования</h4>\
+        </div>\
+        <div class="modal-body modal-scrollable affix-container">\
+            <div class="row">\
+                <div class="col-md-6">\
+                    <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()" />\
+                    <div class="checkbox">\
+                        <label>\
+                            <input type="checkbox" ng-model="conditions.person_check" ng-change="set_filter()" ng-disabled="!personal_check_enabled" />\
+                            Только разрешённые мне\
+                        </label>\
+                    </div>\
+                    <div class="checkbox">\
+                        <label>\
+                            <input type="checkbox" ng-model="conditions.os_check" ng-change="set_filter()" ng-disabled="!os_check_enabled" />\
+                            Только разрешённые в моём отделении\
+                        </label>\
+                    </div>\
+                    <button type="button" class="btn btn-default" ng-click="all_nodes_expanded.value=!all_nodes_expanded.value">\
+                    [[all_nodes_expanded.value ? \'Свернуть все узлы\' : \'Развернуть все узлы\']]</button>\
+                    <div class="ui-treeview treeview-striped">\
+                        <ul ng-repeat="root in tree.children">\
+                            <li sf-treepeat="node in children of root">\
+                                <a ng-click="add_prepared_action(node)" ng-if="!node.children.length" class="leaf">\
+                                    <div class="tree-label leaf">&nbsp;</div>\
+                                    [ [[node.code]] ] [[ node.name ]] <span class="text-danger" ng-bind="get_at_item_price(node.id)"></span>\
+                                </a>\
+                                <a ng-if="node.children.length" ng-click="toggle_vis(node.id)" class="node">\
+                                    <div class="tree-label"\
+                                         ng-class="{\'collapsed\': !subtree_shown(node.id),\
+                                                    \'expanded\': subtree_shown(node.id)}">&nbsp;</div>\
+                                    [ [[node.code]] ] [[ node.name ]]\
+                                </a>\
+                                <ul ng-if="node.children.length && subtree_shown(node.id)">\
+                                    <li sf-treecurse></li>\
+                                </ul>\
+                            </li>\
+                        </ul>\
+                    </div>\
+                </div>\
+                <ng-form name="labDiagnosticsForm">\
+                <div class="col-md-6 modal-affix">\
+                    <ul class="list-group">\
+                        <li ng-repeat="action in prepared2create" class="list-group-item">\
+                            <div class="row" ng-if="labTestsServiceErrorVisible(action)">\
+                            <div class="col-md-12">\
+                                <span class="text-danger">Не выбрано ни одного показателя исследования</span>\
+                            </div>\
+                            </div>\
+                            <div class="row">\
+                            <div class="col-md-8">\
+                                <span ng-if="!action.assignable.length"><span ng-bind="action.type_name" class="rmargin10"></span></span>\
+                                <span ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name" class="rmargin10"></a></span>\
+                                <span ng-if="action_has_price(action)" class="nowrap">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
+                            </div>\
+                            <div class="col-md-4">\
+                                <div class="pull-right">\
+                                    <button class="btn-sm" checkbox-button="action.urgent">Срочно</button>\
+                                    <button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)">\
+                                        <i class="glyphicon glyphicon-trash"></i>\
+                                    </button>\
+                                </div>\
+                            </div>\
+                            </div>\
+                            <hr style="margin-top: 7px; margin-bottom: 7px">\
+                            <div class="row">\
+                            <div class="col-md-8">\
+                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
+                            </div>\
+                            </div>\
+                            <div class="form-group" ng-if="actionReasonRequired(action)">\
+                                <label class="control-label">Обоснование <span class="text-danger">*</span></label>\
+                                <textarea class="form-control" rows="1" ng-model="action.note"\
+                                     ng-required="true" placeholder="Укажите обоснование для назначения"></textarea>\
+                            </div>\
+                        </li>\
+                    </ul>\
+                    <div ng-if="labDiagnosticsForm.$invalid && labDiagnosticsForm.$error.directionDate"\
+                        class="alert alert-danger">\
+                        Планируемая дата и время выполнения не могут быть раньше текущей даты и времени\
+                    </div>\
+                </div>\
+                </ng-form>\
+            </div>\
+        </div>\
+        <div class="modal-footer">\
+            <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
+            <button type="button" class="btn btn-success" ng-click="create_diagnostics()"\
+                ng-disabled="labDiagnosticsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
+        </div>'
+    );
+    $templateCache.put('/WebMis20/modal-treatments-create.html',
+        '<div class="modal-header" xmlns="http://www.w3.org/1999/html">\
+            <button type="button" class="close" ng-click="cancel()">&times;</button>\
+            <h4 class="modal-title" id="myModalLabel">Новое направление на манипуляции и операции</h4>\
+        </div>\
+        <div class="modal-body modal-scrollable affix-container">\
+            <div class="row">\
+                <div class="col-md-6">\
+                    <input class="form-control" type="text" ng-model="conditions.query" wm-slow-change="set_filter()" />\
+                    <div class="checkbox">\
+                        <label>\
+                            <input type="checkbox" ng-model="conditions.person_check" ng-change="set_filter()" ng-disabled="!personal_check_enabled" />\
+                            Только разрешённые мне\
+                        </label>\
+                    </div>\
+                    <div class="checkbox">\
+                        <label>\
+                            <input type="checkbox" ng-model="conditions.os_check" ng-change="set_filter()" ng-disabled="!os_check_enabled" />\
+                            Только разрешённые в моём отделении\
+                        </label>\
+                    </div>\
+                    <button type="button" class="btn btn-default" ng-click="all_nodes_expanded.value=!all_nodes_expanded.value">\
+                    [[all_nodes_expanded.value ? \'Свернуть все узлы\' : \'Развернуть все узлы\']]</button>\
+                    <div class="ui-treeview treeview-striped">\
+                        <ul ng-repeat="root in tree.children">\
+                            <li sf-treepeat="node in children of root">\
+                                <a ng-click="add_prepared_action(node)" ng-if="!node.children.length" class="leaf">\
+                                    <div class="tree-label leaf">&nbsp;</div>\
+                                    [ [[node.code]] ] [[ node.name ]] <span class="text-danger" ng-bind="get_at_item_price(node.id)"></span>\
+                                </a>\
+                                <a ng-if="node.children.length" ng-click="toggle_vis(node.id)" class="node">\
+                                    <div class="tree-label"\
+                                         ng-class="{\'collapsed\': !subtree_shown(node.id),\
+                                                    \'expanded\': subtree_shown(node.id)}">&nbsp;</div>\
+                                    [ [[node.code]] ] [[ node.name ]]\
+                                </a>\
+                                <ul ng-if="node.children.length && subtree_shown(node.id)">\
+                                    <li sf-treecurse></li>\
+                                </ul>\
+                            </li>\
+                        </ul>\
+                    </div>\
+                </div>\
+                <ng-form name="labTreatmentsForm">\
+                <div class="col-md-6 modal-affix">\
+                    <ul class="list-group">\
+                        <li ng-repeat="action in prepared2create" class="list-group-item">\
+                            <div class="row" ng-if="labTestsServiceErrorVisible(action)">\
+                            <div class="col-md-12">\
+                                <span class="text-danger">Не выбрано ни одного показателя исследования</span>\
+                            </div>\
+                            </div>\
+                            <div class="row">\
+                            <div class="col-md-8">\
+                                <span ng-if="!action.assignable.length"><span ng-bind="action.type_name" class="rmargin10"></span></span>\
+                                <span ng-if="action.assignable.length"><a ng-click="open_assignments(action)" ng-bind="action.type_name" class="rmargin10"></a></span>\
+                                <span ng-if="action_has_price(action)" class="nowrap">Стоимость: <span class="text-danger" ng-bind="get_action_price(action)"></span> руб.</span>\
+                            </div>\
+                            <div class="col-md-4">\
+                                <div class="pull-right">\
+                                   <button class="btn btn-danger btn-sm" ng-click="prepared2create.splice($index, 1)">\
+                                        <i class="glyphicon glyphicon-trash"></i>\
+                                    </button>\
+                                </div>\
+                            </div>\
+                            </div>\
+                            <hr style="margin-top: 7px; margin-bottom: 7px">\
+                            <div class="row">\
+                            <div class="col-md-8">\
+                                <wm-datetime-as ng-model="action.planned_end_date" wm-validate="validate_direction_date"></wm-datetime-as>\
+                            </div>\
+                            </div>\
+                            <div class="form-group" ng-if="actionReasonRequired(action)">\
+                                <label class="control-label">Обоснование <span class="text-danger">*</span></label>\
+                                <textarea class="form-control" rows="1" ng-model="action.note"\
+                                     ng-required="true" placeholder="Укажите обоснование для назначения"></textarea>\
+                            </div>\
+                        </li>\
+                    </ul>\
+                    <div ng-if="labTreatmentsForm.$invalid && labTreatmentsForm.$error.directionDate"\
+                        class="alert alert-danger">\
+                        Планируемая дата и время выполнения не могут быть раньше текущей даты и времени\
+                    </div>\
+                </div>\
+                </ng-form>\
+            </div>\
+        </div>\
+        <div class="modal-footer">\
+            <button type="button" class="btn btn-default" ng-click="cancel()">Закрыть</button>\
+            <button type="button" class="btn btn-success" ng-click="create_treatments()"\
+                ng-disabled="labTreatmentsForm.$invalid || !labTestsServicesSelected()">Создать направления</button>\
         </div>'
     );
     $templateCache.put('/WebMis20/modal-action-assignments.html',
